@@ -118,6 +118,8 @@ void HOMEKEY_click_check()
 			offset = CLK_get_system_time() - k->ticks[ON_CLICK];
 			
 			if (offset >= t_sos) {
+				
+				k->ticks[ON_CLICK] += 2000;
 			
 				// Increase the counter for "press + hold"
 				k->click_sos_num ++;
