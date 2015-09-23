@@ -400,8 +400,8 @@ static void _create_dev_info_msg()
 	t->msg[t->msg_filling_offset++] = 'A';
 	t->msg[t->msg_filling_offset++] = 'U';
 	t->msg[t->msg_filling_offset++] = '0';
-	t->msg[t->msg_filling_offset++] = '7';
-	t->msg[t->msg_filling_offset++] = '0';
+	t->msg[t->msg_filling_offset++] = '9';
+	t->msg[t->msg_filling_offset++] = '2';
 	t->msg[t->msg_filling_offset++] = '3';
 	
 	// Amount of minute streaming files

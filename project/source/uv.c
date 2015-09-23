@@ -184,34 +184,6 @@ void UV_Init()
 //uv_ALS_Auto();
 //SYSCLK_timer_start();
 
-#if 0
-  I8U vis_d0, vis_d1;
-  I8U ir_d0,  ir_d1;
-	I8U uv_d0,  uv_d1;
-	
-	I16S vis;
-	I16S ir;
-	I16S uv;
-
-  uv_Get_Cal();
-	BASE_delay_msec(1);
-
-	uv_read_reg(uv_REGS_ALS_VIS_DATA0, 1, &vis_d0);
-	uv_read_reg(uv_REGS_ALS_VIS_DATA1, 1, &vis_d1);
-	uv_read_reg(uv_REGS_ALS_IR_DATA0,  1, &ir_d0);
-	uv_read_reg(uv_REGS_ALS_IR_DATA1,  1, &ir_d1);
-	uv_read_reg(uv_REGS_AUX_DATA0_UVIDX0,  1, &uv_d0);
-	uv_read_reg(uv_REGS_AUX_DATA1_UVIDX1,  1, &uv_d1);
-
-	vis = vis_d1 * 256 + vis_d0;
-	ir  = ir_d1  * 256 + ir_d0;
-	uv  = uv_d1  * 256 + uv_d0;
-	
-	N_SPRINTF("%04x %02x %02x", vis, vis_d1, vis_d0);
-	N_SPRINTF("%04x %02x %02x", ir,  ir_d1,  ir_d0);
-	N_SPRINTF("%04x %02x %02x", uv,  uv_d1,  uv_d0);
-#endif
-
   /* UV state machine context intilization */
 	uv->uv_index = 0;
 	uv->state = UV_STAT_IDLE;

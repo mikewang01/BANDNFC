@@ -100,7 +100,7 @@ I8U SYSTEM_get_ble_device_name(I8U *device_name)
 	I8U len;
 	SYSTEM_get_dev_id(dev_id);
 	
-	len = sprintf((char *)device_name, "CBAND ");
+	len = sprintf((char *)device_name, "NBAND ");
 	
 	device_name[len++] = dev_id[16];
 	device_name[len++] = dev_id[17];
@@ -126,7 +126,7 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 	twentyCharDevID[0] = 'H'; // Hi
 	twentyCharDevID[1] = 'I'; // Hi
 	twentyCharDevID[2] = 'C'; // Cling
-	twentyCharDevID[3] = 'B'; // Band
+	twentyCharDevID[3] = 'N'; // NFC Band
 	
 	for (i = 0; i < 8; i++) {
 		v8 = (dev_data[i]>>4)&0x0f;
