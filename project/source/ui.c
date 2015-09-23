@@ -705,8 +705,10 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, TRUE);
 		len = 0;
 	} else if (mode == UI_MIDDLE_MODE_UV_IDX) {
+#ifdef _ENABLE_UV_
   	integer = UV_get_index();
 		len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
+#endif
 	} else if (mode == UI_MIDDLE_MODE_SLEEP) {
 		TRACKING_get_activity(cling.ui.vertical_index, TRACKING_SLEEP, &stat);
 		// Note: sleep is in seconds, so normalize it to minutes first

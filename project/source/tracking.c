@@ -531,8 +531,12 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 		pminute->skin_temperature = vital.skin_temperature;
 		pminute->heart_rate = vital.heart_rate;
 		pminute->skin_touch_pads = vital.skin_touch_pads;
+#ifdef _ENABLE_UV_
 		pminute->uv_and_activity_type = (UV_get_index()+5)/10;
 		pminute->uv_and_activity_type &= 0x0f;
+#else
+		pminute->uv_and_activity_type = 0;
+#endif
 		pminute->uv_and_activity_type |= cling.activity.workout_type<<4;
 	}
 	
@@ -567,8 +571,13 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->activity_count = diff->activity_count;
 	
 	// Get the maximum UV in past minute as part of minute data
+#ifdef _ENABLE_UV_
 	uv_integer = (UV_get_max_index_per_minute()+5)/10;
 	pminute->uv_and_activity_type = uv_integer & 0x0f;
+#else
+	pminute->uv_and_activity_type = 0;
+#endif
+
 	pminute->uv_and_activity_type |= cling.activity.workout_type<<4;
 
 	N_SPRINTF("MINUTE UPDATE: %08x, %04x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %04x, %02x",

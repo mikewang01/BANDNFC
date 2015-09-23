@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Component Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'lemon' 
- * Target:  'nrf51822_lemon' 
+ * Project: 'lemonNFC' 
+ * Target:  'nrf51822_lemonNFC' 
  */
 
 #ifndef RTE_COMPONENTS_H

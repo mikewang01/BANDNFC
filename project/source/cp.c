@@ -496,8 +496,11 @@ static void _create_daily_activity_info_msg()
 	t->msg[t->msg_filling_offset++] = (day_streaming.temperature>>8)&0xff;
 	t->msg[t->msg_filling_offset++] = (day_streaming.temperature&0xff);
 	// UV index
+#ifdef _ENABLE_UV_
 	t->msg[t->msg_filling_offset++] = (UV_get_index()+5)/10;
-
+#else
+	t->msg[t->msg_filling_offset++] = 0;
+#endif
 	t->msg_len = t->msg_filling_offset;
 
 	// Get message length (fixed length: 2 bytes)
