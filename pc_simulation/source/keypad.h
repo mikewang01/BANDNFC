@@ -1,0 +1,53 @@
+//
+//  File: keypad.h
+//
+//  Header file for keypad processing
+//
+#ifndef _KEYPAD_HEADER_
+#define _KEYPAD_HEADER_
+
+#include "standard_types.h"
+#include "base.h"
+
+#define KEYPAD_TIME_RATIO_SH 0
+
+#define DOUBLE_CLICK_TIME_MAX	100
+#define DOUBLE_CLICK_TIME_MIN	80
+
+#define CLICK_HOLD_TIME_LONG 1500
+#define CLICK_HOLD_TIME_SHORT 1000 // 30 -- remove debouncing for now
+
+#define KEYPAD_CLICK_DEBOUNCE		10 // 100 milli-second for debouncing
+#define DELAY_SINGLE_CLICK_DECLARATION 200
+
+#define KEYPAD_ON_HOLDING          1000
+
+typedef struct tagKEYPAD_CLICK_STAT {
+    I8U         temp_st;     			// temporarily hook status
+    I8U         stable_st;        // stable hook event 
+    I32U        ticks[2]; 		    // 0: ON 1: OFF, 2:SWITCHING
+	I32U		click_on_ts;
+    I8U         half_click;   			// on hook for a short time; but not long enough to call it on hook yet
+	I8U			single_click_num;
+	I8U			click_hold_num;
+	I32U        click_proc_ts;
+} KEYPAD_CLICK_STAT;
+
+// BUTTON STATUS
+enum {
+	ON_CLICK,
+	OFF_CLICK,
+};
+
+typedef enum {
+	CLICK_NONE,				// No event
+	CLICK_HOLD,				// click and hold
+	SINGLE_CLICK,				// click 
+	DOUBLE_CLICK,		// double click
+
+} CLICK_SUB_EVENTS;
+
+void KEYPAD_click_init(void);
+void KEYPAD_click_check(void);
+
+#endif

@@ -1,0 +1,440 @@
+
+#include "main.h"
+
+static BOOLEAN _is_sleep_state(SLEEP_STATUSCODE s)
+{
+	SLEEP_CTX *slp = &cling.sleep;	
+	return (s==slp->state);
+}
+
+static void _update_activity_status_register(I8U stat)
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	
+	slp->m_activity_status <<= 1;
+	if (stat==1) {
+		slp->m_activity_status |= 0x1;
+	}
+}
+
+static I32U _calc_sample_corr(ACC_AXIS s1, ACC_AXIS s2)
+{
+	return (s1.x - s2.x)*(s1.x - s2.x) + \
+		     (s1.y - s2.y)*(s1.y - s2.y) + \
+	       (s1.z - s2.z)*(s1.z - s2.z);
+}
+
+void SLEEP_wake_up_upon_motion()
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	slp->b_sudden_wake_from_sleep = TRUE;
+	slp->b_step_flag = TRUE;
+}
+
+static void _calc_activity_per_minute(ACC_AXIS d)
+{
+	I32S t_curr1, t_diff1;
+	I32S epoch_period;
+	
+	I32U corr_val;
+	
+	SLEEP_CTX *slp = &cling.sleep;
+	
+	I32U threshold;
+	
+	if (_is_sleep_state(SLP_STAT_AWAKE)) {
+		switch (slp->m_sensitive_mode) {
+			case SLEEP_SENSITIVE_LOW    : threshold = AWAKE_CORR_THRESHOLD_LOW;     break;
+			case SLEEP_SENSITIVE_MEDIUM : threshold = AWAKE_CORR_THRESHOLD_MEDIUM;  break;
+			case SLEEP_SENSITIVE_HIGH   : threshold = AWAKE_CORR_THRESHOLD_HIGH;    break;
+			default :                     threshold = AWAKE_CORR_THRESHOLD_MEDIUM;  break;
+		}
+	}
+	else if (_is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND)) {
+		switch (slp->m_sensitive_mode) {
+			case SLEEP_SENSITIVE_LOW    : threshold = SLEEP_CORR_THRESHOLD_LOW;     break;
+			case SLEEP_SENSITIVE_MEDIUM : threshold = SLEEP_CORR_THRESHOLD_MEDIUM;  break;
+			case SLEEP_SENSITIVE_HIGH   : threshold = SLEEP_CORR_THRESHOLD_HIGH;    break;
+			default :                     threshold = SLEEP_CORR_THRESHOLD_MEDIUM;  break;
+		}
+	} else {
+		threshold = AWAKE_CORR_THRESHOLD_MEDIUM;
+	}
+
+	if (!cling.lps.b_low_power_mode)
+	{
+		t_curr1 = CLK_get_system_time();
+		t_diff1 = t_curr1 - slp->slp_measue_timer;
+		
+		if ( _is_sleep_state(SLP_STAT_AWAKE) ) {
+			epoch_period = SLP_CORR_WINDOW_SHORT;
+		} else {
+			epoch_period = SLP_CORR_WINDOW_LONG;
+		}
+		
+		if ( t_diff1 > ( epoch_period * 20 ) ) {
+			slp->slp_measue_timer = t_curr1;
+			corr_val = _calc_sample_corr(d, slp->m_pre_sample );
+			
+			if ( corr_val > threshold ) {
+				slp->m_activity_per_min++;
+			}
+			
+			slp->m_pre_sample.x = d.x;
+			slp->m_pre_sample.y = d.y;
+			slp->m_pre_sample.z = d.z;
+		}
+	}
+}
+
+static void _update_stationary_mins()
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	I8U  i;
+	
+	slp->m_stationary_mins = 0;
+	for (i=0; i<16; i++) {
+		if (((slp->m_activity_status)&(1<<i))==0) {
+			slp->m_stationary_mins++;
+	  }
+  }
+}
+
+//static BOOLEAN _device_is_worn()
+//{
+//	SLEEP_CTX *slp = &cling.sleep;
+//	
+//	if (slp->b_valid_worn_in_entering_sleep_state) {
+//		return TRUE;
+//	} else {
+//		// if touch pads say it is skin touched, trust it!
+//		return FALSE;
+//	}
+//}
+
+static BOOLEAN _sleep_monitor_allowed()
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	
+	if (BATT_charging_det_for_sleep())
+		return FALSE;
+			
+	if (slp->b_valid_worn_in_entering_sleep_state)
+		return TRUE;
+	
+	return FALSE;
+}
+
+static void _sleep_main_state()
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	
+	BOOLEAN b_enter_light_sleep    = FALSE;
+	BOOLEAN b_wake_from_sleep      = FALSE;
+	BOOLEAN b_enter_sound_sleep    = FALSE;
+	
+	I32S threshold_entering_light;
+	I32S threshold_entering_sound;
+	
+	switch (slp->m_sensitive_mode) {
+		case SLEEP_SENSITIVE_LOW    : 
+			threshold_entering_light = AWAKE_TO_LIGHT_THRESHOLD_LOW;
+		  threshold_entering_sound = LIGHT_TO_SOUND_THRESHOLD_LOW;
+		  break;
+		
+		case SLEEP_SENSITIVE_MEDIUM : 
+			threshold_entering_light = AWAKE_TO_LIGHT_THRESHOLD_MEDIUM;
+		  threshold_entering_sound = LIGHT_TO_SOUND_THRESHOLD_MEDIUM;
+		  break;
+		
+		case SLEEP_SENSITIVE_HIGH   : 
+			threshold_entering_light = AWAKE_TO_LIGHT_THRESHOLD_HIGH;
+		  threshold_entering_sound = LIGHT_TO_SOUND_THRESHOLD_HIGH;
+		  break;
+		
+		default :                     
+			threshold_entering_light = AWAKE_TO_LIGHT_THRESHOLD_MEDIUM;
+		  threshold_entering_sound = LIGHT_TO_SOUND_THRESHOLD_MEDIUM;
+		  break;		
+	}
+	
+	if (
+
+       ( slp->b_entered_sleep_stage==TRUE && 
+	       slp->m_mins_cnt>=3 &&  
+				(slp->m_activity_status&0x7)==0x0) ||         // when wakeup in midnight in sudden activity (not walk/run), 
+                                                      // fall asleep again in 3 stationary minutes.
+
+
+       ( slp->b_entered_sleep_stage==FALSE && 
+	       slp->m_mins_cnt>=threshold_entering_light &&  
+				(slp->m_activity_status&0x3f)==0x0 &&        // when in solid entering sleep stage, must have 6 stationary minutes.
+				 slp->m_stationary_mins>=13)                 // in the past 16 minutes, must have 13 statioanry minutes above.
+
+     ) {
+			 if (slp->state==SLP_STAT_AWAKE)
+    b_enter_light_sleep = TRUE;
+	}
+	
+	// Do not wake up from sleep until 5 minutes in a state
+	if ( (slp->b_sudden_wake_from_sleep) && 
+		   ( (slp->m_mins_cnt>=5 && slp->state==SLP_STAT_SOUND) || slp->state==SLP_STAT_LIGHT) )   {
+    b_wake_from_sleep = TRUE;
+	}
+	
+	if ( slp->m_mins_cnt>=threshold_entering_sound && 
+		  (slp->m_activity_status&0xfff)==0x0) {
+			 if (slp->state==SLP_STAT_LIGHT)
+    b_enter_sound_sleep = TRUE;
+	}
+	
+  switch (slp->state) {
+		case SLP_STAT_IDLE:
+			SLEEP_init();
+		  break;
+		case SLP_STAT_AWAKE:
+			if (_sleep_monitor_allowed()) {
+				if (b_enter_light_sleep) {
+					slp->b_sudden_wake_from_sleep = FALSE;
+					slp->m_mins_cnt = 0;
+					slp->m_activity_status = 0;
+					slp->state = SLP_STAT_LIGHT;
+				}
+			}
+			else {
+				slp->b_sudden_wake_from_sleep = FALSE;
+				slp->m_mins_cnt = 0;
+				slp->m_activity_status = 0;
+			}
+			break;
+
+		case SLP_STAT_LIGHT:
+			if (b_wake_from_sleep) {
+				slp->m_mins_cnt = 0;
+				slp->m_activity_status = 0;
+				
+				slp->state = SLP_STAT_AWAKE;
+			}
+			else if (b_enter_sound_sleep) {
+				slp->m_mins_cnt = 0;
+				slp->m_activity_status = 0;
+				slp->state = SLP_STAT_SOUND;
+			}
+			break;
+		
+		case SLP_STAT_SOUND:
+			if ( slp->b_sudden_wake_from_sleep || (slp->m_activity_status&0x1)!=0 ) {
+				slp->m_mins_cnt = 0;
+				slp->m_activity_status = 0;
+				slp->state = SLP_STAT_LIGHT;
+			}
+			break;
+		
+		case SLP_STAT_REM:			
+		  SLEEP_init();
+			break;
+		
+		default:
+		  SLEEP_init();
+			break;
+	}
+}
+
+void SLEEP_minute_proc()
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	I8U  threshold = 0;
+	I8U  wakeup_threshold = 0;
+	I32U t_diff  = CLK_get_system_time();
+	I8U  step_status_tmp;
+	I8U  i, step_cnt;
+
+	t_diff -= cling.lps.ts;	
+	if ( _is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
+    if (cling.lps.b_low_power_mode && (t_diff > 1800000) && (slp->m_successive_no_skin_touch_mins>30) ) {
+			// Get out of sleep mode if device stays in low power stationary mode for over 30 minutes (1 hour)
+			slp->b_sudden_wake_from_sleep = TRUE;
+		}
+	}
+	
+	// monitoring sleep stage switching.
+	if ( 
+	     ( (slp->state==SLP_STAT_LIGHT || slp->state==SLP_STAT_SOUND) && (slp->pre_state==SLP_STAT_LIGHT || slp->pre_state==SLP_STAT_SOUND) ) || 
+	     (  slp->state==SLP_STAT_AWAKE && slp->pre_state==SLP_STAT_AWAKE ) 
+     )
+	{
+		slp->m_successive_same_state_mins++;
+	}
+	else
+	{
+		slp->m_successive_same_state_mins = 0;
+	}
+	
+	if ( (slp->state==SLP_STAT_LIGHT || slp->state==SLP_STAT_SOUND) && slp->m_successive_same_state_mins>=20 ) {
+		slp->b_entered_sleep_stage = TRUE;
+	}
+	else if ( slp->state==SLP_STAT_AWAKE && slp->m_successive_same_state_mins>=10 ) {
+		slp->b_entered_sleep_stage = FALSE;
+	}
+
+	slp->pre_state = slp->state;
+	
+	// monitoring whether device has been correctly worn
+	if (TOUCH_is_skin_touched()) {
+		slp->m_successive_no_skin_touch_mins = 0;
+		slp->b_valid_worn_in_entering_sleep_state = TRUE;
+	} else {
+		slp->m_successive_no_skin_touch_mins++;
+	}
+
+	// detect walking/running step status
+	if ( slp->b_entered_sleep_stage ) {         // only check when having really entered sleep state. 
+		slp->step_status <<= 1;      // shift/update step status in this epoch.
+		
+		
+		if (slp->b_step_flag == TRUE) {        // one minute..
+			slp->step_status |= 1;    // walking/running status in this epoch
+			slp->b_step_flag = FALSE;
+		}
+
+		step_status_tmp = slp->step_status & 0x1F;      // two waling/running minutes in 3 minutes
+		step_cnt = 0;
+		for (i=0; i<5; i++) {
+			if ( step_status_tmp & ((0x01)<<i) ) {
+				step_cnt++;
+			}
+		}
+		
+		if (step_cnt>=3)  { 
+			slp->b_entered_sleep_stage = FALSE;
+		}
+
+		if ( (slp->step_status & 0x03)!=0 &&  (slp->m_successive_no_skin_touch_mins>0) ) { 
+			slp->b_entered_sleep_stage = FALSE;
+		}
+	}
+
+	if (
+		   (slp->m_successive_no_skin_touch_mins>5  &&  _is_sleep_state(SLP_STAT_AWAKE)) || 
+       (slp->m_successive_no_skin_touch_mins>30 && (_is_sleep_state(SLP_STAT_LIGHT)  || _is_sleep_state(SLP_STAT_SOUND)))
+		)
+  {
+		slp->b_valid_worn_in_entering_sleep_state = FALSE;
+	}	
+	
+	if ( _is_sleep_state(SLP_STAT_AWAKE) ) {
+		switch (slp->m_sensitive_mode) {
+			case SLEEP_SENSITIVE_LOW    : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
+			case SLEEP_SENSITIVE_MEDIUM : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
+			case SLEEP_SENSITIVE_HIGH   : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_HIGH;    break;
+			default                     : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
+		}
+	}
+	else if ( _is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND) ) {
+		switch (slp->m_sensitive_mode) {
+			case SLEEP_SENSITIVE_LOW    : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
+			case SLEEP_SENSITIVE_MEDIUM : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
+			case SLEEP_SENSITIVE_HIGH   : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_HIGH;    break;
+			default                     : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
+		}
+	}
+	
+	switch (slp->m_sensitive_mode) {
+    case SLEEP_SENSITIVE_LOW      : wakeup_threshold = WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
+		case SLEEP_SENSITIVE_MEDIUM 	: wakeup_threshold = WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
+		case SLEEP_SENSITIVE_HIGH     : wakeup_threshold = WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_HIGH;    break;
+    default                       : wakeup_threshold = WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
+	}
+	
+  if (slp->m_mins_cnt<31)
+  	slp->m_mins_cnt++;
+  
+  if ( (slp->m_activity_per_min>=wakeup_threshold) && 
+		   (_is_sleep_state(SLP_STAT_SOUND) || _is_sleep_state(SLP_STAT_LIGHT)) )
+	{
+    slp->b_sudden_wake_from_sleep = TRUE;
+	}
+	
+  if (slp->m_activity_per_min>=threshold)
+  	_update_activity_status_register(1);
+  else
+  	_update_activity_status_register(0);
+	
+	N_SPRINTF("%d  %d", slp->state, slp->m_activity_per_min);
+  
+  slp->m_activity_per_min = 0;
+	
+	// count stationary minutes.
+	_update_stationary_mins();
+}
+
+void SLEEP_init()
+{
+	SLEEP_CTX *slp = &cling.sleep;
+	
+	slp->slp_measue_timer = CLK_get_system_time();
+	
+	slp->state = SLP_STAT_AWAKE;
+	slp->m_pre_sample.x = 0;
+	slp->m_pre_sample.y = 0;
+	slp->m_pre_sample.z = 0;
+	
+	slp->m_activity_per_min = 0;
+    slp->m_activity_status  = 0;
+    slp->m_mins_cnt         = 0;
+	slp->m_stationary_mins  = 0;
+	
+	slp->m_successive_same_state_mins = 0;
+	slp->b_entered_sleep_stage = FALSE;
+	slp->pre_state = SLP_STAT_AWAKE;
+
+	slp->b_sudden_wake_from_sleep = FALSE;
+
+//slp->m_sensitive_mode = SLEEP_SENSITIVE_MEDIUM;
+	slp->m_sensitive_mode = SLEEP_SENSITIVE_LOW;
+	
+	slp->m_successive_no_skin_touch_mins = 0;
+	slp->b_valid_worn_in_entering_sleep_state = TRUE;	
+	slp->step_status = 0x00;
+	slp->b_step_flag = FALSE;
+}
+
+void SLEEP_algorithms_proc(ACC_AXIS *xyz)
+{
+	ACC_AXIS current_sample;
+	
+	current_sample.x = xyz->x;
+	current_sample.y = xyz->y;
+	current_sample.z = xyz->z;
+
+	// calc activity status per minute..
+	_calc_activity_per_minute(current_sample);
+
+	// sleep monitering main state machine.
+	_sleep_main_state();
+}
+
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
+
+
+void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)
+{
+	SLEEP_CTX *slp = &cling.sleep;
+
+	slp->m_activity_per_min = activity_per_min;
+
+	if (skin_touch > 0) {
+		cling.touch.skin_touch_type = skin_touch;
+	}
+	else {
+		cling.touch.skin_touch_type = skin_touch;
+	}
+
+	if (steps > 0)
+		SLEEP_wake_up_upon_motion();
+
+	//
+	_sleep_main_state();
+}
+#endif
+
