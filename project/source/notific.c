@@ -14,6 +14,8 @@
 
 #include "main.h"
 
+//#define _NOTIFIC_TESTING_
+
 #define NOTIFIC_ON_TIME_IN_MS 100
 #define NOTIFIC_OFF_TIME_IN_MS 400
 #define NOTIFIC_VIBRATION_REPEAT_TIME 3
@@ -169,6 +171,12 @@ I8U NOTIFIC_get_message_total(void)
 {
 
 #ifdef _ENABLE_ANCS_
+#ifdef _NOTIFIC_TESTING_
+	return 5;
+#endif
+	if (cling.ancs.message_total > 16)
+		cling.ancs.message_total = 16;
+	
 	return cling.ancs.message_total;
 #else
 	return 0;
@@ -184,6 +192,11 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	I32U tmpBuf[32];
 	
 	I8U  *pdata = (I8U *)tmpBuf;
+	
+	if (cling.ancs.message_total == 0) {
+		title_len = sprintf(app_name, "No message!");
+		return title_len;
+	}
 	
 	if (index == 0xff) {
 		
@@ -206,6 +219,29 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 		Y_SPRINTF("[NOTIFIC] incoming msg :%s",app_name );		
 		return title_len;
 	} 
+#ifdef _NOTIFIC_TESTING_
+	if (index == 0)
+		title_len = sprintf(app_name, "0000");
+	else if (index == 1)
+		title_len = sprintf(app_name, "1111");
+	else if (index == 2)
+		title_len = sprintf(app_name, "2222");
+	else if (index == 3)
+		title_len = sprintf(app_name, "33333");
+	else if (index == 4)
+		title_len = sprintf(app_name, "4444");
+	else 
+		title_len = sprintf(app_name, "n/a");
+	
+	return title_len;
+#endif
+	
+	if (index > (cling.ancs.message_total-1)) {
+		title_len = sprintf(app_name, "No message!");
+		return title_len;
+	}
+
+	// Get message title
 	addr_in=((index*256)+SYSTEM_NOTIFICATION_SPACE_START);
 
 	FLASH_Read_App(addr_in, pdata, 128);	
@@ -217,9 +253,9 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	
 	app_name[title_len] = 0;		
 
-	Y_SPRINTF("[NOTIFIC] get ancs title len  is :%d",title_len );	
+	N_SPRINTF("[NOTIFIC] get ancs title len  is :%d",title_len );	
 	
-	Y_SPRINTF("[NOTIFIC] get ancs title string  is :%s",app_name );		
+	N_SPRINTF("[NOTIFIC] get ancs title string  is :%s",app_name );		
 	
 	return title_len;
 #endif
@@ -234,45 +270,60 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	I32U addr_in;
 	I32U tmpBuf_1[32];
 	I32U tmpBuf_2[32];
-	
+	I8U  *pmsg;
 	I8U  *pdata_1 = (I8U *)tmpBuf_1;
   I8U  *pdata_2 = (I8U *)tmpBuf_2;
 
+	if (cling.ancs.message_total == 0) {
+		title_len = sprintf(string, "No message!");
+		return title_len;
+	}
+	
+#ifdef _NOTIFIC_TESTING_
+	if (index == 0)
+		mes_len = sprintf(string, "aaaa2388qwerjqfoiajfkqerfaoiasrqwerqwerasdfasfdjfiq23rjfdoieroaaaa");
+	else if (index == 1)
+		mes_len = sprintf(string, "bbbb2388qwerjqfoiajfkqerfaoiasrqwerqwerasdfasfdjfiq23rjfdoierbbbb");
+	else if (index == 2)
+		mes_len = sprintf(string, "cccc2388qwerjqfoiajfkqerfaoiasrqwerqwerasdfasfdjfiq23rjfdoiercccc");
+	else if (index == 3)
+		mes_len = sprintf(string, "dddd2388qwerjqfoiajfkqerfaoiasrqwerqwerasdfasfdjfiq23rjfdoierdddd");
+	else if (index == 4)
+		mes_len = sprintf(string, "eeee2388qwerjqfoiajfkqerfaoiasrqwerqwerasdfasfdjfiq23rjfdoiereeee");
+	else 
+		mes_len = sprintf(string, "n/a");
+	
+	return mes_len;
+#endif
+	
+	if (index > (cling.ancs.message_total-1)) {
+		title_len = sprintf(string, "No message!");
+		return title_len;
+	}
+
+	// First, read the first 128 bytes
 	addr_in=((index*256)+SYSTEM_NOTIFICATION_SPACE_START);
 
 	FLASH_Read_App(addr_in, pdata_1, 128);	
 
-	addr_in+=128;
-		
-	FLASH_Read_App(addr_in, pdata_2, 128);	
-
   title_len = pdata_1[0];
   mes_len   = pdata_1[1];	
 	
-	mes_offset=(128-title_len-2);
+	mes_offset = 1+1+title_len;
 	
-	if(mes_len > 126){
-	mes_len=126;
-	}
-
-	if(mes_len  <=  mes_offset) {
+	// if the overall length of message and title is less than 128 bytes
+	if (mes_len <= (128-mes_offset)) {
+		memcpy(string, pdata_1+mes_offset, mes_len);
+	} else {
+		addr_in+=128;
+		FLASH_Read_App(addr_in, pdata_2, 128);	
 		
-		// Get the  message string
-	  memcpy(string,pdata_1+2+title_len,mes_len);	
-	  string[mes_len] = 0;		
+		// if the overall length of message and title is greater than 128 bytes
+		memcpy(string, pdata_1+mes_offset, 128-mes_offset);
+		memcpy(string+(128-mes_offset), pdata_2, mes_len-(128-mes_offset));
+		string[mes_len] = 0;
 	}
 	
-	else{
-
-		// Get the  message string
-	  memcpy(string,pdata_1+2+2+title_len,mes_offset);	
-		memcpy(&string[mes_offset],pdata_2,(mes_len-mes_offset));			
-	  string[mes_len] = 0;		
-	}
-
-	Y_SPRINTF("[NOTIFIC] get ancs message len  is :%d",mes_len );	
-	Y_SPRINTF("[NOTIFIC] get ancs message string  is :%s",string );			
-
 	return mes_len;
 	
 #endif

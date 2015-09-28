@@ -354,8 +354,8 @@ const I8U ui_gesture_constrain[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_SMART_APP_NOTIF,*/              S_F_BS_BH,
 	/*UI_DISPLAY_SMART_DETAIL_NOTIF,*/           S_F_BS_BH,
 	/*UI_DISPLAY_SMART_PHONE_FINDER,*/           S_F_BS_BH,
-	/*UI_DISPLAY_SMART_INCOMING_CALL,*/          N_F,
-	/*UI_DISPLAY_SMART_INCOMING_MESSAGE,*/       F_BS,
+	/*UI_DISPLAY_SMART_INCOMING_CALL,*/          S_F_BS,
+	/*UI_DISPLAY_SMART_INCOMING_MESSAGE,*/       S_F_BS,
 	/*UI_DISPLAY_SMART_REMINDER,*/               S_F_BS_BH,
 	/*UI_DISPLAY_SMART_WEATHER,*/                S_F_BS_BH,
 	// 4: a set of VITAL

@@ -108,16 +108,6 @@ void uv_Reset()
   uv_write_reg(uv_REGS_HW_KEY, 0x17);
 }
 
-static void _Disable_Sensor()
-{
-	/* disable mearing rate */
-  uv_write_reg(uv_REGS_MEAS_RATE0, 0x00);
-  uv_write_reg(uv_REGS_MEAS_RATE1, 0x00);
-
-	/* pause */
-	uv_ALS_Pause();
-}
-
 void UV_Init()
 {
 	UV_CTX *uv = &cling.uv;
@@ -180,9 +170,37 @@ void UV_Init()
   uv_Send_Command_SET(uv_PARAM_ALS_VIS_ADC_MISC,    0x20);               // 0x20, high signal range
 
 	/* Set SI1132 autonomous mode. */
-  _Disable_Sensor();
+  uv_Disable_Sensor();
 //uv_ALS_Auto();
 //SYSCLK_timer_start();
+
+#if 0
+  I8U vis_d0, vis_d1;
+  I8U ir_d0,  ir_d1;
+	I8U uv_d0,  uv_d1;
+	
+	I16S vis;
+	I16S ir;
+	I16S uv;
+
+  uv_Get_Cal();
+	BASE_delay_msec(1);
+
+	uv_read_reg(uv_REGS_ALS_VIS_DATA0, 1, &vis_d0);
+	uv_read_reg(uv_REGS_ALS_VIS_DATA1, 1, &vis_d1);
+	uv_read_reg(uv_REGS_ALS_IR_DATA0,  1, &ir_d0);
+	uv_read_reg(uv_REGS_ALS_IR_DATA1,  1, &ir_d1);
+	uv_read_reg(uv_REGS_AUX_DATA0_UVIDX0,  1, &uv_d0);
+	uv_read_reg(uv_REGS_AUX_DATA1_UVIDX1,  1, &uv_d1);
+
+	vis = vis_d1 * 256 + vis_d0;
+	ir  = ir_d1  * 256 + ir_d0;
+	uv  = uv_d1  * 256 + uv_d0;
+	
+	N_SPRINTF("%04x %02x %02x", vis, vis_d1, vis_d0);
+	N_SPRINTF("%04x %02x %02x", ir,  ir_d1,  ir_d0);
+	N_SPRINTF("%04x %02x %02x", uv,  uv_d1,  uv_d0);
+#endif
 
   /* UV state machine context intilization */
 	uv->uv_index = 0;
@@ -190,42 +208,24 @@ void UV_Init()
 	uv->measure_timebase = cling.time.system_clock_in_sec;
 }
 
-static void _Configure_Sensor()
+void uv_Configure_Sensor()
 {
   uv_write_reg(uv_REGS_MEAS_RATE0, 0x80);        // 50 samples per second
   uv_write_reg(uv_REGS_MEAS_RATE1, 0x02);
 	uv_ALS_Auto();
 }
 
-
-I8U UV_get_max_index_per_minute()
+void uv_Disable_Sensor()
 {
-	I8U max = cling.uv.max_uv;
-	cling.uv.max_uv = cling.uv.uv_index;
-	
-	return max;
+	/* disable mearing rate */
+  uv_write_reg(uv_REGS_MEAS_RATE0, 0x00);
+  uv_write_reg(uv_REGS_MEAS_RATE1, 0x00);
+
+	/* pause */
+	uv_ALS_Pause();
 }
 
-I8U UV_get_index()
-{
-	UV_CTX *uv = &cling.uv;
-	return uv->uv_index;
-}
-
-BOOLEAN _is_user_viewing_uv_index()
-{
-	if (UI_is_idle()) {
-		return FALSE;
-	}
-	
-	if (cling.ui.frame_index != UI_DISPLAY_TRACKER_UV_IDX) {
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-static BOOLEAN _measure_uv()
+BOOLEAN uv_Measure()
 {
 	I8U  buf[2];
 //I8U  chip_stat;
@@ -290,6 +290,33 @@ static BOOLEAN _measure_uv()
   return TRUE;
 }
 
+I8U UV_get_max_index_per_minute()
+{
+	I8U max = cling.uv.max_uv;
+	cling.uv.max_uv = cling.uv.uv_index;
+	
+	return max;
+}
+
+I8U UV_get_index()
+{
+	UV_CTX *uv = &cling.uv;
+	return uv->uv_index;
+}
+
+BOOLEAN _is_user_viewing_uv_index()
+{
+	if (UI_is_idle()) {
+		return FALSE;
+	}
+	
+	if (cling.ui.frame_index != UI_DISPLAY_TRACKER_UV_IDX) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 void UV_state_machine()
 {
 	UV_CTX *uv = &cling.uv;
@@ -303,13 +330,13 @@ void UV_state_machine()
 			break;
 
 		case UV_STAT_DUTY_ON : 
-			_Configure_Sensor();
+			uv_Configure_Sensor();
 		  uv->state = UV_STAT_SAMPLE_READY;
 			break;
 
 		case UV_STAT_SAMPLE_READY : 
-      _measure_uv();
-		  _Disable_Sensor();
+      uv_Measure();
+		  uv_Disable_Sensor();
 			uv->state = UV_STAT_DUTY_OFF;
 			break;
 

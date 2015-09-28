@@ -642,7 +642,7 @@ static void _ble_stack_init(void)
 
 /**@brief Function for the Bond Manager initialization.
  */
-static void _device_manager_init(BOOLEAN b_delete)
+void HAL_device_manager_init(BOOLEAN b_delete)
 {
 #ifndef _CLING_PC_SIMULATION_
     uint32_t            err_code;
@@ -701,8 +701,8 @@ static void _ble_init()
 	// RTC initialization, it does not actually START until valid time is written to it.
 	RTC_Init(); 
 
-	_device_manager_init(FALSE);
-	//	_device_manager_init(TRUE);
+	//HAL_device_manager_init(FALSE);
+	
 #ifdef _ENABLE_ANCS_	
 	 db_discovery_init();
 #endif

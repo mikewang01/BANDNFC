@@ -316,7 +316,8 @@ void FLASH_Read_App(I32U add, I8U * cbBuffer, I8U len)
 	}
 
 	add += CLING_APP_SPACE; // Starting App space
-	
+		
+
 #if defined (MCU_NATIVE_FLASH_SIZE_64KB)
 	SYSFLASH_drv_read_sector(add, cbBuffer, len);
 #else

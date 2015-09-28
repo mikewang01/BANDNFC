@@ -24,7 +24,7 @@
 #ifndef _ANCS_H__
 #define _ANCS_H__
 
-#define _ENABLE_ANCS_
+//#define _ENABLE_ANCS_
 
 #include "ble_ancs_c.h"
 #include "standard_types.h"
@@ -56,13 +56,11 @@ typedef struct tagANCS_CONTEXT {
 	ANCS_PACKET    pkt;
 	I8U            message_total;
 	BOOLEAN        ancs_attr_get_flag;
-	BOOLEAN        nflash_erase_flag;	
 	BOOLEAN        notf_updata;
 } ANCS_CONTEXT;
 
 
 void ANCS_service_add(void);
-void ANCS_nflash_attr_write_pro(I8U uid_index,ANCS_PACKET * pkt);
 void ANCS_attr_display_test(void);
 void ANCS_state_machine(void);
 #endif // _ANCS_H__

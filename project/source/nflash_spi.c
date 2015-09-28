@@ -228,6 +228,7 @@ void NOR_erase_block_4k(I32U addr)
 	g_spi_tx_buf[1] = (uint8_t)(addr >> 16);
 	g_spi_tx_buf[2] = (uint8_t)(addr >> 8);
 	g_spi_tx_buf[3] = (uint8_t)(addr);
+	
 	N_SPRINTF("[NFLASH] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);

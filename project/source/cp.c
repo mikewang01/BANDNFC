@@ -391,8 +391,8 @@ static void _create_dev_info_msg()
 		t->msg[t->msg_filling_offset++] = dev_data[i];
 
 	// Add system reset count
-	t->msg[t->msg_filling_offset++] = (cling.system.reset_count>>24)&0xff;
-	t->msg[t->msg_filling_offset++] = (cling.system.reset_count>>16)&0xff;
+	t->msg[t->msg_filling_offset++] = 0;
+	t->msg[t->msg_filling_offset++] = 0;
 	t->msg[t->msg_filling_offset++] = (cling.system.reset_count>>8)&0xff;
 	t->msg[t->msg_filling_offset++] = cling.system.reset_count&0xff;
 	

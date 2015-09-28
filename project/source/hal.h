@@ -38,6 +38,7 @@
 #define DEAD_BEEF                            0xDEADBEEF                                 /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
 void HAL_init(void);
+void HAL_device_manager_init(BOOLEAN b_delete);
 void HAL_advertising_start(void);
 BOOLEAN HAL_set_conn_params(BOOLEAN b_fast);
 BOOLEAN HAL_set_slow_conn_params(void);

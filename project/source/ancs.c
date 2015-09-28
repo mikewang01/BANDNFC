@@ -300,24 +300,12 @@ void ANCS_attr_display_test(void)
 }
 #endif
 
- void ANCS_nflash_attr_write_pro(I8U uid_index,ANCS_PACKET * pkt)
+static void _nflash_store_one_message(I8U *data)
 {
 	//use message 4k space from nflash
 	I32U addr=SYSTEM_NOTIFICATION_SPACE_START;
-
-	I8U *data = (I8U*)pkt;
 	
-  //Buf data that not used set 0	
-  //memset(&data[cling.ancs.pkt.title_len+cling.ancs.pkt.message_len+2],0,(256-cling.ancs.pkt.title_len-cling.ancs.pkt.message_len-2));
-
-	if(cling.ancs.nflash_erase_flag == TRUE){
-
-		Y_SPRINTF("[ANCS] start erase all 4K nflash space");		
-		cling.ancs.nflash_erase_flag = FALSE;	
-		FLASH_erase_App(addr);
-	}
-	
-	addr += (uid_index-1)*256;
+	addr += (cling.ancs.message_total-1)*256;
 	FLASH_Write_App(addr, data, 128);
 	addr += 128;
 	FLASH_Write_App(addr, data+128, 128);
@@ -367,7 +355,7 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
             break;
 
         case ATTRIBUTE_ID:
-            evt.attr.attr_id= data[i];
+            evt.attr.attr_id = data[i];
             m_parse_state = ATTRIBUTE_LEN1;
             break;
 
@@ -853,8 +841,6 @@ void ANCS_service_add(void)
 
     err_code = ble_ancs_c_init(&cling.ancs.m_ancs_c, &ancs_init_obj);
     APP_ERROR_CHECK(err_code);
-
-    cling.ancs.nflash_erase_flag=TRUE;	
 }
 
 
@@ -890,16 +876,21 @@ void ANCS_state_machine(void)
 								
 							// when a new notification message arrives, start notification state machine
 							NOTIFIC_start_notifying(ancs_notif.category_id);
-							
-							 cling.ancs.message_total++;								
-							 if(cling.ancs.message_total == 17) {
-							
-							   cling.ancs.nflash_erase_flag=TRUE;								
-							   cling.ancs.message_total=0;
-							 }							
+													
+							 if(cling.ancs.message_total >= 16) {
+									
+								 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+							 
+								 Y_SPRINTF("[ANCS] message is full, go erase the message space");
+
+							   cling.ancs.message_total = 0;
+							 }
+							 
+							 cling.ancs.message_total++;		
 							 Y_SPRINTF("[ANCS] message total is :%d ",cling.ancs.message_total);
 
-		          ANCS_nflash_attr_write_pro(cling.ancs.message_total,&cling.ancs.pkt);
+		          _nflash_store_one_message((I8U *)&cling.ancs.pkt);
+							 
 		          cling.ancs.ancs_attr_get_flag=FALSE;
               cling.ancs.state=ANCS_IDLE;
 	          }

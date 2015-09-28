@@ -138,6 +138,55 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 		twentyCharDevID[(((i)<<1)+1)+4] = v8;
 	}
 }
+#ifdef _ENABLE_ANCS_
+
+static void _notification_msg_init()
+{
+	I32U dw_buf[16];
+	I8U *p_byte_addr;
+	I32U offset = 0;
+	
+	// If this device is unauthorized, wipe out everything in the critical info section
+	if (!LINK_is_authorized()) {
+		cling.ancs.message_total = 0;
+		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+		return ;
+	}
+
+	p_byte_addr = (I8U *)dw_buf;
+	cling.ancs.message_total = 0;
+	while (offset < FLASH_ERASE_BLK_SIZE) {
+		// Read out the first 4 bytes -
+		FLASH_Read_App(SYSTEM_NOTIFICATION_SPACE_START+offset, p_byte_addr, 4);
+			
+		// Every message, we store 256 bytes, which includes message title and length info.
+		if (p_byte_addr[0] == 0xFF) {
+			break;
+		}
+		
+		if (p_byte_addr[0] >= 128) {
+			Y_SPRINTF("[SYSTEM] message (%d) wrong info - erased: %08x!", offset, dw_buf[0]);
+			// something wrong
+			cling.ancs.message_total = 0;
+			FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+			break;
+		}
+		offset += 256;
+		cling.ancs.message_total ++;
+					
+		Y_SPRINTF("[SYSTEM] message buffer update(%d) - %d, %d", 
+		cling.ancs.message_total, p_byte_addr[0], p_byte_addr[1]);
+
+	}
+	
+	// If nothing gets restored from system
+	if (cling.ancs.message_total == 16) {
+		Y_SPRINTF("[SYSTEM] message buffer full - erased!");
+		cling.ancs.message_total = 0;
+		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+	}
+}
+#endif
 
 static BOOLEAN _critical_info_restored()
 {
@@ -262,12 +311,10 @@ static BOOLEAN _critical_info_restored()
 	cling.ui.fonts_cn = p_byte_addr[59];
 
 	// Minute file critical timing info
-	cling.system.reset_count = p_byte_addr[60];
-	cling.system.reset_count = (cling.system.reset_count << 8) | p_byte_addr[61];
-	cling.system.reset_count = (cling.system.reset_count << 8) | p_byte_addr[62];
+	cling.system.reset_count = p_byte_addr[62];
 	cling.system.reset_count = (cling.system.reset_count << 8) | p_byte_addr[63];
 
-	if (cling.system.reset_count & 0xff000000) {
+	if (cling.system.reset_count & 0x8000) {
 		cling.system.reset_count = 0;
 	} else {
 		cling.system.reset_count ++;
@@ -343,12 +390,15 @@ void SYSTEM_init(void)
 		if (LINK_is_authorized()) {
 			page_erased = FLASH_erase_all(FALSE);
 			
+	    HAL_device_manager_init(FALSE);		
 			// Print out the amount of page that gets erased
 			Y_SPRINTF("[MAIN] No FAT, With Auth, erase %d blocks (4 KB) ", page_erased);
 		} else {
 			// If this is not a authorized device, erase auth info section and critical info section.
 			page_erased = FLASH_erase_all(TRUE);
 			
+			 //delete	bond info
+			 HAL_device_manager_init(TRUE);	
 			// Print out the amount of page that gets erased
 			Y_SPRINTF("[MAIN] No FAT, No Auth, erase %d blocks (4 KB) ", page_erased);
 		}
@@ -359,10 +409,14 @@ void SYSTEM_init(void)
 		
 	} else if (!LINK_is_authorized()) {
 		page_erased = FLASH_erase_application_data(TRUE);
-		
+	  
+		HAL_device_manager_init(TRUE);				
 		// Print out the amount of page that gets erased
 		Y_SPRINTF("[MAIN] YES FAT, No AUTH, erase %d blocks (4 KB) ", page_erased);
 	} else {
+		
+		 //delete	bond info
+		HAL_device_manager_init(FALSE);	
 		Y_SPRINTF("[MAIN] YES FAT, YES AUTH, erase %d blocks (4 KB) ", page_erased);
 	}
 	
@@ -376,6 +430,10 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	_critical_info_restored();
+#ifdef _ENABLE_ANCS_
+	// Initialize smart notification messages
+	_notification_msg_init();
+#endif
 	
 	// Over-the-air update check
 	OTA_main();
@@ -479,8 +537,8 @@ BOOLEAN SYSTEM_backup_critical()
 	critical[59] = cling.ui.fonts_cn;
 
 	// Store the reset count
-	critical[60] = (I8U)((cling.system.reset_count>>24) & 0xFF);
-	critical[61] = (I8U)((cling.system.reset_count>>16) & 0xFF);
+	critical[60] = 0;
+	critical[61] = 0;
 	critical[62] = (I8U)((cling.system.reset_count>>8) & 0xFF);
 	critical[63] = (I8U)((cling.system.reset_count) & 0xFF);
 

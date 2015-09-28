@@ -134,8 +134,10 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U frame_next_idx;
 	
 	// Vertical switching
-	I8U vertical_index;
-	I8U vertical_notif_index;
+	I8U level_1_index;
+	
+	// Page index
+	I8U level_2_index;
 	
 	// Icon flashing
 	BOOLEAN clock_sec_blinking;

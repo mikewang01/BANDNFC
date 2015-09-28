@@ -1,8 +1,7 @@
 #include "main.h"
 #include <stdint.h>
 
-//one utf-8 characters need 3 bytes
-//one nuicode characters need 2 bytes
+
 static I16U _font_utf_to_unicode(I8U *UTF_8_in)
 {
 	 I16U unicode_16;
@@ -13,36 +12,41 @@ static I16U _font_utf_to_unicode(I8U *UTF_8_in)
 }
 
 
-//5x7 ascii size 8 byte
+
 static void _font_read_one_5x7_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 {
-	static I32U addr;
 	//start addr:368k 
-  I32U  BaseAdd=376832;
+	I32U addr_in=FONT_ASCII_5X7_SPACE_START;;
+
   if((ASCIICode >= 0x20)&&(ASCIICode<=0x7e))
   {		
-   addr=((ASCIICode-0x20)*8+BaseAdd);  
-   NOR_readData(addr, len, dataBuf);			
+		addr_in += ((ASCIICode-0x20)*8);
+ 		
+	  NOR_readData(addr_in, len, dataBuf);		
   }
 	else
 	{
    Y_SPRINTF("[FONTS] No search to the 5x7 ASCII ...");		
 	}
-  
+	
 }
 
-//8x16 ascii size 16 byte
+
+
 static void _font_read_one_8x16_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 {
-	static I32U addr;
+	
 	//start addr:368k + 768 byte 
-  I32U  BaseAdd=376832+768;
-	if  ((ASCIICode >= 0x20)&&(ASCIICode<=0x7e))
-	{		
-	 addr=((ASCIICode-0x20)*16+BaseAdd); 
-   NOR_readData(addr, len, dataBuf);			
-	}
-	else
+	I32U addr_in=FONT_ASCII_8X16_SPACE_START;;
+
+  if((ASCIICode >= 0x20)&&(ASCIICode<=0x7e))
+  {		
+		addr_in += ((ASCIICode-0x20)*16);
+  
+	  NOR_readData(addr_in, len, dataBuf);		
+  }	
+	
+  else
 	{
    Y_SPRINTF("[FONTS] No search to the 8x16 ASCII ...");		
 	}
@@ -52,18 +56,22 @@ static void _font_read_one_8x16_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 //15x16 unicode Chinese charactersascii size 32 byte
 static void _font_read_one_Chinese_characters(I8U *utf_8,I16U len, I8U *dataBuf)
 {
-	I32U addr;
+
+	I32U addr_in=FONT_CHINESE_SPACE_START;
+
   I16U unicode_16;	
-		//start addr:368k + 768 byte +1536 byte 
-  I32U  BaseAdd=376832+768+1536;
+
 	unicode_16=_font_utf_to_unicode(utf_8);
 	I8U MSB=(I8U)(unicode_16 >>8);
 	I8U LSB=(I8U)unicode_16;
+
 	if(MSB>=0x4E && MSB<=0x9F)
-	{
-	 addr=(MSB*256+LSB-0x4E00)*32+ BaseAdd;
-	 NOR_readData(addr, len, dataBuf);
-	}
+  {		
+		addr_in += ((MSB*256+LSB-0x4E00)*32);
+   
+	  NOR_readData(addr_in, len, dataBuf);		
+  }		
+
   else
 	{
    Y_SPRINTF("[FONTS] No search to the Chinese characters ...");		

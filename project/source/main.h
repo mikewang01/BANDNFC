@@ -137,12 +137,12 @@ typedef struct tagWHOAMI_CONTEXT {
 } WHOAMI_CTX;
 
 typedef struct tagSYSTEM_CTX {
-	// Reset count - overall reset time since the factory reset
-	// The count only works for authorized device.
-	I32U reset_count;
-	
 	// Connection parameter update
 	I32U conn_params_update_ts;
+	
+	// Reset count - overall reset time since the factory reset
+	// The count only works for authorized device.
+	I16U reset_count;
 	
 	// System power status
 	BOOLEAN b_powered_up;
