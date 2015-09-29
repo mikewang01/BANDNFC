@@ -489,7 +489,7 @@ void PPG_state_machine()
 			if (!TOUCH_is_skin_touched()) {
 				t_diff = t_sec - h->m_no_skin_touch_in_s;
 				
-			if (t_diff > 3) {
+				if (t_diff > 2) {
           ppg_Disable_Sensor();					       // Turn off ppg sensor module
           h->state = PPG_STAT_DUTY_OFF;
           Y_SPRINTF("[PPG] PPG (No skin touch) State off, %d, %d", t_diff, cling.ui.state);

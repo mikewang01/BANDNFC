@@ -24,7 +24,7 @@
 #ifndef _ANCS_H__
 #define _ANCS_H__
 
-//#define _ENABLE_ANCS_
+#define _ENABLE_ANCS_
 
 #include "ble_ancs_c.h"
 #include "standard_types.h"

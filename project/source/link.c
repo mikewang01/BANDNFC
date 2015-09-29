@@ -31,8 +31,8 @@ BOOLEAN _generatingBlob = BOOLEAN_FALSE; // indicates that we are generating a b
 BOOLEAN _checkingBlob = BOOLEAN_FALSE;	// indicates that we are checking a blob (used for timeout check)
 BOOLEAN _waitingBeforeFileCheck = BOOLEAN_FALSE; // flag indicating we are waiting for a short period before checking file.
 I8U token_string[MAX_ENCRYPT_DECRYPT_STRING_SIZE];
-I8U crypto_buffer[ENCRYPT_DECRYPT_BLOCK_SIZE+2];  // the extra two are "safety" especially for sprintf used later.
-I32U _thekey[4];
+I8U *crypto_buffer;  // 16 BYTES BUFFER FOR crypto.
+I8U *_thekey;
 I8U _pad;
 I32U _startTime, _timeCheck;
 I32U _userID;
@@ -149,12 +149,19 @@ void LINK_state_machine(void)
 				acc->auth_state = LINK_S_START_AUTHENTICATION;
 				acc->trigger_cmd = CTL_A1;
 				N_SPRINTF("[LINK] A1 ...");
+				// Borrow pedo grobal buffer as it is a one-time use
+				crypto_buffer = PEDO_get_global_buffer()+512;
+				_thekey = crypto_buffer+128;
 				// terminal state for this phase is WRITE_ENCRYPT_FILE or GENERATE_ERROR_FILE
 			} else if (CTL_A2 == (CTL_A2 & cling.system.mcu_reg[REGISTER_MCU_CTL])) {
 				_timeCheck = curr_sys_time;
 				acc->auth_state = LINK_S_WAIT_FOR_CHECK_FLAG;
 				cling.link.trigger_cmd = CTL_A2;
 				N_SPRINTF("[LINK] A2 ...");
+				// Borrow pedo grobal buffer as it is a one-time use
+				crypto_buffer = PEDO_get_global_buffer()+512;
+				_thekey = crypto_buffer+128;
+
 				// terminal state for this phase is AUTHORIZED or GENERATE_ERROR_FILE
 			} else if (CTL_FA == (CTL_FA & cling.system.mcu_reg[REGISTER_MCU_CTL])) {
 				_timeCheck = curr_sys_time;
@@ -164,6 +171,10 @@ void LINK_state_machine(void)
 				cling.link.trigger_cmd = CTL_FA;
 				// terminal state for this phase is AUTHORIZED or GENERATE_ERROR_FILE
 				N_SPRINTF("[LINK] force auth ...");
+				// Borrow pedo grobal buffer as it is a one-time use
+				crypto_buffer = PEDO_get_global_buffer()+512;
+				_thekey = crypto_buffer+128;
+
 			} else {
 				cling.link.trigger_cmd = 0;
 			}

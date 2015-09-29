@@ -18,65 +18,43 @@ static void _font_read_one_5x7_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 	//start addr:368k 
 	I32U addr_in=FONT_ASCII_5X7_SPACE_START;;
 
-  if((ASCIICode >= 0x20)&&(ASCIICode<=0x7e))
-  {		
-		addr_in += ((ASCIICode-0x20)*8);
- 		
-	  NOR_readData(addr_in, len, dataBuf);		
-  }
-	else
-	{
-   Y_SPRINTF("[FONTS] No search to the 5x7 ASCII ...");		
-	}
+	addr_in += ((ASCIICode-0x20)*8);
 	
+	NOR_readData(addr_in, len, dataBuf);	
 }
 
 
 
 static void _font_read_one_8x16_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 {
-	
 	//start addr:368k + 768 byte 
 	I32U addr_in=FONT_ASCII_8X16_SPACE_START;;
 
-  if((ASCIICode >= 0x20)&&(ASCIICode<=0x7e))
-  {		
-		addr_in += ((ASCIICode-0x20)*16);
-  
-	  NOR_readData(addr_in, len, dataBuf);		
-  }	
-	
-  else
-	{
-   Y_SPRINTF("[FONTS] No search to the 8x16 ASCII ...");		
-	}
+	addr_in += ((ASCIICode-0x20)*16);
+
+	NOR_readData(addr_in, len, dataBuf);	
 }
 
 
 //15x16 unicode Chinese charactersascii size 32 byte
 static void _font_read_one_Chinese_characters(I8U *utf_8,I16U len, I8U *dataBuf)
 {
-
 	I32U addr_in=FONT_CHINESE_SPACE_START;
-
   I16U unicode_16;	
 
 	unicode_16=_font_utf_to_unicode(utf_8);
 	I8U MSB=(I8U)(unicode_16 >>8);
 	I8U LSB=(I8U)unicode_16;
 
-	if(MSB>=0x4E && MSB<=0x9F)
-  {		
-		addr_in += ((MSB*256+LSB-0x4E00)*32);
-   
-	  NOR_readData(addr_in, len, dataBuf);		
-  }		
-
-  else
-	{
-   Y_SPRINTF("[FONTS] No search to the Chinese characters ...");		
+	if((MSB<0x4E) || (MSB>0x9F)) {
+   Y_SPRINTF("[FONTS] No search to the Chinese characters ...");	
+		// use some predefined characters ("")in here
+		MSB = 0x60; 
+		LSB = 0x00;
 	}
 	
+	addr_in += ((MSB*256+LSB-0x4E00)*32);
+	NOR_readData(addr_in, len, dataBuf);			
 }
 
 
@@ -255,74 +233,84 @@ one  utf-8 chinese characters need 3 bytes*/
 I8U FONT_load_characters(I8U *ptr,char *data,I8U height, BOOLEAN b_center)
 {
 	//font data
-	FONT_CTX font;
-  I8U  string_len;  //The length of the string
-  I8U  display_len; //The length of the display	
-	I8U  as_pos = 0;
-	I8U  ch_pos = 0;	
+	I8U font_data[32];
+  I8U string_len;  //The length of the string
+  I8U display_len; //The length of the display	
+	I8U as_pos = 0;
+	I8U ch_pos = 0;	
+	I8U ch_to_process;
+	I16U p_data_offset;
 
 	string_len = strlen(data);
   display_len=_get_display_len((I8U*)data,height);
 	N_SPRINTF("[FONTS] display len :%d ",display_len);	
-	while((as_pos+ch_pos*3) < string_len)
+	p_data_offset = 0;
+	while(p_data_offset < string_len)
 	{
-	  if(((I8U)data[as_pos+ch_pos*3] >= 0x20)&&((I8U)data[as_pos+ch_pos*3]<=0x7e))
+		
+		ch_to_process = (I8U) data[p_data_offset];
+		
+	  if((ch_to_process >= 0x20)&&(ch_to_process<=0x7e))
 	  {
 		  if(height==16)
 		  {
-			  _font_read_one_8x16_ascii((I8U)data[as_pos+ch_pos*3],16,font.data);
-				if(b_center==TRUE)
-				 {
-					 memcpy(&ptr[((128-display_len)>>1)+8*as_pos+16*ch_pos],font.data,8);
-	         memcpy(&ptr[128+((128-display_len)>>1)+8*as_pos+16*ch_pos],&font.data[8],8);	
-				 }
-				else
-				 {
-					 memcpy(&ptr[8*as_pos+16*ch_pos],font.data,8);
-	         memcpy(&ptr[128+8*as_pos+16*ch_pos],&font.data[8],8);						
-				 }
+					_font_read_one_8x16_ascii(ch_to_process,16,font_data);
+					if(b_center==TRUE)
+					{
+						 memcpy(&ptr[((128-display_len)>>1)+8*as_pos+16*ch_pos],font_data,8);
+						 memcpy(&ptr[128+((128-display_len)>>1)+8*as_pos+16*ch_pos],&font_data[8],8);	
+					}
+					else
+					{
+						 memcpy(&ptr[8*as_pos+16*ch_pos],font_data,8);
+						 memcpy(&ptr[128+8*as_pos+16*ch_pos],&font_data[8],8);						
+					}
 		  }
 		 if(height==8)
 		 {
 			 //only display 5x7 ascii
-			 _font_read_one_5x7_ascii((I8U)data[as_pos+ch_pos*3],8,font.data);
+			 _font_read_one_5x7_ascii(ch_to_process,8,font_data);
 			 if(b_center==TRUE)
 			 {
-         memcpy(&ptr[((128-display_len)>>1)+6*as_pos],font.data,6); //In the middle			 
+         memcpy(&ptr[((128-display_len)>>1)+6*as_pos],font_data,6); //In the middle			 
 			 }
 			 else
 			 {
-         memcpy(&ptr[6*as_pos],font.data,6); //The starting address began to show		 
+         memcpy(&ptr[6*as_pos],font_data,6); //The starting address began to show		 
 			 }
 
 		 }
-	  as_pos+=1;
+			as_pos+=1;
+		 p_data_offset = as_pos+ch_pos*3;
 		 continue;
 	 }		 
-   if(((I8U)data[as_pos+ch_pos*3]&0x80)==0x80)//chinese characters  Byte highest=1;
+   if((ch_to_process&0x80)==0x80)//chinese characters  Byte highest=1;
 	 {
-	   _font_read_one_Chinese_characters((I8U*)&data[(as_pos+ch_pos*3)],32,font.data);
+	   _font_read_one_Chinese_characters((I8U*)(data+p_data_offset),32,font_data);
 		 if(b_center==TRUE)
 		 {
-		   memcpy(&ptr[((128-display_len)>>1)+8*as_pos+16*ch_pos],font.data,16);
-       memcpy(&ptr[128+((128-display_len)>>1)+8*as_pos+16*ch_pos],&font.data[16],16);
+		   memcpy(&ptr[((128-display_len)>>1)+8*as_pos+16*ch_pos],font_data,16);
+       memcpy(&ptr[128+((128-display_len)>>1)+8*as_pos+16*ch_pos],&font_data[16],16);
 		 }
 		 else
 		 {
-		   memcpy(&ptr[8*as_pos+16*ch_pos],font.data,16);
-       memcpy(&ptr[128+8*as_pos+16*ch_pos],&font.data[16],16);
+		   memcpy(&ptr[8*as_pos+16*ch_pos],font_data,16);
+       memcpy(&ptr[128+8*as_pos+16*ch_pos],&font_data[16],16);
 		 }
 		 ch_pos+=1;
+		 p_data_offset = as_pos+ch_pos*3;
 		 continue;
-	 }	
+	 }
+	 
 	 break;
 	}
 	N_SPRINTF("[FONTS] display chinese number: %d,ascii number: %d ",ch_pos,as_pos);
 	if(display_len <=128)
 	{
-	return display_len;
+		return display_len;
 	}
-	else return (0xff);
+	else 
+		return (0xff);
 }
 
 

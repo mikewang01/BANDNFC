@@ -142,6 +142,10 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 	I16U pdm_stat;
 	I32U curr_time = CLK_get_system_time();
 	I8U act_motion;
+	
+	// Go skip algorithms processing if device is not authorized
+	if (!LINK_is_authorized())
+		return;
 
 	N_SPRINTF("[ACT] %08x, %08x, %08x, %04x, %04x, %04x,", A.x, A.y, A.z, xyz->x, xyz->y, xyz->z);
 	N_SPRINTF("[ACT] %d, %d, %d, %d, %d, %d,", A.x, A.y, A.z, xyz->x, xyz->y, xyz->z);
