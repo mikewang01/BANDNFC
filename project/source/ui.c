@@ -1516,8 +1516,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_ELLIPTICAL:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "椭圆机 ");
-//			len1 = sprintf((char *)string1, "椭圆");
+//				len1 = sprintf((char *)string1, "椭圆机 ");
+			len1 = sprintf((char *)string1, "椭圆");
 			} else {
 				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Elliptical");
@@ -1528,8 +1528,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_STAIRS:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "爬楼梯 ");
-//			len1 = sprintf((char *)string1, "楼梯");
+//				len1 = sprintf((char *)string1, "爬楼梯 ");
+			len1 = sprintf((char *)string1, "楼梯");
 			} else {
 				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Stairs");
@@ -1551,8 +1551,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_AEROBIC:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "有氧操 ");
-//			len1 = sprintf((char *)string1, "有氧");
+//				len1 = sprintf((char *)string1, "有氧操 ");
+			len1 = sprintf((char *)string1, "有氧");
 			} else {
 				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Aerobic");
