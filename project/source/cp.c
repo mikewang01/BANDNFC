@@ -15,6 +15,7 @@
 #ifndef _CLING_PC_SIMULATION_
 #include "ble_conn_params.h"
 #endif
+
 //#define _JACOB_TESTING_
 
 static void _sync_time_proc(I8U *data)
@@ -1553,7 +1554,7 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
 	I8U *pbuf_2 = (I8U *)minute_data_2;
 	MINUTE_TRACKING_CTX *pminute_1 = (MINUTE_TRACKING_CTX *)minute_data_1;
 	MINUTE_TRACKING_CTX *pminute_2 = (MINUTE_TRACKING_CTX *)minute_data_2;
-	I32U offset, offset2, i;
+	I32U offset, offset2, i, t_curr_ms;
 
 	// If there is already a pending activity streaming packet, 
 	// ignore further streaming request until current one is sent out.
@@ -1563,6 +1564,11 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
 	
 	// If last packet is not yet acknowledged, go back return;
 	if (s->packet_need_ack)
+		return TRUE;
+	
+	t_curr_ms = CLK_get_system_time();
+	
+	if (t_curr_ms < (s->packet_tx_time+20))
 		return TRUE;
 
 	if (s->flag_entry_read) {
@@ -1694,6 +1700,8 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
 	// It is a pending message, and also need ACK
 	s->pending = TRUE;
 	s->packet_need_ack = TRUE;
+	s->packet_tx_time = CLK_get_system_time();
+	
 	return TRUE;
 }
 
