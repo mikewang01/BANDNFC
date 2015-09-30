@@ -588,34 +588,23 @@ static I16U _render_middle_section_large(I8U len, I8U *string, I8U margin)
 	return offset;
 }
 
-static void _render_icon_more()
+static void _render_icon_more(I16U offset)
 {
 	I16U j;
 	I8U *p0, *p1, *p2;
 	const I8U *pin;
 	I8U char_len;
-	I16U offset=110;
 	
 	p0 = cling.ui.p_oled_up+offset+128;
 	p1 = p0+128;
 	p2 = p1+128;
-#if 0
-	// Digits in large fonts
-	pin = asset_content+asset_pos[512+ICON_MIDDLE_NOTIF_MORE];
-	char_len = asset_len[512+ICON_MIDDLE_NOTIF_MORE];
-	for (j = 0; j < char_len; j++) {
-			*p0++ = (*pin++);
-			*p1++ = (*pin++);
-			*p2++ = (*pin++);
-	}
-#else
-	// Digits in large fonts
+
+	// "More" icon
 	pin = asset_content+ICON_TOP_MORE;
 	char_len = ICON_TOP_MORE_LEN;
 	for (j = 0; j < char_len; j++) {
 			*p2++ = (*pin++);
 	}
-#endif
 }
 
 static void _display_dynamic(I8U *pIn, I8U len2, I8U *string2)
@@ -1015,7 +1004,14 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 	
 	if (b_more & cling.ui.b_detail_page) {
 
-		_render_icon_more();
+		if ((mode == UI_MIDDLE_MODE_APP_NOTIF) ||
+				(mode == UI_MIDDLE_MODE_DETAIL_NOTIF) ||
+				(mode == UI_MIDDLE_MODE_MESSAGE)
+		) {
+			_render_icon_more(115);
+		} else {
+			_render_icon_more(110);
+		}
 	}
 	
 	// Add progress bar at the bottome
@@ -1516,8 +1512,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_ELLIPTICAL:
 		{
 			if (cling.ui.fonts_cn) {
-//				len1 = sprintf((char *)string1, "椭圆机 ");
-			len1 = sprintf((char *)string1, "椭圆");
+				len1 = sprintf((char *)string1, "椭圆机 ");
+//			len1 = sprintf((char *)string1, "椭圆");
 			} else {
 				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Elliptical");
@@ -1528,8 +1524,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_STAIRS:
 		{
 			if (cling.ui.fonts_cn) {
-//				len1 = sprintf((char *)string1, "爬楼梯 ");
-			len1 = sprintf((char *)string1, "楼梯");
+				len1 = sprintf((char *)string1, "爬楼梯 ");
+//			len1 = sprintf((char *)string1, "楼梯");
 			} else {
 				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Stairs");
@@ -1551,8 +1547,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_AEROBIC:
 		{
 			if (cling.ui.fonts_cn) {
-//				len1 = sprintf((char *)string1, "有氧操 ");
-			len1 = sprintf((char *)string1, "有氧");
+				len1 = sprintf((char *)string1, "有氧操 ");
+//			len1 = sprintf((char *)string1, "有氧");
 			} else {
 				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Aerobic");
@@ -2475,6 +2471,12 @@ static BOOLEAN _ui_frame_blinking()
 	else if (u->frame_index == UI_DISPLAY_STOPWATCH_HEARTRATE)
 		return TRUE;
 	else if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE)
+		return TRUE;
+	else if (u->frame_index == UI_DISPLAY_TRACKER_UV_IDX)
+		return TRUE;
+	else if (u->frame_index == UI_DISPLAY_VITAL_SKIN_TEMP)
+		return TRUE;
+	else if (u->frame_index == UI_DISPLAY_TRACKER_STEP)
 		return TRUE;
 	else
 		return FALSE;
