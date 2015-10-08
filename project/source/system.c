@@ -383,22 +383,25 @@ void SYSTEM_init(void)
 	// Check whether this is a authenticated device
 	LINK_init();
 	
+	if (LINK_is_authorized()) 
+	    HAL_device_manager_init(FALSE);	
+	else
+		  //delete	bond info
+		  HAL_device_manager_init(TRUE);	
+	
 	// If our FAT file system is NOT mounted, please erase NOR flash, and create it
 	if(!FAT_chk_mounted())
 	{
 		// Erase Nor Flash if device is not authorized or File system undetected
 		if (LINK_is_authorized()) {
 			page_erased = FLASH_erase_all(FALSE);
-			
-	    HAL_device_manager_init(FALSE);		
+
 			// Print out the amount of page that gets erased
 			Y_SPRINTF("[MAIN] No FAT, With Auth, erase %d blocks (4 KB) ", page_erased);
 		} else {
 			// If this is not a authorized device, erase auth info section and critical info section.
 			page_erased = FLASH_erase_all(TRUE);
 			
-			 //delete	bond info
-			 HAL_device_manager_init(TRUE);	
 			// Print out the amount of page that gets erased
 			Y_SPRINTF("[MAIN] No FAT, No Auth, erase %d blocks (4 KB) ", page_erased);
 		}
@@ -409,14 +412,10 @@ void SYSTEM_init(void)
 		
 	} else if (!LINK_is_authorized()) {
 		page_erased = FLASH_erase_application_data(TRUE);
-	  
-		HAL_device_manager_init(TRUE);				
+	  		
 		// Print out the amount of page that gets erased
 		Y_SPRINTF("[MAIN] YES FAT, No AUTH, erase %d blocks (4 KB) ", page_erased);
 	} else {
-		
-		 //delete	bond info
-		HAL_device_manager_init(FALSE);	
 		Y_SPRINTF("[MAIN] YES FAT, YES AUTH, erase %d blocks (4 KB) ", page_erased);
 	}
 	

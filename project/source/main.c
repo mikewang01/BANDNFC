@@ -431,7 +431,7 @@ int main(void)
 
 #ifdef _ENABLE_ANCS_	
     // ANCS state machine
-    ANCS_state_machine();
+    //ANCS_state_machine();
 #endif
 
 		// User data save and store

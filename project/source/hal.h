@@ -15,8 +15,6 @@
 
 
 #define SECURITY_REQUEST_DELAY          APP_TIMER_TICKS(1500, APP_TIMER_PRESCALER)   /**< Delay after connection until security request is sent, if necessary (ticks). */
-#define DISC_RSTART_DELAY_SLOW          APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)  /**< Delay after connection until security request is sent, if necessary (ticks). */
-#define DISC_RSTART_DELAY_FAST          APP_TIMER_TICKS(3000, APP_TIMER_PRESCALER)  /**< Delay after connection until security request is sent, if necessary (ticks). */
 
 #define LED_PORT       NRF_GPIO_PORT_SELECT_PORT2
 #define LED_OFFSET     2
@@ -27,8 +25,8 @@
 #define BONDMNGR_DELETE_BUTTON_PIN_NO        NRF6310_BUTTON_1                           /**< Button used for deleting all bonded masters during startup. */
 
 #define APP_TIMER_PRESCALER                  0                                          /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_MAX_TIMERS                 4                                          /**< Maximum number of simultaneously created timers. */
-#define APP_TIMER_OP_QUEUE_SIZE              4                                          /**< Size of timer operation queues. */
+#define APP_TIMER_MAX_TIMERS                 3                                          /**< Maximum number of simultaneously created timers. */
+#define APP_TIMER_OP_QUEUE_SIZE              3                                          /**< Size of timer operation queues. */
 
 #define SENSOR_CONTACT_DETECTED_INTERVAL     APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER) /**< Sensor Contact Detected toggle interval (ticks). */
 
@@ -46,8 +44,7 @@ void HAL_disconnect_for_fast_connection(void);
 
 #ifdef _ENABLE_ANCS_
 void HAL_ancs_start_security_req(dm_handle_t const * p_handle);
-void HAL_ancs_discovery_start(void * p_context);
-void HAL_ancs_start_disc_serves_req(I32U time_delay);
+void HAL_ancs_discovery_start(void);
 #endif
 
 #endif

@@ -114,7 +114,6 @@ static ble_gap_adv_params_t                  m_adv_params;                      
 static  ble_db_discovery_t        m_ble_db_discovery;                       /**< Structure used to identify the DB Discovery module. */
 static  dm_handle_t               m_peer_handle;                            /**< Identifies the peer that is currently connected. */
 static  app_timer_id_t            m_sec_req_timer_id;                       /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
-static  app_timer_id_t            m_disc_start_timer_id;                       /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
 
 static  ble_uuid_t m_adv_uuids[] = {{ANCS_UUID_SERVICE,BLE_UUID_TYPE_VENDOR_BEGIN}};  /**< Universally unique service identifiers. */
 
@@ -129,44 +128,31 @@ static  ble_uuid_t m_adv_uuids[] = {{ANCS_UUID_SERVICE,BLE_UUID_TYPE_VENDOR_BEGI
  */
 static void sec_req_timeout_handler(void * p_context)
 {
-    uint32_t             err_code;
+   
     dm_security_status_t status;
 
     if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID)
     {
-        err_code = dm_security_status_req(&m_peer_handle, &status);
-        //APP_ERROR_CHECK(err_code);
-
+         dm_security_status_req(&m_peer_handle, &status);
+        
         // If the link is still not secured by the peer, initiate security procedure.
         if (status == NOT_ENCRYPTED)
         {
-            err_code = dm_security_setup_req(&m_peer_handle);
-            //APP_ERROR_CHECK(err_code);
+            dm_security_setup_req(&m_peer_handle);           
         }
     }
 }
 
 
 
-void HAL_ancs_discovery_start(void * p_context)
+void HAL_ancs_discovery_start(void)
 {
-  I32U err_code;
-	BLE_CTX *r = &cling.ble;
-	
-	if(r->b_conn_params_updated == TRUE){
-		
-		if(!BTLE_is_connected()) 
-		return;
-			
-	   err_code = ble_db_discovery_start(&m_ble_db_discovery,cling.ble.conn_handle);
-	   //APP_ERROR_CHECK(err_code);
-	}
-	else{
-	
-	HAL_ancs_start_disc_serves_req(DISC_RSTART_DELAY_FAST);
-	}
 
+  ble_db_discovery_start(&m_ble_db_discovery,cling.ble.conn_handle);
+  
 }
+
+
 
 /**@brief Function for initializing the timer module.
  */
@@ -178,26 +164,9 @@ static void _create_sec_req_timer_init(void)
                                 APP_TIMER_MODE_SINGLE_SHOT,
                                 sec_req_timeout_handler);
 	
-	  Y_SPRINTF("[HAL] sec req timer err :%d",err_code);
+	  N_SPRINTF("[HAL] sec req timer err :%d",err_code);
     APP_ERROR_CHECK(err_code);
 }
-
-
-/**@brief Function for initializing the timer module.
- */
-static void _create_ancs_disc_start_timer_init(void)
-{
-    uint32_t err_code;
-
-    err_code = app_timer_create(&m_disc_start_timer_id,
-                                APP_TIMER_MODE_SINGLE_SHOT,
-                                HAL_ancs_discovery_start);
-	
-	  Y_SPRINTF("[HAL] ansc disc create timer err :%d",err_code);
-    APP_ERROR_CHECK(err_code);
-}
-
-
 
 /**@brief Function for initializing the database discovery module.
  */
@@ -217,13 +186,6 @@ void HAL_ancs_start_security_req(dm_handle_t const * p_handle)
 
 }
 
-void HAL_ancs_start_disc_serves_req(I32U time_delay)
-{
-  I32U err_code;
-	
-	err_code  = app_timer_start(m_disc_start_timer_id, time_delay, NULL);
-	APP_ERROR_CHECK(err_code);
-}
 
 #endif
 
@@ -662,7 +624,6 @@ void HAL_device_manager_init(BOOLEAN b_delete)
 
     memset(&register_param.sec_param, 0, sizeof(ble_gap_sec_params_t));
     
-//    register_param.sec_param.timeout      = SEC_PARAM_TIMEOUT;
     register_param.sec_param.bond         = SEC_PARAM_BOND;
     register_param.sec_param.mitm         = SEC_PARAM_MITM;
     register_param.sec_param.io_caps      = SEC_PARAM_IO_CAPABILITIES;
@@ -701,8 +662,6 @@ static void _ble_init()
 	// RTC initialization, it does not actually START until valid time is written to it.
 	RTC_Init(); 
 
-	//HAL_device_manager_init(FALSE);
-	
 #ifdef _ENABLE_ANCS_	
 	 db_discovery_init();
 #endif
@@ -742,13 +701,10 @@ void HAL_init(void)
 	//ANCS pairing req initialization
 	 _create_sec_req_timer_init();	
 	
-	 //20s start ancs discovery
-	 _create_ancs_disc_start_timer_init();
 #endif	
 	// GPIO initializaiton
 	GPIO_init();
 	
-
 	// Enable SPI 0
 	spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
 	cling.system.b_spi_0_ON = TRUE;

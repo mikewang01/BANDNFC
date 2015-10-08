@@ -254,6 +254,7 @@ void GPIO_twi_init(I8U twi_master_instance)
 		twi_config.sda = 26;
 		twi_config.interrupt_priority = APP_IRQ_PRIORITY_LOW;
 		error_code = nrf_drv_twi_init(&p_twi1_instance, &twi_config, NULL);//, twi_event_handler);
+		APP_ERROR_CHECK(error_code);
 		nrf_drv_twi_enable(&p_twi1_instance);
 		cling.system.b_twi_1_ON = TRUE;
 		

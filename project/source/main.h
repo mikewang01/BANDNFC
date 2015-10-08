@@ -11,6 +11,8 @@
 /* Generic macros (do not change across platforms) */
 #define LOOP_FOREVER    1         /* makes while() statements more legible */
 
+//#define _UICO_TOUCH_TUNING_
+
 // 
 // Global device id address
 //

@@ -87,8 +87,10 @@ static void _update_horizontal_level_1_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 {
 	I8U index = u->frame_prev_idx;
 	I8U max_frame_num;
-
-	if (index == UI_DISPLAY_SMART_APP_NOTIF) {
+	
+	if (index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
+		return;
+	} else if (index == UI_DISPLAY_SMART_APP_NOTIF) {
 		max_frame_num = NOTIFIC_get_message_total();		
 		
 		if (max_frame_num == 0) {
@@ -111,6 +113,8 @@ static void _update_horizontal_level_1_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 				u->level_1_index --;
 			}
 		}
+	} else {
+		u->level_1_index = 0;
 	}
 }
 
@@ -2464,22 +2468,10 @@ static void _restore_ui_index()
 static BOOLEAN _ui_frame_blinking()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-	if (u->frame_index == UI_DISPLAY_HOME)
-		return TRUE;
-		else if (u->frame_index == UI_DISPLAY_SMART_REMINDER)
-		return TRUE;
-	else if (u->frame_index == UI_DISPLAY_STOPWATCH_HEARTRATE)
-		return TRUE;
-	else if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE)
-		return TRUE;
-	else if (u->frame_index == UI_DISPLAY_TRACKER_UV_IDX)
-		return TRUE;
-	else if (u->frame_index == UI_DISPLAY_VITAL_SKIN_TEMP)
-		return TRUE;
-	else if (u->frame_index == UI_DISPLAY_TRACKER_STEP)
-		return TRUE;
-	else
+	if ((u->frame_index >= UI_DISPLAY_SMART) && (u->frame_index <= UI_DISPLAY_SMART_END))
 		return FALSE;
+	else 
+		return TRUE;
 }
 
 #if 0

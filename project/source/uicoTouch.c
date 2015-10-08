@@ -4,7 +4,7 @@
 
 //#define UICO_FORCE_BURN_FIRMWARE
 
-#define UICO_INCLUDE_FIRMWARE_BINARY
+//#define UICO_INCLUDE_FIRMWARE_BINARY
 #ifdef UICO_INCLUDE_FIRMWARE_BINARY
 #include "uicoData.h"
 #endif
@@ -410,7 +410,43 @@ static I32S _try_firmware_update()
 	I16S i = 0;
 
 #ifdef UICO_FORCE_BURN_FIRMWARE
-  return _execute_bootloader(UICO_BINARY_FILE_SIZE);
+  _execute_bootloader(UICO_BINARY_FILE_SIZE);
+	
+	for (i=0; i<128; i++) data[i]=0xFF;
+
+	while ( !((data[0] == COMMAND_GET_DATA) && (data[1] == 17)) ) {
+		
+		data[0] = 0x00;
+		data[1] = COMMAND_GET_DATA;
+		data[2] = SYSTEM_INFO;
+		
+		_i2c_main_write(data, 3);
+
+    data[0] = 0x20;
+		_i2c_main_write(data, 1);
+		_i2c_main_read (data, 2);
+		N_SPRINTF("[UICO]: 0x%02x 0x%02x", data[0], data[1]);
+
+    if ( !((data[0] == COMMAND_GET_DATA) && (data[1] == 17)) ) {
+    	// Write Stop Acknowledge
+    	_write_stop_acknowledge();
+    }
+	}
+
+  // Read 2 + temp[1] bytes
+	_i2c_main_read (data, 2 + data[1]);
+
+	// Write Stop Acknowledge
+  _write_stop_acknowledge();
+
+
+	N_SPRINTF("[UICO] Firmware version found: %d.%d.%d", data[10],   data[11],   data[12]);
+	N_SPRINTF("[UICO] Firmware version got: %d.%d.%d", uicoDat[4], uicoDat[5], uicoDat[3]);
+	cling.whoami.touch_ver[0] = data[10];
+	cling.whoami.touch_ver[1] = data[11];
+	cling.whoami.touch_ver[2] = data[12];
+	
+	return 0;
 #endif
 
 	for (i=0; i<128; i++) data[i]=0xFF;
@@ -472,10 +508,6 @@ static I32S _try_firmware_update()
     		return -1;
     	}
 
-//#ifndef UICO_FORCE_BURN_FIRMWARE
-//    		N_SPRINTF("[UICO] 4 No new firmware version found, no upgrade necessary.");
-//    		return -1;
-//#endif
   	}
   }
 

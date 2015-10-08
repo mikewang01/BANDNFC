@@ -919,7 +919,7 @@ uint32_t BTLE_device_manager_event_handler(dm_handle_t const * p_handle,
             break;
         case DM_EVT_LINK_SECURED:
 					  #ifdef _ENABLE_ANCS_
-				    HAL_ancs_start_disc_serves_req(DISC_RSTART_DELAY_SLOW);
+				     HAL_ancs_discovery_start();
 				    #endif
 						break;
         case DM_EVT_SECURITY_SETUP:

@@ -1,7 +1,7 @@
 
 #include "main.h"
 
-static BOOLEAN _is_sleep_state(SLEEP_STATUSCODE s)
+BOOLEAN SLEEP_is_sleep_state(SLEEP_STATUSCODE s)
 {
 	SLEEP_CTX *slp = &cling.sleep;	
 	return (s==slp->state);
@@ -42,7 +42,7 @@ static void _calc_activity_per_minute(ACC_AXIS d)
 	
 	I32U threshold;
 	
-	if (_is_sleep_state(SLP_STAT_AWAKE)) {
+	if (SLEEP_is_sleep_state(SLP_STAT_AWAKE)) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = AWAKE_CORR_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = AWAKE_CORR_THRESHOLD_MEDIUM;  break;
@@ -50,7 +50,7 @@ static void _calc_activity_per_minute(ACC_AXIS d)
 			default :                     threshold = AWAKE_CORR_THRESHOLD_MEDIUM;  break;
 		}
 	}
-	else if (_is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND)) {
+	else if (SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND)) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = SLEEP_CORR_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = SLEEP_CORR_THRESHOLD_MEDIUM;  break;
@@ -66,7 +66,7 @@ static void _calc_activity_per_minute(ACC_AXIS d)
 		t_curr1 = CLK_get_system_time();
 		t_diff1 = t_curr1 - slp->slp_measue_timer;
 		
-		if ( _is_sleep_state(SLP_STAT_AWAKE) ) {
+		if ( SLEEP_is_sleep_state(SLP_STAT_AWAKE) ) {
 			epoch_period = SLP_CORR_WINDOW_SHORT;
 		} else {
 			epoch_period = SLP_CORR_WINDOW_LONG;
@@ -250,9 +250,10 @@ void SLEEP_minute_proc()
 	I8U  i, step_cnt;
 
 	t_diff -= cling.lps.ts;	
-	if ( _is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
-    if (cling.lps.b_low_power_mode && (t_diff > 1800000) && (slp->m_successive_no_skin_touch_mins>30) ) {
-			// Get out of sleep mode if device stays in low power stationary mode for over 30 minutes (1 hour)
+	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
+					
+		// Get out of sleep mode if device has been off the wrist for more than 20 minutes (1 hour)
+    if (slp->m_successive_no_skin_touch_mins > 20) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
 	}
@@ -315,14 +316,14 @@ void SLEEP_minute_proc()
 	}
 
 	if (
-		   (slp->m_successive_no_skin_touch_mins>5  &&  _is_sleep_state(SLP_STAT_AWAKE)) || 
-       (slp->m_successive_no_skin_touch_mins>30 && (_is_sleep_state(SLP_STAT_LIGHT)  || _is_sleep_state(SLP_STAT_SOUND)))
+		   (slp->m_successive_no_skin_touch_mins>5  &&  SLEEP_is_sleep_state(SLP_STAT_AWAKE)) || 
+       (slp->m_successive_no_skin_touch_mins>30 && (SLEEP_is_sleep_state(SLP_STAT_LIGHT)  || SLEEP_is_sleep_state(SLP_STAT_SOUND)))
 		)
   {
 		slp->b_valid_worn_in_entering_sleep_state = FALSE;
 	}	
 	
-	if ( _is_sleep_state(SLP_STAT_AWAKE) ) {
+	if ( SLEEP_is_sleep_state(SLP_STAT_AWAKE) ) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
@@ -330,7 +331,7 @@ void SLEEP_minute_proc()
 			default                     : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
 		}
 	}
-	else if ( _is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND) ) {
+	else if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
@@ -350,7 +351,7 @@ void SLEEP_minute_proc()
   	slp->m_mins_cnt++;
   
   if ( (slp->m_activity_per_min>=wakeup_threshold) && 
-		   (_is_sleep_state(SLP_STAT_SOUND) || _is_sleep_state(SLP_STAT_LIGHT)) )
+		   (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT)) )
 	{
     slp->b_sudden_wake_from_sleep = TRUE;
 	}

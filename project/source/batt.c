@@ -61,18 +61,18 @@ BOOLEAN BATT_charging_det_for_sleep()
 	}
 }
 
-void BATT_update_charging_sec(I8U tick_in_s)
+void BATT_update_charging_time(I8U tick_in_s)
 {
 	if (BATT_is_charging()) {
 		cling.batt.charging_overall_time += tick_in_s;
 		
-		if (cling.batt.charging_overall_time > 10800) {
-			cling.batt.charging_overall_time = 10800;
+		if (cling.batt.charging_overall_time > BATTERY_MAXIMUM_CHARGING_TIME) {
+			cling.batt.charging_overall_time = BATTERY_MAXIMUM_CHARGING_TIME;
 		}
 	}
 }
 
-void BATT_charging_update_sec(I8U sec)
+void BATT_exit_charging_state(I8U sec)
 {
 	BATT_CTX *b = &cling.batt;
 	
@@ -154,8 +154,6 @@ void BATT_init()
 		cling.batt.non_charging_accumulated_active_sec = 0;
 	} else {
 		cling.batt.charging_state = CHARGER_REMOVED;
-//		cling.batt.non_charging_accumulated_steps = 0xff;
-//		cling.batt.non_charging_accumulated_active_sec = 0xff;
 	}
 #endif
 }
@@ -254,12 +252,12 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 	
 	// Charging state switching
 	if (BATT_is_charging()) {
+		b->non_charging_accumulated_steps = 0;
+		b->non_charging_accumulated_active_sec = 0;
 		if (b->charging_state != CHARGER_IN_CHARGING) {
 			b->toggling_number ++;
 			Y_SPRINTF("[BATT] ---5+ V is supplied (%d)---", b->toggling_number);
 			b->charging_state = CHARGER_IN_CHARGING;
-			b->non_charging_accumulated_steps = 0;
-			b->non_charging_accumulated_active_sec = 0;
 			b->charging_timebase = t_curr;
 			if (b->state_switching_duration > 5) {
 				// Turn on OLED panel
@@ -283,15 +281,14 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 				if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] < 100) {
 					t_diff = cling.system.mcu_reg[REGISTER_MCU_BATTERY]+1;
 					
-					// Up limit on battery percentage at 99% (if charging overall time is less than 3 hours)
+					// Up limit on battery percentage at 99% (if charging overall time is less than 2 hours)
 					if (t_diff > 99) {
-						if (b->charging_overall_time < 3000) {
+						if (b->charging_overall_time < BATTERY_MAXIMUM_CHARGING_TIME) {
 							t_diff = 99;
 							
-							// Time stay-in 99% should be less than 30 hour
-							if (b->charging_overall_time < 2000) {
-								b->charging_overall_time = 2000;
-							}
+							// Time stay-in 99% should be less than 30 minutes
+							if (b->charging_overall_time < BATTERY_75_PERC_FULL_CHARGE)
+								b->charging_overall_time = BATTERY_75_PERC_FULL_CHARGE;
 						} else {
 							t_diff = 100;
 						}

@@ -56,12 +56,13 @@ typedef struct tagANCS_CONTEXT {
 	ANCS_PACKET    pkt;
 	I8U            message_total;
 	BOOLEAN        ancs_attr_get_flag;
+	BOOLEAN        ancs_attr_store_flag;	
 	BOOLEAN        notf_updata;
 } ANCS_CONTEXT;
 
 
 void ANCS_service_add(void);
-void ANCS_attr_display_test(void);
+
 void ANCS_state_machine(void);
 #endif // _ANCS_H__
 

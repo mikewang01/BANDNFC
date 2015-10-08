@@ -270,7 +270,6 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	I32U addr_in;
 	I32U tmpBuf_1[32];
 	I32U tmpBuf_2[32];
-	I8U  *pmsg;
 	I8U  *pdata_1 = (I8U *)tmpBuf_1;
   I8U  *pdata_2 = (I8U *)tmpBuf_2;
 

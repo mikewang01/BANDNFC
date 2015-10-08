@@ -94,6 +94,8 @@ void SLEEP_init(void);
 void SLEEP_algorithms_proc(ACC_AXIS *xyz);
 void SLEEP_minute_proc(void);
 void SLEEP_wake_up_upon_motion(void);
+BOOLEAN SLEEP_is_sleep_state(SLEEP_STATUSCODE s);
+
 #ifdef USING_VIRTUAL_ACTIVITY_SIM
 
 void SLEEP_activity_minute_sim(int activity_per_min, int steps, int bWearing);

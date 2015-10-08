@@ -91,8 +91,10 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 	
 	cling.lps.ts = t_curr;
 	
-	// Performance UV index measure
-	cling.uv.b_perform_measure = TRUE;
+	// Performance UV index measure if device is un-volunteerly waked up
+	if (!b_force) {
+		cling.uv.b_perform_measure = TRUE;
+	}
 }
 
 static I8U _get_stride_length()

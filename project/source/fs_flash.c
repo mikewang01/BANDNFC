@@ -37,7 +37,7 @@ BOOLEAN FLASH_addr_validation(I8U section_index, I32U cluster)
 	}
 
 	if (b_bad_cluster) {
-		Y_SPRINTF("[FS] bad cluster index");
+		Y_SPRINTF("[FS] bad cluster index, cluster: %d, section: %d", cluster, section_index);
 		// Erase Nor Flash if device is not authorized or File system undetected
 		if (LINK_is_authorized()) {
 			FLASH_erase_all(FALSE);

@@ -21,6 +21,7 @@
 
 
 FAT_CTX fat_mgr;
+	
 I16U fat_map_ctx[FAT_MAP_NUM];
 
 I16U LD_I16U(I8U *ptr)

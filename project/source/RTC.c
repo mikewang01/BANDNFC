@@ -41,7 +41,7 @@ EN_STATUSCODE RTC_Start(void)
   return STATUSCODE_SUCCESS;
 }
 
-#define TIMEING_TEST
+//#define TIMEING_TEST
 
 void RTC_config(I32U interval)
 {
@@ -180,8 +180,8 @@ void RTC_timer_handler( void * p_context )
 	
 	// update battery measuring timer
 	cling.batt.level_update_timebase += tick_in_s;
-	BATT_update_charging_sec(tick_in_s);
-	BATT_charging_update_sec(tick_in_s);
+	BATT_update_charging_time(tick_in_s);
+	BATT_exit_charging_state(tick_in_s);
 
 	// update radio duty cycling
 	cling.time.system_clock_in_sec += tick_in_s;

@@ -14,6 +14,10 @@
 
 void _low_power_process_hw(I8U int_source)
 {
+	I32U t_diff_ms = CLK_get_system_time();
+	
+	t_diff_ms -= cling.lps.ts;
+	
 	// 
 	// INT1 is spurious, so if set, read the INT cause and report in the FIFO
 	//
@@ -21,6 +25,13 @@ void _low_power_process_hw(I8U int_source)
 	if (int_source & 0x6a) {
 		N_SPRINTF("[SENSOR] Acc interrupt: %02x", int_source);
 		TRACKING_exit_low_power_mode(FALSE);
+	}
+	
+	// if system stays in low power mode for more than 2 hour, wake up 
+	if ((SLEEP_is_sleep_state(SLP_STAT_SOUND)) || (SLEEP_is_sleep_state(SLP_STAT_LIGHT))) {
+		if (t_diff_ms >= 1800000) {
+			TRACKING_exit_low_power_mode(TRUE);
+		}
 	}
 }
 
