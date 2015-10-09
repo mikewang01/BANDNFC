@@ -824,7 +824,7 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		b_center = false;
 	} else if (mode == UI_MIDDLE_MODE_APP_NOTIF) {
 		len = NOTIFIC_get_app_name(cling.ui.level_1_index, (char *)string);
-		Y_SPRINTF("[UI] app index: %d", cling.ui.level_1_index);
+		Y_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.level_1_index, len, (char *)string);
 
 		if ((len > 14) && cling.ui.b_detail_page) {
 			_display_detail_2_row(string, 0);

@@ -186,8 +186,8 @@ I8U NOTIFIC_get_message_total(void)
 
 I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 {
-#ifdef _ENABLE_ANCS_		
 	I8U  title_len;
+#ifdef _ENABLE_ANCS_		
 	I32U addr_in;
 	I32U tmpBuf[32];
 	
@@ -258,13 +258,17 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	N_SPRINTF("[NOTIFIC] get ancs title string  is :%s",app_name );		
 	
 	return title_len;
+#else
+	
+	title_len = sprintf(app_name, "No message!");
+	return title_len;
 #endif
 }
 
 I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 {
-#ifdef _ENABLE_ANCS_	
 	I8U  title_len;
+#ifdef _ENABLE_ANCS_	
 	I8U  mes_len;	
 	I8U  mes_offset;
 	I32U addr_in;
@@ -324,16 +328,19 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	}
 	
 	return mes_len;
-	
+#else
+
+	title_len = sprintf(string, "No message!");
+	return title_len;
 #endif
 }
 
 //if message = "Incoming Call" .......
 I8U NOTIFIC_get_callerID(char *string)
 {
+	I8U  title_len = 0;
 #ifdef _ENABLE_ANCS_		
 	// ....
-	I8U  title_len = 0;
 	I32U addr_in;
 	I32U tmpBuf[32];
 	
@@ -356,8 +363,9 @@ I8U NOTIFIC_get_callerID(char *string)
 	
 	return title_len;	
 #else
-	string[0] = 0;
-	return 0;
+	
+	title_len = sprintf(string, "No CallerID!");
+	return title_len;
 #endif	
 }
 
