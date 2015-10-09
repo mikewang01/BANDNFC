@@ -157,6 +157,24 @@ void USER_store_device_param(I8U *data)
 	N_SPRINTF("[USER] critical store device param: %d", setting_length);
 }
 
+void USER_setup_profile(I8U *data)
+{
+	I16U height_in_cm, weight_in_kg, stride_in_cm;
+	I8U *pdata = data;
+
+	height_in_cm = *pdata++; // height
+	height_in_cm |= (*pdata++)<<8; // 
+	
+	weight_in_kg = *pdata++; // weight
+	weight_in_kg |= (*pdata++)<<8; // 
+	
+	stride_in_cm = *pdata++; // stride
+	stride_in_cm |= (*pdata++)<<8; // 
+	
+	Y_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
+	
+}
+
 void USER_setup_device(I8U *data, I8U setting_length)
 {
 	USER_DATA *u = &cling.user_data;

@@ -41,6 +41,7 @@ static void _font_read_one_Chinese_characters(I8U *utf_8,I16U len, I8U *dataBuf)
 {
 	I32U addr_in=FONT_CHINESE_SPACE_START;
   I16U unicode_16;	
+		I8U replace_string[16];
 
 	unicode_16=_font_utf_to_unicode(utf_8);
 	I8U MSB=(I8U)(unicode_16 >>8);
@@ -48,16 +49,12 @@ static void _font_read_one_Chinese_characters(I8U *utf_8,I16U len, I8U *dataBuf)
 
 	if((MSB<0x4E) || (MSB>0x9F)) {
     Y_SPRINTF("[FONTS] No search to the Chinese characters ...");	
-		I8U replace_string[16];
+		memset(dataBuf, 0, 32);
+		
 		// use some predefined characters ("")in here
 		_font_read_one_8x16_ascii('"',16,replace_string);
-		memcpy(dataBuf,replace_string,8);
-		dataBuf+=8;
-		memset(dataBuf,0,8);
-		dataBuf+=8;		
-		memcpy(dataBuf,&replace_string[8],8);		
-		dataBuf+=8;		
-		memset(dataBuf,0,8);	
+		memcpy(dataBuf+4,replace_string,8);
+		memcpy(dataBuf+16,&replace_string[8],8);		
     return;		
 		//MSB = 0x60; 
 		//LSB = 0x00;

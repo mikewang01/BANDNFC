@@ -915,7 +915,7 @@ static void _pending_process()
 		{
 #ifdef _ENABLE_ANCS_
 			if (p->msg[1]) {
-				N_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
+				Y_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
 				if (!cling.ancs.b_enabled) {
 					cling.ancs.b_enabled = TRUE;
 				//	ANCS_start_ancs_discovery();
@@ -936,6 +936,11 @@ static void _pending_process()
 			} else {
 				cling.ui.fonts_cn = FALSE;
 			}
+			break;
+		}
+		case CP_MSG_TYPE_SET_USER_PROFILE:
+		{
+			USER_setup_profile(p->msg+1);
 			break;
 		}
 		case CP_MSG_TYPE_ANDROID_NOTIFY:

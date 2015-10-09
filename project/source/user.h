@@ -72,5 +72,6 @@ void USER_profile_update(void);
 void USER_setup_device(I8U *data, I8U setting_length);
 void USER_state_machine(void);
 void USER_store_device_param(I8U *data);
+void USER_setup_profile(I8U *data);
 
 #endif  // __USER_HEADER__

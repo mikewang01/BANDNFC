@@ -35,7 +35,7 @@
 /**@brief Macro for initializing SPI master by default values. */
 #define SPI_MASTER_INIT_DEFAULT                                             \
 {                                                                           \
-    SPI_FREQUENCY_FREQUENCY_M1, /**< Serial clock frequency 1 Mbps. */      \
+    SPI_FREQUENCY_FREQUENCY_M4, /**< Serial clock frequency 1 Mbps. */      \
     SPI_PIN_DISCONNECTED,       /**< SCK pin DISCONNECTED. */               \
     SPI_PIN_DISCONNECTED,       /**< MISO pin DISCONNECTED. */              \
     SPI_PIN_DISCONNECTED,       /**< MOSI pin DISCONNECTED. */              \

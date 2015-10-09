@@ -90,6 +90,7 @@ enum {
 	CP_MSG_TYPE_ANDROID_NOTIFY,
 	CP_MSG_TYPE_SOS_MESSAGE,               
 	CP_MSG_TYPE_SET_LANGUAGE,              // 25
+	CP_MSG_TYPE_SET_USER_PROFILE, 
 };
 
 typedef struct tagCP_PACKET {
