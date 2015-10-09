@@ -16,7 +16,7 @@ static void _set_reg(I8U reg_idx, I8U config)
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 13");
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_ACC);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 }
 
@@ -27,7 +27,7 @@ static void _get_reg(I8U reg_idx)
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 12");
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 2, GPIO_SPI_0_CS_ACC);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 }
 
@@ -37,7 +37,7 @@ static void _get_data(I8U reg_idx)
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 11");
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 7, 0, 0, g_spi_rx_buf, 0, 7, GPIO_SPI_0_CS_ACC);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 }
 

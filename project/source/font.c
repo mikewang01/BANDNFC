@@ -85,7 +85,7 @@ static void _read_block(I32U addr, I16U len, I8U *dataBuf)
 	N_SPRINTF("[FONT] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
 
 	spi_master_tx_rx(SPI_MASTER_0, Font_tx_buf, 4, 0, 0, dataBuf, 4, len, GPIO_SPI_0_CS_FONT);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 }
 #endif
 
