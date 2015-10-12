@@ -236,6 +236,8 @@ static void _on_connect(ble_evt_t * p_ble_evt)
 	r->b_conn_params_updated = FALSE;
 	cling.system.conn_params_update_ts = CLK_get_system_time();
 	sd_ble_tx_buffer_count_get(&r->tx_buf_available);
+	
+	Y_SPRINTF("[BTLE] Connected! ");
 }
 #endif
 /**@brief Function for handling the Disconnect event.
@@ -919,6 +921,7 @@ uint32_t BTLE_device_manager_event_handler(dm_handle_t const * p_handle,
             break;
         case DM_EVT_LINK_SECURED:
 					  #ifdef _ENABLE_ANCS_
+				     ble_db_discovery_clear_index();
 				     HAL_ancs_discovery_start();
 				    #endif
 						break;

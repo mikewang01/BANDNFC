@@ -110,6 +110,7 @@ static I8U _get_stride_length()
 	// Equation:  (p - 1.3)/(2.2-1.3) = (stride - 18) / (32.4 - 18)
 	//            stride *= (stride_length / 30)
 	//
+	// 1 feet = 12 inch
 	// 1 inch = 2.54 cm
 	//
 	// so, the basic equation to get stride length is:
@@ -123,7 +124,7 @@ static I8U _get_stride_length()
 	// where s is the stride length, and p is the pace (steps per second)
 	TRACKING_CTX *a = &cling.activity;
 	I32U total_steps, walking, running;
-	double pace,stride;
+	double pace,stride, ratio;
 	walking = a->day.walking - a->day_stored.walking;
 	running = a->day.running - a->day_stored.running;
 	total_steps = walking+running;
@@ -131,7 +132,29 @@ static I8U _get_stride_length()
 	pace = total_steps / cling.time.local.second;
 	if (pace < 1.6)
 		pace = 1.6;
+	if (pace > 4)
+		pace = 4;
 	stride = 43.89*pace-7.68;
+	
+	// Get user defined stride length and perform a calibration
+	ratio = cling.user_data.profile.stride_in_cm;
+	ratio /= 75;
+	if (ratio > 2)
+		ratio = 2;
+	else if (ratio < 0.5)
+		ratio = 0.5;
+	stride *= ratio;
+	
+	// Check whether it is a indoor running, ratio down by 1.3
+	if (cling.activity.workout_place == WORKOUT_PLACE_INDOOR) {
+		if (pace > 2.5) {
+			if (cling.activity.workout_type == WORKOUT_RUN) {
+				stride /= 1.3;
+			}
+		}
+	}
+	
+	// Do normalization to 16 m
 	stride *= 16;
 	stride /= 100;
 	stride += 0.5;
@@ -599,13 +622,13 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	
 	adj = 0;
 	// Adjust heart rate in case of intense activity
-	if (vital.skin_touch_pads > 0) {
-		t_diff = CLK_get_system_time();
-		t_diff = t_diff - cling.hr.heart_rate_measured_time;
-	
+	if (vital.skin_touch_pads > 0) {	
 		// If heart rate is not updated for 2 minutes, interpolate heart rate during intensive exercise period
 		//
-		if (t_diff > 60000) {
+		// Not sure why we have heart rate measuring time threshold setup here
+		//
+		//if (t_diff > 60000) 
+		{
 			if (pminute->running > 150) {
 				adj = pminute->running-150;
 				if (adj > 45) {

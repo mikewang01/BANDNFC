@@ -225,7 +225,6 @@ typedef struct tagHEARTRATE_CTX{
 	
 	BOOLEAN sample_ready;
 	BOOLEAN heart_rate_ready;
-	I32U heart_rate_measured_time;
 
 	// PPG state machine
 	PPG_STATES state;

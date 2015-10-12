@@ -199,7 +199,6 @@ static void _seek_cross_point(I16S instSample)
   				h->m_pre_pulse_width = t_peak_diff;
 					h->heart_rate_ready  = TRUE;
 					// The time of latest heart rate measured
-					h->heart_rate_measured_time = CLK_get_system_time();
   				_reset_heart_rate_calculator();
   				_calc_heart_rate();
   				return;

@@ -274,21 +274,7 @@ static void _cling_global_init()
 
 	// Cling reminder state machine
 	cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-#if 0
-	// For testing, give a bunch of notifications
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_OTHER] = 0;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_INCOMING_CALL] = 15;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_MISSED_CALL] = 8;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_VOICE_MAIL] = 0;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_SOCIAL] = 3;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_SCHEDULE] = 12;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_EMAIL] = 7;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_NEWS] = 23;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_HEALTH_AND_FITNESS] = 13;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_BUSINESS_AND_FINANCE] = 9;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_LOCATION] = 25;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_ENTERTAINMENT] = 7;
-#endif
+
 	// Disable chip peripherals before starting up the system
 	NRF_UART0->ENABLE= 0;//0x1;   
 	NRF_SPI0->ENABLE = 0;//0x1;   
@@ -431,7 +417,7 @@ int main(void)
 
 #ifdef _ENABLE_ANCS_	
     // ANCS state machine
-    //ANCS_state_machine();
+    ANCS_state_machine();
 #endif
 
 		// User data save and store

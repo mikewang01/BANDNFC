@@ -43,14 +43,14 @@ void USER_data_init()
 	memset(&u->profile, 0, sizeof(USER_PROFILE_CTX));
 
 	// Initialize stride length and weight for distance calculation
-	u->profile.stride_length_user = 30; // In inches
-	u->profile.weight = 150; // in Pounds
+	u->profile.stride_in_cm = 75; // In center meters
+	u->profile.weight_in_kg = 70; // in KG
+	u->profile.height_in_cm = 170; // in center meters
 
 	// default distance
 	u->profile.metric_distance = FALSE;
 
 	// user dynamic data initialization
-	u->stride_length_adj = 30; // In inches
 	u->calories_factor = 36; // Calorie factor normalized by 1000
 
 	// User pedometer state filtering thresholds
@@ -159,6 +159,7 @@ void USER_store_device_param(I8U *data)
 
 void USER_setup_profile(I8U *data)
 {
+	USER_DATA *u = &cling.user_data;
 	I16U height_in_cm, weight_in_kg, stride_in_cm;
 	I8U *pdata = data;
 
@@ -173,6 +174,11 @@ void USER_setup_profile(I8U *data)
 	
 	Y_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
 	
+	// Initialize stride length and weight for distance calculation
+	u->profile.stride_in_cm = stride_in_cm; // In center meters
+	u->profile.weight_in_kg = weight_in_kg; // in KG
+	u->profile.height_in_cm = height_in_cm; // in center meters
+
 }
 
 void USER_setup_device(I8U *data, I8U setting_length)

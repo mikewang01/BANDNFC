@@ -147,7 +147,7 @@ BOOLEAN spi_master_op_wait_done()
 		return FALSE;
 }
 
-#define SPI_RETRYING_NUM 50
+#define SPI_RETRYING_NUM 500
 #define SPI_BLOCKING_NUM 50
 
 void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance, 
@@ -181,7 +181,12 @@ void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance,
 			N_SPRINTF("[SPI] tx rx error code: OK");
 			break;
 		}
+		if(i == (SPI_RETRYING_NUM - 1)){
 		Y_SPRINTF("[SPI] tx rx error code: %d", err_code);
+			// Enable SPI master
+		spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
+		cling.system.b_spi_0_ON = TRUE;		
+		}
 		BASE_delay_msec(1);	
 	}
 	

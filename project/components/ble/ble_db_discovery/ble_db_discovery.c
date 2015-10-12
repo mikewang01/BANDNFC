@@ -19,7 +19,6 @@
 #include "main.h"
 #define SRV_DISC_START_HANDLE  0x0001                    /**< The start handle value used during service discovery. */
 #define DB_DISCOVERY_MAX_USERS BLE_DB_DISCOVERY_MAX_SRV  /**< The maximum number of users/registrations allowed by this module. */
-#define DB_LOG                 app_trace_log             /**< A debug logger macro that can be used in this file to do logging information over UART. */
 
 /**@brief Array of structures containing information about the registered application modules. */
 static struct
@@ -253,7 +252,7 @@ static void on_srv_disc_completion(ble_db_discovery_t * p_db_discovery)
         // discovery is about to start.
         p_srv_being_discovered->char_count = 0;
 
-        DB_LOG("[DB]: Starting discovery of service with UUID 0x%x for Connection handle %d\r\n",
+        N_SPRINTF("[DB]: Starting discovery of service with UUID 0x%x for Connection handle %d\r\n",
                p_srv_being_discovered->srv_uuid.uuid, p_db_discovery->conn_handle);
 
         uint32_t err_code;
@@ -771,6 +770,12 @@ uint32_t ble_db_discovery_init(void)
     m_pending_usr_evt_index    = 0;
 
     return NRF_SUCCESS;
+}
+
+void  ble_db_discovery_clear_index(void)
+{
+    m_num_of_discoveries_made  = 0;
+    m_pending_usr_evt_index    = 0;
 }
 
 

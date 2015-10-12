@@ -43,6 +43,12 @@ enum {
 };
 
 enum {
+	WORKOUT_PLACE_NONE,
+	WORKOUT_PLACE_INDOOR,
+	WORKOUT_PLACE_OUTDOOR
+};
+
+enum {
 	WORKOUT_NONE,
 	WORKOUT_WALK,
 	WORKOUT_RUN,
@@ -151,7 +157,7 @@ typedef struct tagTRACKING_CTX {
 	I32U workout_Calories_acc;
 	I32U workout_time_stamp_stop;
 	I8U workout_type;
-	
+	I8U workout_place;
 } TRACKING_CTX;
 
 BOOLEAN TRACKING_is_not_active(void);

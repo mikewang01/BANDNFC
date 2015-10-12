@@ -435,7 +435,19 @@ uint32_t spi_master_send_recv(const spi_master_hw_instance_t spi_master_hw_insta
     else
     {
         //Disable interrupt SPI.
-        APP_ERROR_CHECK(sd_nvic_DisableIRQ(p->irq_type));
+			for(I16U i=0;i<5000;i++)
+			{
+			  err_code=sd_nvic_DisableIRQ(p->irq_type);
+				if(err_code == NRF_SUCCESS) break;
+				else   nrf_delay_us(100);	
+				
+				if(i == 4999)
+				Y_SPRINTF("[SPI] 111  disable spi interrupt fail");
+				 return NRF_ERROR_BUSY;	
+			}
+			//APP_ERROR_CHECK(err_code);
+        //APP_ERROR_CHECK(sd_nvic_DisableIRQ(p->irq_type));
+			
     }
 
     //Initialize and perform data transfer
@@ -494,7 +506,18 @@ uint32_t spi_master_send_recv(const spi_master_hw_instance_t spi_master_hw_insta
     else
     {
         //Enable SPI interrupt.
-        APP_ERROR_CHECK(sd_nvic_EnableIRQ(p->irq_type));
+			for(I16U k=0;k<5000;k++)
+			{
+			  err_code=sd_nvic_EnableIRQ(p->irq_type);
+				if(err_code == NRF_SUCCESS) break;
+				else   nrf_delay_us(100);	
+				
+				if(k == 4999)
+				Y_SPRINTF("[SPI] 111  enable spi interrupt fail");
+        return NRF_ERROR_BUSY;						
+			}
+			//APP_ERROR_CHECK(err_code);
+       // APP_ERROR_CHECK(sd_nvic_EnableIRQ(p->irq_type));
     }
 
     return err_code;

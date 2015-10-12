@@ -150,6 +150,7 @@ static void _notification_msg_init()
 	if (!LINK_is_authorized()) {
 		cling.ancs.message_total = 0;
 		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+		Y_SPRINTF("[SYSTEM] message: 0 (unauthorized)");
 		return ;
 	}
 
@@ -185,6 +186,9 @@ static void _notification_msg_init()
 		cling.ancs.message_total = 0;
 		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
 	}
+	
+	Y_SPRINTF("[SYSTEM] message OVERALL: %d", cling.ancs.message_total);
+
 }
 #endif
 

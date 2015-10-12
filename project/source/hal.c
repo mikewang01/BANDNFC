@@ -523,18 +523,20 @@ static void _ble_evt_dispatch(ble_evt_t * p_ble_evt)
 
 	dm_ble_evt_handler(p_ble_evt);
 #ifdef _ENABLE_ANCS_	
-  ble_db_discovery_on_ble_evt(&m_ble_db_discovery, p_ble_evt);	
+  if (!OTA_if_enabled()) 
+	{
+    ble_db_discovery_on_ble_evt(&m_ble_db_discovery, p_ble_evt);	
+	}
 #endif	
 	ble_conn_params_on_ble_evt(p_ble_evt);
 
 #ifdef _ENABLE_ANCS_
-	//if (!OTA_if_enabled()) 
-	//{
+	if (!OTA_if_enabled()) 
+	{
     ble_ancs_c_on_ble_evt(&cling.ancs.m_ancs_c, p_ble_evt);
-	//}
+	}
 #endif
 	BTLE_on_ble_evt(p_ble_evt);
-	
 }
 #endif
 

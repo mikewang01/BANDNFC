@@ -20,18 +20,13 @@ typedef struct tagUSER_PROFILE_CTX {
 	I8U name[32]; // Limit user name length to 32 bytes
 	I8U name_len;
 #endif
-	I16U weight;
-	I16U height;
-  I8U stride_length_user;
+	I16U weight_in_kg;
+	I16U height_in_cm;
+  I16U stride_in_cm;
 	BOOLEAN metric_distance;
 } USER_PROFILE_CTX;
 
 typedef struct tagUSER_DATA {
-	// User profile
-	USER_PROFILE_CTX profile;
-	
-	// device length
-	I8U setting_len;
 	
 	// System measurement setting
 	I32U ppg_day_interval;
@@ -39,8 +34,12 @@ typedef struct tagUSER_DATA {
 	I32U skin_temp_day_interval;
 	I32U skin_temp_night_interval;
 	
+	// User profile
+	USER_PROFILE_CTX profile;
+	
+	// device length
+	I8U setting_len;
 	// User dynamic data 
-  I32U stride_length_adj;
 	I16U calories_factor;
 	
 	// gesture recognition

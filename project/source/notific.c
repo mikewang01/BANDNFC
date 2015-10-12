@@ -139,17 +139,11 @@ void NOTIFIC_state_machine()
 void NOTIFIC_smart_phone_notify(I8U mode, I8U id, I8U count)
 {
 	if (mode == NOTIFIC_SMART_PHONE_NEW) {
-#ifdef _ENABLE_ANCS_
-		cling.ancs.cat_count[id] = count;
-#endif
 		// Inform NOTIFIC state machine to notify user
 		NOTIFIC_start_notifying(id);
 		Y_SPRINTF("NOTIFIC - SMART PHONE @ %d, %d, %d", id, count, mode);
 	} else if (mode == NOTIFIC_SMART_PHONE_DELETE) {
 		NOTIFIC_stop_notifying();
-#ifdef _ENABLE_ANCS_
-		cling.ancs.cat_count[id] = 0;
-#endif
 	} else if (mode == NOTIFIC_SMART_PHONE_STOP) {
 		NOTIFIC_stop_notifying();
 	}
@@ -198,27 +192,6 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 		return title_len;
 	}
 	
-	if (index == 0xff) {
-		
-	  addr_in=((cling.ancs.message_total-1)*256+SYSTEM_NOTIFICATION_SPACE_START);
-	
-	  FLASH_Read_App(addr_in, pdata, 128);	
-
-	  title_len= pdata[0];
-		
-		if (title_len >= 127)
-			title_len = 127;
-		
-		// Get the incoming message
-	  memcpy(app_name,pdata+2,title_len);	
-		
-	  app_name[title_len] = 0;		
-
-		Y_SPRINTF("[NOTIFIC] incoming msg len :%d",title_len );	
-		
-		Y_SPRINTF("[NOTIFIC] incoming msg :%s",app_name );		
-		return title_len;
-	} 
 #ifdef _NOTIFIC_TESTING_
 	if (index == 0)
 		title_len = sprintf(app_name, "0000");

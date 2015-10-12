@@ -24,7 +24,7 @@
 #ifndef _ANCS_H__
 #define _ANCS_H__
 
-//#define _ENABLE_ANCS_
+#define _ENABLE_ANCS_
 
 #include "ble_ancs_c.h"
 #include "standard_types.h"
@@ -48,15 +48,13 @@ typedef struct tagANCS_CONTEXT {
 
 	I16U supported_categories;
 	BOOLEAN b_enabled;
-
-	I8U cat_count[12];
 	
 	I8U state;
   ble_ancs_c_t   m_ancs_c;              /**< Structure used to identify the Apple Notification Service Client. */
 	ANCS_PACKET    pkt;
 	I8U            message_total;
 	BOOLEAN        ancs_attr_get_flag;
-	BOOLEAN        ancs_attr_store_flag;	
+	BOOLEAN        ancs_attr_store_flag;		
 	BOOLEAN        notf_updata;
 } ANCS_CONTEXT;
 

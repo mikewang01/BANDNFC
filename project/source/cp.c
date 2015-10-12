@@ -34,7 +34,7 @@ static void _sync_time_proc(I8U *data)
 	cling.time.time_since_1970 <<= 8;
 	cling.time.time_since_1970 |= data[4];
 
-	Y_SPRINTF("[CP] time sync !! - %d, %d", cling.time.time_zone, cling.time.time_since_1970);
+	N_SPRINTF("[CP] time sync !! - %d, %d", cling.time.time_zone, cling.time.time_since_1970);
 
 	RTC_get_local_clock(&cling.time.local);
 	
@@ -295,7 +295,7 @@ static void _create_dev_info_msg()
 	if (file_available < 0)
 		file_available = 0;
 	
-	Y_SPRINTF("[CP] @@@@ file available: %d, mem: %d", file_available, free);
+	N_SPRINTF("[CP] @@@@ file available: %d, mem: %d", file_available, free);
 
 	// Creat a new message
 	t->msg_id ++;
@@ -353,7 +353,7 @@ static void _create_dev_info_msg()
 	t->msg[t->msg_filling_offset++] = file_available&0xff;
 	// key user info 16 bytes
 	
-	Y_SPRINTF("[CP] ++dev info: %d, %d, %d", cling.link.pairing.userID, cling.link.pairing.crc, cling.link.pairing.authToken);
+	N_SPRINTF("[CP] ++dev info: %d, %d, %d", cling.link.pairing.userID, cling.link.pairing.crc, cling.link.pairing.authToken);
 	
 
 	// System checks dev info after authentication is done, but auth info
@@ -634,7 +634,7 @@ static void _write_file_to_fs_rest(I8U *data)
 		if (OTA_if_enabled()) {
 			if (cling.ota.file_len == 0) {
 				cling.ota.file_len = r->msg_file_len;
-				Y_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
+				N_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
 			} else {
 				cling.ota.percent = (I8U)(((cling.ota.file_len-r->msg_file_len)*100)/cling.ota.file_len);
 				N_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
@@ -709,11 +709,11 @@ static void _write_file_to_fs_head(BYTE *data)
 		// App central start to download 'app.bin', which is a clear indicattor of OTA
 		OTA_set_state(TRUE);
 		//
-		Y_SPRINTF("[CP] Start download app.bin, set OTA flag");
+		N_SPRINTF("[CP] Start download app.bin, set OTA flag");
 		
 		if (cling.ota.file_len == 0) {
 			cling.ota.file_len = r->msg_file_len;
-			Y_SPRINTF("[CP] Initialize OTA file len: %d", r->msg_file_len);
+			N_SPRINTF("[CP] Initialize OTA file len: %d", r->msg_file_len);
 		}
 	} else {
 		r->b_reload_profile = FALSE;
@@ -810,7 +810,7 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_LOAD_DEVICE_INFO:
 		{
-			Y_SPRINTF("[CP] load dev info");
+			N_SPRINTF("[CP] load dev info");
 			
 			HAL_disconnect_for_fast_connection();
 			_create_dev_info_msg();
@@ -828,7 +828,7 @@ static void _pending_process()
 		{
 			
 #if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
-			Y_SPRINTF("[CP] debug msg: %02x, %02x, %02x, %02x", p->msg[0], p->msg[1], p->msg[2], p->msg[3]);
+			N_SPRINTF("[CP] debug msg: %02x, %02x, %02x, %02x", p->msg[0], p->msg[1], p->msg[2], p->msg[3]);
 			DBG_uico_ctl(p->msg+1);
 #endif
 			
@@ -850,12 +850,12 @@ static void _pending_process()
 			
 			// Enable over the air update flag, and exit low power mode
 			OTA_set_state(TRUE);
-			Y_SPRINTF("[CP] << OTA enabled >>");
+			N_SPRINTF("[CP] << OTA enabled >>");
 			break;
 		}
 		case CP_MSG_TYPE_REBOOT:
 		{
-			Y_SPRINTF("[CP] reboot");
+			N_SPRINTF("[CP] reboot");
 			SYSTEM_reboot();
 			break;
 		}
@@ -907,7 +907,7 @@ static void _pending_process()
 		case CP_MSG_TYPE_BLE_DISCONNECT:
 		{
 			// Disconnect BLE service
-			Y_SPRINTF("[CP] BLE disconnecting ...");
+			N_SPRINTF("[CP] BLE disconnecting ...");
 			BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
 			break;
 		}
@@ -915,10 +915,9 @@ static void _pending_process()
 		{
 #ifdef _ENABLE_ANCS_
 			if (p->msg[1]) {
-				Y_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
+				N_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
 				if (!cling.ancs.b_enabled) {
 					cling.ancs.b_enabled = TRUE;
-				//	ANCS_start_ancs_discovery();
 				}
 
 				cling.ancs.supported_categories = p->msg[2];

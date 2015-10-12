@@ -193,11 +193,22 @@ static void _operation_mode_switch(I8U gesture)
 		if (index == UI_DISPLAY_STOPWATCH_STOP) {
 			cling.activity.workout_time_stamp_stop = CLK_get_system_time();
 			cling.activity.workout_type = WORKOUT_NONE;
+			cling.activity.workout_place = WORKOUT_PLACE_NONE;
 			return;
 		}
 	}
 	
-	if ((gesture == TOUCH_BUTTON_SINGLE) || (gesture == TOUCH_FINGER_RIGHT)) {
+	if (gesture == TOUCH_FINGER_RIGHT) {
+		
+		if (index == UI_DISPLAY_WORKOUT_INDOOR) {
+			cling.activity.workout_place = WORKOUT_PLACE_INDOOR;
+			return;
+		}
+		
+		if (index == UI_DISPLAY_WORKOUT_OUTDOOR) {
+			cling.activity.workout_place = WORKOUT_PLACE_OUTDOOR;
+			return;
+		}
 		
 		if (index == UI_DISPLAY_WORKOUT_WALKING) {
 			cling.activity.workout_type = WORKOUT_WALK;
@@ -513,6 +524,11 @@ static I8U _ui_touch_sensing()
 			break;
 	}
 	
+	if ((gesture >= TOUCH_SWIPE_LEFT) && (gesture <= TOUCH_BUTTON_SINGLE))
+	{
+			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+	}
+
 	// Operation mode update
 	_operation_mode_switch(gesture);
 	
@@ -808,8 +824,13 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		N_SPRINTF("[UI] smart message hit +++++");
 	} else if (mode == UI_MIDDLE_MODE_INCOMING_MESSAGE) {
 		Y_SPRINTF("[UI] Incoming message: %d", cling.ui.level_1_index);
-		// Get incoming message application
-		len = NOTIFIC_get_app_name(0xff, (char *)string);
+#ifdef _ENABLE_ANCS_
+		// Get incoming message application, index is updated to the last message
+		cling.ui.level_1_index = cling.ancs.message_total-1;
+#else
+		cling.ui.level_1_index = 0;
+#endif
+		len = NOTIFIC_get_app_name(cling.ui.level_1_index, (char *)string);
 		
 		if ((len > 14) && cling.ui.b_detail_page) {
 			_display_detail_2_row(string, 0);
@@ -840,7 +861,7 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 	} else if (mode == UI_MIDDLE_MODE_DETAIL_NOTIF) {
 		NOTIFIC_get_app_message_detail(cling.ui.level_1_index, (char *)string);
 		_display_detail_2_row(string, cling.ui.level_2_index);
-		Y_SPRINTF("[UI] message detail: %d %d", cling.ui.level_1_index, cling.ui.level_2_index);
+		Y_SPRINTF("[UI] message detail: %d %d %s", cling.ui.level_1_index, cling.ui.level_2_index, (char *)string);
 		b_more = TRUE;
 		len = 0;
 		b_center = false;
@@ -1818,7 +1839,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 			b_center = FALSE;
 			_display_stopwatch_core(string1, len1, string2, len2, UI_TOP_MODE_WORKOUT_STOP, b_center);
 			
-			N_SPRINTF("[UI] stopwatch stop: %d:%d.%d (%d,%d)", hour, minute, second, CLK_get_system_time(), cling.activity.workout_time_stamp_start);
+			Y_SPRINTF("[UI] stopwatch stop: %d:%d.%d (%d,%d)", hour, minute, second, CLK_get_system_time(), cling.activity.workout_time_stamp_start);
 			break;
 		} 
 		case UI_DISPLAY_STOPWATCH_RESULT:
@@ -2456,8 +2477,10 @@ static void _restore_ui_index()
 	// If it is charging
 	
 	if (BATT_is_charging()) {
-		u->frame_index = UI_DISPLAY_HOME;
-		return;
+		if ((u->frame_index < UI_DISPLAY_STOPWATCH_STOP) || (u->frame_index > UI_DISPLAY_STOPWATCH_CALORIES)) {
+			u->frame_index = UI_DISPLAY_HOME;
+			return;
+		}
 	}
 	
 	// Go back to previous UI page
@@ -2825,8 +2848,13 @@ I8U UI_get_workout_mode()
 
 void UI_reset_workout_mode()
 {
-	if (cling.ui.frame_index < UI_DISPLAY_STOPWATCH_STOP)
+	if (cling.ui.frame_index < UI_DISPLAY_STOPWATCH_STOP) {
 		cling.activity.workout_type = WORKOUT_NONE;
-	if (cling.ui.frame_index > UI_DISPLAY_STOPWATCH_CALORIES)
+		cling.activity.workout_place = WORKOUT_PLACE_NONE;
+	}
+	
+	if (cling.ui.frame_index > UI_DISPLAY_STOPWATCH_CALORIES) {
 		cling.activity.workout_type = WORKOUT_NONE;
+		cling.activity.workout_place = WORKOUT_PLACE_NONE;
+	}
 }
