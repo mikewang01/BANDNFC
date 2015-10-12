@@ -14,7 +14,7 @@
 #include "nrf_soc.h"
 #include "nrf51_bitfields.h"
 #include "spi_master.h"
-
+#include "main.h"
 #if defined(SPI_MASTER_0_ENABLE) || defined(SPI_MASTER_1_ENABLE)
 
 typedef struct
