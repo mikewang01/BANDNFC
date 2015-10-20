@@ -253,7 +253,7 @@ void SLEEP_minute_proc()
 	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
 					
 		// Get out of sleep mode if device has been off the wrist for more than 20 minutes (1 hour)
-    if (slp->m_successive_no_skin_touch_mins > 20) {
+    if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
 	}
@@ -317,7 +317,7 @@ void SLEEP_minute_proc()
 
 	if (
 		   (slp->m_successive_no_skin_touch_mins>5  &&  SLEEP_is_sleep_state(SLP_STAT_AWAKE)) || 
-       (slp->m_successive_no_skin_touch_mins>30 && (SLEEP_is_sleep_state(SLP_STAT_LIGHT)  || SLEEP_is_sleep_state(SLP_STAT_SOUND)))
+       (slp->m_successive_no_skin_touch_mins>90 && (SLEEP_is_sleep_state(SLP_STAT_LIGHT)  || SLEEP_is_sleep_state(SLP_STAT_SOUND)))
 		)
   {
 		slp->b_valid_worn_in_entering_sleep_state = FALSE;
@@ -425,10 +425,10 @@ void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)
 	slp->m_activity_per_min = activity_per_min;
 
 	if (skin_touch > 0) {
-		cling.touch.skin_touch_type = skin_touch;
+		cling.touch.b_skin_touch = skin_touch;
 	}
 	else {
-		cling.touch.skin_touch_type = skin_touch;
+		cling.touch.b_skin_touch = skin_touch;
 	}
 
 	if (steps > 0)

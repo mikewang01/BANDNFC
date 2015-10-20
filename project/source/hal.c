@@ -112,12 +112,25 @@ static ble_gap_adv_params_t                  m_adv_params;                      
 #ifdef _ENABLE_ANCS_
 
 static  ble_db_discovery_t        m_ble_db_discovery;                       /**< Structure used to identify the DB Discovery module. */
-static  dm_handle_t               m_peer_handle;                            /**< Identifies the peer that is currently connected. */
-static  app_timer_id_t            m_sec_req_timer_id;                       /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
-
+static  app_timer_id_t            m_ancs_pair_timer_id;                     /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
 static  ble_uuid_t m_adv_uuids[] = {{ANCS_UUID_SERVICE,BLE_UUID_TYPE_VENDOR_BEGIN}};  /**< Universally unique service identifiers. */
 
+/* Security requirements for this application. */
+ble_gap_sec_params_t m_ancs_sec_params = {
 
+    /* Perform bonding. */
+    .bond = SEC_PARAM_BOND,
+    /* Man In The Middle protection not required. */
+    .mitm = SEC_PARAM_MITM,
+    /* No I/O capabilities. */
+    .io_caps = BLE_GAP_IO_CAPS_NONE,
+    /* Out Of Band data not available. */
+    .oob = SEC_PARAM_OOB,
+    /* Minimum encryption key size. */
+    .min_key_size = SEC_PARAM_MIN_KEY_SIZE,
+    /* Maximum encryption key size. */
+    .max_key_size = SEC_PARAM_MAX_KEY_SIZE
+};
 
 /**@brief Function for handling the security request timer time-out.
  *
@@ -129,38 +142,47 @@ static  ble_uuid_t m_adv_uuids[] = {{ANCS_UUID_SERVICE,BLE_UUID_TYPE_VENDOR_BEGI
 static void sec_req_timeout_handler(void * p_context)
 {
    
-    dm_security_status_t status;
+  dm_security_status_t status;
+	I32U err_code;
 
-    if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID)
-    {
-         dm_security_status_req(&m_peer_handle, &status);
-        
-        // If the link is still not secured by the peer, initiate security procedure.
-        if (status == NOT_ENCRYPTED)
-        {
-            dm_security_setup_req(&m_peer_handle);           
-        }
-    }
+	if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID)
+	{
+		dm_security_status_req(&cling.ancs.m_peer_handle, &status);
+		
+		if (status == NOT_ENCRYPTED){
+			
+		   err_code = sd_ble_gap_authenticate(cling.ble.conn_handle,&m_ancs_sec_params);		
+
+			 if(err_code == NRF_SUCCESS)
+			 Y_SPRINTF("[HAL] Successfully initiated authentication procedure.");
+			 APP_ERROR_CHECK(err_code);
+		 }
+							
+	}
 }
-
 
 
 void HAL_ancs_discovery_start(void)
 {
-
-  ble_db_discovery_start(&m_ble_db_discovery,cling.ble.conn_handle);
-  
+	I32U err_code;
+		
+  err_code=ble_db_discovery_start(&m_ble_db_discovery,cling.ble.conn_handle);
+	
+	//Client procedure already in progress.
+	if(err_code == NRF_ERROR_BUSY)
+	return;
+	
+	APP_ERROR_CHECK(err_code);
 }
-
 
 
 /**@brief Function for initializing the timer module.
  */
-static void _create_sec_req_timer_init(void)
+static void _ancs_pair_req_timer_init(void)
 {
     uint32_t err_code;
 
-    err_code = app_timer_create(&m_sec_req_timer_id,
+    err_code = app_timer_create(&m_ancs_pair_timer_id,
                                 APP_TIMER_MODE_SINGLE_SHOT,
                                 sec_req_timeout_handler);
 	
@@ -170,21 +192,32 @@ static void _create_sec_req_timer_init(void)
 
 /**@brief Function for initializing the database discovery module.
  */
-static void db_discovery_init(void)
+static void _ancs_service_discovery_init(void)
 {
 	uint32_t err_code = ble_db_discovery_init();
 	APP_ERROR_CHECK(err_code);
 }
 
 
-void HAL_ancs_start_security_req(dm_handle_t const * p_handle)
+void HAL_ancs_pairing_start(void)
 {
   I32U err_code;
-	m_peer_handle = (*p_handle);
-	err_code      = app_timer_start(m_sec_req_timer_id, SECURITY_REQUEST_DELAY, NULL);
+	err_code      = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);
 	APP_ERROR_CHECK(err_code);
 
 }
+
+
+void HAL_ancs_delete_bond_info(void)
+{
+
+	Y_SPRINTF("[HAL] pairing error - delete bond info and BLE disconnect");
+	
+  HAL_device_manager_init(TRUE);	
+
+	BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);
+}
+
 
 
 #endif
@@ -525,7 +558,10 @@ static void _ble_evt_dispatch(ble_evt_t * p_ble_evt)
 #ifdef _ENABLE_ANCS_	
   if (!OTA_if_enabled()) 
 	{
-    ble_db_discovery_on_ble_evt(&m_ble_db_discovery, p_ble_evt);	
+		 if (cling.gcp.host_type == HOST_TYPE_IOS) {	
+			 
+       ble_db_discovery_on_ble_evt(&m_ble_db_discovery, p_ble_evt);	
+		 }
 	}
 #endif	
 	ble_conn_params_on_ble_evt(p_ble_evt);
@@ -533,7 +569,10 @@ static void _ble_evt_dispatch(ble_evt_t * p_ble_evt)
 #ifdef _ENABLE_ANCS_
 	if (!OTA_if_enabled()) 
 	{
-    ble_ancs_c_on_ble_evt(&cling.ancs.m_ancs_c, p_ble_evt);
+	  if (cling.gcp.host_type == HOST_TYPE_IOS) {	
+			
+      ble_ancs_c_on_ble_evt(&cling.ancs.m_ancs_c, p_ble_evt);
+		}
 	}
 #endif
 	BTLE_on_ble_evt(p_ble_evt);
@@ -657,17 +696,14 @@ static void radio_notification_init(void)
 static void _ble_init()
 {
 #ifndef _CLING_PC_SIMULATION_
+	
 	_ble_stack_init();
 
 	SYSCLK_Init(); 
-	
-	// RTC initialization, it does not actually START until valid time is written to it.
-	RTC_Init(); 
-
 #ifdef _ENABLE_ANCS_	
-	 db_discovery_init();
+	 _ancs_service_discovery_init();
 #endif
-	
+	    
 	_gap_params_init();
 
 #ifdef _ENABLE_ANCS_
@@ -701,19 +737,20 @@ void HAL_init(void)
 	
 #ifdef _ENABLE_ANCS_	
 	//ANCS pairing req initialization
-	 _create_sec_req_timer_init();	
+	 _ancs_pair_req_timer_init();	
 	
 #endif	
 	// GPIO initializaiton
 	GPIO_init();
-	
+#ifndef _CLING_PC_SIMULATION_
+
 	// Enable SPI 0
 	spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
 	cling.system.b_spi_0_ON = TRUE;
 
 	// Enable TWI I2C 1
 	GPIO_twi_init(1);
-
+#endif
 	// UV sensor initialization
 #ifdef _ENABLE_UV_
   UV_Init();

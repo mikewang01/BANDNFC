@@ -51,8 +51,6 @@ static void _sync_time_proc(I8U *data)
 		b_activity_consistency = FALSE;
 	} else if (stored_day_total.running != cling.activity.day_stored.running) {
 		b_activity_consistency = FALSE;
-	} else if (stored_day_total.sleep != cling.activity.day_stored.sleep) {
-		b_activity_consistency = FALSE;
 	} else if (stored_day_total.walking != cling.activity.day_stored.walking) {
 		b_activity_consistency = FALSE;
 	}
@@ -498,7 +496,7 @@ static void _create_daily_activity_info_msg()
 	t->msg[t->msg_filling_offset++] = (day_streaming.temperature&0xff);
 	// UV index
 #ifdef _ENABLE_UV_
-	t->msg[t->msg_filling_offset++] = (UV_get_index()+5)/10;
+	t->msg[t->msg_filling_offset++] = (cling.uv.max_uv+5)/10;
 #else
 	t->msg[t->msg_filling_offset++] = 0;
 #endif
@@ -810,7 +808,8 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_LOAD_DEVICE_INFO:
 		{
-			N_SPRINTF("[CP] load dev info");
+			cling.gcp.host_type = p->msg[1];
+			Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
 			
 			HAL_disconnect_for_fast_connection();
 			_create_dev_info_msg();
@@ -944,7 +943,7 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_ANDROID_NOTIFY:
 		{
-			NOTIFIC_smart_phone_notify(p->msg[1], p->msg[2], p->msg[3]);
+			NOTIFIC_smart_phone_notify(p->msg+1);
 			break;
 		}
 		case CP_MSG_TYPE_DEVICE_SETTING:
@@ -1272,7 +1271,7 @@ void CP_create_register_rd_msg()
 	memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
 
 }
-#ifdef _JACOB_TESTING
+#ifdef _JACOB_TESTING_
 static I32U tttt = 0;
 #endif
 static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U mode, I16U same_entry_num)
@@ -1358,7 +1357,10 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 	// Activity count (2B)
 	pkt[filling_offset++] = (pminute->activity_count>>8)&0xff;
 	pkt[filling_offset++] = pminute->activity_count&0xff;
-#ifdef _JACOB_TESTING
+	
+	N_SPRINTF("[CP] activity counts: %04x", pminute->activity_count);
+	
+#ifdef _JACOB_TESTING_
 	if (tttt < 120) {
 		pkt[filling_offset++] = 0x16;
 	} else if (tttt < 240) {
@@ -1770,7 +1772,7 @@ void CP_create_streaming_daily_msg( void )
 	pkt[filling_offset++] = (cling.time.time_since_1970>>8)&0xff;
 	pkt[filling_offset++] = (cling.time.time_since_1970&0xff);
 	
-	// Steps (2B)
+	// Steps (4B)
 	steps = cling.activity.day.running+cling.activity.day.walking;
 	pkt[filling_offset++] = (steps>>24)&0xff;
 	pkt[filling_offset++] = (steps>>16)&0xff;
@@ -1796,6 +1798,9 @@ void CP_create_streaming_daily_msg( void )
 	
 	// skin touch (1B)
 	pkt[filling_offset++] = TOUCH_get_skin_pad();
+	
+	// UV index
+	pkt[filling_offset++] = (cling.uv.max_uv+5)/10;
 	s->pending = TRUE;
 }
 

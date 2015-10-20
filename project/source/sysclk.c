@@ -13,11 +13,8 @@
 
 #include "standards.h"
 
-#define _DISABLE_SYSTEM_TIMER_
-
-#ifndef _DISABLE_SYSTEM_TIMER_
-static app_timer_id_t               m_sys_clk_timer_id;                        /**< system clock timer. */
-#endif
+#define APP_TIMER_MAX_TIMERS                 4                                          /**< Maximum number of simultaneously created timers. */
+#define APP_TIMER_OP_QUEUE_SIZE              4                                          /**< Size of timer operation queues. */
 
 #ifdef _CLING_PC_SIMULATION_
 I32U sim_tick_acc = 0;
@@ -42,21 +39,16 @@ I32U SYSCLK_GetFineTime(void)
 	// Get the elapsed time
 	app_timer_cnt_get(&tick_now);
 	app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
-	tick_diff += cling.time.rtc_tick_residual;
 	system_clock_in_ms = cling.time.system_clock_in_sec*1000;
 	system_clock_in_ms += (tick_diff/32.768);
 
 	N_SPRINTF("[SYSCLK]: sec: %d, n: %d, o:%d", cling.time.system_clock_in_sec, tick_now, cling.time.tick_count);
-#else
-	tick_diff = sim_tick_acc;
-#endif
 	// 32758 ticks per second, about 32 tick per ms.
 	return (I32U)system_clock_in_ms;
-  //return (cling.time.system_clock_in_sec*1000+tick_diff);
-}
-
-void SYSCLK_timer_handler(void * p_context)
-{
+#else
+	tick_diff = sim_tick_acc;
+	return 0;
+#endif
 }
 
 /**@brief Function for the Timer initialization.
@@ -69,29 +61,9 @@ void SYSCLK_Init(void)
 	
 	// Initialize timer module.
 	APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
-#endif
-}
 
-EN_STATUSCODE SYSCLK_create_timer(void)
-{
-#ifndef _DISABLE_SYSTEM_TIMER_
-	uint32_t err_code;
-	// Create timers.
-	err_code = app_timer_create(&m_sys_clk_timer_id,
-															APP_TIMER_MODE_REPEATED,
-															SYSCLK_timer_handler);
-	APP_ERROR_CHECK(err_code);
-#endif
-	return STATUSCODE_SUCCESS;
-}
-
-void SYSCLK_timer_stop()
-{
-#ifndef _DISABLE_SYSTEM_TIMER_
-
-	app_timer_stop(m_sys_clk_timer_id);
-	
-	N_SPRINTF("[SYSCLK] stop timer ...");
+	// RTC initialization, it does not actually START until valid time is written to it.
+	RTC_Init(); 
 #endif
 }
 
@@ -102,7 +74,7 @@ void SYSCLK_timer_start(void)
 #ifndef _CLING_PC_SIMULATION_
 	// Start application timers
 	N_SPRINTF("[SYSCLK] RTC start 20ms, %d ", CLK_get_system_time());
-	RTC_config(SYSCLK_INTERVAL_20MS);
+	RTC_start_operation_clk();
 #endif
 }
 

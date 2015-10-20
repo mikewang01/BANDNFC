@@ -42,10 +42,7 @@ void NOTIFIC_state_machine(void);
 void NOTIFIC_start_notifying(I8U cat_id);
 void NOTIFIC_stop_notifying(void);
 void NOTIFIC_start_idle_alert(void);
-void NOTIFIC_smart_phone_notify(I8U mode, I8U id, I8U count);
-
-BOOLEAN NOTIFIC_is_new_message(void);
-
+void NOTIFIC_smart_phone_notify(I8U* data);
 I8U NOTIFIC_get_message_total(void);
 I8U NOTIFIC_get_app_name(I8U index, char *app_name);
 I8U NOTIFIC_get_app_message_detail(I8U index, char *string);

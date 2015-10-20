@@ -144,6 +144,9 @@ BOOLEAN OLED_set_panel_on()
 {
 #ifndef _CLING_PC_SIMULATION_
 	CLING_OLED_CTX *o = &cling.oled;
+
+	// Start 20 ms timer for screen rendering
+	SYSCLK_timer_start();
 	
 	// We are about to turn on OLED, if BLE is in idle mode, we should start advertising
 	if (BTLE_is_idle()) {
@@ -247,6 +250,13 @@ void OLED_state_machine(void)
 						cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 						cling.reminder.ui_hh = cling.time.local.hour;
 						cling.reminder.ui_mm = cling.time.local.minute;
+						cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
+					}
+					
+					if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+						if (cling.notific.cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL) {
+							UI_switch_state(UI_STATE_NOTIFIC, 0);
+						}
 					}
 				}
 				o->state = OLED_STATE_ON;

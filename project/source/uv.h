@@ -76,6 +76,7 @@ typedef struct tagUV_CTX {
 	UV_STATES state;
 	BOOLEAN b_perform_measure;
 	I8U max_uv;
+	I8U max_UI_uv;
 } UV_CTX;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -108,7 +109,6 @@ void uv_Configure_Sensor(void);
 void uv_Disable_Sensor(void);
 BOOLEAN uv_Measure(void);
 
-I8U  UV_get_index(void);
 I8U UV_get_max_index_per_minute(void);
 
 BOOLEAN _is_user_viewing_uv_index(void);

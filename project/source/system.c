@@ -209,11 +209,11 @@ static BOOLEAN _critical_info_restored()
 		a->day_stored.calories = a->day.calories;
 		a->day_stored.distance = a->day.distance;
 		a->day_stored.running = a->day.running;
-		a->day_stored.sleep = a->day.sleep;
 		a->day_stored.walking = a->day.walking;
 
 		// Get sleep by noon from flash
-		a->sleep_by_noon = TRACKING_get_sleep_by_noon();
+		a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+		a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 		return FALSE;
 	}
 	
@@ -233,6 +233,8 @@ static BOOLEAN _critical_info_restored()
 	
 	// If nothing gets restored from system
 	if (offset == 0) {
+		cling.batt.b_no_batt_restored = TRUE;
+		Y_SPRINTF("[SYSTEM] Notthing gets restored");
 		return FALSE;
 	}
 	
@@ -275,14 +277,14 @@ static BOOLEAN _critical_info_restored()
 	N_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
 
 	// Update stored total
-	a->day_stored.sleep = a->day.sleep;
 	a->day_stored.walking = a->day.walking;
 	a->day_stored.running = a->day.running;
 	a->day_stored.distance = a->day.distance;
 	a->day_stored.calories = a->day.calories;
 	
 	// Get sleep seconds by noon
-	a->sleep_by_noon = TRACKING_get_sleep_by_noon();
+	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 
 	// Restoring system running mode
 	cling.system.simulation_mode = p_byte_addr[50];
@@ -304,7 +306,7 @@ static BOOLEAN _critical_info_restored()
 #endif	
 	// Restore battery level
 	if (p_byte_addr[56] == 0)
-		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 50;
+		cling.batt.b_no_batt_restored = TRUE;
 	else 
 		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = p_byte_addr[56];
 		
@@ -313,6 +315,7 @@ static BOOLEAN _critical_info_restored()
 	cling.batt.non_charging_accumulated_active_sec = p_byte_addr[57];
 	cling.batt.non_charging_accumulated_steps = p_byte_addr[58];
 	cling.ui.fonts_cn = p_byte_addr[59];
+	cling.gcp.host_type = p_byte_addr[60];
 
 	// Minute file critical timing info
 	cling.system.reset_count = p_byte_addr[62];
@@ -433,6 +436,7 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	_critical_info_restored();
+	
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();
@@ -540,7 +544,7 @@ BOOLEAN SYSTEM_backup_critical()
 	critical[59] = cling.ui.fonts_cn;
 
 	// Store the reset count
-	critical[60] = 0;
+	critical[60] = cling.gcp.host_type;
 	critical[61] = 0;
 	critical[62] = (I8U)((cling.system.reset_count>>8) & 0xFF);
 	critical[63] = (I8U)((cling.system.reset_count) & 0xFF);

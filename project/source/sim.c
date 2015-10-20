@@ -100,8 +100,8 @@ void SIM_init()
 	cling.time.local_minute = cling.time.local.minute;
 
 	// Update stored total
-	a->sleep_by_noon = a->day.sleep;
-	a->day_stored.sleep = a->day.sleep;
+	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 	a->day_stored.walking = a->day.walking;
 	a->day_stored.running = a->day.running;
 	a->day_stored.distance = a->day.distance;

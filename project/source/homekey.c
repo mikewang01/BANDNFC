@@ -53,9 +53,6 @@ BOOLEAN HOMEKEY_check_on_hook_change()
 		k->ticks[stat] = t_curr;
 		Y_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
-		// Start 20 ms timer for screen rendering for any button event
-		SYSCLK_timer_start();
-			
 		if (k->temp_st == ON_CLICK) {
 			k->click_on_ts = t_curr;
 		
@@ -98,7 +95,7 @@ BOOLEAN HOMEKEY_check_on_hook_change()
 void HOMEKEY_click_check()
 {
 	HOMEKEY_CLICK_STAT *k = &cling.key;
-	I32U t_curr;
+	I32U t_curr=0;
 	I32U offset = 0;
 	I32U t_click_and_hold = CLICK_HOLD_TIME_LONG;
 	I32U t_sos = CLICK_HOLD_TIME_SOS;
@@ -259,9 +256,6 @@ void HOMEKEY_sim_kickoff()
 
 static void _sim_physical_touch()
 {
-		// Start 20 ms timer for screen rendering for any button event
-		SYSCLK_timer_start();
-	
 		// Turn on OLED panel
 		OLED_set_panel_on();
 		

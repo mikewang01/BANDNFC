@@ -9,152 +9,19 @@
 #include "standards.h"
 #include "main.h"
 
-static volatile BOOLEAN bWriteRTC = BOOLEAN_FALSE;
 #ifndef _CLING_PC_SIMULATION_
 static app_timer_id_t								m_rtc_timer_id; /**< 1 sec based timer. >**/
+static app_timer_id_t								m_operation_timer_id; /**< 1 sec based timer. >**/
 #endif
 
 const I8U DAYS_IN_EACH_MONTH[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 
-// RTC is set to Calendar mode
-EN_STATUSCODE RTC_Init(void)
+void OPERATION_timer_handler( void * p_context )
 {
-#ifndef _CLING_PC_SIMULATION_
-	uint32_t err_code;
+	N_SPRINTF("[RTC] OPERATION 50ms timer handler func");
 	
-	err_code = app_timer_create(&m_rtc_timer_id,
-															APP_TIMER_MODE_REPEATED,
-															RTC_timer_handler);
-
-	APP_ERROR_CHECK(err_code);
-#endif
-  return STATUSCODE_SUCCESS;
-}
-
-EN_STATUSCODE RTC_Start(void)
-{
-#ifndef _CLING_PC_SIMULATION_
-	RTC_config(SYSCLK_INTERVAL_20MS);
-	
-	N_SPRINTF("[RTS] reset tick count, start 20 ms sysclock");
-#endif
-  return STATUSCODE_SUCCESS;
-}
-
-//#define TIMEING_TEST
-
-void RTC_config(I32U interval)
-{
-#ifndef _CLING_PC_SIMULATION_
-	uint32_t err_code;
-
-	/////
-	I32U tick_now=0;
-	I32U tick_diff=0;
-	I32U tick_in_s;
-#ifdef TIMEING_TEST
-	I32U aaaa, bbbb;
-#endif
-	//////
-	if (cling.time.sysclk_interval == interval) {
-		// Re-fresh timer
-		cling.time.sysclk_config_timestamp = CLK_get_system_time();
-		return;
-	}
-#ifdef TIMEING_TEST
-	aaaa = CLK_get_system_time();
-#endif
-	cling.time.sysclk_interval = interval;
-	cling.time.sysclk_config_timestamp = CLK_get_system_time();
-
-	// Update tick count on the first interrupt
-	// so that we can sync up to system tick.
-	
-	// Before reset the tick count, we should accumualte the residual for correct timing
-	// The residual is the lower 15 bits
-	app_timer_cnt_get(&tick_now);
-	app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
-	cling.time.rtc_tick_residual += tick_diff;
-	cling.time.rtc_tick_residual += (cling.time.tick_count&0x7fff);
-	
-	// if residual tick is greater than 1 second, add it to system clock
-	tick_in_s = (cling.time.rtc_tick_residual>>15);
-	cling.time.system_clock_in_sec += tick_in_s;
-	cling.time.rtc_tick_residual -= (tick_in_s << 15);
-	
-	// Stop the timer
-	app_timer_stop(m_rtc_timer_id);
-
-	// Start application with new timers
-	err_code = app_timer_start(m_rtc_timer_id, interval, NULL);
-	APP_ERROR_CHECK(err_code);
-	
-	// Add about 1 ms timer delay
-	cling.time.rtc_tick_residual += 32;
-
-	// Initialize the tick count
-	app_timer_cnt_get(&cling.time.tick_count);
-#ifdef TIMEING_TEST
-	bbbb = CLK_get_system_time();
-	Y_SPRINTF("[SYSCLK] config timer: %d, %d, %d, %d, %d", 
-	interval, cling.time.tick_count, cling.time.rtc_tick_residual, aaaa, bbbb);
-#endif
-#endif
-}
-
-// 
-// We might not need RTC stop as RTC runs all the time
-//
-void RTC_stop(void)
-{
-#ifndef _CLING_PC_SIMULATION_
-	I32U t_curr = CLK_get_system_time();
-	
-	N_SPRINTF("[RTC] status: %d, %d, %d", cling.time.sysclk_interval, cling.time.sysclk_config_timestamp, t_curr);
-	
-	if (t_curr > (cling.time.sysclk_config_timestamp + SYSCLK_EXPIRATION)) {
-		N_SPRINTF("[SYSCLK] RTC stop, %d @ %d ", t_curr, cling.time.sysclk_config_timestamp);
-
-		if (!cling.system.b_powered_up) {
-			// RTC configure to a much lower clock
-			RTC_config(SYSCLK_INTERVAL_4000MS);
-		} else {
-			RTC_config(SYSCLK_INTERVAL_2000MS);		
-		}
-	}
-#endif
-}
-
-
-void RTC_get_delta_clock_forward(SYSTIME_CTX *delta, I8U offset)
-{
-	I32U epoch = cling.time.time_since_1970+offset*EPOCH_DAY_SECOND;
-	I16S time_diff_in_minute = cling.time.time_zone;
-	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
-	epoch += time_diff_in_minute;
-	
-	RTC_get_regular_time(epoch, delta);
-}
-
-void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset)
-{
-	I32U epoch = cling.time.time_since_1970-offset*EPOCH_DAY_SECOND;
-	I16S time_diff_in_minute = cling.time.time_zone;
-	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
-	epoch += time_diff_in_minute;
-
-	RTC_get_regular_time(epoch, delta);
-}
-
-void RTC_get_local_clock(SYSTIME_CTX *local)
-{
-	I32U epoch = cling.time.time_since_1970;
-	I32S time_diff_in_minute = cling.time.time_zone;
-	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
-	epoch += time_diff_in_minute;
-	
-	RTC_get_regular_time(epoch, local);
-
+	// Timer update
+	cling.hr.sample_ready = TRUE;	
 }
 
 void RTC_timer_handler( void * p_context )
@@ -162,21 +29,24 @@ void RTC_timer_handler( void * p_context )
 	I32U tick_now;
 	I32U tick_diff;
 	I32U tick_in_s;
+	
+	N_SPRINTF("[RTC] 4S timer handler func");
 
 #ifndef _CLING_PC_SIMULATION_	
-	app_timer_cnt_get(&tick_now);
-	app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
-	tick_in_s = (tick_diff>>15);
-	tick_diff = (tick_in_s << 15);
-	cling.time.tick_count += tick_diff;
-	cling.time.tick_count &= MAX_RTC_CNT;
-	
+	if (cling.time.tick_count) {		
+		app_timer_cnt_get(&tick_now);
+		app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
+		tick_in_s = (tick_diff>>15);
+		tick_diff = (tick_in_s << 15);
+		cling.time.tick_count += tick_diff;
+		cling.time.tick_count &= MAX_RTC_CNT;
+	} else {	
+		app_timer_cnt_get(&cling.time.tick_count);
+		tick_in_s = (cling.time.tick_count>>15);
+	}
 #else
-	tick_in_s = 1; // 1 second timer
+	tick_in_s = 2; // 1 second timer
 #endif
-	
-	// Timer update
-	cling.hr.sample_ready = TRUE;
 	
 	// update battery measuring timer
 	cling.batt.level_update_timebase += tick_in_s;
@@ -192,6 +62,13 @@ void RTC_timer_handler( void * p_context )
 		cling.batt.shut_down_time += tick_in_s;
 	}
 	
+	// Accumulate skin touch time
+	if (TOUCH_is_skin_touched()) {
+		if (cling.touch.skin_touch_time_per_minute < 60) {
+			cling.touch.skin_touch_time_per_minute += tick_in_s;
+			N_SPRINTF("[RTC] skint touch time per min: %d", cling.touch.skin_touch_time_per_minute);
+		}
+	}	
 #ifdef USING_VIRTUAL_ACTIVITY_SIM
 	 if (OTA_if_enabled()) {
 		 cling.ota.percent ++;
@@ -235,6 +112,109 @@ void RTC_timer_handler( void * p_context )
 		}
 		cling.time.local_hour = cling.time.local.hour;
 	}
+}
+
+// RTC is set to Calendar mode
+EN_STATUSCODE RTC_Init(void)
+{
+#ifndef _CLING_PC_SIMULATION_
+	uint32_t err_code;
+	
+	err_code = app_timer_create(&m_rtc_timer_id,
+															APP_TIMER_MODE_REPEATED,
+															RTC_timer_handler);
+
+	APP_ERROR_CHECK(err_code);
+	
+	err_code = app_timer_create(&m_operation_timer_id,
+															APP_TIMER_MODE_REPEATED,
+															OPERATION_timer_handler);
+
+	APP_ERROR_CHECK(err_code);
+#endif
+  return STATUSCODE_SUCCESS;
+}
+
+EN_STATUSCODE RTC_Start(void)
+{
+#ifndef _CLING_PC_SIMULATION_
+	
+	app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_10000MS, NULL);
+	
+	RTC_start_operation_clk();
+	
+	N_SPRINTF("[RTS] reset tick count, start 20 ms sysclock");
+#endif
+  return STATUSCODE_SUCCESS;
+}
+
+// 
+// We might not need RTC stop as RTC runs all the time
+//
+void RTC_stop_operation_clk(void)
+{
+#ifndef _CLING_PC_SIMULATION_
+	I32U t_curr = CLK_get_system_time();
+	
+	N_SPRINTF("[RTC] status: %d, %d, %d", cling.time.sysclk_interval, cling.time.sysclk_config_timestamp, t_curr);
+	
+	if (t_curr > (cling.time.operation_clk_start_in_ms + OPERATION_CLK_EXPIRATION)) {
+
+		if (cling.time.operation_clk_enabled) {
+			Y_SPRINTF("[SYSCLK] OPERATION clk stop, %d @ %d ", t_curr, cling.time.operation_clk_start_in_ms);
+			cling.time.operation_clk_enabled = FALSE;
+			app_timer_stop(m_operation_timer_id);
+		}
+	}
+#endif
+}
+
+void RTC_start_operation_clk()
+{
+	I32U err_code;
+#ifndef _CLING_PC_SIMULATION_
+
+	cling.time.operation_clk_start_in_ms = CLK_get_system_time();
+	
+	if (!cling.time.operation_clk_enabled) {
+		Y_SPRINTF("[SYSCLK] OPERATION clk start, %d ", cling.time.operation_clk_start_in_ms);
+		cling.time.operation_clk_enabled = TRUE;
+		err_code = app_timer_start(m_operation_timer_id, SYSCLK_INTERVAL_20MS, NULL);
+		APP_ERROR_CHECK(err_code);
+	}
+#endif
+}
+
+
+void RTC_get_delta_clock_forward(SYSTIME_CTX *delta, I8U offset)
+{
+	I32U epoch = cling.time.time_since_1970+offset*EPOCH_DAY_SECOND;
+	I16S time_diff_in_minute = cling.time.time_zone;
+	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
+	epoch += time_diff_in_minute;
+	
+	RTC_get_regular_time(epoch, delta);
+}
+
+void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset)
+{
+	I32U epoch = cling.time.time_since_1970-offset*EPOCH_DAY_SECOND;
+	I16S time_diff_in_minute = cling.time.time_zone;
+	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
+	epoch += time_diff_in_minute;
+
+	RTC_get_regular_time(epoch, delta);
+}
+
+void RTC_get_local_clock(SYSTIME_CTX *local)
+{
+	I32U epoch = cling.time.time_since_1970;
+	I32S time_diff_in_minute = cling.time.time_zone;
+	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
+	epoch += time_diff_in_minute;
+	
+	RTC_get_regular_time(epoch, local);
+
 }
 
 I8U const month_leap_in_days[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};

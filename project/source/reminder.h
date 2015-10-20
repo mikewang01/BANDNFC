@@ -26,6 +26,7 @@ typedef struct tagREMINDER_CTX {
 	I8U second_vibrate_time;
 	I8U ui_hh;
 	I8U ui_mm;
+	I8U ui_alarm_on;
 	I8U total;
 	REMINDER_STATE_TYPE state;
 } REMINDER_CTX;

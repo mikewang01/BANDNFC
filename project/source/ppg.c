@@ -3,6 +3,8 @@
 
 static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 {
+#ifndef _CLING_PC_SIMULATION_
+
 	I32U err_code;
 	const nrf_drv_twi_t twi = NRF_DRV_TWI_INSTANCE(1);
 	
@@ -27,10 +29,15 @@ static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 		N_SPRINTF("[PPG] Read RX FAIL: ");
 		return STATUSCODE_FAILURE;
 	}
+#else
+	return STATUSCODE_SUCCESS;
+#endif
 }
 
 static BOOLEAN ppg_write_reg(I8U cmdID, I8U regVal)
 {
+#ifndef _CLING_PC_SIMULATION_
+
 	I32U err_code;
 	const nrf_drv_twi_t twi = NRF_DRV_TWI_INSTANCE(1);
 	I8U acData[2];
@@ -50,6 +57,9 @@ static BOOLEAN ppg_write_reg(I8U cmdID, I8U regVal)
 		N_SPRINTF("[PPG] Write FAIL: 0x%02x  0x%02x", cmdID, regVal);
 		return STATUSCODE_FAILURE;
 	}
+#else
+	return STATUSCODE_SUCCESS;
+#endif
 }
 
 static void _calc_heart_rate()

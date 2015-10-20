@@ -53,15 +53,14 @@ typedef struct tagSYSTIME_CTX
 EN_STATUSCODE RTC_Init( void );
 
 EN_STATUSCODE RTC_Start( void );
-void RTC_stop( void );
-void RTC_config(I32U interval);
+void RTC_start_operation_clk(void);
+void RTC_stop_operation_clk( void );
 
 // Get desired clock from UTC time
 void RTC_get_local_clock(SYSTIME_CTX *local);
 void RTC_get_delta_clock_forward(SYSTIME_CTX *delta, I8U offset);
 void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset);
 
-void RTC_timer_handler( void * p_context );
 void RTC_get_regular_time(I32U epoch, SYSTIME_CTX *t);
 I32U RTC_get_epoch_day_start(I32U past_days);
 

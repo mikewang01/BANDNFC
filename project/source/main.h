@@ -61,7 +61,10 @@
 #ifndef _CLING_PC_SIMULATION_
 #include "nrf_drv_twi.h"
 #include "nrf_adc.h"
+#include "uv_calib.h"
+#include "ble_db_discovery.h"
 #endif
+#include "uv.h"
 #include "touch.h"
 #include "butterworth.h"
 #include "ppg.h"
@@ -74,9 +77,6 @@
 #include "homekey.h"
 #include "Font.h"
 #include "ppg.h"
-#include "uv.h"
-#include "uv_calib.h"
-#include "ble_db_discovery.h"
 
 #define TWI_MASTER_UV       1
 #define TWI_MASTER_UICO     1
@@ -116,11 +116,10 @@ typedef struct tagCLING_TIME_CTX {
 
 	// System clock
 	I32U system_clock_in_sec;	// Sourced from RTC 
-	I32U rtc_tick_residual;
 	
 	// System clock interval
-	I32U sysclk_interval;
-	I32U sysclk_config_timestamp;
+	BOOLEAN operation_clk_enabled;
+	I32U operation_clk_start_in_ms;
 	
 } CLING_TIME_CTX;
 

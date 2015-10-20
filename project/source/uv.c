@@ -6,15 +6,17 @@
 
 static EN_STATUSCODE uv_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 {
+#ifndef _CLING_PC_SIMULATION_
+
 	I32U err_code;
 	const nrf_drv_twi_t twi = NRF_DRV_TWI_INSTANCE(1);
-	
+
 	if (pRegVal==NULL) return STATUSCODE_NULL_POINTER;
-	
+
 	if (!cling.system.b_twi_1_ON) {
 		GPIO_twi_enable(1);
 	}
-	
+
 	err_code = nrf_drv_twi_tx(&twi, (uv_I2C_ADDR>>1), &cmdID, 1, true);
 	if (err_code == NRF_SUCCESS) {
 		N_SPRINTF("[UV] Read TX PASS: ");
@@ -30,10 +32,15 @@ static EN_STATUSCODE uv_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 		N_SPRINTF("[UV] Read RX FAIL: ");
 		return STATUSCODE_FAILURE;
 	}
+#else
+	return STATUSCODE_SUCCESS;
+#endif
 }
 
 static EN_STATUSCODE uv_write_reg(I8U cmdID, I8U regVal)
 {
+#ifndef _CLING_PC_SIMULATION_
+
 	I32U err_code;
 	const nrf_drv_twi_t twi = NRF_DRV_TWI_INSTANCE(1);
 	I8U acData[2];
@@ -53,6 +60,9 @@ static EN_STATUSCODE uv_write_reg(I8U cmdID, I8U regVal)
 		N_SPRINTF("[UV] Write FAIL: 0x%02x  0x%02x", cmdID, regVal);
 		return STATUSCODE_FAILURE;
 	}	
+#else
+	return STATUSCODE_SUCCESS;
+#endif
 }
 
 /*------------ !!! BASIC SUBROUTINE FOR SI1132 DRIVER START !!! ------------*/
@@ -172,7 +182,6 @@ void UV_Init()
 	/* Set SI1132 autonomous mode. */
   uv_Disable_Sensor();
 //uv_ALS_Auto();
-//SYSCLK_timer_start();
 
 #if 0
   I8U vis_d0, vis_d1;
@@ -265,9 +274,15 @@ BOOLEAN uv_Measure()
 	uv_idx /= 10;
   uv->uv_index = (I8U)uv_idx;
 	
-	if (uv->uv_index > uv->max_uv)
+	if (uv->max_uv < uv->uv_index)
 		uv->max_uv = uv->uv_index;
 	
+	if (UI_is_idle()) {
+		uv->max_UI_uv = uv->uv_index;
+	} else {
+		if (uv->uv_index > uv->max_UI_uv)
+			uv->max_UI_uv = uv->max_uv;
+	}
   N_SPRINTF("%d    %d    %d", uv->uv_index, uv_idx, proxData);
 #endif
 
@@ -296,12 +311,6 @@ I8U UV_get_max_index_per_minute()
 	cling.uv.max_uv = cling.uv.uv_index;
 	
 	return max;
-}
-
-I8U UV_get_index()
-{
-	UV_CTX *uv = &cling.uv;
-	return uv->uv_index;
 }
 
 BOOLEAN _is_user_viewing_uv_index()

@@ -6,9 +6,10 @@
  ******************************************************************************/
 
 #include "main.h"
+#ifndef _CLING_PC_SIMULATION_
 
 #include "uicoTouch.h"
-
+#endif
 BOOLEAN TOUCH_new_gesture()
 {
 	return cling.touch.b_valid_gesture;
@@ -121,9 +122,6 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 			
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
-		// Start 20 ms timer for screen rendering
-		SYSCLK_timer_start();
-			
 		// Turn on OLED panel
 		if (!OLED_set_panel_on()) {
 			t->b_valid_gesture = TRUE;
@@ -175,9 +173,6 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 		
-		// Start 20 ms timer for screen rendering
-		SYSCLK_timer_start();
-		
 		// Turn on OLED panel
 		if (!OLED_set_panel_on()) {
 			t->b_valid_gesture = TRUE;
@@ -207,11 +202,11 @@ static void _skin_touch_processing(TOUCH_CTX *t, BOOLEAN b_skin_detected)
 		// skin touch
 		if (b_skin_detected) {
 			t->b_skin_touch = TRUE;
-			N_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
+			Y_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
 			B_SPRINTF("SKIN: ON");
 		} else {
 			t->b_skin_touch = FALSE;
-			N_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
+			Y_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
 			B_SPRINTF("SKIN: OFF");
 		}		
 }
@@ -237,12 +232,12 @@ void TOUCH_gesture_check(void)
 	// Check to see if the touch Interrupt pin is pulled down
 	int_pin = nrf_gpio_pin_read(GPIO_TOUCH_INT);           
 
-	if(int_pin)
+	if (int_pin)
 		return;
-
+	
 	// get gesture
 	//
-	N_SPRINTF("[TOUCH] Interrupt status (%d)", CLK_get_system_time());
+	Y_SPRINTF("[TOUCH] Interrupt status (%d): %d", CLK_get_system_time(), int_pin);
 	
 	//
 	// Gesture byte definition -
@@ -310,10 +305,15 @@ void TOUCH_init(void)
 	
 	Y_SPRINTF("[TOUCH] skin touched: %d", cling.touch.b_skin_touch);
 
-	// Configure power mode: 
-	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
-
 #endif
+}
+
+I8U TOUCH_get_skin_touch_time()
+{
+	I8U touch_time = cling.touch.skin_touch_time_per_minute;
+	
+	cling.touch.skin_touch_time_per_minute = 0;
+	return touch_time;
 }
 
 I8U TOUCH_get_skin_pad(void)

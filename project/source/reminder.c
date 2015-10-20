@@ -90,17 +90,7 @@ void REMINDER_set_next_reminder()
 			}
 		}
 	}
-	#if 0
-	
-	if (reminder_testing_flag) {
-		reminder_testing_flag = FALSE;
-		// for testing
-		b_found = TRUE;
-		hour = cling.time.local.hour;
-		minute = cling.time.local.minute;
-	}
-	#endif
-	
+
 	if (b_found) {
 		cling.reminder.b_valid = TRUE;
 		cling.reminder.hour = hour;
@@ -151,8 +141,13 @@ void REMINDER_state_machine()
 				// Reset vibration times
 				cling.reminder.vibrate_time = 0;
 				cling.reminder.second_vibrate_time = 0;
+
+				UI_turn_on_display(UI_STATE_REMINDER, 1000);
+
 			} else {
-				GPIO_vibrator_set(FALSE);
+				if (cling.notific.state == NOTIFIC_STATE_IDLE) {
+					GPIO_vibrator_set(FALSE);
+				}
 			}
 			break;
 		}
@@ -245,6 +240,8 @@ I8U REMINDER_get_time_at_index(I8U index)
 
 		cling.reminder.ui_hh = hh;
 		cling.reminder.ui_mm = mm;
+		
+		N_SPRINTF("[REMINDER] ui display: %d:%d", hh, mm);
 		
 		// In case that some rediculous number comes up, go reset
 	} else {

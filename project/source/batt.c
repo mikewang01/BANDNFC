@@ -178,10 +178,7 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 			
 			return FALSE;
 		}
-		
-		// Delete bond info
-		BTLE_delete_bond();
-		
+			
 		// Disconnect BLE if device is connected.
 		if (BTLE_is_connected()) {
 			Y_SPRINTF("[RTC] disconnect, unauthorized device");
@@ -213,7 +210,8 @@ static void _battery_adc_acquired(BATT_CTX *b, I32U t_curr)
 		b->b_initial_measuring = FALSE;
 		// No need to initialize battery level here as system restore its value from 
 		// critical area.
-		if (!LINK_is_authorized()) {
+		if ((!LINK_is_authorized()) || cling.batt.b_no_batt_restored) {
+			cling.batt.b_no_batt_restored = FALSE;
 			cling.system.mcu_reg[REGISTER_MCU_BATTERY] = b->battery_measured_perc;
 		}
 		
@@ -247,6 +245,7 @@ static void _battery_adc_acquired(BATT_CTX *b, I32U t_curr)
 static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 {
 	I32U t_diff;
+#ifndef _CLING_PC_SIMULATION_
 
 	N_SPRINTF("[BATT] --- adc idle---");
 	
@@ -351,6 +350,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 
 		Y_SPRINTF("[BATT] discharging start measureing ..."); 
 	}		
+#endif
 }
 
 BOOLEAN BATT_is_low_battery()
@@ -387,6 +387,8 @@ void BATT_monitor_state_machine()
 
 void BATT_start_first_measure()
 {
+#ifndef _CLING_PC_SIMULATION_
+
 	GPIO_vbat_adc_config();
 	cling.batt.volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_4);
 	
@@ -394,4 +396,5 @@ void BATT_start_first_measure()
 	cling.batt.adc_state = CHARGER_ADC_ACQUIRED;
 	
 	Y_SPRINTF("[BATT] start first measure");
+#endif
 }

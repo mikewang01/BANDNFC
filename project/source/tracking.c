@@ -243,15 +243,12 @@ static void _day_stat_reset()
 	cling.activity.workout_Calories_start = 0;
 	
 	// Reset activity count for the Day rollover
-	cling.activity.day.sleep = 0;
 	cling.activity.day.walking = 0;
 	cling.activity.day.running = 0;
 	cling.activity.day.calories = 0;
 	cling.activity.day.distance = 0;
 
 	// Reset stored activity data buffer that is used for minute-based activity calculation
-	cling.activity.day_stored.sleep = 0;
-	cling.activity.day_stored.walking = 0;
 	cling.activity.day_stored.running = 0;
 	cling.activity.day_stored.distance = 0;
 	cling.activity.day_stored.calories = 0;
@@ -410,7 +407,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				  (diff->sleep_state == SLP_STAT_SOUND) ||
 			    (diff->sleep_state == SLP_STAT_REM))
 			{
-				a->day.sleep += 60;
 				diff->activity_count = 0;
 			} else {
 				diff->activity_count = 50;
@@ -464,7 +460,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				(diff->sleep_state == SLP_STAT_SOUND) ||
 				(diff->sleep_state == SLP_STAT_REM))
 			{
-				a->day.sleep += 60;
 				a->sleep_by_noon += 60;
 				
 				// As we detect sleep state, adjust step detection threshold to low sensitivity
@@ -481,6 +476,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 {
 	I32U t_curr;
+	I8U touch_time;
 	
 	t_curr = CLK_get_system_time() - cling.activity.step_detect_ts;
 	
@@ -489,16 +485,33 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 		vital->heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
 		vital->skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
 	} else {
-		vital->skin_touch_pads = TOUCH_get_skin_pad();
+		touch_time = TOUCH_get_skin_touch_time();
+		
+		// Debouncing logic for skin touch detection
+		//
+		// Conditions:
+		//
+		// 1. Positive if band is currently touched
+		// 2. Positive if band is touched for more than 30 seconds in past minute
+		//
+		vital->skin_touch_pads = 0;
+		if (TOUCH_get_skin_pad())
+			vital->skin_touch_pads = 1;
+		else if (touch_time > TOUCH_DEBOUNCING_TIME_PER_MINUTE)
+			vital->skin_touch_pads = 1;
+		
+		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
 		
 		if (BATT_charging_det_for_sleep())
 			vital->skin_touch_pads = 0;
 		
 		// Make sure the device touches skin, otherwise, the number make no use
-		if (vital->skin_touch_pads == 0) {
-			vital->skin_temperature = 0;
-			vital->heart_rate = 0;
-			return;
+		if (vital->skin_touch_pads == 0)  {
+			if ((cling.sleep.state != SLP_STAT_LIGHT) && (cling.sleep.state != SLP_STAT_SOUND)) {
+				vital->skin_temperature = 0;
+				vital->heart_rate = 0;
+				return;
+			}
 		}
 		
 		vital->skin_temperature = cling.therm.current_temperature;
@@ -561,7 +574,7 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 		pminute->heart_rate = vital.heart_rate;
 		pminute->skin_touch_pads = vital.skin_touch_pads;
 #ifdef _ENABLE_UV_
-		pminute->uv_and_activity_type = (UV_get_index()+5)/10;
+		pminute->uv_and_activity_type = (cling.uv.max_uv+5)/10;
 		pminute->uv_and_activity_type &= 0x0f;
 #else
 		pminute->uv_and_activity_type = 0;
@@ -576,7 +589,7 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_TRACKING_CTX *diff)
 {
 	MINUTE_VITAL_CTX vital;
-	I32U t_diff, adj;
+	I32U adj;
 	I8U hr_diff;
 	I8U uv_integer;
 		
@@ -598,7 +611,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;
-	
+		
 	// Get the maximum UV in past minute as part of minute data
 #ifdef _ENABLE_UV_
 	uv_integer = (UV_get_max_index_per_minute()+5)/10;
@@ -692,12 +705,6 @@ void _update_minute_base(MINUTE_DELTA_TRACKING_CTX diff)
 	denormalized_stat = diff.calories;
 	denormalized_stat <<= 4;
 	a->day_stored.calories += denormalized_stat;
-	if ((diff.sleep_state == SLP_STAT_LIGHT) ||
-		  (diff.sleep_state == SLP_STAT_SOUND) ||
-	    (diff.sleep_state == SLP_STAT_REM))
-	{
-		a->day_stored.sleep += 60;
-	}
 }
 
 static void _logging_per_minute()
@@ -798,7 +805,7 @@ static void _logging_midnight_local()
 	dw_buf[0] |= previous_day.day;
 	
 	// Get other information
-	dw_buf[1] = cling.activity.day_stored.sleep;
+	dw_buf[1] = cling.activity.sleep_stored_by_noon;
 	dw_buf[2] = cling.activity.day_stored.walking+cling.activity.day_stored.running;
 	dw_buf[3] = cling.activity.day_stored.distance>>4;
 	dw_buf[4] = cling.activity.day_stored.calories>>4;
@@ -871,6 +878,7 @@ void TRACKING_data_logging()
 	if (cling.time.local_noon_updated) {
 		cling.time.local_noon_updated = FALSE;
 		N_SPRINTF("slepp by noon: %d", cling.activity.sleep_by_noon);
+		cling.activity.sleep_stored_by_noon = cling.activity.sleep_by_noon;
 		cling.activity.sleep_by_noon = 0;
 		SLEEP_init();
 	}
@@ -882,8 +890,51 @@ BOOLEAN TRACKING_is_not_active()
 	return cling.lps.b_low_power_mode;
 }
 
+void TRACKING_get_sleep_statistics(I8U index, I32U *value)
+{
+	I32U buf[16];
+	I8U *pbuf;
+	I32U pos;
+	I8U month, day;
+	SYSTIME_CTX delta;
+	BOOLEAN b_available = FALSE;
+	
+	if (cling.time.local.hour >= 12) {
+		index --;
+	}
+	
+	if (index == 0)  {
+		// Just return whatever the value that we stored
+		*value = cling.activity.sleep_stored_by_noon;
+		return;
+	}
+	
+	RTC_get_delta_clock_backward(&delta, index);
+	pbuf = (I8U *)buf;
+	for (pos = 0; pos < SYSTEM_DAYSTAT_SPACE_SIZE; pos+=64) {
+		FLASH_Read_App(SYSTEM_DAYSTAT_SPACE_START+pos, pbuf, 64);
+		
+		if (pbuf[0] == 0xff) {
+			break;
+		} else {
+			day = buf[0] & 0xff;
+			month = (buf[0]>>8) & 0xff;
+			if ((delta.month == month) && (delta.day == day)) {
+				b_available = TRUE;
+				break;
+			}
+		}
+	}
+	N_SPRINTF("[TRACKING] delta: %d, %d, index: %d", delta.month, delta.day, index);
+		
+	if (b_available) {
+		*value = buf[1];
+	} else {
+		*value = 0;
+	}
+}
 
-BOOLEAN TRACKING_get_activity(I8U index, I8U mode, I32U *value)
+void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 {
 	I32U buf[16];
 	I8U *pbuf;
@@ -918,6 +969,11 @@ BOOLEAN TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 		b_available = TRUE;
 
 	} else {
+		
+		if (mode == TRACKING_SLEEP) {
+			TRACKING_get_sleep_statistics(index, value);
+			return;
+		}
 		RTC_get_delta_clock_backward(&delta, index);
 		pbuf = (I8U *)buf;
 		for (pos = 0; pos < SYSTEM_DAYSTAT_SPACE_SIZE; pos+=64) {
@@ -965,7 +1021,6 @@ BOOLEAN TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 
 	}
 	
-	return b_available;
 }
 
 void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
@@ -1115,7 +1170,7 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 	}
 }
 
-I32U TRACKING_get_sleep_by_noon()
+I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day)
 {
 	I32U epoch_start = RTC_get_epoch_day_start(0);
 	I32U sleep_seconds = 0;
@@ -1123,11 +1178,16 @@ I32U TRACKING_get_sleep_by_noon()
 	I32U dw_buf[4];
 	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
 	I8U *pbuf = (I8U *)dw_buf;
-
-	if (cling.time.local.hour >= 12) {
-		epoch_start += (EPOCH_DAY_SECOND>>1);
-	} else {
+	
+	// Check whether we want to get previous 24 hours sleep data
+	if (b_previous_day) {
 		epoch_start -= (EPOCH_DAY_SECOND>>1);
+	} else {
+		if (cling.time.local.hour >= 12) {
+			epoch_start += (EPOCH_DAY_SECOND>>1);
+		} else {
+			epoch_start -= (EPOCH_DAY_SECOND>>1);
+		}
 	}
 	
 	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
@@ -1171,7 +1231,6 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	day_total->running = 0;
 	day_total->calories = 0;
 	day_total->distance = 0;
-	day_total->sleep = 0;
 	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
 		FLASH_Read_App(offset + SYSTEM_TRACKING_SPACE_START, pbuf, 16);
 		
@@ -1193,12 +1252,6 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 			day_total->running += minute->running;
 			day_total->distance += minute->distance;
 			day_total->calories += minute->calories;
-			if ((minute->sleep_state == SLP_STAT_LIGHT) ||
-				  (minute->sleep_state == SLP_STAT_SOUND) ||
-			    (minute->sleep_state == SLP_STAT_REM))
-			{
-				day_total->sleep += 60;
-			}
 		}
 		
 	}

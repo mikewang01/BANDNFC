@@ -14,7 +14,8 @@
 #include "pstorage.h"
 #include "ble_hci.h"
 #include "app_error.h"
-
+#include "hal.h"
+#include "ancs.h"
 #if defined ( __CC_ARM )
     #ifndef __ALIGN
         #define __ALIGN(x)      __align(x)                  /**< Forced aligment keyword for ARM Compiler */
@@ -2694,8 +2695,13 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
                 else
                 {
                     DM_LOG("[DM]: Security parameter request failed, reason 0x%08X.\r\n", err_code);
+									  #ifdef _ENABLE_ANCS_
+									 // if(err_code == DM_DEVICE_CONTEXT_FULL)
+                    HAL_ancs_delete_bond_info();
+									  #endif
                     event_result = err_code;
                     notify_app   = true;
+									
                 }
             }
             else
@@ -2745,7 +2751,7 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
             m_connection_table[index].state &= (~STATE_PAIRING);
             event.event_id                   = DM_EVT_SECURITY_SETUP_COMPLETE;
             notify_app                       = true;
-
+					
             if (p_ble_evt->evt.gap_evt.params.auth_status.auth_status != BLE_GAP_SEC_STATUS_SUCCESS)
             {
                 // Free the allocation as bonding failed.

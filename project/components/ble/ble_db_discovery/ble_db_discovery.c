@@ -772,12 +772,6 @@ uint32_t ble_db_discovery_init(void)
     return NRF_SUCCESS;
 }
 
-void  ble_db_discovery_clear_index(void)
-{
-    m_num_of_discoveries_made  = 0;
-    m_pending_usr_evt_index    = 0;
-}
-
 
 uint32_t ble_db_discovery_close()
 {

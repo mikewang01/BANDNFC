@@ -85,7 +85,6 @@ typedef struct tagMINUTE_DELTA_TRACKING_CTX {
 } MINUTE_DELTA_TRACKING_CTX;
 
 typedef struct tagDAY_TRACKING_CTX {
-	I32U sleep;
 	I32U walking;
 	I32U running;
 	I32U distance;
@@ -128,6 +127,7 @@ typedef struct tagTRACKING_CTX {
 
 	// Sleep by noon
 	I32U sleep_by_noon;
+	I32U sleep_stored_by_noon;
 	
 	// motion time stamp
 	I32U motion_ts;
@@ -168,9 +168,9 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute);
 
 void TRACKING_exit_low_power_mode(BOOLEAN b_force);
 void TRACKING_total_data_load_file(void);
-BOOLEAN TRACKING_get_activity(I8U index, I8U mode, I32U *value);
+void TRACKING_get_activity(I8U index, I8U mode, I32U *value);
 I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total);
-I32U TRACKING_get_sleep_by_noon(void);
+I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day);
 void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_enter_low_power_mode(void);

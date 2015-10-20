@@ -134,7 +134,10 @@ static void _update_level_1_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 	} else if (index == UI_DISPLAY_TRACKER_CALORIES) {
 		max_frame_num = FRAME_DEPTH_CALORIES;
 	} else if (index == UI_DISPLAY_SMART_REMINDER) {
+		if (cling.reminder.ui_alarm_on)
+			return;
 		max_frame_num = cling.reminder.total;
+		N_SPRINTF("[UI] max reminder num: %d", max_frame_num);
 	} else if (index == UI_DISPLAY_SMART_WEATHER) {
 		max_frame_num = FRAME_DEPTH_WEATHER;
 	} else if (index == UI_DISPLAY_SMART_INCOMING_MESSAGE) {
@@ -170,9 +173,9 @@ static void _update_level_1_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 	
 	// Read out reminder index from Flash
 	if (index == UI_DISPLAY_SMART_REMINDER) {
-			cling.ui.level_1_index = REMINDER_get_time_at_index(cling.ui.level_1_index);
+		cling.ui.level_1_index = REMINDER_get_time_at_index(cling.ui.level_1_index);
+		N_SPRINTF("[UI] new vertical index(Reminder): %d", cling.ui.level_1_index);
 	}
-	
 	
 	N_SPRINTF("[UI] new vertical index: %d", cling.ui.level_1_index);
 }
@@ -183,6 +186,15 @@ static void _operation_mode_switch(I8U gesture)
 	I8U index = u->frame_prev_idx;
 
 	if (gesture == TOUCH_FINGER_RIGHT){
+		
+		if (index == UI_DISPLAY_SMART_INCOMING_CALL) {
+			
+			// Stop vibration in incoming call state
+			cling.notific.state = NOTIFIC_STATE_IDLE;
+			GPIO_vibrator_set(FALSE);
+			return;
+		}
+		
 		if (index == UI_DISPLAY_STOPWATCH_START) {
 			cling.activity.workout_time_stamp_start = CLK_get_system_time();
 			cling.activity.workout_Calories_start = cling.activity.day.calories;
@@ -526,7 +538,9 @@ static I8U _ui_touch_sensing()
 	
 	if ((gesture >= TOUCH_SWIPE_LEFT) && (gesture <= TOUCH_BUTTON_SINGLE))
 	{
+		if (cling.reminder.state != REMINDER_STATE_IDLE) {
 			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+		}
 	}
 
 	// Operation mode update
@@ -802,7 +816,7 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		len = 0;
 	} else if (mode == UI_MIDDLE_MODE_UV_IDX) {
 #ifdef _ENABLE_UV_
-  	integer = UV_get_index();
+  	integer = cling.uv.max_UI_uv;
 		len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
 #endif
 	} else if (mode == UI_MIDDLE_MODE_SLEEP) {
@@ -824,12 +838,9 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		N_SPRINTF("[UI] smart message hit +++++");
 	} else if (mode == UI_MIDDLE_MODE_INCOMING_MESSAGE) {
 		Y_SPRINTF("[UI] Incoming message: %d", cling.ui.level_1_index);
-#ifdef _ENABLE_ANCS_
-		// Get incoming message application, index is updated to the last message
-		cling.ui.level_1_index = cling.ancs.message_total-1;
-#else
+
 		cling.ui.level_1_index = 0;
-#endif
+
 		len = NOTIFIC_get_app_name(cling.ui.level_1_index, (char *)string);
 		
 		if ((len > 14) && cling.ui.b_detail_page) {
@@ -842,7 +853,7 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		
 		len = 0;
 		b_more = TRUE;
-		b_center = false;
+		b_center = FALSE;
 	} else if (mode == UI_MIDDLE_MODE_APP_NOTIF) {
 		len = NOTIFIC_get_app_name(cling.ui.level_1_index, (char *)string);
 		Y_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.level_1_index, len, (char *)string);
@@ -857,14 +868,14 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		
 		len = 0;
 		b_more = TRUE;
-		b_center = false;
+		b_center = FALSE;
 	} else if (mode == UI_MIDDLE_MODE_DETAIL_NOTIF) {
 		NOTIFIC_get_app_message_detail(cling.ui.level_1_index, (char *)string);
 		_display_detail_2_row(string, cling.ui.level_2_index);
 		Y_SPRINTF("[UI] message detail: %d %d %s", cling.ui.level_1_index, cling.ui.level_2_index, (char *)string);
 		b_more = TRUE;
 		len = 0;
-		b_center = false;
+		b_center = FALSE;
 	} else if (mode == UI_MIDDLE_MODE_PHONE_FINDER) {
 		string[0] = ICON32_PHONE_FINDER_1;	
 		string[1] = ' ';
@@ -2626,6 +2637,7 @@ void UI_state_machine()
 		}
 		case UI_STATE_NOTIFIC:
 		{
+#ifndef _CLING_PC_SIMULATION_
 			if (u->state_init) {
 				u->state_init = FALSE;
 				if (cling.notific.cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)
@@ -2644,6 +2656,7 @@ void UI_state_machine()
 					}
 				}
 			}
+#endif
 			break;
 		}
 		case UI_STATE_LOW_POWER:
@@ -2726,7 +2739,7 @@ void UI_state_machine()
 					t_threshold *= 1000; // second -> milli-second
 				}
 			} else if (u->frame_index == UI_DISPLAY_TRACKER_UV_IDX) {
-				t_threshold += 2000;
+				t_threshold += 5000;
 			}
 			
 			// If we don't see any gesture in 4 seconds, dark out screen
@@ -2788,6 +2801,12 @@ void UI_state_machine()
 				u->level_1_index = 0;
 				u->true_display = FALSE;
 				u->b_detail_page = FALSE;
+				
+				// Reset UV index
+				cling.uv.max_UI_uv = 0;
+				
+				// Reset alarm clock flag
+				cling.reminder.ui_alarm_on = FALSE;
 
 				// Reset workout type
 				UI_reset_workout_mode();
@@ -2816,9 +2835,6 @@ void UI_state_machine()
 
 void UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 {
-	// Start 20 ms timer for screen rendering
-	SYSCLK_timer_start();
-	
 	// Turn on OLED panel
 	OLED_set_panel_on();
 	

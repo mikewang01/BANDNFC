@@ -133,6 +133,7 @@ BOOLEAN _is_user_viewing_skin_temp()
 
 void THERMISTOR_state_machine()
 {
+#ifndef _CLING_PC_SIMULATION_
 	THERMISTOR_CTX *t = &cling.therm;
 	
 	I32U t_curr, t_diff;
@@ -208,7 +209,7 @@ void THERMISTOR_state_machine()
 		default:
 			break;
 	}
-	
+#endif
 }
 
 BOOLEAN THERMISTOR_is_the_state(THERMISTOR_STATES state_to_check)

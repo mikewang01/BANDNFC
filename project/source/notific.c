@@ -27,7 +27,7 @@
 
 void NOTIFIC_stop_notifying()
 {
-	Y_SPRINTF("[NOTIFIC] Stop notifying");
+	N_SPRINTF("[NOTIFIC] Stop notifying");
 	cling.notific.state = NOTIFIC_STATE_IDLE;
 	GPIO_vibrator_set(FALSE);
 }
@@ -37,7 +37,17 @@ void NOTIFIC_stop_notifying()
 #define NOTIFIC_MULTI_REMINDER_IDLE_ALERT     3
 
 void NOTIFIC_start_notifying(I8U cat_id)
-{			
+{		
+#ifndef _CLING_PC_SIMULATION_
+
+	// Do not notify user if unit is not worn
+	if (!TOUCH_is_skin_touched())
+		return;
+	
+	// Do not notify user if unit is in sleep state
+	if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
+		return;
+
 	// Reset vibration times
 	cling.notific.vibrate_time = 0;
 	// The maximum vibration time
@@ -48,10 +58,11 @@ void NOTIFIC_start_notifying(I8U cat_id)
 	cling.notific.cat_id = cat_id;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	
-	Y_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
+	N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
 	
 	// Also, turn on screen
 	UI_turn_on_display(UI_STATE_NOTIFIC, 3000);
+#endif
 }
 
 void NOTIFIC_start_idle_alert()
@@ -61,7 +72,7 @@ void NOTIFIC_start_idle_alert()
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	//UI_turn_on_display(UI_STATE_IDLE, 3000);
 	
-	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+	N_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 }
 
 void NOTIFIC_state_machine()
@@ -81,7 +92,7 @@ void NOTIFIC_state_machine()
 		{
 			cling.notific.state = NOTIFIC_STATE_ON;
 			cling.notific.second_reminder_time = 0;
-			Y_SPRINTF("[NOTIFIC] second notif max: %d,", cling.notific.second_reminder_max);
+			N_SPRINTF("[NOTIFIC] second notif max: %d,", cling.notific.second_reminder_max);
 			break;
 		}
 		case NOTIFIC_STATE_ON:
@@ -112,7 +123,7 @@ void NOTIFIC_state_machine()
 					cling.notific.ts = t_curr;
 				} else {
 					cling.notific.state = NOTIFIC_STATE_ON;
-					Y_SPRINTF("[NOTIFIC] vibrator repeat, %d, %d", cling.notific.vibrate_time, t_curr);
+					N_SPRINTF("[NOTIFIC] vibrator repeat, %d, %d", cling.notific.vibrate_time, t_curr);
 				}
 			}
 			break;
@@ -122,44 +133,65 @@ void NOTIFIC_state_machine()
 			if (t_curr > (cling.notific.ts + NOTIFIC_MULTI_REMINDER_LATENCY)) {
 				if (cling.notific.second_reminder_time >= cling.notific.second_reminder_max) {
 					cling.notific.state = NOTIFIC_STATE_IDLE;
+					N_SPRINTF("[NOTIFIC] Notify second reminder over, idle - %d", cling.notific.second_reminder_time);
+					GPIO_vibrator_set(FALSE);
 				} else {
 					cling.notific.state = NOTIFIC_STATE_ON;
 					// Reset vibration times
 					cling.notific.vibrate_time = 0;
-					Y_SPRINTF("[NOTIFIC] Notify second reminder - %d", cling.notific.second_reminder_time);
+					N_SPRINTF("[NOTIFIC] Notify second reminder - %d", cling.notific.second_reminder_time);
 				}
 			}
 			break;
 		}
 		default:
+		{
+			N_SPRINTF("[NOTIFIC] Notify wrong state - %d", cling.notific.state);
+			cling.notific.state = NOTIFIC_STATE_IDLE;
+			GPIO_vibrator_set(FALSE);
 			break;
+		}
 	}
 }
 
-void NOTIFIC_smart_phone_notify(I8U mode, I8U id, I8U count)
+void NOTIFIC_smart_phone_notify(I8U* data)
 {
+	I8U mode = data[0];
+	I8U id = data[1];
+	I8U title_len, msg_len;
+	
+	title_len = data[2];
+	msg_len = data[3];
+	
+	if ((title_len + msg_len) > 120)
+		return;
+	
+	data[4+title_len+msg_len] = 0;
+	
 	if (mode == NOTIFIC_SMART_PHONE_NEW) {
 		// Inform NOTIFIC state machine to notify user
 		NOTIFIC_start_notifying(id);
-		Y_SPRINTF("NOTIFIC - SMART PHONE @ %d, %d, %d", id, count, mode);
+		
+	 if(cling.ancs.message_total >= 16) {
+			
+		 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+	 
+		 Y_SPRINTF("[ANCS] message is full, go erase the message space");
+
+		 cling.ancs.message_total = 0;
+	 }
+	 
+	 cling.ancs.message_total++;		
+		Y_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
+	 // title len, message len, ....
+		ANCS_nflash_store_one_message(data+2);
+		
 	} else if (mode == NOTIFIC_SMART_PHONE_DELETE) {
 		NOTIFIC_stop_notifying();
 	} else if (mode == NOTIFIC_SMART_PHONE_STOP) {
 		NOTIFIC_stop_notifying();
 	}
 }
-
-
-BOOLEAN NOTIFIC_is_new_message(void)
-{
-	
-#ifdef _ENABLE_ANCS_		
-	return cling.ancs.notf_updata;
-#else
-	return 0;
-#endif
-}
-
 
 I8U NOTIFIC_get_message_total(void)
 {
@@ -213,6 +245,9 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 		title_len = sprintf(app_name, "No message!");
 		return title_len;
 	}
+	
+	// Get the latest notification first.
+	index = cling.ancs.message_total - 1 - index;
 
 	// Get message title
 	addr_in=((index*256)+SYSTEM_NOTIFICATION_SPACE_START);
@@ -221,14 +256,17 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	
 	title_len =  pdata[0];
 	
+	if (title_len >= ANCS_SUPPORT_MAX_TITLE_LEN)
+		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+	
 	// Get the incoming message
 	memcpy(app_name,pdata+2,title_len);	
 	
 	app_name[title_len] = 0;		
 
-	N_SPRINTF("[NOTIFIC] get ancs title len  is :%d",title_len );	
+	N_SPRINTF("[NOTIFIC] get ancs title len :%d",title_len );	
 	
-	N_SPRINTF("[NOTIFIC] get ancs title string  is :%s",app_name );		
+	N_SPRINTF("[NOTIFIC] get ancs title string :%s",app_name );		
 	
 	return title_len;
 #else
@@ -276,6 +314,9 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 		title_len = sprintf(string, "No message!");
 		return title_len;
 	}
+	
+	// Get the latest notification first.
+	index = cling.ancs.message_total - 1 - index;
 
 	// First, read the first 128 bytes
 	addr_in=((index*256)+SYSTEM_NOTIFICATION_SPACE_START);
@@ -287,9 +328,14 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	
 	mes_offset = 1+1+title_len;
 	
+	//Currently only support 128 byte	
+	if(mes_len >= 127)
+	 mes_len=127;
+	
 	// if the overall length of message and title is less than 128 bytes
 	if (mes_len <= (128-mes_offset)) {
 		memcpy(string, pdata_1+mes_offset, mes_len);
+		string[mes_len] = 0;
 	} else {
 		addr_in+=128;
 		FLASH_Read_App(addr_in, pdata_2, 128);	
@@ -325,14 +371,13 @@ I8U NOTIFIC_get_callerID(char *string)
 
 	title_len= pdata[0];
 	
-	if (title_len >= 127)
-		title_len = 127;
+	if (title_len >= ANCS_SUPPORT_MAX_TITLE_LEN)
+		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
 
 	memcpy(string, pdata+2, title_len);		
 	string[title_len] = 0;
 
-	Y_SPRINTF("[NOTIFIC] len is :%d, %02x, %02x, %02x, %02x",title_len, pdata[0], pdata[1], pdata[2], pdata[3]);		
-	Y_SPRINTF("[NOTIFIC] get notf callerID string is :%s",string );
+	N_SPRINTF("[NOTIFIC] get notf callerID string is :%s",string );
 	
 	return title_len;	
 #else

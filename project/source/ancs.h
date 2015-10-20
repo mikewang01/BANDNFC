@@ -26,8 +26,16 @@
 
 #define _ENABLE_ANCS_
 
+#ifndef _CLING_PC_SIMULATION_
 #include "ble_ancs_c.h"
 #include "standard_types.h"
+
+#define   ANCS_ATTR_TITLE_FLAG       0
+#define   ANCS_ATTR_MESSAGE_FLAG     1
+
+#define   ANCS_FILTERING_OLD_MSG_DELAY_TIME    5        /*5s*///5000     /*5000ms*/
+#define   ANCS_SUPPORT_MAX_TITLE_LEN           64       /*64 byte*/
+#define   ANCS_SUPPORT_MAX_MESSAGE_LEN         192      /*192 byte*/
 
 //ANCS get message and store states 
 enum {
@@ -50,18 +58,21 @@ typedef struct tagANCS_CONTEXT {
 	BOOLEAN b_enabled;
 	
 	I8U state;
-  ble_ancs_c_t   m_ancs_c;              /**< Structure used to identify the Apple Notification Service Client. */
+  ble_ancs_c_t   m_ancs_c;                        /**< Structure used to identify the Apple Notification Service Client. */
 	ANCS_PACKET    pkt;
 	I8U            message_total;
 	BOOLEAN        ancs_attr_get_flag;
 	BOOLEAN        ancs_attr_store_flag;		
-	BOOLEAN        notf_updata;
+  dm_handle_t    m_peer_handle;                     /**< Identifies the peer that is currently connected. */
+  I8U            notif_index;
 } ANCS_CONTEXT;
 
 
 void ANCS_service_add(void);
-
+void ANCS_nflash_store_one_message(I8U *data);
 void ANCS_state_machine(void);
+#endif
+
 #endif // _ANCS_H__
 
 /** @} */

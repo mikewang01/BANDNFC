@@ -69,6 +69,7 @@ enum {
 	BTLE_DISCONN_REASON_USER_SLEEP,
 	BTLE_DISCONN_REASON_SYSTEM_SHUTDOWN,
 	BTLE_DISCONN_REASON_ANCS_DISC_FAIL,	
+	BTLE_DISCONN_REASON_ANCS_DELETE_BOND	
 };
 
 #define BLE_DISCONN_EVT_FACTORY_RESET   0x0001
@@ -136,7 +137,6 @@ uint32_t BTLE_device_manager_event_handler(dm_handle_t const * p_handle,
 void BTLE_reset_streaming(void);
 void BTLE_update_streaming_minute_entries(void);
 BOOLEAN BTLE_streaming_authorized(void);
-void BTLE_delete_bond(void);
 
 #endif // __BTLE_HEADER__
 /** @} */

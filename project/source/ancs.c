@@ -101,9 +101,9 @@ typedef struct
 
 
 
-static tx_message_t   m_tx_buffer[2]; //m_tx_buffer[TX_BUFFER_SIZE];       /**< Transmit buffer for messages to be transmitted to the Notification Provider. */
-static uint32_t       m_tx_insert_index = 0;                               /**< Current index in the transmit buffer where the next message should be inserted. */
-static uint32_t       m_tx_index        = 0;                               /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
+static tx_message_t   m_tx_buffer[3]; //m_tx_buffer[TX_BUFFER_SIZE];       /**< Transmit buffer for messages to be transmitted to the Notification Provider. */
+static uint8_t        m_tx_insert_index = 0;                               /**< Current index in the transmit buffer where the next message should be inserted. */
+static uint8_t        m_tx_index        = 0;                               /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
 
 static ble_ancs_c_service_t   m_service;                                   /**< Current service data. */
 static ble_ancs_c_t         * mp_ble_ancs;                                 /**< Pointer to the current instance of the ANCS client module. The memory for this is provided by the application.*/
@@ -130,8 +130,7 @@ typedef enum
 } parse_state_t;
 
 static parse_state_t         m_parse_state = COMMAND_ID;                                   /**< ANCS notification attribute parsing state. */
-static I8U                   ATTR_title_or_message_index=0; 
-
+static I8U                   title_or_message_index; 
 
 /**@brief 128-bit service UUID for the Apple Notification Center Service.
  */
@@ -273,7 +272,7 @@ static void tx_buffer_process(void)
 
 }
 
-static void _nflash_store_one_message(I8U *data)
+void ANCS_nflash_store_one_message(I8U *data)
 {
 	//use message 4k space from nflash
 	I32U addr=SYSTEM_NOTIFICATION_SPACE_START;
@@ -311,22 +310,28 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
              break;
 
         case NOTIFICATION_UID2:
-					   evt.attr.attr_len |= (data[i] << 8);
+					   evt.attr.notif_uid |= (data[i] << 8);
              m_parse_state = NOTIFICATION_UID3;
              break;
 
         case NOTIFICATION_UID3:
-             evt.attr.attr_len |= (data[i] << 8);
+             evt.attr.notif_uid |= (data[i] << 8);
              m_parse_state = NOTIFICATION_UID4;
              break;
 
         case NOTIFICATION_UID4:
-             evt.attr.attr_len |= (data[i] << 8);
+             evt.attr.notif_uid |= (data[i] << 8);
              m_parse_state = ATTRIBUTE_ID;
              break;
 
         case ATTRIBUTE_ID:
              evt.attr.attr_id = (ble_ancs_c_notif_attr_id_values_t)data[i];
+				     if((evt.attr.attr_id != BLE_ANCS_NOTIF_ATTR_ID_TITLE)&&(evt.attr.attr_id != BLE_ANCS_NOTIF_ATTR_ID_MESSAGE)){
+						 
+						 title_or_message_index = ANCS_ATTR_TITLE_FLAG;
+						 Y_SPRINTF("[ANCS] get attr id err :%d",evt.attr.attr_id);						  
+						 return;
+						 }
              m_parse_state = ATTRIBUTE_LEN1;
              break;
 
@@ -337,33 +342,35 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
 
         case ATTRIBUTE_LEN2:
              evt.attr.attr_len |= (data[i] << 8);
-				     if(ATTR_title_or_message_index == 0){
+				     if(title_or_message_index == ANCS_ATTR_TITLE_FLAG){
 
-             if((I8U)evt.attr.attr_len > 64){
+               if((I8U)evt.attr.attr_len > 64){
 
-							 N_SPRINTF("[ANCS] get title len overstep the boundary and parse err");
-						   return;
-						 }							 
-					   cling.ancs.pkt.title_len=(I8U)evt.attr.attr_len;
-						 ptr = cling.ancs.pkt.buf;
-	           N_SPRINTF("[ANCS] get attr title len  :%d",evt.attr.attr_len );	
+							  N_SPRINTF("[ANCS] get title len overstep the boundary and parse err");
+						    return;
+						   }	
+								
+					     cling.ancs.pkt.title_len=(I8U)evt.attr.attr_len;
+						   ptr = cling.ancs.pkt.buf;
+	             N_SPRINTF("[ANCS] get attr title len  :%d",evt.attr.attr_len );	
 						}
 						else{
 							
                if((I8U)evt.attr.attr_len > 164){
-
+								 
+                 title_or_message_index = ANCS_ATTR_TITLE_FLAG;
 							   N_SPRINTF("[ANCS] get message len overstep the boundary and parse err");
 						     return;
-						   }							
-						 cling.ancs.pkt.message_len=(I8U)evt.attr.attr_len;
-						 ptr = &cling.ancs.pkt.buf[cling.ancs.pkt.title_len];	
-             N_SPRINTF("[ANCS] get attr message len  :%d",evt.attr.attr_len );							
+						   }	
+							 
+						   cling.ancs.pkt.message_len=(I8U)evt.attr.attr_len;
+						   ptr = &cling.ancs.pkt.buf[cling.ancs.pkt.title_len];	
+               N_SPRINTF("[ANCS] get attr message len  :%d",evt.attr.attr_len );							
 						}
             m_parse_state = ATTRIBUTE_READY;
 
             buff_idx = 0;
             current_len = 0;							
-
             break;
 
         case ATTRIBUTE_READY:
@@ -372,18 +379,14 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
 
              if (current_len == evt.attr.attr_len)
              {
-                if(ATTR_title_or_message_index == 0){
+                if(title_or_message_index == ANCS_ATTR_TITLE_FLAG){
 								
-									cling.ancs.pkt.buf[cling.ancs.pkt.title_len]=0;
-									N_SPRINTF("[ANCS] get attr title data :%s",(char *)cling.ancs.pkt.buf);	
-								  ATTR_title_or_message_index=1;
+								  title_or_message_index=ANCS_ATTR_MESSAGE_FLAG;
 									m_parse_state = ATTRIBUTE_ID;
 								}
                 else {
 									
-									cling.ancs.pkt.buf[cling.ancs.pkt.title_len+cling.ancs.pkt.message_len]=0;
-								  ATTR_title_or_message_index=0;
-			            N_SPRINTF("[ANCS] get attr message data:%s",(char*)&cling.ancs.pkt.buf[cling.ancs.pkt.title_len]);		
+								  title_or_message_index = ANCS_ATTR_TITLE_FLAG;	
 								  m_parse_state = COMMAND_ID;
 								  cling.ancs.ancs_attr_store_flag=TRUE;
 									return;
@@ -476,7 +479,6 @@ static void on_evt_gattc_notif(ble_ancs_c_t * p_ancs, const ble_evt_t * p_ble_ev
     if (p_notif->handle == notif_handle_value)
 		{
 			  N_SPRINTF("[ANCS] get notif source len is :%d",p_notif->len);
-        ATTR_title_or_message_index=0;
 			  BLE_UUID_COPY_INST(m_ancs_evt.uuid, m_service.notif_source.uuid);
         parse_notif(p_ancs, &m_ancs_evt,p_notif->data,p_notif->len);
     }
@@ -629,7 +631,8 @@ uint32_t ble_ancs_c_data_source_notif_disable(void)
 
 uint32_t ble_ancs_get_notif_attrs( const uint32_t       p_uid)
 {
-	  I16U len=0;
+	  I16U title_max_len=0;
+	  I16U message_max_len=0;	
     tx_message_t * p_msg;
     uint32_t    index    = 0;
  
@@ -645,27 +648,27 @@ uint32_t ble_ancs_get_notif_attrs( const uint32_t       p_uid)
     p_msg->req.write_req.gattc_params.offset   = 0;
     p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
 
-    //Encode Command ID.
+    //Command ID.
     p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_COMMAND_ID_GET_NOTIF_ATTRIBUTES;
     
     //Encode Notification UID.
     index += uint32_encode(p_uid, &p_msg->req.write_req.gattc_value[index]);
 	
-    //Encode Attribute ID.
+    //Attribute ID.
 	  p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_NOTIF_ATTR_ID_TITLE;
 		
 		//MAX title len
-		len=64;
-	  p_msg->req.write_req.gattc_value[index++] = (uint8_t) (len);
-    p_msg->req.write_req.gattc_value[index++] = (uint8_t) (len >> 8);
+		title_max_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+	  p_msg->req.write_req.gattc_value[index++] = (uint8_t) (title_max_len);
+    p_msg->req.write_req.gattc_value[index++] = (uint8_t) (title_max_len >> 8);
 
     //Encode Attribute ID.
 	  p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_NOTIF_ATTR_ID_MESSAGE;
 	 
 	  //MAX message len
-	  len=192;
-	  p_msg->req.write_req.gattc_value[index++] = (uint8_t) (len);
-    p_msg->req.write_req.gattc_value[index++] = (uint8_t) (len >> 8); 
+	  message_max_len = ANCS_SUPPORT_MAX_MESSAGE_LEN;
+	  p_msg->req.write_req.gattc_value[index++] = (uint8_t) (message_max_len);
+    p_msg->req.write_req.gattc_value[index++] = (uint8_t) (message_max_len >> 8); 
 	 
     p_msg->req.write_req.gattc_params.len = index;
     p_msg->conn_handle                    = cling.ble.conn_handle;
@@ -685,6 +688,7 @@ uint32_t ble_ancs_c_request_attrs(const ble_ancs_c_evt_notif_t  notif)
     err_code = ble_ancs_verify_notification_format(notif);
     if (err_code != NRF_SUCCESS)
     {
+			  Y_SPRINTF("[ANCS] verify notification format failed ");	
         return err_code;
     }
 
@@ -747,29 +751,38 @@ static void on_ancs_c_evt(ble_ancs_c_evt_t * p_evt)
     {
         case BLE_ANCS_C_EVT_DISCOVER_COMPLETE:
 				    {
-              Y_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");
-							  apple_notification_setup();
-							  ATTR_title_or_message_index=0;
-						    ancs_timer = CLK_get_system_time();
-             						
+              N_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");
+							
+							apple_notification_setup();
+							
+							title_or_message_index=ANCS_ATTR_TITLE_FLAG;
+						  //ancs_timer = CLK_get_system_time();
+               ancs_timer = cling.time.system_clock_in_sec;						
 						}
             break;
 
         case BLE_ANCS_C_EVT_NOTIF:
-				    {			
+				    {	
+
 							#ifdef _ENABLE_UART_
 							notif_print(&p_evt->notif);	
               #endif	
-		          ancs_t_curr = CLK_get_system_time();
+		          //ancs_t_curr = CLK_get_system_time();
+							ancs_t_curr = cling.time.system_clock_in_sec;
+							
 		          ancs_t_diff = (ancs_t_curr - ancs_timer);
 							
-		          if (ancs_t_diff>4000) {
+		          if (ancs_t_diff >= ANCS_FILTERING_OLD_MSG_DELAY_TIME) {
 								
 								if(p_evt->notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_ADDED){
-										
-								ancs_notif=p_evt->notif;
 									
-							  cling.ancs.ancs_attr_get_flag=TRUE;
+									cling.ancs.notif_index++;		
+                  if(cling.ancs.notif_index >= 4)
+	                cling.ancs.notif_index=1;
+										
+								  ancs_notif=p_evt->notif;
+									
+							    cling.ancs.ancs_attr_get_flag=TRUE;
              															
 								}
 							}												
@@ -780,11 +793,13 @@ static void on_ancs_c_evt(ble_ancs_c_evt_t * p_evt)
             // ANCS not found.
 				    N_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
 			
-				    if(BTLE_is_connected()){
+				    if (cling.gcp.host_type == HOST_TYPE_IOS) {
 							
-							BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);	
-						}
-         
+				      if(BTLE_is_connected()){
+							
+						  	BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);	
+						  }
+					  }
             break;
 
         default:
@@ -826,23 +841,52 @@ void ANCS_service_add(void)
     APP_ERROR_CHECK(err_code);
 }
 
-void _ancs_get_attr_pro(void)
+static void _ancs_get_attr_pro(void)
 {
-	I32U err_code;
-	N_SPRINTF("[ANCS] start get attr message  ... ");		
+	I32U    t_diff, curr_2, t_prev, curr_3;
+	N_SPRINTF("[ANCS] start get one attr message  index :%d ",cling.ancs.notif_index);		
 	
-	err_code = ble_ancs_c_request_attrs(ancs_notif);
+	//Each message interval greater than 800 ms
 	
-	if(err_code==NRF_SUCCESS)				
-	Y_SPRINTF("[ANCS] start get attr message successed ... ");			
+	//the first messaage
+	if(cling.ancs.notif_index == 1){
+		
+    t_prev = CLK_get_system_time();
 	
+	  ble_ancs_c_request_attrs(ancs_notif);		
+	}
+	
+	//the second messaage
+	else if(cling.ancs.notif_index == 2){
+				
+		curr_2 = CLK_get_system_time();
+		t_diff= curr_2 - t_prev;
+		
+		if(t_diff >= 800){
+	   ble_ancs_c_request_attrs(ancs_notif);
+	  }		
+	}
+	
+	//the third messaage
+	else if(cling.ancs.notif_index == 3){
+		
+	  curr_3 = CLK_get_system_time();
+		t_diff= curr_3 - curr_2;
+		
+		if(t_diff >= 800){
+	   ble_ancs_c_request_attrs(ancs_notif);
+	  }		
+	}
+	else{
+	
+    cling.ancs.notif_index = 0;		
+	}
 }
 
-void _ancs_store_attr_pro(void)
+static void _ancs_store_attr_pro(void)
 {
 	
-		 Y_SPRINTF("[ANCS] start store attr message to nflash ... ");							
-		 cling.ancs.notf_updata=TRUE;
+		 N_SPRINTF("[ANCS] start store attr message to nflash ... ");							
 			
 		 // when a new notification message arrives, start notification state machine
 		 NOTIFIC_start_notifying(ancs_notif.category_id);
@@ -859,7 +903,7 @@ void _ancs_store_attr_pro(void)
 		 cling.ancs.message_total++;		
 		 Y_SPRINTF("[ANCS] message total is :%d ",cling.ancs.message_total);
 
-		_nflash_store_one_message((I8U *)&cling.ancs.pkt);
+		ANCS_nflash_store_one_message((I8U *)&cling.ancs.pkt);
 		 	 	
 }
 
@@ -876,7 +920,7 @@ void ANCS_state_machine(void)
 
     if (id_mask & cling.ancs.supported_categories) {
 			
-		_ancs_get_attr_pro();
+		  _ancs_get_attr_pro();
 			
 		}
 		

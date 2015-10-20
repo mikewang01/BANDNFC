@@ -40,7 +40,7 @@
 #ifndef BLE_ANCS_C_H__
 #define BLE_ANCS_C_H__
 
-
+#ifndef _CLING_PC_SIMULATION_
 #include "ble_types.h"
 #include "ble_srv_common.h"
 #include "device_manager.h"
@@ -300,6 +300,7 @@ uint32_t ble_ancs_c_data_source_notif_disable(void);
  * @retval NRF_SUCCESS If all operations were successful. Otherwise, an error code is returned.
  */
 uint32_t ble_ancs_c_request_attrs(const ble_ancs_c_evt_notif_t  p_notif);
+#endif
 
 #endif // BLE_ANCS_C_H__
 

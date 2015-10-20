@@ -206,8 +206,8 @@ void _power_manager_process(void)
 {
 	I32U err_code;
 	
-	// Turn off system clock also
-	RTC_stop();
+	// Turn off operation clock also
+	RTC_stop_operation_clk();
 
 	// If there is a pending packet, go straight out
 	if (cling.gcp.b_new_pkt)
@@ -313,6 +313,10 @@ static void _system_startup()
 	
 	// UI init
 	UI_init();
+	
+	// Configure power mode: 
+	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
+
 }
 
 /**@brief Function for application main entry.
@@ -361,8 +365,7 @@ int main(void)
 	_system_startup();
 	
 	Y_SPRINTF("[MAIN] Entering main loop");
-	
-		
+
 	// Enter main loop.
 	while (LOOP_FOREVER)
 	{

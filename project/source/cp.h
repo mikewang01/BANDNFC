@@ -106,6 +106,12 @@ enum {
 	CP_TX_PACKET_PENDING_ACK,
 };
 
+enum {
+	HOST_TYPE_NONE,
+	HOST_TYPE_IOS,
+	HOST_TYPE_ANDROID
+};
+
 typedef struct tagCP_TX_STREAMING_CTX {
 	I32U packet_tx_time;
 	BOOLEAN pending;
@@ -176,6 +182,9 @@ typedef struct tagCP_CTX {
 	
 	I8U pkt_buff[22];
 	BOOLEAN b_new_pkt;
+	
+	// Host type
+	I8U host_type;
 
 } CP_CTX;
 

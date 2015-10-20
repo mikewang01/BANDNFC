@@ -45,6 +45,7 @@ typedef struct tagBATT_CTX {
 	I16U shut_down_time;
 	I8U battery_measured_perc;
 	BOOLEAN b_initial_measuring;
+	BOOLEAN b_no_batt_restored;
 	
 	// charging detection
 	I8U non_charging_accumulated_active_sec;
