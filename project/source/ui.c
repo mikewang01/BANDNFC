@@ -887,12 +887,16 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		
 		if (cling.reminder.total>0) {
 			
-			if (cling.reminder.ui_hh == 0xff || cling.reminder.ui_mm == 0xff || cling.reminder.ui_hh >= 24 || cling.reminder.ui_mm >= 60) {
-				len = sprintf((char *)string, "0:00");
-			} else {
+			if (cling.reminder.ui_alarm_on) {
 				len = sprintf((char *)string, "%d:%02d", cling.reminder.ui_hh, cling.reminder.ui_mm);
+			} else {
+				
+				if (cling.reminder.ui_hh == 0xff || cling.reminder.ui_mm == 0xff || cling.reminder.ui_hh >= 24 || cling.reminder.ui_mm >= 60) {
+					len = sprintf((char *)string, "0:00");
+				} else {
+					len = sprintf((char *)string, "%d:%02d", cling.reminder.ui_hh, cling.reminder.ui_mm);
+				}
 			}
-			
 		} else {
 				len = sprintf((char *)string, "0:00");
 		}
@@ -1320,6 +1324,9 @@ static void _right_row_render(I8U mode)
 	if (mode == UI_BOTTOM_MODE_NONE) {
 	} else if (mode == UI_BOTTOM_MODE_2DIGITS_INDEX) {
 
+		if (cling.reminder.ui_alarm_on)
+			return;
+		
 		len = sprintf((char *)string, "%02d", cling.ui.level_1_index);
 		//FONT_load_characters(cling.ui.p_oled_up+(120-len*6), (char *)string, 8, FALSE);
 		FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, FALSE);

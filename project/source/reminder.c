@@ -141,7 +141,7 @@ void REMINDER_state_machine()
 				// Reset vibration times
 				cling.reminder.vibrate_time = 0;
 				cling.reminder.second_vibrate_time = 0;
-
+				cling.reminder.ui_alarm_on = TRUE;
 				UI_turn_on_display(UI_STATE_REMINDER, 1000);
 
 			} else {
