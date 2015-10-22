@@ -509,7 +509,7 @@ void PPG_state_machine()
 			
 			h->m_no_skin_touch_in_s = t_sec;
 			
-		  SYSCLK_timer_start();
+		  RTC_start_operation_clk();
 		  if (h->sample_ready) {
 			  h->sample_ready = FALSE;
 				N_SPRINTF("[PPG] wearing confirmed, %d, %d", t_sec, h->m_measuring_timer_in_s);
@@ -549,7 +549,8 @@ void PPG_state_machine()
 				// If user is asleep, we reduce the duty cycle by 2
 				if ((cling.sleep.state == SLP_STAT_LIGHT) || 
 						(cling.sleep.state == SLP_STAT_SOUND) || 
-						(cling.sleep.state == SLP_STAT_REM)) {
+						(cling.sleep.state == SLP_STAT_REM)) 
+				{
 					t_threshold = cling.user_data.ppg_night_interval>>10;
 //        t_threshold = 1800;
 					N_SPRINTF("[PPG] sleeping mode: %d", t_threshold);

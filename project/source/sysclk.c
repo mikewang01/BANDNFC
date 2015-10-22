@@ -13,9 +13,6 @@
 
 #include "standards.h"
 
-#define APP_TIMER_MAX_TIMERS                 4                                          /**< Maximum number of simultaneously created timers. */
-#define APP_TIMER_OP_QUEUE_SIZE              4                                          /**< Size of timer operation queues. */
-
 #ifdef _CLING_PC_SIMULATION_
 I32U sim_tick_acc = 0;
 void SYSCLK_update_tick(void)
@@ -50,33 +47,5 @@ I32U SYSCLK_GetFineTime(void)
 	return 0;
 #endif
 }
-
-/**@brief Function for the Timer initialization.
- *
- * @details Initializes the timer module. This creates and starts application timers.
- */
-void SYSCLK_Init(void)
-{
-#ifndef _CLING_PC_SIMULATION_
-	
-	// Initialize timer module.
-	APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
-
-	// RTC initialization, it does not actually START until valid time is written to it.
-	RTC_Init(); 
-#endif
-}
-
-/**@brief Function for starting application timers.
- */
-void SYSCLK_timer_start(void)
-{
-#ifndef _CLING_PC_SIMULATION_
-	// Start application timers
-	N_SPRINTF("[SYSCLK] RTC start 20ms, %d ", CLK_get_system_time());
-	RTC_start_operation_clk();
-#endif
-}
-
 
 /** @} */

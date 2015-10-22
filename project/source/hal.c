@@ -109,8 +109,9 @@ static dm_application_instance_t             m_app_handle;                      
 static ble_gap_adv_params_t                  m_adv_params;                              /**< Parameters to be passed to the stack when starting advertising. */
 #endif
 
-#ifdef _ENABLE_ANCS_
+static dm_handle_t               m_peer_handle;                            /**< Identifies the peer that is currently connected. */
 
+#ifdef _ENABLE_ANCS_
 static  ble_db_discovery_t        m_ble_db_discovery;                       /**< Structure used to identify the DB Discovery module. */
 static  app_timer_id_t            m_ancs_pair_timer_id;                     /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
 static  ble_uuid_t m_adv_uuids[] = {{ANCS_UUID_SERVICE,BLE_UUID_TYPE_VENDOR_BEGIN}};  /**< Universally unique service identifiers. */
@@ -147,7 +148,8 @@ static void sec_req_timeout_handler(void * p_context)
 
 	if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID)
 	{
-		dm_security_status_req(&cling.ancs.m_peer_handle, &status);
+		err_code=dm_security_status_req(&m_peer_handle, &status);
+		APP_ERROR_CHECK(err_code);
 		
 		if (status == NOT_ENCRYPTED){
 			
@@ -159,20 +161,6 @@ static void sec_req_timeout_handler(void * p_context)
 		 }
 							
 	}
-}
-
-
-void HAL_ancs_discovery_start(void)
-{
-	I32U err_code;
-		
-  err_code=ble_db_discovery_start(&m_ble_db_discovery,cling.ble.conn_handle);
-	
-	//Client procedure already in progress.
-	if(err_code == NRF_ERROR_BUSY)
-	return;
-	
-	APP_ERROR_CHECK(err_code);
 }
 
 
@@ -199,15 +187,6 @@ static void _ancs_service_discovery_init(void)
 }
 
 
-void HAL_ancs_pairing_start(void)
-{
-  I32U err_code;
-	err_code      = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);
-	APP_ERROR_CHECK(err_code);
-
-}
-
-
 void HAL_ancs_delete_bond_info(void)
 {
 
@@ -219,8 +198,49 @@ void HAL_ancs_delete_bond_info(void)
 }
 
 
-
 #endif
+
+static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
+                                           dm_event_t const  * p_event,
+                                           ret_code_t        event_result)
+{
+    uint32_t err_code;
+    APP_ERROR_CHECK(event_result);
+	
+    switch(p_event->event_id)
+    {
+
+        case DM_EVT_LINK_SECURED:
+					  #ifdef _ENABLE_ANCS_
+            if (cling.gcp.host_type == HOST_TYPE_IOS) {		
+							
+				        ble_db_discovery_open();	
+	
+                err_code=ble_db_discovery_start(&m_ble_db_discovery,cling.ble.conn_handle);
+	
+	              APP_ERROR_CHECK(err_code);
+						}
+				    #endif
+						break;
+
+        case DM_EVT_CONNECTION:
+					   m_peer_handle = (*p_handle);
+					   #ifdef _ENABLE_ANCS_
+				     if (cling.gcp.host_type == HOST_TYPE_IOS) {	
+
+							 	err_code = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);
+	              APP_ERROR_CHECK(err_code);
+						 }
+				     #endif
+					  break;
+
+        default:
+            break;
+    }
+		
+    return NRF_SUCCESS;
+}
+
 
 void HAL_disconnect_for_fast_connection()
 {
@@ -671,7 +691,7 @@ void HAL_device_manager_init(BOOLEAN b_delete)
     register_param.sec_param.oob          = SEC_PARAM_OOB;
     register_param.sec_param.min_key_size = SEC_PARAM_MIN_KEY_SIZE;
     register_param.sec_param.max_key_size = SEC_PARAM_MAX_KEY_SIZE;
-    register_param.evt_handler            = BTLE_device_manager_event_handler;
+    register_param.evt_handler            = _device_manager_evt_handler;
     register_param.service_type           = DM_PROTOCOL_CNTXT_GATT_SRVR_ID;
 
     err_code = dm_register(&m_app_handle, &register_param);
@@ -699,7 +719,7 @@ static void _ble_init()
 	
 	_ble_stack_init();
 
-	SYSCLK_Init(); 
+	RTC_Init(); 
 #ifdef _ENABLE_ANCS_	
 	 _ancs_service_discovery_init();
 #endif

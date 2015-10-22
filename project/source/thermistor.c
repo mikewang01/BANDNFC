@@ -2,7 +2,7 @@
 #include "main.h"
 
 #define SKIN_TEMPERATURE_MEASURING_PERIOD_FOREGROUND  2
-#define SKIN_TEMPERATURE_MEASURING_PERIOD_BACKGROUND  600
+#define SKIN_TEMPERATURE_MEASURING_PERIOD_BACKGROUND  900
 
 static void _calc_temperature()
 {
@@ -153,13 +153,15 @@ void THERMISTOR_state_machine()
 		}
 	  case THERMISTOR_STAT_DUTY_ON:
 		{
+			// Start 50ms operation clock
+		  RTC_start_operation_clk();
 			GPIO_therm_power_on();
 			t->measure_timebase = cling.time.system_clock_in_sec;
 			t->state = THERMISTOR_STAT_MEASURING;
 			t->power_on_timebase = t_curr;
 			// Configure ADC
 			GPIO_therm_adc_config();
-			N_SPRINTF("[THERM] duty on");
+			Y_SPRINTF("[THERM] duty on");
 			break;
 		}
 		case THERMISTOR_STAT_MEASURING:
@@ -168,15 +170,15 @@ void THERMISTOR_state_machine()
 			//
 			// The actual measuring takes about 7 ms to finish
 			if (t_curr > (t->power_on_timebase + THERMISTOR_POWER_SETTLE_TIME_MS)) {
-				N_SPRINTF("[THERM] therm measuring at %d ", CLK_get_system_time());
+				Y_SPRINTF("[THERM] therm measuring at %d ", CLK_get_system_time());
 				cling.therm.therm_volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_6);
-				N_SPRINTF("[THERM] power measuring ");
+				Y_SPRINTF("[THERM] power measuring ");
 				cling.therm.power_volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_2);
 				//t->state = THERMISTOR_STAT_START_THERM_PIN_MEASURING;
 				t->state = THERMISTOR_STAT_DUTY_OFF;
 				GPIO_therm_power_off();
 				t->b_start_adc = TRUE;
-				N_SPRINTF("[THERM] adc measured at(%d): %d,%d", CLK_get_system_time(), cling.therm.therm_volts_reading, cling.therm.power_volts_reading);
+				Y_SPRINTF("[THERM] adc measured at(%d): %d,%d", CLK_get_system_time(), cling.therm.therm_volts_reading, cling.therm.power_volts_reading);
   			_calc_temperature();
 			}
 			N_SPRINTF("[THERM] therm pin turn on adc");
@@ -198,10 +200,10 @@ void THERMISTOR_state_machine()
 					N_SPRINTF("[THERM] duty off -> ON, view screen");
 	  		}
 	  	} else {
-					N_SPRINTF("[THERM] duty off normal-> %d, %d", t_diff, cling.user_data.skin_temp_day_interval);
+				N_SPRINTF("[THERM] duty off normal-> %d, %d", t_diff, cling.user_data.skin_temp_day_interval);
     		if ( t_diff >  SKIN_TEMPERATURE_MEASURING_PERIOD_BACKGROUND ) {
 					t->state = THERMISTOR_STAT_DUTY_ON;
-					N_SPRINTF("[THERM] duty off -> ON, normal");
+					Y_SPRINTF("[THERM] duty off -> ON, normal: %d", t_diff);
 	  		}
 	  	}
 	  	break;

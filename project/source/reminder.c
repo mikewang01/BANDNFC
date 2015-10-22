@@ -129,7 +129,7 @@ void REMINDER_state_machine()
 
 	if (cling.reminder.state != REMINDER_STATE_IDLE) {
 		// Start 20 ms timer 
-		SYSCLK_timer_start();
+		RTC_start_operation_clk();
 	}
 	
 	switch (cling.reminder.state) {

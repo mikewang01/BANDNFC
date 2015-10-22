@@ -129,11 +129,6 @@ BOOLEAN BTLE_is_advertising(void);
 BOOLEAN BTLE_is_idle(void);
 void BTLE_execute_adv(BOOLEAN b_fast);
 BOOLEAN BTLE_is_streaming_enabled(void);
-#ifndef _CLING_PC_SIMULATION_
-uint32_t BTLE_device_manager_event_handler(dm_handle_t const * p_handle,
-                                           dm_event_t const  * p_event,
-                                           ret_code_t        event_result);
-#endif
 void BTLE_reset_streaming(void);
 void BTLE_update_streaming_minute_entries(void);
 BOOLEAN BTLE_streaming_authorized(void);

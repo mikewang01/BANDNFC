@@ -146,7 +146,7 @@ BOOLEAN OLED_set_panel_on()
 	CLING_OLED_CTX *o = &cling.oled;
 
 	// Start 20 ms timer for screen rendering
-	SYSCLK_timer_start();
+	RTC_start_operation_clk();
 	
 	// We are about to turn on OLED, if BLE is in idle mode, we should start advertising
 	if (BTLE_is_idle()) {
@@ -197,7 +197,7 @@ void OLED_state_machine(void)
 	
 	if (o->state != OLED_STATE_IDLE) {
 		// Start system timer
-		SYSCLK_timer_start();
+		RTC_start_operation_clk();
 	}
 
 	switch (o->state) {

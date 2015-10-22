@@ -772,6 +772,12 @@ uint32_t ble_db_discovery_init(void)
     return NRF_SUCCESS;
 }
 
+void ble_db_discovery_open(void)
+{
+    m_num_of_handlers_reg      = 1;
+    m_initialized              = true;
+}
+
 
 uint32_t ble_db_discovery_close()
 {

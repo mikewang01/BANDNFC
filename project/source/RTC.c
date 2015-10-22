@@ -9,6 +9,10 @@
 #include "standards.h"
 #include "main.h"
 
+
+#define APP_TIMER_MAX_TIMERS                 4                                          /**< Maximum number of simultaneously created timers. */
+#define APP_TIMER_OP_QUEUE_SIZE              4                                          /**< Size of timer operation queues. */
+
 #ifndef _CLING_PC_SIMULATION_
 static app_timer_id_t								m_rtc_timer_id; /**< 1 sec based timer. >**/
 static app_timer_id_t								m_operation_timer_id; /**< 1 sec based timer. >**/
@@ -120,6 +124,9 @@ EN_STATUSCODE RTC_Init(void)
 #ifndef _CLING_PC_SIMULATION_
 	uint32_t err_code;
 	
+	// Initialize timer module.
+	APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
+
 	err_code = app_timer_create(&m_rtc_timer_id,
 															APP_TIMER_MODE_REPEATED,
 															RTC_timer_handler);

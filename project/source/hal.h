@@ -31,8 +31,6 @@ BOOLEAN HAL_set_slow_conn_params(void);
 void HAL_disconnect_for_fast_connection(void);
 
 #ifdef _ENABLE_ANCS_
-void HAL_ancs_pairing_start(void);
-void HAL_ancs_discovery_start(void);
 void HAL_ancs_delete_bond_info(void);
 #endif
 

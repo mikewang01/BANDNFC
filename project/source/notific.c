@@ -47,7 +47,7 @@ void NOTIFIC_start_notifying(I8U cat_id)
 	// Do not notify user if unit is in sleep state
 	if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
 		return;
-
+	
 	// Reset vibration times
 	cling.notific.vibrate_time = 0;
 	// The maximum vibration time
@@ -80,7 +80,7 @@ void NOTIFIC_state_machine()
 	I32U t_curr = CLK_get_system_time();
 	
 	if (cling.notific.state != NOTIFIC_STATE_IDLE) {
-			SYSCLK_timer_start();
+		RTC_start_operation_clk();
 	}
 	
 	switch (cling.notific.state) {
