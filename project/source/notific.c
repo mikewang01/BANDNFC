@@ -156,6 +156,7 @@ void NOTIFIC_state_machine()
 
 void NOTIFIC_smart_phone_notify(I8U* data)
 {
+#ifndef _CLING_PC_SIMULATION_	
 	I8U mode = data[0];
 	I8U id = data[1];
 	I8U title_len, msg_len;
@@ -191,6 +192,7 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 	} else if (mode == NOTIFIC_SMART_PHONE_STOP) {
 		NOTIFIC_stop_notifying();
 	}
+#endif
 }
 
 I8U NOTIFIC_get_message_total(void)

@@ -818,7 +818,7 @@ static I32S _get_classify_win_siz(CLASSIFIER_STAT *c, I32U ts_th)
 
     return win_siz;
 }
-
+#if 0
 // If a step coming through all classification, we finally validate it against pace
 // make sure it is consistent
 static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U idx)
@@ -849,6 +849,7 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
     }
     return motion;
 }
+#endif
 
 static MOTION_TYPE _CAR_classify(CLASSIFIER_STAT *c, MOTION_TYPE motion)
 {
@@ -911,10 +912,10 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
 		
     // 5/ Car (moving vechicle) Classication
     motion = _CAR_classify(c, motion);
-
+#if 0
     // 6/ Validate the step against the noise
     motion = _noise_validate(c, motion, step_idx);
-		
+#endif
     // 7/ Update classification status
     _update_classification_status(c, motion, step_idx);
 

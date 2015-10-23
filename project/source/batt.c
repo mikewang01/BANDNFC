@@ -46,6 +46,8 @@ BOOLEAN BATT_charging_det_for_sleep()
 	BATT_CTX *b = &cling.batt;
 	
 	if (b->charging_state == CHARGER_IN_CHARGING) {
+		b->non_charging_accumulated_steps = 0;
+		b->non_charging_accumulated_active_sec = 0;
 		return TRUE;
 	} else {
 		

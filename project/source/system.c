@@ -444,10 +444,11 @@ void SYSTEM_init(void)
 	
 	// Over-the-air update check
 	OTA_main();
+#ifndef _CLING_PC_SIMULATION_	
 
 	// Watchdog init, and disabled for debugging purpose
 	Watchdog_Init();
-
+#endif
 	// Start first battery measurement
 	BATT_start_first_measure();
 }

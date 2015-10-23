@@ -4,6 +4,10 @@
  ******************************************************************************/
 
 #include "main.h"
+
+#ifndef _CLING_PC_SIMULATION_	
+
+
 #include "nrf_drv_wdt.h"
 
 nrf_drv_wdt_channel_id m_channel_id;
@@ -50,5 +54,7 @@ void Watchdog_Feed(void)
 	#endif
 #endif
 }
+
+#endif
 
 /** @} */

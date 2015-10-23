@@ -146,7 +146,7 @@ EN_STATUSCODE RTC_Start(void)
 {
 #ifndef _CLING_PC_SIMULATION_
 	
-	app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_10000MS, NULL);
+	app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_2000MS, NULL);
 	
 	RTC_start_operation_clk();
 	
