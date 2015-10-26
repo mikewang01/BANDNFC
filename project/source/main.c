@@ -459,7 +459,6 @@ int main(void)
 #endif
 
     THERMISTOR_state_machine();
-		
 #if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
 		// Debug processing
 		DBG_event_processing();
@@ -467,6 +466,9 @@ int main(void)
 	}
 }
 
+/** 
+ * @}
+ */
 /** 
  * @}
  */

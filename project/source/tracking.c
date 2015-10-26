@@ -249,6 +249,7 @@ static void _day_stat_reset()
 	cling.activity.day.distance = 0;
 
 	// Reset stored activity data buffer that is used for minute-based activity calculation
+	cling.activity.day_stored.walking = 0;
 	cling.activity.day_stored.running = 0;
 	cling.activity.day_stored.distance = 0;
 	cling.activity.day_stored.calories = 0;
@@ -418,6 +419,9 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		diff->running = a->day.running - a->day_stored.running;
 		diff->distance = (a->day.distance - a->day_stored.distance) >> 4; // meters, normalized by 16
 		diff->sleep_state = cling.sleep.state;
+
+		N_SPRINTF("[tracking] diff: %d, %d, %d", diff->walking, a->day.walking, a->day_stored.walking);
+
 		if (diff->running > 0) {
 			if (cling.activity.workout_type == WORKOUT_NONE) {
 				if (diff->running > 50) {

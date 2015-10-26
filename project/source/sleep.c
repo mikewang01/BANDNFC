@@ -12,9 +12,7 @@ static void _update_activity_status_register(I8U stat)
 	SLEEP_CTX *slp = &cling.sleep;
 	
 	slp->m_activity_status <<= 1;
-	if (stat==1) {
-		slp->m_activity_status |= 0x1;
-	}
+	slp->m_activity_status |= stat;
 }
 
 static I32U _calc_sample_corr(ACC_AXIS s1, ACC_AXIS s2)
@@ -136,6 +134,8 @@ static void _sleep_main_state()
 	I32S threshold_entering_light;
 	I32S threshold_entering_sound;
 	
+	// put the device into awake mode when its in successive stationary minutes more than 
+	
 	switch (slp->m_sensitive_mode) {
 		case SLEEP_SENSITIVE_LOW    : 
 			threshold_entering_light = AWAKE_TO_LIGHT_THRESHOLD_LOW;
@@ -157,23 +157,25 @@ static void _sleep_main_state()
 		  threshold_entering_sound = LIGHT_TO_SOUND_THRESHOLD_MEDIUM;
 		  break;		
 	}
-	
-	if (
 
-       ( slp->b_entered_sleep_stage==TRUE && 
-	       slp->m_mins_cnt>=3 &&  
-				(slp->m_activity_status&0x7)==0x0) ||         // when wakeup in midnight in sudden activity (not walk/run), 
-                                                      // fall asleep again in 3 stationary minutes.
+	// If user is currently in awake state
+	if (slp->state==SLP_STAT_AWAKE) {
 
+		if (	
+				 ((slp->b_entered_sleep_stage==TRUE) && 
+					(slp->m_mins_cnt>=3) &&  
+					(slp->m_activity_status&0x7)==0x0) ||         // when wakeup in midnight in sudden activity (not walk/run), 
+																												// fall asleep again in 3 stationary minutes.
 
-       ( slp->b_entered_sleep_stage==FALSE && 
-	       slp->m_mins_cnt>=threshold_entering_light &&  
-				(slp->m_activity_status&0x3f)==0x0 &&        // when in solid entering sleep stage, must have 6 stationary minutes.
-				 slp->m_stationary_mins>=13)                 // in the past 16 minutes, must have 13 statioanry minutes above.
-
-     ) {
-			 if (slp->state==SLP_STAT_AWAKE)
-    b_enter_light_sleep = TRUE;
+				 ((slp->b_entered_sleep_stage==FALSE) && 
+					(slp->m_mins_cnt>=threshold_entering_light) &&  
+					((slp->m_activity_status&0x3f)==0x0) &&        // when in solid entering sleep stage, must have 6 stationary minutes.
+					(slp->m_stationary_mins>=13) &&               // in the past 16 minutes, must have 13 statioanry minutes above.
+					(slp->m_successive_stationary_mins<=SUCCESSIVE_STATIONARY_MINS))      // if device has been put on desk, omit sleep in this case.
+			 ) 
+		{
+			b_enter_light_sleep = TRUE;
+		}
 	}
 	
 	// Do not wake up from sleep until 5 minutes in a state
@@ -248,6 +250,7 @@ void SLEEP_minute_proc()
 	I32U t_diff  = CLK_get_system_time();
 	I8U  step_status_tmp;
 	I8U  i, step_cnt;
+	I32U activityState;
 
 	t_diff -= cling.lps.ts;	
 	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
@@ -362,9 +365,38 @@ void SLEEP_minute_proc()
   	_update_activity_status_register(0);
 	
 	N_SPRINTF("%d  %d", slp->state, slp->m_activity_per_min);
-  
+	
+	// count successive  stationary minutes
+	slp->activity_status_per_min <<= 1;
+	if (slp->m_activity_per_min == 0) {
+		slp->m_successive_stationary_mins++;
+	} else {
+		slp->m_successive_stationary_mins = 0;
+		slp->activity_status_per_min |= 1;
+	}
+	
   slp->m_activity_per_min = 0;
 	
+	//
+	// Detect if wristband is put on desk -
+	//
+	// If yes, then, exit from sleep first
+	//
+	// Also, start monitoring steps and active seconds untile user starts to using the band again.
+	//
+	activityState = slp->activity_status_per_min & 0x0fffff;
+	if (activityState == 0x000FFC00) {
+		// Positive detection that wristband is not worn on the wrist
+		if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {
+			// Wake up from sleep
+			slp->b_sudden_wake_from_sleep = TRUE;
+		}	
+		
+		// Reset non charging steps & activity seconds
+		cling.batt.non_charging_accumulated_steps = 0;
+		cling.batt.non_charging_accumulated_active_sec = 0;
+	}
+
 	// count stationary minutes.
 	_update_stationary_mins();
 }
@@ -398,6 +430,8 @@ void SLEEP_init()
 	slp->b_valid_worn_in_entering_sleep_state = TRUE;	
 	slp->step_status = 0x00;
 	slp->b_step_flag = FALSE;
+	
+	slp->m_successive_stationary_mins = 0;
 }
 
 void SLEEP_algorithms_proc(ACC_AXIS *xyz)

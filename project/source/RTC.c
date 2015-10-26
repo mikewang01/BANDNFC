@@ -107,6 +107,8 @@ void RTC_timer_handler( void * p_context )
 		
 		// Reset reminder
 		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+
+		N_SPRINTF("[RTC] local day updated");
 	}
 
 	// Testing, assuming user sleeps around 22:00 at night

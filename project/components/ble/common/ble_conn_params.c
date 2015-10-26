@@ -19,6 +19,8 @@
 #include "app_util.h"
 
 
+
+
 static ble_conn_params_init_t m_conn_params_config;     /**< Configuration as specified by the application. */
 static ble_gap_conn_params_t  m_preferred_conn_params;  /**< Connection parameters preferred by the application. */
 static uint8_t                m_update_count;           /**< Number of Connection Parameter Update messages that has currently been sent. */
@@ -27,6 +29,9 @@ static ble_gap_conn_params_t  m_current_conn_params;    /**< Connection paramete
 static app_timer_id_t         m_conn_params_timer_id;   /**< Connection parameters timer. */
 
 static bool m_change_param = false;
+static uint8_t  device_type = CONN_PARAMS_MGR_DEVICE_NULL;/*try to record current device taht is connected to device*/
+static int conn_mgr_disconnect_for_fast_connection( ble_gap_conn_params_t  *conn_params);
+
 
 static bool is_conn_params_ok(ble_gap_conn_params_t * p_conn_params)
 {
@@ -263,7 +268,6 @@ static void on_conn_params_update(ble_evt_t * p_ble_evt)
     conn_params_negotiation();
 }
 
-
 void ble_conn_params_on_ble_evt(ble_evt_t * p_ble_evt)
 {
     switch (p_ble_evt->header.evt_id)
@@ -290,27 +294,48 @@ void ble_conn_params_on_ble_evt(ble_evt_t * p_ble_evt)
     }
 }
 
+/*****************************************************************************
+ * Function      : ble_conn_params_change_conn_params
+ * Description   : general api to change connection parameter 
+ * Input         : None
+ * Output        : None
+ * Return        : int -1:
+ * Others        :
+ * Record				:
+ * 1.Date        : 20151019
+ *   Author      : MikeWang
+ *   Modification: Created function
 
+*****************************************************************************/
 uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params)
 {
     uint32_t err_code;
-
+#define ANDOIRD_CONN_PARAMS_TIMES 2
     m_preferred_conn_params = *new_params;
     // Set the connection params in stack
     err_code = sd_ble_gap_ppcp_set(&m_preferred_conn_params);
-    if (err_code == NRF_SUCCESS)
-    {
-        if (!is_conn_params_ok(&m_current_conn_params))
-        {
-            m_change_param = true;
-            err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_preferred_conn_params);
-            m_update_count = 1;
-        }
-        else
-        {
+    if (err_code == NRF_SUCCESS) {
+        if (!is_conn_params_ok(&m_current_conn_params)) {
+            m_update_count ++;
+            if( device_type == CONN_PARAMS_MGR_DEVICE_IOS) {
+								m_change_param = true;
+                err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_preferred_conn_params);
+                m_update_count = 0;
+							  //err_code = app_timer_start(m_conn_params_timer_id, APP_TIMER_TICKS(1*1000, 0), NULL);
+            } else {
+							 /*for andoird can only update parameter for once*/
+								if(m_update_count < ANDOIRD_CONN_PARAMS_TIMES){
+									 err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_preferred_conn_params);
+								}else{
+									m_update_count = 0;
+									conn_mgr_disconnect_for_fast_connection(&m_preferred_conn_params);
+								}
+               
+            }
+
+        } else {
             // Notify the application that the procedure has succeded
-            if (m_conn_params_config.evt_handler != NULL)
-            {
+            if (m_conn_params_config.evt_handler != NULL) {
                 ble_conn_params_evt_t evt;
 
                 evt.evt_type = BLE_CONN_PARAMS_EVT_SUCCEEDED;
@@ -320,4 +345,64 @@ uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params)
         }
     }
     return err_code;
+}
+
+
+bool conn_params_mgr_set_device_type(uint16_t dev_type)
+{
+    device_type = dev_type;
+    return true;
+}
+
+/*****************************************************************************
+ * Function      : conn_mgr_disconnect_for_fast_connection
+ * Description   : set connection parameter to a higher one if the device is an andoird one
+ * Input          : None
+ * Output        : None
+ * Return        : int -1:
+ * Others        :
+ * Record				:
+ * 1.Date        : 20151019
+ *   Author      : MikeWang
+ *   Modification: Created function
+
+*****************************************************************************/
+static int conn_mgr_disconnect_for_fast_connection( ble_gap_conn_params_t  *conn_params)
+{
+
+
+    // cling.system.conn_params_update_ts = t_curr;
+
+    // Y_SPRINTF("[CONN] disconnect BLE for a fast connection");
+    uint32_t err_code = sd_ble_gap_ppcp_set(conn_params);
+    err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION); //BLE_HCI_STATUS_CODE_SUCCESS);
+
+    if (err_code != NRF_SUCCESS) {
+        return err_code;
+    }
+    //r->adv_mode = BLE_FAST_ADV;
+    // Disconnect BLE service
+    //BTLE_disconnect(BTLE_DISCONN_REASON_FAST_CONN);
+
+    //r->disconnect_evt |= BLE_DISCONN_EVT_FAST_CONNECT;
+    return true;
+}
+
+bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params)
+{
+    ble_gap_conn_params_t old_params;
+    sd_ble_gap_ppcp_get(&old_params);
+    if(is_conn_params_ok(&m_current_conn_params)) {
+    if((new_params.max_conn_interval == old_params.max_conn_interval) && (new_params.min_conn_interval == old_params.min_conn_interval)) {
+          //Y_SPRINTF("[CONN]still the sem max_conn_interval = %d,  min_conn_interval = %d", old_params.max_conn_interval, old_params.min_conn_interval); 
+					return true;
+						
+        }
+    }
+		// Y_SPRINTF("[CONN]diffrent max_conn_interval = %d,  min_conn_interval = %d", old_params.max_conn_interval, old_params.min_conn_interval); 
+    return false;
+}
+ble_gap_conn_params_t get_current_conn_params()
+{
+    return m_current_conn_params;
 }
