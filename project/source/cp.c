@@ -711,7 +711,7 @@ static void _write_file_to_fs_head(BYTE *data)
 		
 		if (cling.ota.file_len == 0) {
 			cling.ota.file_len = r->msg_file_len;
-			N_SPRINTF("[CP] Initialize OTA file len: %d", r->msg_file_len);
+			Y_SPRINTF("[CP] Initialize OTA file len: %d", r->msg_file_len);
 		}
 	} else {
 		r->b_reload_profile = FALSE;
@@ -849,7 +849,7 @@ static void _pending_process()
 			
 			// Enable over the air update flag, and exit low power mode
 			OTA_set_state(TRUE);
-			N_SPRINTF("[CP] << OTA enabled >>");
+			Y_SPRINTF("[CP] << OTA enabled >>");
 			break;
 		}
 		case CP_MSG_TYPE_REBOOT:
@@ -914,11 +914,7 @@ static void _pending_process()
 		{
 #ifdef _ENABLE_ANCS_
 			if (p->msg[1]) {
-				N_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
-				if (!cling.ancs.b_enabled) {
-					cling.ancs.b_enabled = TRUE;
-				}
-
+				Y_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
 				cling.ancs.supported_categories = p->msg[2];
 				cling.ancs.supported_categories <<= 8;
 				cling.ancs.supported_categories |= p->msg[3];
@@ -1560,7 +1556,7 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
 	I8U *pbuf_2 = (I8U *)minute_data_2;
 	MINUTE_TRACKING_CTX *pminute_1 = (MINUTE_TRACKING_CTX *)minute_data_1;
 	MINUTE_TRACKING_CTX *pminute_2 = (MINUTE_TRACKING_CTX *)minute_data_2;
-	I32U offset, offset2, i, t_curr_ms;
+	I32U offset, offset2, i;
 
 	// If there is already a pending activity streaming packet, 
 	// ignore further streaming request until current one is sent out.
@@ -1570,11 +1566,6 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
 	
 	// If last packet is not yet acknowledged, go back return;
 	if (s->packet_need_ack)
-		return TRUE;
-	
-	t_curr_ms = CLK_get_system_time();
-	
-	if (t_curr_ms < (s->packet_tx_time+20))
 		return TRUE;
 
 	if (s->flag_entry_read) {
@@ -1706,8 +1697,6 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
 	// It is a pending message, and also need ACK
 	s->pending = TRUE;
 	s->packet_need_ack = TRUE;
-	s->packet_tx_time = CLK_get_system_time();
-	
 	return TRUE;
 }
 

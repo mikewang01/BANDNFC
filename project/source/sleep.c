@@ -259,6 +259,10 @@ void SLEEP_minute_proc()
     if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
+		
+		// once user gets into sleep mode, reset not-wearing conditions.
+		slp->m_successive_stationary_mins = 0; 
+		slp->activity_status_per_min = 0;
 	}
 	
 	// monitoring sleep stage switching.

@@ -291,19 +291,14 @@ static BOOLEAN _critical_info_restored()
 	
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
-#ifdef _ENABLE_ANCS_
-	// Notification category
-	cling.ancs.supported_categories = p_byte_addr[52];
-	cling.ancs.supported_categories <<= 8;
-	cling.ancs.supported_categories |= p_byte_addr[53];
-#endif	
+
+	// 52, 53: reserved
 
 	// Restore Skin touch
 	cling.touch.b_skin_touch = p_byte_addr[54];
-#ifdef _ENABLE_ANCS_	
-	// Restore ANCS setting
-	cling.ancs.b_enabled = p_byte_addr[55];
-#endif	
+
+	// 55: Reservered.
+	
 	// Restore battery level
 	if (p_byte_addr[56] == 0)
 		cling.batt.b_no_batt_restored = TRUE;
@@ -437,6 +432,11 @@ void SYSTEM_init(void)
 	//
 	_critical_info_restored();
 	
+	// Enable all notifications
+	cling.ancs.supported_categories = 0xffff;
+	
+	Y_SPRINTF("[SYSTEM] restored ANCS categories: %02x", cling.ancs.supported_categories);
+
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();
@@ -520,18 +520,13 @@ BOOLEAN SYSTEM_backup_critical()
 	// Store total reminders
 	critical[51] = cling.reminder.total;
 	
-#ifdef _ENABLE_ANCS_
-	// Store notification categories
-	critical[52] = (I8U)((cling.ancs.supported_categories>>8)&0xFF);
-	critical[53] = (I8U)(cling.ancs.supported_categories & 0xFF);
-#endif
+	// 52, 53: Reserved
 	
 	// Store skin touch type
 	critical[54] = cling.touch.b_skin_touch;
-#ifdef _ENABLE_ANCS_
-	// Store ANCS enable bit
-	critical[55] = cling.ancs.b_enabled;
-#endif
+
+	// 55: Reserved
+
 	// Store battery level
 	critical[56] = cling.system.mcu_reg[REGISTER_MCU_BATTERY];
 	if (critical[56] == 0) {

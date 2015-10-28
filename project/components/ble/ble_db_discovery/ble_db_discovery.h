@@ -226,8 +226,6 @@ uint32_t ble_db_discovery_start(ble_db_discovery_t * const p_db_discovery,
  */
 void ble_db_discovery_on_ble_evt(ble_db_discovery_t * const p_db_discovery,
                                  const ble_evt_t * const    p_ble_evt);
-
-void ble_db_discovery_open(void);
 /** @} */
 
 #endif // BLE_DB_DISCOVERY_H__

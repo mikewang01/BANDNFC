@@ -281,6 +281,13 @@ void ANCS_nflash_store_one_message(I8U *data)
 	N_SPRINTF("[ANCS] ADDR :%d, %02x, %02x, %02x, %02x",addr, data[0], data[1], data[2], data[3]);		
 }
 
+static void _ancs_parse_factory_init()
+{
+
+  m_parse_state = COMMAND_ID;
+	title_or_message_index = ANCS_ATTR_TITLE_FLAG;	
+}
+
 
 /**@brief Function for parsing received notification attribute response data.
  */
@@ -298,6 +305,12 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
         {
         case COMMAND_ID:
              //not store cmmand id
+				     if(data[i] != 0){
+							 
+							 //parse error.
+							 _ancs_parse_factory_init();
+							 return;
+						 }
              m_parse_state = NOTIFICATION_UID1;
              break;
 
@@ -325,7 +338,8 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
              evt.attr.attr_id = (ble_ancs_c_notif_attr_id_values_t)data[i];
 				     if((evt.attr.attr_id != BLE_ANCS_NOTIF_ATTR_ID_TITLE)&&(evt.attr.attr_id != BLE_ANCS_NOTIF_ATTR_ID_MESSAGE)){
 						 
-						 title_or_message_index = ANCS_ATTR_TITLE_FLAG;
+						 //parse error.
+						 _ancs_parse_factory_init();
 						 Y_SPRINTF("[ANCS] get attr id err :%d",evt.attr.attr_id);						  
 						 return;
 						 }
@@ -341,9 +355,11 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
              evt.attr.attr_len |= (data[i] << 8);
 				     if(title_or_message_index == ANCS_ATTR_TITLE_FLAG){
 
-               if((I8U)evt.attr.attr_len > 64){
-
-							  N_SPRINTF("[ANCS] get title len overstep the boundary and parse err");
+               if(evt.attr.attr_len > ANCS_SUPPORT_MAX_TITLE_LEN){
+								 
+								//parse error. 
+                _ancs_parse_factory_init();
+							  Y_SPRINTF("[ANCS] get title len overstep the boundary and parse err");
 						    return;
 						   }	
 								
@@ -353,12 +369,16 @@ static void parse_get_notif_attrs_response( const uint8_t *data, int len)
 						}
 						else{
 							
-               if((I8U)evt.attr.attr_len > 164){
+               if(evt.attr.attr_len > ANCS_SUPPORT_MAX_MESSAGE_LEN){
 								 
-                 title_or_message_index = ANCS_ATTR_TITLE_FLAG;
-							   N_SPRINTF("[ANCS] get message len overstep the boundary and parse err");
+								 //parse error.
+                 _ancs_parse_factory_init();
+							   Y_SPRINTF("[ANCS] get message len overstep the boundary and parse err");
 						     return;
 						   }	
+							 
+							 if(evt.attr.attr_len >= 190)
+								 evt.attr.attr_len=190;
 							 
 						   cling.ancs.pkt.message_len=(I8U)evt.attr.attr_len;
 						   ptr = &cling.ancs.pkt.buf[cling.ancs.pkt.title_len];	
@@ -475,14 +495,14 @@ static void on_evt_gattc_notif(ble_ancs_c_t * p_ancs, const ble_evt_t * p_ble_ev
 
     if (p_notif->handle == m_service.notif_source.handle_value)
 		{
-			  N_SPRINTF("[ANCS] get notif source len is :%d",p_notif->len);
+			  Y_SPRINTF("[ANCS] get notif source len is :%d",p_notif->len);
 			  BLE_UUID_COPY_INST(m_ancs_evt.uuid, m_service.notif_source.uuid);
         parse_notif(p_ancs, &m_ancs_evt,p_notif->data,p_notif->len);
     }
 
     else if (p_notif->handle == m_service.data_source.handle_value)
 		{
-			  N_SPRINTF("[ANCS] get data source len is :%d",p_notif->len);
+			  Y_SPRINTF("[ANCS] get data source len is :%d",p_notif->len);
 	      BLE_UUID_COPY_INST(m_ancs_evt.uuid, m_service.data_source.uuid);
         parse_get_notif_attrs_response(p_notif->data, p_notif->len);
     }
@@ -886,7 +906,7 @@ void ANCS_state_machine(void)
 		return;
 
   if(cling.ancs.ancs_attr_get_flag == TRUE){
-				
+					
 	  ble_ancs_c_request_attrs(ancs_notif);		
 
     cling.ancs.ancs_attr_get_flag = FALSE;	
@@ -901,4 +921,7 @@ void ANCS_state_machine(void)
 
 }
 	
+
+
+
 #endif

@@ -443,8 +443,8 @@ static I32S _try_firmware_update()
     /*read touch ic failure uo threhold*/
 #define TOUCH_IC_BRICKED_THREHOLD  10
     I8U  data[128];
-    I16S i = 0;
-    bool is_touchic_bricked = false;
+    volatile I16S i = 0;
+    volatile bool is_touchic_bricked = false;
     uint16_t uico_binary_lenth = 0;
     unsigned char *s  = NULL;
     /*obtian firmware lenth*/
@@ -469,7 +469,7 @@ static I32S _try_firmware_update()
         data[0] = 0x20;
         _i2c_main_write(data, 1);
         _i2c_main_read (data, 2);
-        N_SPRINTF("[UICO]: 0x%02x 0x%02x", data[0], data[1]);
+        Y_SPRINTF("[UICO]: 0x%02x 0x%02x", data[0], data[1]);
 
 #if 1
         if ( !((data[0] == COMMAND_GET_DATA) && (data[1] == 17)) ) {
@@ -495,8 +495,8 @@ static I32S _try_firmware_update()
 
         // Write Stop Acknowledge
         _write_stop_acknowledge();
-     
-			/*revision format major version:minor version: revison version*/
+
+        /*revision format major version:minor version: revison version*/
         N_SPRINTF("[UICO] Firmware version found: %d.%d.%d", data[10],   data[11],   data[18]);
         N_SPRINTF("[UICO] Firmware version got: %d.%d.%d", s[4], s[5], s[9]);
         cling.whoami.touch_ver[0] = data[10];
@@ -541,6 +541,10 @@ static I32S _try_firmware_update()
 #else
         return 0;
 #endif
+    } else {
+        Y_SPRINTF("[UICO] uico ic has been bricked force to update it .");
+        _execute_bootloader(uico_binary_lenth, s);
+        SYSTEM_reboot();
     }
 
 
@@ -685,15 +689,15 @@ I8U UICO_main()
 
     opcode = 0;
     opdetail = 0;
-		
+
     /*--------------------------- Acknowledge Any Response ---------------------------*/
     // Write Start Acknowledge (0x20)
     _write_start_acknowledge(buf);
-		
+
     /*--------------------------- Read Response  ---------------------------*/
     // Read First 2 bytes
     _i2c_main_read (buf, 2);
-		/////
+    /////
 
 #ifdef UICO_INT_MESSAGE
     a = buf[0];
@@ -702,11 +706,11 @@ I8U UICO_main()
 #endif
 
     len =  buf[1];
-		if (len == 0) {
-			_write_stop_acknowledge();
-			return 0xff;
-		}
-		// Read the remaining bytes
+    if (len == 0) {
+        _write_stop_acknowledge();
+        return 0xff;
+    }
+    // Read the remaining bytes
     len += 2;
     _i2c_main_read(buf, len);
     // Write Stop Acknowledge
@@ -715,7 +719,7 @@ I8U UICO_main()
     if (buf[0] != COMMAND_READPACKET) {
 
 #ifdef UICO_INT_MESSAGE
-			Y_SPRINTF("[UICO] NOT a read packet: %d, %d, ", a, b);
+        Y_SPRINTF("[UICO] NOT a read packet: %d, %d, ", a, b);
 #endif
         return 0xff;
     }
@@ -742,7 +746,7 @@ I8U UICO_main()
     i = buf[8];
     j = buf[9];
     Y_SPRINTF("[UICO] Packet (%d) %d, %d, %d, %d, %d, %d, %d, %d, %d, %d", a,
-                  a, b, c, d, e, f, g, h, i, j);
+              a, b, c, d, e, f, g, h, i, j);
 #endif
 
     // Put response in a circular buffer

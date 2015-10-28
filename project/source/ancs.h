@@ -55,7 +55,6 @@ typedef struct tagANCS_PACKET {
 typedef struct tagANCS_CONTEXT {
 
 	I16U supported_categories;
-	BOOLEAN b_enabled;
 	
 	I8U state;
   ble_ancs_c_t   m_ancs_c;                        /**< Structure used to identify the Apple Notification Service Client. */

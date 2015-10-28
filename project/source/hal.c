@@ -76,8 +76,8 @@
 //
 #if 1
 const I16U conn_param_active[4] = {
-    MSEC_TO_UNITS(40, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(100, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
+    MSEC_TO_UNITS(20, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(40, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
     4,                                          /**< Slave latency. */
     MSEC_TO_UNITS(2000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
@@ -200,6 +200,7 @@ void HAL_ancs_delete_bond_info(void)
 
 
 #endif
+#ifndef _CLING_PC_SIMULATION_	
 
 static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
         dm_event_t const  * p_event,
@@ -213,8 +214,6 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
             APP_ERROR_CHECK(event_result);
 #ifdef _ENABLE_ANCS_
             if (cling.gcp.host_type == HOST_TYPE_IOS) {
-
-                ble_db_discovery_open();
 
                 err_code = ble_db_discovery_start(&m_ble_db_discovery, cling.ble.conn_handle);
 
@@ -299,7 +298,7 @@ void HAL_disconnect_for_fast_connection()
     }
 #endif
 }
-
+#endif
 
 BOOLEAN HAL_set_slow_conn_params()
 {
@@ -318,13 +317,16 @@ BOOLEAN HAL_set_slow_conn_params()
     if (t_curr < (cling.system.conn_params_update_ts + MANUAL_CONN_PARAMS_UPDATE_DELAY))
         return FALSE;
 
+		
+		r->adv_mode = BLE_SLOW_ADV;
     cling.system.conn_params_update_ts = t_curr;
 
     params.min_conn_interval = conn_param_idle[0];
     params.max_conn_interval = conn_param_idle[1];
     params.slave_latency = conn_param_idle[2];
     params.conn_sup_timeout = conn_param_idle[3];
-/*ckeck connection parameter*/
+
+		/*ckeck connection parameter*/
     if(ble_conn_params_com_conn_params(params) == true) {
         Y_SPRINTF("[HAL] still in slow connection");
         return TRUE;
@@ -347,9 +349,9 @@ BOOLEAN HAL_set_slow_conn_params()
         Y_SPRINTF("[HAL] connection params SLOW");
         sd_ble_tx_buffer_count_get(&r->tx_buf_available);
     }
-
-    return TRUE;
 #endif
+    return TRUE;
+
 }
 
 /**@brief Function for error handling, which is called when an error has occurred.
@@ -434,10 +436,10 @@ static void _gap_params_init(void)
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
 
-    gap_conn_params.min_conn_interval = conn_param_idle[0];
-    gap_conn_params.max_conn_interval = conn_param_idle[1];
-    gap_conn_params.slave_latency     = conn_param_idle[2];
-    gap_conn_params.conn_sup_timeout  = conn_param_idle[3];
+    gap_conn_params.min_conn_interval = conn_param_active[0];
+    gap_conn_params.max_conn_interval = conn_param_active[1];
+    gap_conn_params.slave_latency     = conn_param_active[2];
+    gap_conn_params.conn_sup_timeout  = conn_param_active[3];
 
     cling.system.conn_params_update_ts = CLK_get_system_time();
 
