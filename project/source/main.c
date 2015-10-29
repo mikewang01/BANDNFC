@@ -18,12 +18,13 @@
 
 //#define _POWER_TEST_
 //#define _NOR_FLASH_SPI_TEST_
+extern void GPIO_system_test_powerdown();
 
 CLING_MAIN_CTX cling;
 
 #ifdef _POWER_TEST_
 
-static void _power_test_sub()
+static void _power_test_powerdown(BOOLEAN b_sd_enabled)
 {	
 	GPIO_init();
 	
@@ -37,11 +38,23 @@ static void _power_test_sub()
 	NRF_AAR->ENABLE = 0;//0x1;   
 	NRF_CCM->ENABLE = 0;//0x1;   
 	NRF_QDEC->ENABLE = 0;//0x1;   
-	NRF_LPCOMP->ENABLE = 0;//0x1;   
+	NRF_LPCOMP->ENABLE = 0;//0x1; 
+
+	GPIO_system_powerdown();
+			//GPIO_system_test_powerdown();
+
 	// Enter main loop.
 	while (LOOP_FOREVER)
 	{
-		__wfe();
+		if (b_sd_enabled) {
+			// Feed watchdog every 4 seconds upon RTC interrupt
+			Watchdog_Feed();
+			sd_app_evt_wait();
+			//GPIO_system_test_powerdown();
+			GPIO_system_powerdown();
+		} else {
+		  __wfe();
+		}
 	}
 }
 #endif
@@ -319,17 +332,30 @@ static void _system_startup()
 
 }
 
+static void _system_module_poweroff()
+{
+			NRF_SPI0->ENABLE = 0;//0x1;   
+			NRF_TWI0->ENABLE = 0;//0x1;   
+			NRF_SPI1->ENABLE = 0;//0x1;   
+			NRF_TWI1->ENABLE = 0;//0x1;   
+			NRF_SPIS1->ENABLE = 0;//0x1;   
+			NRF_ADC->ENABLE = 0;//0x1;  
+			NRF_AAR->ENABLE = 0;//0x1;   
+			NRF_CCM->ENABLE = 0;//0x1;   
+			NRF_QDEC->ENABLE = 0;//0x1;   
+			NRF_LPCOMP->ENABLE = 0;//0x1; 
+}
+
 /**@brief Function for application main entry.
  */
 int main(void)
 {
 	// Initialize Wristband firmware gloal structure
 	_cling_global_init();
-		
-#ifdef _POWER_TEST_
-	_power_test_sub();
-#endif
 	
+#ifdef _POWER_TEST_
+	_power_test_powerdown(FALSE);
+#endif
 	// Hardware abstruct layer initialize.
 	//
 	// Including: UART, Keypad, Display, NOR flash, Physical IO, SPI, I2C, Sesnors
@@ -365,7 +391,7 @@ int main(void)
 	_system_startup();
 	
 	Y_SPRINTF("[MAIN] Entering main loop");
-
+	
 	// Enter main loop.
 	while (LOOP_FOREVER)
 	{
@@ -375,16 +401,22 @@ int main(void)
 		// Home key event detection
 		HOMEKEY_click_check();
 
-		// Main power management process
-		_power_manager_process();
-		
 		if (cling.system.b_powered_up) {
 
+			// Main power management process
+			_power_manager_process();
+			
 			// For unauthorized device, we should shut it down if battery is lower than a threshold
 			if (BATT_device_unauthorized_shut_down())
 				continue;
 					
 		} else {
+			// Turn off all system modules
+			_system_module_poweroff();
+			
+			// Main power management process
+			_power_manager_process();
+			
 			// If device is plugged into power, go restart the system.
 			if (BATT_is_charging()) {
 				SYSTEM_restart_from_reset_vector();
@@ -392,6 +424,8 @@ int main(void)
 			
 			// detect a possible state change
 			HOMEKEY_check_on_hook_change();
+			
+			N_SPRINTF("[MAIN] shut down event");
 			
 			continue;
 		}

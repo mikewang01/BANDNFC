@@ -7,7 +7,12 @@
 
 #include "main.h"
 #include "assets.h"
+
+#ifdef _CLINGBAND_NFC_MODEL_
+#include "ui_matrix_nfc.h"
+#else
 #include "ui_matrix.h"
+#endif
 
 #define RENDERING_MAX_FRAMES     11
 
@@ -1279,6 +1284,8 @@ static void _left_system_render(BOOLEAN b_charging, BOOLEAN b_ble_conn)
 	for (j = 0; j < curr_batt_level; j++) {
 		*p0++ |= p_v;
 	}
+	
+	N_SPRINTF("[UI] left rendering: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 }
 
 static void _render_calendar(SYSTIME_CTX time)
@@ -2566,6 +2573,10 @@ void UI_state_machine()
 				if (BATT_is_charging() || BATT_is_low_battery()) {
 					Y_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 					UI_switch_state(UI_STATE_LOW_POWER, 1000);
+				} else if (!LINK_is_authorized()) {
+					u->prefer_state = UI_STATE_AUTHORIZATION;
+					
+					UI_switch_state(UI_STATE_AUTHORIZATION, 1000);
 				} else {
 					_display_frame_home(TRUE);
 				}

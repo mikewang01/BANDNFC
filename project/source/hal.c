@@ -71,7 +71,7 @@
 #define FIRST_CONN_PARAMS_UPDATE_DELAY       APP_TIMER_TICKS(600*1000, APP_TIMER_PRESCALER) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (600 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY        APP_TIMER_TICKS(500, APP_TIMER_PRESCALER) /**< Time between each call to sd_ble_gap_conn_param_update after the first (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT         5                                          /**< Number of attempts before giving up the connection parameter negotiation. */
-#define MANUAL_CONN_PARAMS_UPDATE_DELAY      10000
+#define MANUAL_CONN_PARAMS_UPDATE_DELAY      5000 //10000
 
 //
 #if 1
@@ -261,11 +261,8 @@ void HAL_disconnect_for_fast_connection()
 #endif
     cling.system.conn_params_update_ts = t_curr;
 
-    Y_SPRINTF("[HAL] disconnect BLE for a fast connection");
+    N_SPRINTF("[HAL] disconnect BLE for a fast connection");
     r->adv_mode = BLE_FAST_ADV;
-
-    // Disconnect BLE service
-    //BTLE_disconnect(BTLE_DISCONN_REASON_FAST_CONN);
 
 #if 1
     if(cling.gcp.host_type == HOST_TYPE_IOS) {
@@ -284,15 +281,15 @@ void HAL_disconnect_for_fast_connection()
     params.slave_latency = conn_param_active[2];
     params.conn_sup_timeout = conn_param_active[3];
     //current_params = params;
-    if(ble_conn_params_com_conn_params(params) == true) {
-        Y_SPRINTF("[HAL] STILL IN fast connection");
+    if(ble_conn_params_com_conn_params(params, true) == true) {
+        N_SPRINTF("[HAL] STILL IN fast connection");
         return ;
     }
     uint32_t err_code = ble_conn_params_change_conn_params(&params);
 
     if (err_code == NRF_SUCCESS) {
         r->b_conn_params_updated = FALSE;
-        Y_SPRINTF("[HAL] connection params HIGH");
+        Y_SPRINTF("[HAL] connection params update -- HIGH --");
         //err_code = app_timer_start(m_conn_params_timer_id, APP_TIMER_TICKS(1*1000, APP_TIMER_PRESCALER), &current_params);
         sd_ble_tx_buffer_count_get(&r->tx_buf_available);
     }
@@ -327,7 +324,7 @@ BOOLEAN HAL_set_slow_conn_params()
     params.conn_sup_timeout = conn_param_idle[3];
 
 		/*ckeck connection parameter*/
-    if(ble_conn_params_com_conn_params(params) == true) {
+    if(ble_conn_params_com_conn_params(params, false) == true) {
         Y_SPRINTF("[HAL] still in slow connection");
         return TRUE;
     }
@@ -346,7 +343,7 @@ BOOLEAN HAL_set_slow_conn_params()
     if (err_code == NRF_SUCCESS) {
         // Connection parameters get updated, which means BLE is in a slow connection mode
         r->b_conn_params_updated = TRUE;
-        Y_SPRINTF("[HAL] connection params SLOW");
+				Y_SPRINTF("[HAL] connection params updated -- SLOW --");
         sd_ble_tx_buffer_count_get(&r->tx_buf_available);
     }
 #endif
@@ -790,6 +787,7 @@ static void _ble_init()
 void HAL_init(void)
 {
     GPIO_system_powerup();
+	
 #ifdef _ENABLE_UART_
     // UART initialization
     UART_init();

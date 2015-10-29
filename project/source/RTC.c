@@ -194,6 +194,12 @@ void RTC_start_operation_clk()
 #endif
 }
 
+void RTC_system_shutdown_timer()
+{
+			app_timer_stop(m_rtc_timer_id);
+			app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_6000MS, NULL);
+}
+
 
 void RTC_get_delta_clock_forward(SYSTIME_CTX *delta, I8U offset)
 {

@@ -336,6 +336,9 @@ void BTLE_execute_adv(BOOLEAN b_fast)
 		}
 	}
 	
+	if (!cling.system.b_powered_up)
+		return;
+	
 	// if UI is ON or battery is in charging state, we should start advertising again
 	if (b_fast)
 		r->adv_mode = BLE_FAST_ADV;

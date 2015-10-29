@@ -33,6 +33,22 @@ static void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
 }
 
 #ifndef _CLING_PC_SIMULATION_
+static __INLINE void _gpio_cfg_disconnect_pull_input(uint32_t pin_number, nrf_gpio_pin_pull_t pull_config)
+#else
+static void _gpio_cfg_disconnect_input(uint32_t pin_number, nrf_gpio_pin_pull_t pull_config)
+#endif
+{
+#ifndef _CLING_PC_SIMULATION_
+	// when system is disconnected from input buffer, none of other parameter matters
+    NRF_GPIO->PIN_CNF[pin_number] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
+                                        | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
+                                        | (pull_config << GPIO_PIN_CNF_PULL_Pos)
+                                        | (GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos)
+                                        | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
+#endif
+}
+
+#ifndef _CLING_PC_SIMULATION_
 static __INLINE void _gpio_cfg_disconnect_input(uint32_t pin_number)
 #else
 static void _gpio_cfg_disconnect_input(uint32_t pin_number)
@@ -75,6 +91,11 @@ void GPIO_system_powerup()
 	_gpio_cfg_output(GPIO_CHARGER_SD      , TRUE);     // Charger Shut down pin, pull UP to power up system
 	
 	cling.system.b_powered_up = TRUE;
+}
+
+void GPIO_system_test_powerdown()
+{
+	_gpio_cfg_disconnect_pull_input(GPIO_CHARGER_SD, NRF_GPIO_PIN_PULLDOWN);     // Charger Shut down pin, pull down
 }
 
 void GPIO_system_powerdown()

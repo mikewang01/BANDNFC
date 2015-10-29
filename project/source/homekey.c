@@ -78,6 +78,8 @@ BOOLEAN HOMEKEY_check_on_hook_change()
 					UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 					Y_SPRINTF("[KEY] set UI: button clicked (sensing)");
 				}
+			} else {
+				RTC_start_operation_clk();
 			}
 		} 
 		return TRUE;

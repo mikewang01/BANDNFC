@@ -772,7 +772,7 @@ static void on_ancs_c_evt(ble_ancs_c_evt_t * p_evt)
 							
 							apple_notification_setup();
 							
-							title_or_message_index=ANCS_ATTR_TITLE_FLAG;
+							_ancs_parse_factory_init();
 	
 		          ancs_timer =CLK_get_system_time();
 							
@@ -787,7 +787,6 @@ static void on_ancs_c_evt(ble_ancs_c_evt_t * p_evt)
 							notif_print(&p_evt->notif);	
               #endif	
 
-							//ancs_t_curr = cling.time.time_since_1970;
 							ancs_t_curr =CLK_get_system_time();
 							
 		          ancs_t_diff = (ancs_t_curr - ancs_timer);
@@ -867,6 +866,9 @@ static BOOLEAN _ancs_supported_is_enable(void)
 	
 	id_mask = 1 << (ancs_notif.category_id-1);	
 	
+	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER)
+		return TRUE;
+		
 	if (id_mask & cling.ancs.supported_categories) 
 		return TRUE;
 	else

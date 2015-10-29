@@ -122,6 +122,7 @@ I8U _get_battery_perc()
 			Y_SPRINTF("[BATT] low power shut-down (reading: %d, )", b->volts_reading);
 		
 			GPIO_system_powerdown();
+			RTC_system_shutdown_timer();
 		}
 	}
 #endif
@@ -193,6 +194,7 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 		Y_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
 		
 		GPIO_system_powerdown();
+		RTC_system_shutdown_timer();
 		
 		return TRUE;
 		
@@ -276,7 +278,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 			UI_turn_on_display(UI_STATE_CLOCK_GLANCE, 2000);
 		} else {
 			
-			if (t_curr > (b->charging_timebase + 40000)) {
+			if (t_curr > (b->charging_timebase + 60000)) {
 				b->charging_timebase = t_curr;
 				
 				if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] < 100) {
@@ -350,7 +352,11 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 	
 		cling.batt.adc_state = CHARGER_ADC_ACQUIRED;
 
-		Y_SPRINTF("[BATT] discharging start measureing ..."); 
+		if (BATT_is_charging()) {
+			Y_SPRINTF("[BATT] Measureing (charging) - adc: %d", cling.batt.volts_reading); 
+		} else {
+			Y_SPRINTF("[BATT] Measureing (discharging) - adc: %d", cling.batt.volts_reading); 
+		}
 	}		
 #endif
 }
@@ -397,6 +403,6 @@ void BATT_start_first_measure()
 	cling.batt.b_initial_measuring = TRUE;
 	cling.batt.adc_state = CHARGER_ADC_ACQUIRED;
 	
-	Y_SPRINTF("[BATT] start first measure");
+	Y_SPRINTF("[BATT] start first measure - adc: %d", cling.batt.volts_reading);
 #endif
 }

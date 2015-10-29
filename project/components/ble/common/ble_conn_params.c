@@ -209,6 +209,7 @@ static void conn_params_negotiation(void)
 
 static void on_connect(ble_evt_t * p_ble_evt)
 {
+	I32U err_code;
     // Save connection parameters
     m_conn_handle         = p_ble_evt->evt.gap_evt.conn_handle;
     m_current_conn_params = p_ble_evt->evt.gap_evt.params.connected.conn_params;
@@ -219,7 +220,11 @@ static void on_connect(ble_evt_t * p_ble_evt)
 	  m_preferred_conn_params = m_on_conn_params;
 	 /*we take the first connnection as the fast params*/
 	  is_default_params_on_first_conn = true;
-	   
+
+		// Make sure that default conenction parameter gets restored in BLE stack.
+    err_code = sd_ble_gap_ppcp_set(&m_preferred_conn_params);
+		APP_ERROR_CHECK(err_code);
+
 		Y_SPRINTF("[BLE CONN]-- on_connect Current (on CONN) Max: %d, Min: %d", 
 				m_current_conn_params.max_conn_interval, m_current_conn_params.min_conn_interval);
 
@@ -407,13 +412,13 @@ static int conn_mgr_disconnect_for_fast_connection( ble_gap_conn_params_t  *conn
     return true;
 }
 
-bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params)
+bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params, bool b_conn_speed_fast)
 {
     ble_gap_conn_params_t old_params;
     sd_ble_gap_ppcp_get(&old_params);
     if(is_conn_params_ok(&m_current_conn_params)) {
     if((new_params.max_conn_interval == old_params.max_conn_interval) && (new_params.min_conn_interval == old_params.min_conn_interval)) {
-          N_SPRINTF("[CONN]still the sem max_conn_interval = %d,  min_conn_interval = %d", old_params.max_conn_interval, old_params.min_conn_interval); 
+          N_SPRINTF("[CONN]still the same max_conn_interval = %d,  min_conn_interval = %d", old_params.max_conn_interval, old_params.min_conn_interval); 
 					return true;
 						
         }
@@ -421,13 +426,20 @@ bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params)
 		/*this means  the first  connection happened and we take it as the fast one, for some andoird devices whose ble stack is nor in accordance 
 		with standart ble prototol, a parameter out of the range of fast parameter ranges gonna appear, we need to fake the current connection parameters to 
 		cheat the ble stack*/
+
 		if(is_default_params_on_first_conn == true){
 				/*used to take in ble stack */
 				m_current_conn_params = m_on_conn_params;
-			  is_default_params_on_first_conn = false;
-			  return true;
+				is_default_params_on_first_conn = false;
+				N_SPRINTF("[CONN] default params");
+			
+				if (b_conn_speed_fast)
+					return true;
+				else
+					return false;
 		}
-		// Y_SPRINTF("[CONN]diffrent max_conn_interval = %d,  min_conn_interval = %d", old_params.max_conn_interval, old_params.min_conn_interval); 
+
+		N_SPRINTF("[CONN]different max_conn_interval = %d,  min_conn_interval = %d", old_params.max_conn_interval, old_params.min_conn_interval); 
     return false;
 }
 ble_gap_conn_params_t get_current_conn_params()

@@ -5,8 +5,6 @@
 
 #include "standards.h"
 
-//#define _ENABLE_UV_
-
 #define uv_I2C_ADDR                 		(0xC0)    // 0x60
 
 #define uv_REGS_PART_ID                 (0x00)

@@ -11,7 +11,15 @@
 /* Generic macros (do not change across platforms) */
 #define LOOP_FOREVER    1         /* makes while() statements more legible */
 
-//#define _UICO_TOUCH_TUNING_
+#define _CLINGBAND_NFC_MODEL_
+
+//#define _CLINGBAND_UV_MODEL_
+
+#ifdef _CLINGBAND_UV_MODEL_
+
+#define _ENABLE_UV_
+
+#endif
 
 // 
 // Global device id address

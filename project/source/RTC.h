@@ -55,6 +55,7 @@ EN_STATUSCODE RTC_Init( void );
 EN_STATUSCODE RTC_Start( void );
 void RTC_start_operation_clk(void);
 void RTC_stop_operation_clk( void );
+void RTC_system_shutdown_timer(void);
 
 // Get desired clock from UTC time
 void RTC_get_local_clock(SYSTIME_CTX *local);

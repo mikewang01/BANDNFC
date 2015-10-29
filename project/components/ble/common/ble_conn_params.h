@@ -112,7 +112,7 @@ uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t *new_params);
  */
 void ble_conn_params_on_ble_evt(ble_evt_t * p_ble_evt);
 bool conn_params_mgr_set_device_type(uint16_t dev_type);
-bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params);
+bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params, bool b_conn_speed_fast);
 ble_gap_conn_params_t get_current_conn_params(void);
 #endif // BLE_CONN_PARAMS_H__
 

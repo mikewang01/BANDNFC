@@ -242,6 +242,36 @@ static void _sleep_main_state()
 	}
 }
 
+static void _wristband_not_wearing_detection(SLEEP_CTX *slp)
+{
+	I32U activityState, activeMinutes;
+	int i;
+
+	if (slp->m_successive_stationary_mins < SUCCESSIVE_STATIONARY_MINS) {
+		return;
+	}
+	
+	// Check the latest 24 minutes
+	activityState = slp->activity_status_per_min & 0x0ffffff;
+	activeMinutes = 0;
+	
+	// Counting the amount of movement minutes
+	for (i = 0; i < 32; i++) {
+		if (activityState & 0x01) {
+			activeMinutes ++;
+		}
+		activityState >>= 1;
+	}
+	
+	// If user has very active 8 minutes in past 24 minutes, and the latest 10 minutes is completely stationary
+	// we think this is when user puts down the wristband
+	if (activeMinutes >= 8) {
+		// Reset non charging steps & activity seconds
+		cling.batt.non_charging_accumulated_steps = 0;
+		cling.batt.non_charging_accumulated_active_sec = 0;
+	}
+}
+
 void SLEEP_minute_proc()
 {
 	SLEEP_CTX *slp = &cling.sleep;
@@ -250,7 +280,6 @@ void SLEEP_minute_proc()
 	I32U t_diff  = CLK_get_system_time();
 	I8U  step_status_tmp;
 	I8U  i, step_cnt;
-	I32U activityState;
 
 	t_diff -= cling.lps.ts;	
 	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
@@ -259,10 +288,6 @@ void SLEEP_minute_proc()
     if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
-		
-		// once user gets into sleep mode, reset not-wearing conditions.
-		slp->m_successive_stationary_mins = 0; 
-		slp->activity_status_per_min = 0;
 	}
 	
 	// monitoring sleep stage switching.
@@ -376,7 +401,10 @@ void SLEEP_minute_proc()
 		slp->m_successive_stationary_mins++;
 	} else {
 		slp->m_successive_stationary_mins = 0;
-		slp->activity_status_per_min |= 1;
+
+		// Recording the minutes that user has dramatic movement
+		if (slp->m_activity_per_min >= WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_HIGH)
+			slp->activity_status_per_min |= 1;
 	}
 	
   slp->m_activity_per_min = 0;
@@ -388,19 +416,8 @@ void SLEEP_minute_proc()
 	//
 	// Also, start monitoring steps and active seconds untile user starts to using the band again.
 	//
-	activityState = slp->activity_status_per_min & 0x0fffff;
-	if (activityState == 0x000FFC00) {
-		// Positive detection that wristband is not worn on the wrist
-		if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {
-			// Wake up from sleep
-			slp->b_sudden_wake_from_sleep = TRUE;
-		}	
-		
-		// Reset non charging steps & activity seconds
-		cling.batt.non_charging_accumulated_steps = 0;
-		cling.batt.non_charging_accumulated_active_sec = 0;
-	}
-
+	_wristband_not_wearing_detection(slp);
+	
 	// count stationary minutes.
 	_update_stationary_mins();
 }
