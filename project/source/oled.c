@@ -252,12 +252,15 @@ void OLED_state_machine(void)
 						cling.reminder.ui_mm = cling.time.local.minute;
 						cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
 					}
-					
+				
 					if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+#ifdef _ENABLE_ANCS_						
 						if (cling.notific.cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL) {
 							UI_switch_state(UI_STATE_NOTIFIC, 0);
 						}
-					}
+				
+#endif	
+	}						
 				}
 				o->state = OLED_STATE_ON;
 			break;

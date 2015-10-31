@@ -789,7 +789,19 @@ I8U UICO_main()
                     opdetail = 2;
 #ifdef UICO_INT_MESSAGE
                 coor = res[3].x;
-                Y_SPRINTF("FINGER DOWN DETECTED (%d), coor: %d", prev_code, coor);
+                Y_SPRINTF("FINGER DOWN DETECTED 1(%d), coor: %d", prev_code, coor);
+#endif
+            } else {
+                opcode |= 0x02;
+                if (res[3].x > 84)
+                    opdetail = 0;
+                else if (res[3].x > 42)
+                    opdetail = 1;
+                else
+                    opdetail = 2;
+#ifdef UICO_INT_MESSAGE
+                coor = res[3].x;
+                Y_SPRINTF("FINGER DOWN DETECTED 2(%d), coor: %d", prev_code, coor);
 #endif
             }
         }
@@ -826,9 +838,10 @@ I8U UICO_main()
                     right_cnt ++;
                 }
             }
+#ifdef UICO_INT_MESSAGE
 
-            N_SPRINTF("SWIPE DETECTED (%d)", prev_code);
-
+            Y_SPRINTF("SWIPE DETECTED (%d)", prev_code);
+#endif
             opcode |= 0x01;
 #if 0
             if (left_cnt > right_cnt)

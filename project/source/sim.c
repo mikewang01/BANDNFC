@@ -77,7 +77,22 @@ void SIM_init()
 	// We should add system restoration for critical info
 	CLING_TIME_CTX *t = &cling.time;
 	TRACKING_CTX *a = &cling.activity;
-	
+
+	// Restoring the time zone info
+	// Shanghai: UTC +8 hours (units in 15 minutes) -> 8*(60/15) = 32 minutes
+	t->time_zone = 32;
+	t->time_since_1970 = 1400666400;  // 2014, 5, 21, 18:00
+	cling.time.local.year = 2015;
+	cling.time.local.month = 10;
+	cling.time.local.day = 29;
+	cling.time.local.hour = 18;
+	cling.time.local.minute = 0;
+	cling.time.local.second = 0;
+	t->time_since_1970 += 365 * 24 * 60 * 60;  // year
+	t->time_since_1970 += (31 + 30 + 31 + 31 + 30 + 8) * 24 * 60 * 60; // days
+	t->time_since_1970 -= 18 * 60 * 60;
+	RTC_get_local_clock(&cling.time.local);
+
 	Y_SPRINTF("[SIM] virtual device gets initialized");
 #ifndef _CLING_PC_SIMULATION_
 	cling.system.simulation_mode = 1;
@@ -86,12 +101,6 @@ void SIM_init()
 	
 	_tracking_init();
 	
-	// Restoring the time zone info
-	// Shanghai: UTC +8 hours (units in 15 minutes) -> 8*(60/15) = 32 minutes
-	t->time_zone = 32;
-	t->time_since_1970 = 1400666400;
-	RTC_get_local_clock(&cling.time.local);
-
 	// Make sure the minute file has correct offset
 	a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
 
@@ -340,7 +349,8 @@ void SIM_get_accelerometer(I16S *x, I16S *y, I16S *z)
 
 		if (curr_minute < acc_sim_table[i * 4]) {
 			std = acc_sim_table[(i - 1) * 4 + 1];
-			cling.touch.b_skin_touch_type = acc_sim_table[(i - 1) * 4 + 2];
+			//cling.touch.b_skin_touch_type = acc_sim_table[(i - 1) * 4 + 2];
+			cling.touch.b_skin_touch = 1;
 			cling.therm.current_temperature = acc_sim_table[(i - 1) * 4 + 3]*10;
 			break;
 		}

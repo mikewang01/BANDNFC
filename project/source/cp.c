@@ -949,7 +949,9 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_ANDROID_NOTIFY:
 		{
+#ifdef _ENABLE_ANCS_
 			NOTIFIC_smart_phone_notify(p->msg+1);
+#endif
 			break;
 		}
 		case CP_MSG_TYPE_DEVICE_SETTING:

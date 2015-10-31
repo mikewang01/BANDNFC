@@ -49,7 +49,7 @@ void RTC_timer_handler( void * p_context )
 		tick_in_s = (cling.time.tick_count>>15);
 	}
 #else
-	tick_in_s = 2; // 1 second timer
+	tick_in_s = 1; // 1 second timer
 #endif
 	
 	// update battery measuring timer
@@ -196,8 +196,10 @@ void RTC_start_operation_clk()
 
 void RTC_system_shutdown_timer()
 {
-			app_timer_stop(m_rtc_timer_id);
-			app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_6000MS, NULL);
+#ifndef _CLING_PC_SIMULATION_
+	app_timer_stop(m_rtc_timer_id);
+	app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_6000MS, NULL);
+#endif
 }
 
 

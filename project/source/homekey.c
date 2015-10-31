@@ -29,7 +29,7 @@ void HOMEKEY_click_init()
 #endif
 }
 
-BOOLEAN HOMEKEY_check_on_hook_change()
+void HOMEKEY_check_on_hook_change()
 {
 #ifndef _CLING_PC_SIMULATION_
 	HOMEKEY_CLICK_STAT *k = &cling.key;
@@ -82,12 +82,12 @@ BOOLEAN HOMEKEY_check_on_hook_change()
 				RTC_start_operation_clk();
 			}
 		} 
-		return TRUE;
+		return;
 	} else {
-		return FALSE;
+		return;
 	}
 #else
-	return FALSE;
+	return;
 #endif
 }
 

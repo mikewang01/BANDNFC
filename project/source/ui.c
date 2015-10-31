@@ -2077,10 +2077,7 @@ static void _render_logo()
 	}
 
 	// Finally, we render the frame
-	OLED_full_scree_show(cling.ui.p_oled_up);
-
-	OLED_set_display(1);
-	
+	_render_screen();
 }
 
 static void _display_charging(I16U perc)
@@ -2145,9 +2142,7 @@ static void _display_charging(I16U perc)
 	FONT_load_characters(cling.ui.p_oled_up+128+90, (char *)string, 16, FALSE);
 	
 	// Finally, we render the frame
-	OLED_full_scree_show(cling.ui.p_oled_up);
-
-	OLED_set_display(1);
+	_render_screen();
 	
 }
 

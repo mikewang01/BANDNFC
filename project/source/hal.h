@@ -12,7 +12,7 @@
 #include "device_manager.h"
 #include "ancs.h"
 #endif
-
+#include "standard_types.h"
 
 #define SECURITY_REQUEST_DELAY          APP_TIMER_TICKS(1500, APP_TIMER_PRESCALER)   /**< Delay after connection until security request is sent, if necessary (ticks). */
 

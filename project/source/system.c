@@ -440,12 +440,12 @@ void SYSTEM_init(void)
 	//
 	_critical_info_restored();
 	
+#ifdef _ENABLE_ANCS_
 	// Enable all notifications
 	cling.ancs.supported_categories = 0xffff;
 	
 	Y_SPRINTF("[SYSTEM] restored ANCS categories: %02x", cling.ancs.supported_categories);
 
-#ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();
 #endif

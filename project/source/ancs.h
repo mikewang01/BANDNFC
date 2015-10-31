@@ -27,6 +27,7 @@
 #define _ENABLE_ANCS_
 
 #ifndef _CLING_PC_SIMULATION_
+#ifdef _ENABLE_ANCS_
 #include "ble_ancs_c.h"
 #include "standard_types.h"
 
@@ -69,6 +70,7 @@ typedef struct tagANCS_CONTEXT {
 void    ANCS_service_add(void);
 void    ANCS_nflash_store_one_message(I8U *data);
 void    ANCS_state_machine(void);
+#endif
 #endif
 
 #endif // _ANCS_H__

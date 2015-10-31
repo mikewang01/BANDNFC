@@ -189,13 +189,14 @@ static void _ancs_service_discovery_init(void)
 
 void HAL_ancs_delete_bond_info(void)
 {
-
+#ifdef _ENABLE_ANCS_
     Y_SPRINTF("[HAL] pairing error - delete bond info and BLE disconnect");
 
     HAL_device_manager_init(TRUE);
 
     if(BTLE_is_connected())
         BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);
+#endif
 }
 
 
@@ -224,8 +225,8 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 
         case DM_EVT_CONNECTION:
             APP_ERROR_CHECK(event_result);
-            m_peer_handle = (*p_handle);
 #ifdef _ENABLE_ANCS_
+            m_peer_handle = (*p_handle);
             if (cling.gcp.host_type == HOST_TYPE_IOS) {
 
                 err_code = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);

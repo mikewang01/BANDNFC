@@ -18,7 +18,6 @@
 
 //#define _POWER_TEST_
 //#define _NOR_FLASH_SPI_TEST_
-extern void GPIO_system_test_powerdown();
 
 CLING_MAIN_CTX cling;
 
@@ -41,7 +40,6 @@ static void _power_test_powerdown(BOOLEAN b_sd_enabled)
 	NRF_LPCOMP->ENABLE = 0;//0x1; 
 
 	GPIO_system_powerdown();
-			//GPIO_system_test_powerdown();
 
 	// Enter main loop.
 	while (LOOP_FOREVER)
@@ -50,7 +48,6 @@ static void _power_test_powerdown(BOOLEAN b_sd_enabled)
 			// Feed watchdog every 4 seconds upon RTC interrupt
 			Watchdog_Feed();
 			sd_app_evt_wait();
-			//GPIO_system_test_powerdown();
 			GPIO_system_powerdown();
 		} else {
 		  __wfe();
@@ -296,8 +293,8 @@ static void _cling_global_init()
 	NRF_TWI1->ENABLE = 0;//0x1;   
 	NRF_SPIS1->ENABLE = 0;//0x1;   
 	NRF_ADC->ENABLE = 0;//0x1;  
-	NRF_AAR->ENABLE = 0;//0x1;   
-	NRF_CCM->ENABLE = 0;//0x1;   
+	//NRF_AAR->ENABLE = 0;//0x1;   
+	//NRF_CCM->ENABLE = 0;//0x1;   
 	NRF_QDEC->ENABLE = 0;//0x1;   
 	NRF_LPCOMP->ENABLE = 0;//0x1;   
 }
@@ -340,10 +337,16 @@ static void _system_module_poweroff()
 			NRF_TWI1->ENABLE = 0;//0x1;   
 			NRF_SPIS1->ENABLE = 0;//0x1;   
 			NRF_ADC->ENABLE = 0;//0x1;  
-			NRF_AAR->ENABLE = 0;//0x1;   
-			NRF_CCM->ENABLE = 0;//0x1;   
+	
 			NRF_QDEC->ENABLE = 0;//0x1;   
 			NRF_LPCOMP->ENABLE = 0;//0x1; 
+			NRF_UART0->ENABLE = 0;
+	// Have to investiage why these two module cannot be turned off
+#if 0
+			NRF_CCM->ENABLE = 0;//0x1;   
+
+			NRF_AAR->ENABLE = 0;//0x1;
+#endif
 }
 
 /**@brief Function for application main entry.

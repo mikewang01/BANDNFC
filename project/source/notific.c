@@ -39,7 +39,7 @@ void NOTIFIC_stop_notifying()
 void NOTIFIC_start_notifying(I8U cat_id)
 {		
 #ifndef _CLING_PC_SIMULATION_
-
+#ifdef _ENABLE_ANCS_
 	// Do not notify user if unit is not worn
 	if (!TOUCH_is_skin_touched())
 		return;
@@ -47,7 +47,7 @@ void NOTIFIC_start_notifying(I8U cat_id)
 	// Do not notify user if unit is in sleep state
 	if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
 		return;
-	
+
 	// Reset vibration times
 	cling.notific.vibrate_time = 0;
 	// The maximum vibration time
@@ -57,11 +57,11 @@ void NOTIFIC_start_notifying(I8U cat_id)
 		cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_OTHERS;
 	cling.notific.cat_id = cat_id;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
-	
 	N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
 	
 	// Also, turn on screen
 	UI_turn_on_display(UI_STATE_NOTIFIC, 3000);
+#endif	
 #endif
 }
 
@@ -153,7 +153,7 @@ void NOTIFIC_state_machine()
 		}
 	}
 }
-
+#ifdef _ENABLE_ANCS_
 void NOTIFIC_smart_phone_notify(I8U* data)
 {
 #ifndef _CLING_PC_SIMULATION_	
@@ -210,7 +210,7 @@ I8U NOTIFIC_get_message_total(void)
 	return 0;
 #endif
 }
-
+#endif
 
 I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 {
@@ -226,22 +226,6 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 		return title_len;
 	}
 	
-#ifdef _NOTIFIC_TESTING_
-	if (index == 0)
-		title_len = sprintf(app_name, "0000");
-	else if (index == 1)
-		title_len = sprintf(app_name, "1111");
-	else if (index == 2)
-		title_len = sprintf(app_name, "2222");
-	else if (index == 3)
-		title_len = sprintf(app_name, "33333");
-	else if (index == 4)
-		title_len = sprintf(app_name, "4444");
-	else 
-		title_len = sprintf(app_name, "n/a");
-	
-	return title_len;
-#endif
 	
 	if (index > (cling.ancs.message_total-1)) {
 		title_len = sprintf(app_name, "No message!");

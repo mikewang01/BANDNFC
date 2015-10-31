@@ -52,6 +52,6 @@ void HOMEKEY_click_init(void);
 void HOMEKEY_click_check(void);
 void HOMEKEY_sim(void);
 void HOMEKEY_sim_kickoff(void);
-BOOLEAN HOMEKEY_check_on_hook_change(void);
+void HOMEKEY_check_on_hook_change(void);
 
 #endif
