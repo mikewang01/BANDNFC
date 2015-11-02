@@ -23,7 +23,6 @@
 #include "uicoTouch.h"
 
 //#define UICO_FORCE_BURN_FIRMWARE
-
 #define UICO_INCLUDE_FIRMWARE_BINARY
 #ifdef UICO_INCLUDE_FIRMWARE_BINARY
 #include "uicoData.h"
@@ -548,7 +547,7 @@ static I32S _try_firmware_update()
     }
 
 
-}
+} 
 
 static UICOTOUCH_RESPONSE_CTX res[5];
 static I8U prev_code;

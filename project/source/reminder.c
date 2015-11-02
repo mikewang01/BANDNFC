@@ -155,7 +155,7 @@ void REMINDER_state_machine()
 		{
 			N_SPRINTF("[REMINDER] vibrator is ON, %d", t_curr);
 			cling.reminder.ts = t_curr;
-			GPIO_vibrator_set(TRUE);
+			GPIO_vibrator_on_block(REMINDER_ON_TIME_IN_MS);
 			cling.reminder.state = REMINDER_STATE_OFF;
 			break;
 		}

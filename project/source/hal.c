@@ -326,7 +326,7 @@ BOOLEAN HAL_set_slow_conn_params()
 
 		/*ckeck connection parameter*/
     if(ble_conn_params_com_conn_params(params, false) == true) {
-        Y_SPRINTF("[HAL] still in slow connection");
+        N_SPRINTF("[HAL] still in slow connection");
         return TRUE;
     }
 		

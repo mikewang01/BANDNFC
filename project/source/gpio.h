@@ -77,6 +77,7 @@ void GPIO_spi_init_config(I8U spi_no);
 
 // Vibrator control
 void GPIO_vibrator_set(BOOLEAN b_on);
+void GPIO_vibrator_on_block(I8U latency);
 
 // Interrupt control
 void GPIO_interrupt_enable(void);

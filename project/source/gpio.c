@@ -256,7 +256,8 @@ void GPIO_twi_init(I8U twi_master_instance)
 		twi_config.scl = 15;
 		twi_config.sda = 16;
 		twi_config.interrupt_priority = APP_IRQ_PRIORITY_LOW;
-		
+		Y_SPRINTF("[GPIO] twi 0 initialization: %d, %d", error_code, TWI_COUNT);
+
 #endif
 	} else {
 		const nrf_drv_twi_t p_twi1_instance = NRF_DRV_TWI_INSTANCE(1);
@@ -269,10 +270,10 @@ void GPIO_twi_init(I8U twi_master_instance)
 		APP_ERROR_CHECK(error_code);
 		nrf_drv_twi_enable(&p_twi1_instance);
 		cling.system.b_twi_1_ON = TRUE;
+		Y_SPRINTF("[GPIO] twi 1 initialization: %d, %d", error_code, TWI_COUNT);
 		
 		BASE_delay_msec(1);
 	}
-	N_SPRINTF("[GPIO] twi initialization: %d, %d", error_code, TWI_COUNT);
 #endif
 }
 void GPIO_twi_enable(I8U twi_master_instance)
@@ -293,7 +294,7 @@ void GPIO_twi_enable(I8U twi_master_instance)
 			nrf_drv_twi_enable(&twi);
 			
 			cling.system.b_twi_1_ON = TRUE;
-			N_SPRINTF("[GPIO] twi 1 enabled");
+			Y_SPRINTF("[GPIO] twi 1 enabled");
 			BASE_delay_msec(1);
 		}
 	}
@@ -321,7 +322,7 @@ void GPIO_twi_disable(I8U twi_master_instance)
 //			_gpio_cfg_disconnect_input(GPIO_TWI1_CLK);
 			
 			cling.system.b_twi_1_ON = FALSE;
-			N_SPRINTF("[GPIO] twi 1 disabled");
+			Y_SPRINTF("[GPIO] twi 1 disabled");
 			BASE_delay_msec(1);
 		}
 	}
@@ -381,6 +382,27 @@ void GPIO_therm_adc_config(void)
 	// Initialize and configure ADC
 	nrf_adc_configure( (nrf_adc_config_t *)&nrf_adc_config);
 #endif
+}
+
+void GPIO_vibrator_on_block(I8U latency)
+{
+	I32U t_curr = CLK_get_system_time();
+	I32U t_diff = 0;
+	RTC_start_operation_clk();
+	_gpio_cfg_output(GPIO_VIBRATOR_EN, TRUE);
+	
+	while (t_diff < latency) {
+		// Feed watchdog every 4 seconds upon RTC interrupt
+		Watchdog_Feed();
+
+		sd_app_evt_wait();
+		t_diff = CLK_get_system_time();
+		t_diff -= t_curr;
+		if (t_diff > latency)
+			break;
+	}
+	
+	_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);
 }
 
 void GPIO_vibrator_set(BOOLEAN b_on)

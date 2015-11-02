@@ -669,17 +669,6 @@ BOOLEAN BTLE_streaming_authorized()
 			if (HAL_set_slow_conn_params()) {
 				N_SPRINTF("No packets: Slow Connection interval");
 			}
-			
-			// If user enters sleep, turn off BLE
-			if ((cling.sleep.state == SLP_STAT_LIGHT) ||
-				 (cling.sleep.state == SLP_STAT_SOUND) ||
-				 (cling.sleep.state == SLP_STAT_REM))
-			{
-				
-					Y_SPRINTF("[BTLE] NO PACKETS - BLE disconnect");
-					// Disconnect BLE service
-					BTLE_disconnect(BTLE_DISCONN_REASON_USER_SLEEP);
-			}
 		} else {
 				// Update amount of data needs to be streamed
 				if (!r->streaming_minute_scratch_amount) {

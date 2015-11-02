@@ -99,7 +99,7 @@ void NOTIFIC_state_machine()
 		{
 			N_SPRINTF("[NOTIFIC] vibrator is ON, %d", t_curr);
 			cling.notific.ts = t_curr;
-			GPIO_vibrator_set(TRUE);
+			GPIO_vibrator_on_block(NOTIFIC_ON_TIME_IN_MS);
 			cling.notific.state = NOTIFIC_STATE_OFF;
 			break;
 		}
