@@ -22,11 +22,7 @@
 #include "main.h"
 #include "uicoTouch.h"
 
-//#define UICO_FORCE_BURN_FIRMWARE
-#define UICO_INCLUDE_FIRMWARE_BINARY
-#ifdef UICO_INCLUDE_FIRMWARE_BINARY
 #include "uicoData.h"
-#endif
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //
@@ -541,12 +537,14 @@ static I32S _try_firmware_update()
         return 0;
 #endif
     } else {
+#if ((defined UICO_FORCE_BURN_FIRMWARE) || (defined UICO_INCLUDE_FIRMWARE_BINARY)) 
         Y_SPRINTF("[UICO] uico ic has been bricked force to update it .");
         _execute_bootloader(uico_binary_lenth, s);
         SYSTEM_reboot();
+#endif
     }
 
-
+	return 0;
 } 
 
 static UICOTOUCH_RESPONSE_CTX res[5];
@@ -791,6 +789,7 @@ I8U UICO_main()
                 Y_SPRINTF("FINGER DOWN DETECTED 1(%d), coor: %d", prev_code, coor);
 #endif
             } else {
+#if 0 // Do not send a finger touch event if previously swipe gesture has been sent
                 opcode |= 0x02;
                 if (res[3].x > 84)
                     opdetail = 0;
@@ -798,6 +797,7 @@ I8U UICO_main()
                     opdetail = 1;
                 else
                     opdetail = 2;
+#endif
 #ifdef UICO_INT_MESSAGE
                 coor = res[3].x;
                 Y_SPRINTF("FINGER DOWN DETECTED 2(%d), coor: %d", prev_code, coor);

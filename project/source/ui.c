@@ -2808,6 +2808,7 @@ void UI_state_machine()
 		case UI_STATE_DARK:
 		{
 			if (t_curr > (u->display_to_base+u->frame_interval)) {
+				Y_SPRINTF("[UI] screen go dark");
 				// Turn off OLED panel
 				OLED_set_panel_off();
 				u->state = UI_STATE_IDLE;

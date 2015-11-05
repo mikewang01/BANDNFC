@@ -643,6 +643,11 @@
               <FileType>1</FileType>
               <FilePath>..\source\weather.c</FilePath>
             </File>
+            <File>
+              <FileName>uicoData.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\source\uicoData.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1432,6 +1437,11 @@
               <FileName>weather.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\source\weather.c</FilePath>
+            </File>
+            <File>
+              <FileName>uicoData.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\source\uicoData.c</FilePath>
             </File>
           </Files>
         </Group>

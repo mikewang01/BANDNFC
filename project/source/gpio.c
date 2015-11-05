@@ -294,7 +294,7 @@ void GPIO_twi_enable(I8U twi_master_instance)
 			nrf_drv_twi_enable(&twi);
 			
 			cling.system.b_twi_1_ON = TRUE;
-			Y_SPRINTF("[GPIO] twi 1 enabled");
+			N_SPRINTF("[GPIO] twi 1 enabled");
 			BASE_delay_msec(1);
 		}
 	}
@@ -322,7 +322,7 @@ void GPIO_twi_disable(I8U twi_master_instance)
 //			_gpio_cfg_disconnect_input(GPIO_TWI1_CLK);
 			
 			cling.system.b_twi_1_ON = FALSE;
-			Y_SPRINTF("[GPIO] twi 1 disabled");
+			N_SPRINTF("[GPIO] twi 1 disabled");
 			BASE_delay_msec(1);
 		}
 	}

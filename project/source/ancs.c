@@ -864,15 +864,25 @@ static BOOLEAN _ancs_supported_is_enable(void)
 
 	I16U id_mask;
 	
+	// If none of categories is supported, we do nothing
+	if (cling.ancs.supported_categories == 0)
+		return FALSE;
+	
+	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER) {
+		// If this is a "OTHER" category, we should support it unless user only purposely enables 'incoming call'
+		if (cling.ancs.supported_categories == 0x01)
+			return FALSE;
+		else
+			return TRUE;
+	}
+
+	// Check whether corresponding category is enabled
 	id_mask = 1 << (ancs_notif.category_id-1);	
 	
-	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER)
-		return TRUE;
-		
 	if (id_mask & cling.ancs.supported_categories) 
 		return TRUE;
-	else
-		return FALSE;
+
+	return FALSE;
 }
 
 static void _ancs_store_attr_pro(void)
