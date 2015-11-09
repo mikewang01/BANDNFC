@@ -15,6 +15,8 @@ static void _start_OTA()
 	I32U data;
 	uint32_t *config;
 	
+	Y_SPRINTF("[OTA] perform OTA, initialize all the parameters, and go reboot");
+	
 	// Clean up the setting page
 	SYSFLASH_drv_page_erasure(255);
 	

@@ -22,7 +22,11 @@
 #include "main.h"
 #include "uicoTouch.h"
 
+//#define UICO_FORCE_BURN_FIRMWARE
+#define UICO_INCLUDE_FIRMWARE_BINARY
+#ifdef UICO_INCLUDE_FIRMWARE_BINARY
 #include "uicoData.h"
+#endif
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //
@@ -109,6 +113,21 @@
 
 #define LARGE_FORMAT                        0
 
+#define UICO_ACCESS_REG_COMMAND  0X00
+#define UICO_USER_COMMAND 0x8C
+#define UICO_USER_SPECIFIC_COMMAND_CALIBRATION_WHEN_FLOATIING 0XA0
+#define UICO_USER_SPECIFIC_COMMAND_CALIBRATION_WHEN_FIXTURE   0XA5
+#define UICO_CALIBRATION_LENTH   3
+#define UICO_ERROR_CODE 0xff
+#define UICO_CALIBRATION_PROCCES_LENTH  2
+#define UICO_CALIBRATION_SUCESS_CODE  0X00
+#define UICO_CALIBRATION_FAILED_CODE  0XFE
+#define UICO_DEBUG 
+
+/*======LOCAL VAR=======================================================================================*/
+static uint8_t is_calibration_sucess =  FALSE;/*INFICATE IF MANUAL CALIBRATION HAS BEEN EXCEXUTED SUCESSFULLY*/
+static UICOTOUCH_RESPONSE_CTX res[5];
+static I8U prev_code;
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static EN_STATUSCODE _i2c_btld_read(I8U *pi8uRegValue, I8U number_of_bytes)
@@ -282,7 +301,125 @@ void UICO_dbg_write_read(I8U *obuf, I8U len, I8U *ibuf)
     _write_stop_acknowledge();
 }
 #endif
+/*****************************************************************************
+ * Function      : uico_touch_ic_floating_calibration_start
+ * Description   : i2c read driver finction
+ * Input         : I8U *pi8uRegValue
+                I8U number_of_bytes
+ * Output        : None
+ * Return        : static
+ * Others        :
+ * Record
+ * 1.Date        : 20151015
+ *   Author      : MikeWang
+ *   Modification: Created function
 
+*****************************************************************************/
+
+void GPIO_interrupt_handle();
+bool uico_touch_is_floating_calibration_sucessfully(void);
+#define MAX_CYCLES_WAITING_FOR_CALIBRATION_RESPONSE  2000
+bool uico_touch_ic_floating_calibration_start()
+{
+
+    uint32_t i = 0;
+start_uico:
+    i = 0;
+    uint8_t command_buffer[UICO_CALIBRATION_LENTH] = {UICO_ACCESS_REG_COMMAND, UICO_USER_COMMAND, UICO_USER_SPECIFIC_COMMAND_CALIBRATION_WHEN_FLOATIING};
+    if(_i2c_main_write(command_buffer, UICO_CALIBRATION_LENTH) == NRF_SUCCESS) {
+#ifdef UICO_DEBUG
+        while(uico_touch_is_floating_calibration_sucessfully() != TRUE) {
+            GPIO_interrupt_handle();
+            i++;
+            if(i > MAX_CYCLES_WAITING_FOR_CALIBRATION_RESPONSE) {
+                return FALSE;
+            }
+        }
+#endif
+        return TRUE;
+
+    } else {
+        return FALSE;
+    }
+}
+/*****************************************************************************
+ * Function      : uico_touch_ic_floating_calibration_response_process
+ * Description   : process ucalibration response from touch ic
+ * Input         : I8U *buffer
+                   I8U lenth
+ * Output        : None
+ * Return        : static
+ * Others        :
+ *  
+ * 1.Date        : 20151015
+ *   Author      : MikeWang
+ *   Modification: Created function
+
+*****************************************************************************/
+static bool uico_touch_ic_floating_calibration_response_process(uint8_t *buffer, uint16_t lenth)
+{
+    uint8_t i = 0;
+    Y_SPRINTF("[UICO] calibration_response:0x%02x, 0x%02x, 0x%02x, 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3]);
+    /*This means there is something wrong with tthe lenth of data*/
+    if(lenth <= UICO_CALIBRATION_PROCCES_LENTH) {
+        return FALSE;
+    }
+    /*buffer proess eraea*/
+    if(buffer[i] == UICO_USER_COMMAND) {
+        N_SPRINTF("[UICO] calibration_response:0x%02x", buffer[i]);
+        i++;
+        if(buffer[i] == UICO_ERROR_CODE) {
+            /*Customer-Specific Commands is Not Supported*/
+            return FALSE; 
+        } else if(buffer[i] == UICO_CALIBRATION_PROCCES_LENTH) {
+            N_SPRINTF("[UICO] calibration_response:0x%02x", buffer[i]);
+            i++;
+            if(buffer[i] == UICO_USER_SPECIFIC_COMMAND_CALIBRATION_WHEN_FLOATIING) {
+                N_SPRINTF("[UICO] calibration_response:0x%02x", buffer[i]);
+                i++;
+                if(buffer[i] == UICO_ERROR_CODE) {
+                    /*The Customer-Specific Command Code was Not Recognized*/
+                    return FALSE;
+                } else {
+                    N_SPRINTF("[UICO] calibration_response:0x%02x", buffer[i]);
+                    if((buffer[i] == UICO_CALIBRATION_SUCESS_CODE)) {
+                        /*The Touch Controller Successfully Processed the Customer-Specific Command*/
+                        N_SPRINTF("[UICO] calibration_response sucess");
+                        is_calibration_sucess = TRUE;
+                        return TRUE;
+                    } else {
+                        /*The Touch Controller Failed to Process the Customer-Specific Command*/
+                        return FALSE;
+                    }
+
+                }
+            } else {
+                /**/
+                return FALSE;
+            }
+
+        }
+
+    }
+}
+bool uico_touch_is_floating_calibration_sucessfully()
+{
+    return is_calibration_sucess;
+}
+/*****************************************************************************
+ * Function      : UICO_set_power_mode
+ * Description   : set touchi ic power mode function
+ * Input         : I8U *pi8uRegValue
+                I8U number_of_bytes
+ * Output        : None
+ * Return        : static
+ * Others        :
+ * Record
+ * 1.Date        : 20151015
+ *   Author      : MikeWang
+ *   Modification: Created function
+
+*****************************************************************************/
 void UICO_set_power_mode(UICO_POWER_MODE mode)
 {
     I8U buf[2];
@@ -544,11 +681,10 @@ static I32S _try_firmware_update()
 #endif
     }
 
-	return 0;
+
 } 
 
-static UICOTOUCH_RESPONSE_CTX res[5];
-static I8U prev_code;
+
 
 void UICO_init()
 {
@@ -718,6 +854,11 @@ I8U UICO_main()
 #ifdef UICO_INT_MESSAGE
         Y_SPRINTF("[UICO] NOT a read packet: %d, %d, ", a, b);
 #endif
+			        /*process user command individually*/
+        if(buf[0] == UICO_USER_COMMAND) {
+            uico_touch_ic_floating_calibration_response_process(buf, len);
+        }
+				
         return 0xff;
     }
 

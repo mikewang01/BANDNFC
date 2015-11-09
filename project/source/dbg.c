@@ -72,27 +72,6 @@ enum {
 
 #if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
 
-void DBG_uico_ctl(I8U *data)
-{
-	I8U type = data[0];
-	
-	if (type == ENABLE_OTA_DEBUG) {
-		cling.dbg.b_log = data[1];
-		Y_SPRINTF("[DBG]: enable OTA: %d, %d", cling.dbg.b_log, data[1]);
-	} else if (type == TOUCH_OTA_READ) {
-		cling.dbg.b_pending = TRUE;
-		cling.dbg.b_read = TRUE;
-		cling.dbg.len = data[1];
-		Y_SPRINTF("[DBG]: OTA READ: %d, %d", cling.dbg.len, data[1]);
-	} else if (type == TOUCH_OTA_WRITE) {
-		cling.dbg.b_pending = TRUE;
-		cling.dbg.b_write = TRUE;
-		cling.dbg.len = data[1];
-		memcpy(cling.dbg.buf, data+2, cling.dbg.len);
-		Y_SPRINTF("[DBG]: OTA Write: %d, %d", cling.dbg.len, data[1]);
-	}
-}
-
 
 void DBG_event_processing()
 {

@@ -302,7 +302,7 @@ void TOUCH_init(void)
 #ifndef _CLING_PC_SIMULATION_	
 	// Initialize skin touch states
 	UICO_init();
-	
+	//uico_touch_ic_floating_calibration_start();
 	Y_SPRINTF("[TOUCH] skin touched: %d", cling.touch.b_skin_touch);
 
 #endif

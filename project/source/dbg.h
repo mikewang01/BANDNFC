@@ -127,7 +127,6 @@ typedef struct tagDEBUG_CTX {
 #endif
 
 void DEBUG_create_dbg_msg(I8U *msg, I8U len);
-void DBG_uico_ctl(I8U *data);
 void DBG_event_processing(void);
 
 #endif

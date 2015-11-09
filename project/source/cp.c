@@ -713,11 +713,12 @@ static void _write_file_to_fs_head(BYTE *data)
 	} else if (!strcmp((char *)"ota_start.txt", (char *)f_buf)) {
 		r->b_ota_start = TRUE;
 		r->b_reload_profile = FALSE;
+		Y_SPRINTF("[CP] OTA start text file received");
 	} else if (!strcmp((char *)"app.bin", (char *)f_buf)) {
 		// App central start to download 'app.bin', which is a clear indicattor of OTA
 		OTA_set_state(TRUE);
 		//
-		N_SPRINTF("[CP] Start download app.bin, set OTA flag");
+		Y_SPRINTF("[CP] Start download app.bin, set OTA flag");
 		
 		if (cling.ota.file_len == 0) {
 			cling.ota.file_len = r->msg_file_len;
@@ -809,7 +810,7 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_FILE_LOAD_LIST:
 		{
-			N_SPRINTF("[CP] load file list");
+			Y_SPRINTF("[CP] load file list");
 			// When iOS get MUTEX, it also rely on iOS to release MUTEX, or MCU release it when turning off the radio
 			if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
 				return ;
@@ -835,11 +836,6 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_DEBUG_MSG:
 		{
-			
-#if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
-			N_SPRINTF("[CP] debug msg: %02x, %02x, %02x, %02x", p->msg[0], p->msg[1], p->msg[2], p->msg[3]);
-			DBG_uico_ctl(p->msg+1);
-#endif
 			
 			break;
 		}
