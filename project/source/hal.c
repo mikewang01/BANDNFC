@@ -36,9 +36,6 @@
 #include "ble_hci.h"
 #include "ble_srv_common.h"
 #include "ble_advdata.h"
-//#include "ble_bas.h"
-//#include "ble_hrs.h"
-//#include "ble_dis.h"
 #include "ble_conn_params.h"
 #include "app_timer.h"
 #include "ble_error_log.h"
@@ -51,7 +48,6 @@
 #include "pstorage.h"
 #include "ancs.h"
 #include "ble_db_discovery.h"
-#include "ble_ancs_c.h"
 #endif
 #include "sysflash_rw.h"
 
@@ -635,7 +631,7 @@ static void _ble_evt_dispatch(ble_evt_t * p_ble_evt)
     if (!OTA_if_enabled()) {
         if (cling.gcp.host_type == HOST_TYPE_IOS) {
 
-            ble_ancs_c_on_ble_evt(&cling.ancs.m_ancs_c, p_ble_evt);
+            ANCS_on_ble_evt(p_ble_evt);
         }
     }
 #endif
@@ -847,9 +843,7 @@ void HAL_init(void)
     HOMEKEY_click_init();
 
     // FONT initializaiton
-#ifdef _ENABLE_FONT_TRANSFER_
     FONT_init();
-#endif
 
 #ifdef _ENABLE_TOUCH_
     BASE_delay_msec(600);

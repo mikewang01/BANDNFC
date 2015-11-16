@@ -94,9 +94,7 @@ void SIM_init()
 	RTC_get_local_clock(&cling.time.local);
 
 	Y_SPRINTF("[SIM] virtual device gets initialized");
-#ifndef _CLING_PC_SIMULATION_
-	cling.system.simulation_mode = 1;
-#endif
+	
 	_weather_init();
 	
 	_tracking_init();
@@ -132,6 +130,8 @@ void SIM_init()
 }
 
 #endif
+
+#ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
 static MINUTE_TRACKING_CTX _activity_sim_with_type(SIM_ACTIVITY_TYPE type)
 {
 	MINUTE_TRACKING_CTX a;
@@ -259,6 +259,7 @@ I16S SIM_get_current_activity(I8U type)
 
 	return 0;
 }
+#endif
 
 void SIM_setup_idle_alert()
 {

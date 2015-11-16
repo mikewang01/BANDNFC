@@ -11,7 +11,6 @@
 
 #include "main.h"
 #include "Aes.h"
-#include "ble_ancs_c.h"
 
 #define BLE_PAYLOAD_LEN 20
 #ifndef _CLING_PC_SIMULATION_
@@ -388,11 +387,12 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
             { 
                 if (r->btle_State == BTLE_STATE_ADVERTISING) {
-									if (r->adv_mode == BLE_ADV_SLEEP)
+									if (r->adv_mode == BLE_ADV_SLEEP) {
 										r->btle_State = BTLE_STATE_IDLE;
-									else
+									} else {
 										BTLE_execute_adv(FALSE);
-									Y_SPRINTF("[BTLE] Advertising timeout ");
+										Y_SPRINTF("[BTLE] Advertising timeout ");
+									}
                 } 
             }
 						break;

@@ -179,7 +179,7 @@ void ppg_PS_ALS_Auto             (void);
 
 #define PPG_MEASURING_PERIOD_FOREGROUND          1    // real time measuring
 #define PPG_MEASURING_PERIOD_BACKGROUND          600    // real time measuring
-#define PPG_SAMPLE_PROCESSING_PERIOD             2
+#define PPG_SAMPLE_PROCESSING_PERIOD             1
 #define PPG_HR_MEASURING_TIMEOUT                25
 #define PPG_NEXT_CHECK_LATENCY                 180
 

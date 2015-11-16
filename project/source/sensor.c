@@ -159,10 +159,9 @@ static void _low_power_process_sw()
 	
 	if (!sample_count)
 		return;
-
-	if (cling.system.simulation_mode) 
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
 		return;
-
+#endif
 	// Reset the accumulator
 	b_motion = FALSE;
 	v = 0;
@@ -259,10 +258,9 @@ static void _high_power_process_FIFO()
 	if (!sample_count)
 		return;
 	
-			N_SPRINTF("[SENSOR] sample count: %d, %d", sample_count, cling.system.simulation_mode);
+			N_SPRINTF("[SENSOR] sample count: %d", sample_count);
 
-#ifndef _CLING_PC_SIMULATION_
-	if (cling.system.simulation_mode) 
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
 		return;
 #endif
 	jitter_counts = 0;

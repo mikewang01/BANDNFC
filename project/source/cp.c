@@ -332,7 +332,7 @@ static void _create_dev_info_msg()
 	// Touch panel version
   t->msg[t->msg_filling_offset++] = cling.whoami.touch_ver[2];
 	// HW INFO
-	t->msg[t->msg_filling_offset++] = cling.system.mcu_reg[REGISTER_MCU_HWINFO];  
+	t->msg[t->msg_filling_offset++] = 1;
 	// BATTERY LEVEL
 	t->msg[t->msg_filling_offset++] = cling.system.mcu_reg[REGISTER_MCU_BATTERY]; 
 	// Software version number
@@ -905,8 +905,6 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_SIMULATION_CONFIG:
 		{
-			cling.system.simulation_mode = p->msg[1];
-			N_SPRINTF("[CP] Simulation mode: %d", cling.system.simulation_mode);
 			break;
 		}
 		case CP_MSG_TYPE_BLE_DISCONNECT:

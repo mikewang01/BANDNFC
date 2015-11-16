@@ -69,8 +69,8 @@ typedef enum {
 } UV_STATES;
 
 typedef struct tagUV_CTX {
-	I8U  uv_index;
 	I32U measure_timebase;
+	I8U  uv_index;
 	UV_STATES state;
 	BOOLEAN b_perform_measure;
 	I8U max_uv;

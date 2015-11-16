@@ -170,22 +170,24 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 	data[4+title_len+msg_len] = 0;
 	
 	if (mode == NOTIFIC_SMART_PHONE_NEW) {
+		 if(cling.ancs.message_total >= 16) {
+				
+			 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+		 
+			 N_SPRINTF("[ANCS] message is full, go erase the message space");
+
+			 cling.ancs.message_total = 0;
+		 }
+		 
+		cling.ancs.message_total++;		
+		
+		N_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
+	 
+		// title len, message len, ....
+		ANCS_nflash_store_one_message(data+2);
+		
 		// Inform NOTIFIC state machine to notify user
 		NOTIFIC_start_notifying(id);
-		
-	 if(cling.ancs.message_total >= 16) {
-			
-		 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
-	 
-		 Y_SPRINTF("[ANCS] message is full, go erase the message space");
-
-		 cling.ancs.message_total = 0;
-	 }
-	 
-	 cling.ancs.message_total++;		
-		Y_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
-	 // title len, message len, ....
-		ANCS_nflash_store_one_message(data+2);
 		
 	} else if (mode == NOTIFIC_SMART_PHONE_DELETE) {
 		NOTIFIC_stop_notifying();

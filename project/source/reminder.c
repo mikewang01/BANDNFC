@@ -108,6 +108,8 @@ void REMINDER_set_next_reminder()
 	if (cling.reminder.total>0) {
 		REMINDER_get_time_at_index(0);
   }
+
+	N_SPRINTF("[REMINDER] Set next reminder - done");
 }
 
 static BOOLEAN _check_reminder()
@@ -176,6 +178,7 @@ void REMINDER_state_machine()
 				if (cling.reminder.vibrate_time >= REMINDER_VIBRATION_REPEAT_TIME) {
 					cling.reminder.state = REMINDER_STATE_SECOND_REMINDER;
 					cling.reminder.second_vibrate_time ++;
+					N_SPRINTF("[REMINDER] go second reminder, %d, %d", cling.reminder.second_vibrate_time, cling.reminder.vibrate_time);
 				} else {
 					cling.reminder.state = REMINDER_STATE_ON;
 					N_SPRINTF("[REMINDER] vibrator repeat, %d, %d", cling.reminder.vibrate_time, t_curr);
@@ -188,6 +191,7 @@ void REMINDER_state_machine()
 			if (t_curr > (cling.reminder.ts + REMINDER_SECOND_REMINDER_LATENCY)) {
 				if (cling.reminder.second_vibrate_time >= SECOND_REMINDER_TIME) {
 					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+					N_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
 				} else {
 					N_SPRINTF("[REMINDER] second reminder on");
 					cling.reminder.state = REMINDER_STATE_ON;					
@@ -201,12 +205,14 @@ void REMINDER_state_machine()
 		{
 			REMINDER_set_next_reminder();
 			cling.reminder.state = REMINDER_STATE_IDLE;
+			N_SPRINTF("[REMINDER] STATE: CHECK NEXT");
 			break;
 		}
 		default:
 		{
 			REMINDER_set_next_reminder();
 			cling.reminder.state = REMINDER_STATE_IDLE;
+			N_SPRINTF("[REMINDER] STATE: DEFAULT: %d", cling.reminder.state);
 			break;
 		}
 	}

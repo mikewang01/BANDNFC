@@ -26,12 +26,10 @@ typedef struct tagHOMEKEY_CLICK_STAT {
     I8U         temp_st;     			// temporarily hook status
     I8U         stable_st;        // stable hook event 
     I32U        ticks[2]; 		    // 0: ON 1: OFF, 2:SWITCHING
-	I32U		click_on_ts;
     I8U         half_click;   			// on hook for a short time; but not long enough to call it on hook yet
 	I8U			single_click_num;
 	I8U			click_hold_num;
 	I8U     click_sos_num;
-	I32U        click_proc_ts;
 } HOMEKEY_CLICK_STAT;
 
 // BUTTON STATUS

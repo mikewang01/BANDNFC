@@ -19,6 +19,7 @@ typedef enum {
 
 //#define USING_VIRTUAL_ACTIVITY_SIM
 
+//#define _ACTIVITY_SIM_BASED_ON_EPOCH_
 //#define _REMINDER_SIMULATION_
 //#define _LONG_TERM_TRACKING_
 

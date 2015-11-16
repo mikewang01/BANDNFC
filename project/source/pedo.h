@@ -222,6 +222,15 @@ enum {
 #define CHEATING_INTEGRATION_LENGTH 8
 
 typedef struct tagANTI_CHEATING_CTX {
+    I8U  factor;               // cheating factor: 0: no cheating, 7: absolute cheating
+
+    // Kc check on linear motion cheating
+    I32S ap_mag_prev[4];                      // previous A' magnitude for direction check-up
+    I8U  ap_mag_dir;                       // A' magnitude direction
+    ACCELEROMETER_ACC ap_acc;               // Accumulated A'
+    ACCELEROMETER_3D ap_up;                // Up swing A' accumulation
+    ACCELEROMETER_3D ap_dw;                // Down swing A' accumulation
+    ACCELEROMETER_3D ap_prev;              // Right integration
 
     // Non intentional cheating detection feature
     ACCELEROMETER_ACC a_acc;             // Raw A integration (in processing) within a step
@@ -298,14 +307,15 @@ typedef struct tagRAW_ACCE_STAT {
 } RAW_ACCE_STAT, *PRAW_ACCE_STAT;
 
 typedef struct tagACCELEROMETER_INPUT_STAT {
+
+    I8U pair_ratio_lo;              // the maximum of each axis
+    I8U pair_ratio_hi;              // the maximum of each axis
     I32U ts;                        // time stamp on second
     I32U min_mag;                   // Minimum magnitude
     I32U max_mag;                   // Minimum magnitude
     I32U acc;
-    I32U peak_vibrate_window;
-    I8U pair_ratio_lo;              // the maximum of each axis
-    I8U pair_ratio_hi;              // the maximum of each axis
     I8U peak_vibrate_single;
+    I32U peak_vibrate_window;
     I8U peak_strike_single;
     I8U peak_strike_window;         // the maximum of each axis
     I8U acc_symmetric_window;

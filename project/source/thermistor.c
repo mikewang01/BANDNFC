@@ -99,7 +99,7 @@ static void _calc_temperature()
 	}
 
 	temperature = FIRST_TEMP + i;
-  Y_SPRINTF( "therm: %d  power: %d  temp: %d", t->therm_volts_reading, t->power_volts_reading, temperature);
+  N_SPRINTF( "therm: %d  power: %d  temp: %d", t->therm_volts_reading, t->power_volts_reading, temperature);
 	
 	t->current_temperature = temperature;
 }
@@ -161,7 +161,7 @@ void THERMISTOR_state_machine()
 			t->power_on_timebase = t_curr;
 			// Configure ADC
 			GPIO_therm_adc_config();
-			Y_SPRINTF("[THERM] duty on");
+			N_SPRINTF("[THERM] duty on");
 			break;
 		}
 		case THERMISTOR_STAT_MEASURING:
@@ -170,15 +170,15 @@ void THERMISTOR_state_machine()
 			//
 			// The actual measuring takes about 7 ms to finish
 			if (t_curr > (t->power_on_timebase + THERMISTOR_POWER_SETTLE_TIME_MS)) {
-				Y_SPRINTF("[THERM] therm measuring at %d ", CLK_get_system_time());
+				N_SPRINTF("[THERM] therm measuring at %d ", CLK_get_system_time());
 				cling.therm.therm_volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_6);
-				Y_SPRINTF("[THERM] power measuring ");
+				N_SPRINTF("[THERM] power measuring ");
 				cling.therm.power_volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_2);
 				//t->state = THERMISTOR_STAT_START_THERM_PIN_MEASURING;
 				t->state = THERMISTOR_STAT_DUTY_OFF;
 				GPIO_therm_power_off();
 				t->b_start_adc = TRUE;
-				Y_SPRINTF("[THERM] adc measured at(%d): %d,%d", CLK_get_system_time(), cling.therm.therm_volts_reading, cling.therm.power_volts_reading);
+				N_SPRINTF("[THERM] adc measured at(%d): %d,%d", CLK_get_system_time(), cling.therm.therm_volts_reading, cling.therm.power_volts_reading);
   			_calc_temperature();
 			}
 			N_SPRINTF("[THERM] therm pin turn on adc");
@@ -203,7 +203,7 @@ void THERMISTOR_state_machine()
 				N_SPRINTF("[THERM] duty off normal-> %d, %d", t_diff, cling.user_data.skin_temp_day_interval);
     		if ( t_diff >  SKIN_TEMPERATURE_MEASURING_PERIOD_BACKGROUND ) {
 					t->state = THERMISTOR_STAT_DUTY_ON;
-					Y_SPRINTF("[THERM] duty off -> ON, normal: %d", t_diff);
+					N_SPRINTF("[THERM] duty off -> ON, normal: %d", t_diff);
 	  		}
 	  	}
 	  	break;

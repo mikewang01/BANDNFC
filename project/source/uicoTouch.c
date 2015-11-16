@@ -359,7 +359,7 @@ start_uico:
 static bool uico_touch_ic_floating_calibration_response_process(uint8_t *buffer, uint16_t lenth)
 {
     uint8_t i = 0;
-    Y_SPRINTF("[UICO] calibration_response:0x%02x, 0x%02x, 0x%02x, 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3]);
+    N_SPRINTF("[UICO] calibration_response:0x%02x, 0x%02x, 0x%02x, 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3]);
     /*This means there is something wrong with tthe lenth of data*/
     if(lenth <= UICO_CALIBRATION_PROCCES_LENTH) {
         return FALSE;
@@ -462,7 +462,7 @@ static I32S _execute_bootloader(I32S payload_length, unsigned char *s)
 
         // every string starts with FF3x.  If first byte isn't FF, something is wrong
         if (s[index] != 0xFF) {
-            Y_SPRINTF("[UICO] ERROR: execute_bootload has lost sync with the file (0x%02x)", uicoDat[index]);
+            N_SPRINTF("[UICO] ERROR: execute_bootload has lost sync with the file (0x%02x)", uicoDat[index]);
             return -1;
         } else {
 
@@ -470,44 +470,44 @@ static I32S _execute_bootloader(I32S payload_length, unsigned char *s)
 
                 case COMMAND_ENTER_BOOTLOAD:
                     length = 2 + 8;
-                    Y_SPRINTF("[UICO] COMMAND_ENTER_BOOTLOAD.");
+                    N_SPRINTF("[UICO] COMMAND_ENTER_BOOTLOAD.");
                     break;
 
                 case COMMAND_FLASH_WRITE:
                     length = UPGRADE_BLOCK_LENGTH;
-                    Y_SPRINTF("[UICO] UPGRADE_BLOCK_LENGTH.");
+                    N_SPRINTF("[UICO] UPGRADE_BLOCK_LENGTH.");
                     break;
 
                 case COMMAND_FLASH_VERIFY:
                     length = 2 + 8;
-                    Y_SPRINTF("[UICO] COMMAND_FLASH_VERIFY.");
+                    N_SPRINTF("[UICO] COMMAND_FLASH_VERIFY.");
                     break;
 
                 case COMMAND_BOOTLOAD_DONE:
                     length = 2 + 8;
                     sending = 0;
-                    Y_SPRINTF("[UICO] COMMAND_BOOTLOAD_DONE.");
+                    N_SPRINTF("[UICO] COMMAND_BOOTLOAD_DONE.");
                     break;
 
 #if LARGEFORMAT
                 case COMMAND_BOOTLOAD_SELECT:
                     length = 2 + 8 + 2;
-                    Y_SPRINTF("[UICO] COMMAND_BOOTLOAD_SELECT.");
+                    N_SPRINTF("[UICO] COMMAND_BOOTLOAD_SELECT.");
                     break;
 #else
                 case COMMAND_BOOTLOAD_SELECT:
                     length = 0;
-                    Y_SPRINTF("[UICO] COMMAND_BOOTLOAD_SELECT.");
+                    N_SPRINTF("[UICO] COMMAND_BOOTLOAD_SELECT.");
                     break;
 #endif
 
                 default:
-                    Y_SPRINTF("[UICO] ERROR: execute_bootload has lost sync with the file (0x%02x)", uicoDat[index]);
+                    N_SPRINTF("[UICO] ERROR: execute_bootload has lost sync with the file (0x%02x)", uicoDat[index]);
                     return -1;
             }
         }
 
-        Y_SPRINTF("[UICO] Writing block 0x%02x...", uicoDat[index + 11]);
+        N_SPRINTF("[UICO] Writing block 0x%02x...", uicoDat[index + 11]);
 
         _setup_buffer(buffer, index, length, s);
         retry_count = 3;
@@ -528,7 +528,7 @@ static I32S _execute_bootloader(I32S payload_length, unsigned char *s)
                 }
 
                 _i2c_btld_read(&response[0], 1);
-//		  Y_SPRINTF("[UICO] Received Data: %02x %02x", buffer[0], response[0]);
+//		  N_SPRINTF("[UICO] Received Data: %02x %02x", buffer[0], response[0]);
 
                 if (response[0] == BOOTLOAD_MODE)	{           // Success!
                     N_SPRINTF("[UICO] Success!");
@@ -542,7 +542,7 @@ static I32S _execute_bootloader(I32S payload_length, unsigned char *s)
             }
         }
 
-//	Y_SPRINTF("[UICO] Returned Data: %02x %02x %02x %02x %02x %02x %02x %02x", response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7]);
+//	N_SPRINTF("[UICO] Returned Data: %02x %02x %02x %02x %02x %02x %02x %02x", response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7]);
 
         if ((response[0] != BOOTLOAD_MODE) && (s[index + 1] != COMMAND_BOOTLOAD_DONE) && (length != 0)) {
             Y_SPRINTF("[UICO] FAIL on block 0x%02x write (response 0x%02x 0x%02x)  0x%02x  %d", uicoDat[index + 11], response[0], response[1], uicoDat[index + 1], length);
@@ -601,7 +601,7 @@ static I32S _try_firmware_update()
         data[0] = 0x20;
         _i2c_main_write(data, 1);
         _i2c_main_read (data, 2);
-        Y_SPRINTF("[UICO]: 0x%02x 0x%02x", data[0], data[1]);
+        N_SPRINTF("[UICO]: 0x%02x 0x%02x", data[0], data[1]);
 
 #if 1
         if ( !((data[0] == COMMAND_GET_DATA) && (data[1] == 17)) ) {
@@ -643,12 +643,12 @@ static I32S _try_firmware_update()
         // Compare Version Major, Version Minor, and Tuning Revision for match
 #if 1
         if((data[10] == s[4]) && (data[11] == s[5]) && (data[18] == s[9])) {
-            Y_SPRINTF("[UICO] 1 No new firmware version found, no upgrade necessary. %d %d %d", uicoDat[4], uicoDat[5], uicoDat[3]);
+            N_SPRINTF("[UICO] 1 No new firmware version found, no upgrade necessary. %d %d %d", uicoDat[4], uicoDat[5], uicoDat[3]);
             return -1;
         }
 #else
         if (data[10] > s[4]) {
-            Y_SPRINTF("[UICO] 1 No new firmware version found, no upgrade necessary.");
+            N_SPRINTF("[UICO] 1 No new firmware version found, no upgrade necessary.");
             return -1;
         } else if (data[10] == s[4]) {
             if (data[11] > s[5]) {
@@ -675,7 +675,7 @@ static I32S _try_firmware_update()
 #endif
     } else {
 #if ((defined UICO_FORCE_BURN_FIRMWARE) || (defined UICO_INCLUDE_FIRMWARE_BINARY)) 
-        Y_SPRINTF("[UICO] uico ic has been bricked force to update it .");
+        N_SPRINTF("[UICO] uico ic has been bricked force to update it .");
         _execute_bootloader(uico_binary_lenth, s);
         SYSTEM_reboot();
 #endif
@@ -735,7 +735,7 @@ void UICO_init()
         }
 
     }
-    Y_SPRINTF("[UICO init]: 0x%02x 0x%02x 0x%02x", buf[0], buf[1], 0x55);
+    N_SPRINTF("[UICO init]: 0x%02x 0x%02x 0x%02x", buf[0], buf[1], 0x55);
     // Read 2 + buf[1] bytes
     _i2c_main_read(buf, 2 + buf[1]);
 
@@ -748,7 +748,7 @@ void UICO_init()
     touch_num_supported = buf[7];
     screen_size_code    = buf[6];
 
-    Y_SPRINTF("[UICO]: %d %d %d %d", resolution_x, resolution_y, touch_num_supported, screen_size_code);
+    N_SPRINTF("[UICO]: %d %d %d %d", resolution_x, resolution_y, touch_num_supported, screen_size_code);
 
     if( refresh_rate == 0 ) {
         switch(screen_size_code) {
@@ -835,7 +835,7 @@ I8U UICO_main()
 #ifdef UICO_INT_MESSAGE
     a = buf[0];
     b = buf[1];
-    Y_SPRINTF("[UICO] Packet 2 bytes %d, %d, ", a, b);
+    N_SPRINTF("[UICO] Packet 2 bytes %d, %d, ", a, b);
 #endif
 
     len =  buf[1];
@@ -852,7 +852,7 @@ I8U UICO_main()
     if (buf[0] != COMMAND_READPACKET) {
 
 #ifdef UICO_INT_MESSAGE
-        Y_SPRINTF("[UICO] NOT a read packet: %d, %d, ", a, b);
+        N_SPRINTF("[UICO] NOT a read packet: %d, %d, ", a, b);
 #endif
 			        /*process user command individually*/
         if(buf[0] == UICO_USER_COMMAND) {
@@ -867,7 +867,7 @@ I8U UICO_main()
     if( len < 6 ) {
 
 #ifdef UICO_INT_MESSAGE
-        Y_SPRINTF("[UICO] wrong len (%d) %d, %d", COMMAND_READPACKET, a, b);
+        N_SPRINTF("[UICO] wrong len (%d) %d, %d", COMMAND_READPACKET, a, b);
 #endif
         return 0xff;
     }
@@ -883,7 +883,7 @@ I8U UICO_main()
     h = buf[7];
     i = buf[8];
     j = buf[9];
-    Y_SPRINTF("[UICO] Packet (%d) %d, %d, %d, %d, %d, %d, %d, %d, %d, %d", a,
+    N_SPRINTF("[UICO] Packet (%d) %d, %d, %d, %d, %d, %d, %d, %d, %d, %d", a,
               a, b, c, d, e, f, g, h, i, j);
 #endif
 
@@ -904,7 +904,7 @@ I8U UICO_main()
     // type: 2 ------ SKIN ----------
     // type: 3 ------ SKIN + FINGER ----------
     if (_is_skin_touched(4)) {
-        Y_SPRINTF("SKIN TOUCH DETECTED");
+        N_SPRINTF("SKIN TOUCH DETECTED");
         opcode |= 0x04;
     }
 
@@ -927,7 +927,7 @@ I8U UICO_main()
                     opdetail = 2;
 #ifdef UICO_INT_MESSAGE
                 coor = res[3].x;
-                Y_SPRINTF("FINGER DOWN DETECTED 1(%d), coor: %d", prev_code, coor);
+                N_SPRINTF("FINGER DOWN DETECTED 1(%d), coor: %d", prev_code, coor);
 #endif
             } else {
 #if 0 // Do not send a finger touch event if previously swipe gesture has been sent
@@ -941,7 +941,7 @@ I8U UICO_main()
 #endif
 #ifdef UICO_INT_MESSAGE
                 coor = res[3].x;
-                Y_SPRINTF("FINGER DOWN DETECTED 2(%d), coor: %d", prev_code, coor);
+                N_SPRINTF("FINGER DOWN DETECTED 2(%d), coor: %d", prev_code, coor);
 #endif
             }
         }
@@ -980,7 +980,7 @@ I8U UICO_main()
             }
 #ifdef UICO_INT_MESSAGE
 
-            Y_SPRINTF("SWIPE DETECTED (%d)", prev_code);
+            N_SPRINTF("SWIPE DETECTED (%d)", prev_code);
 #endif
             opcode |= 0x01;
 #if 0
@@ -1126,7 +1126,7 @@ int read_data_from_uico_touch(uint8_t *buffer_p, uint16_t rx_lenth)
 
 
     _i2c_main_read(buffer,  rx_lenth);
-    Y_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+    N_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
     // Write Stop Acknowledge
     _write_stop_acknowledge();
 
@@ -1173,11 +1173,11 @@ int read_unkown_lenth_from_uico_touch(uint8_t *buffer_p, uint16_t *rx_lenth)
     // Read First 2 bytes
 
     _i2c_main_read (buffer, 2);
-    Y_SPRINTF("[UICO]: 0x%02x 0x%02x", buffer[0], buffer[1]);
+    N_SPRINTF("[UICO]: 0x%02x 0x%02x", buffer[0], buffer[1]);
     *rx_lenth =  buffer[1];
     *rx_lenth += 2;
     _i2c_main_read(buffer,  *rx_lenth);
-    Y_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+    N_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
     // Write Stop Acknowledge
     _write_stop_acknowledge();
 

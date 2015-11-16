@@ -16,9 +16,6 @@
 #include "main.h"
 #include "btle.h"
 #include "pstorage.h"
-#include "ancs.h"
-
-#include "ble_ancs_c.h"
 #include <string.h>
 #include <stdbool.h>
 #include "ble_err.h"
@@ -28,111 +25,21 @@
 #include "device_manager.h"
 #include "ble_db_discovery.h"
 #include "app_error.h"
-#include "oled.h"
 
 #ifdef _ENABLE_ANCS_
 
-#define BLE_ANCS_NOTIF_EVT_ID_INDEX       0                       /**< Index of the Event ID field when parsing notifications. */
-#define BLE_ANCS_NOTIF_FLAGS_INDEX        1                       /**< Index of the Flags field when parsing notifications. */
-#define BLE_ANCS_NOTIF_CATEGORY_ID_INDEX  2                       /**< Index of the Category ID field when parsing notifications. */
-#define BLE_ANCS_NOTIF_CATEGORY_CNT_INDEX 3                       /**< Index of the Category Count field when parsing notifications. */
-#define BLE_ANCS_NOTIF_NOTIF_UID          4                       /**< Index of the Notification UID field when patsin notifications. */
+static tx_message_t   m_tx_buffer[3];            /**< Transmit buffer for messages to be transmitted to the Notification Provider. */
+static I8U            m_tx_insert_index ;        /**< Current index in the transmit buffer where the next message should be inserted. */
+static I8U            m_tx_index;                /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
 
-#define START_HANDLE_DISCOVER            0x0001                   /**< Value of start handle during discovery. */
-
-#define WRITE_MESSAGE_LENGTH             13                       /**< Length of the write message for CCCD/control point. */
-#define BLE_CCCD_NOTIFY_BIT_MASK         0x0001                   /**< Enable notification bit. */
-
-
-/**@brief ANCS request types.
- */
-typedef enum
-{
-    READ_REQ = 1,  /**< Type identifying that this tx_message is a read request. */
-    WRITE_REQ      /**< Type identifying that this tx_message is a write request. */
-} ancs_tx_request_t;
-
-
-/**@brief Structure used for holding the characteristic found during the discovery process.
- */
-typedef struct
-{
-    ble_uuid_t            uuid;          /**< UUID identifying the characteristic. */
-    ble_gatt_char_props_t properties;    /**< Properties for the characteristic. */
-    uint16_t              handle_decl;   /**< Characteristic Declaration Handle for the characteristic. */
-    uint16_t              handle_value;  /**< Value Handle for the value provided in the characteristic. */
-    uint16_t              handle_cccd;   /**< CCCD Handle value for the characteristic. */
-} ble_ancs_c_characteristic_t;
-
-
-/**@brief Structure used for holding the Apple Notification Center Service found during the discovery process.
- */
-typedef struct
-{
-    uint8_t                     handle;         /**< Handle of Apple Notification Center Service, which identifies to which peer this discovered service belongs. */
-    ble_gattc_service_t         service;        /**< The GATT Service holding the discovered Apple Notification Center Service. */
-    ble_ancs_c_characteristic_t control_point;  /**< Control Point Characteristic for the service. Allows interaction with the peer. */
-    ble_ancs_c_characteristic_t notif_source;   /**< Characteristic that keeps track of arrival, modification, and removal of notifications. */
-    ble_ancs_c_characteristic_t data_source;    /**< Characteristic where attribute data for the notifications is received from peer. */
-} ble_ancs_c_service_t;
-
-
-/**@brief Structure for writing a message to the central, i.e. Control Point or CCCD.
- */
-typedef struct
-{
-    uint8_t                  gattc_value[WRITE_MESSAGE_LENGTH]; /**< The message to write. */
-    ble_gattc_write_params_t gattc_params;                      /**< GATTC parameters for this message. */
-} write_params_t;
-
-
-/**@brief Structure for holding data to be transmitted to the connected master.
- */
-typedef struct
-{
-    uint16_t          conn_handle;  /**< Connection handle to be used when transmitting this message. */
-    ancs_tx_request_t type;         /**< Type of this message, i.e. read or write message. */
-    union
-    {
-        uint16_t       read_handle; /**< Read request message. */
-        write_params_t write_req;   /**< Write request message. */
-    } req;
-} tx_message_t;
-
-
-
-static tx_message_t   m_tx_buffer[3]; //m_tx_buffer[TX_BUFFER_SIZE];       /**< Transmit buffer for messages to be transmitted to the Notification Provider. */
-static uint8_t        m_tx_insert_index = 0;                               /**< Current index in the transmit buffer where the next message should be inserted. */
-static uint8_t        m_tx_index        = 0;                               /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
-
-static ble_ancs_c_service_t   m_service;                                   /**< Current service data. */
-static ble_ancs_c_t         * mp_ble_ancs;                                 /**< Pointer to the current instance of the ANCS client module. The memory for this is provided by the application.*/
-static ble_ancs_c_evt_t       m_ancs_evt;                                  /**< The ANCS event that is created in this module and propagated to the application. */
-static uint8_t                m_ancs_uuid_type;                            /**< Store ANCS UUID. */
-
-static ble_ancs_c_evt_notif_t ancs_notif;
-                                 
+static ble_ancs_c_service_t    m_service;        /**< Current service data. */
+static ble_ancs_notif_t        ancs_notif;
+static ble_ancs_notif_attr_t   ancs_notif_attr;
+	
 static I32U      ancs_timer;
 static I32U      ancs_t_curr, ancs_t_diff;		
 
-typedef enum
-{
-    COMMAND_ID,
-    NOTIFICATION_UID1,
-    NOTIFICATION_UID2,
-    NOTIFICATION_UID3,
-    NOTIFICATION_UID4,
-    ATTRIBUTE_ID,
-    ATTRIBUTE_LEN1,
-    ATTRIBUTE_LEN2,
-    ATTRIBUTE_READY
-} parse_state_t;
-
-static parse_state_t         m_parse_state = COMMAND_ID;                                   /**< ANCS notification attribute parsing state. */
-static I8U                   title_or_message_index; 
-
-/**@brief 128-bit service UUID for the Apple Notification Center Service.
- */
+/**@brief 128-bit service UUID for the Apple Notification Center Service.*/
 const ble_uuid128_t ble_ancs_base_uuid128 =
 {
   {
@@ -181,98 +88,87 @@ const ble_uuid128_t ble_ancs_ds_base_uuid128 =
 /**@brief Function for handling events from the database discovery module.*/
 static void db_discover_evt_handler(ble_db_discovery_evt_t * p_evt)
 {
-	Y_SPRINTF("[ANCS]: Database Discovery handler called with event 0x%x\r\n", p_evt->evt_type);
-
-	ble_ancs_c_evt_t evt;
+	ANCS_CONTEXT *a = &cling.ancs;
 	ble_db_discovery_char_t * p_chars;
-
 	p_chars = p_evt->params.discovered_db.charateristics;
+
+	N_SPRINTF("[ANCS]: Database Discovery handler called with event 0x%x\r\n", p_evt->evt_type);
 
 	// Check if the ANCS Service was discovered.
 	if (p_evt->evt_type == BLE_DB_DISCOVERY_COMPLETE &&
 			p_evt->params.discovered_db.srv_uuid.uuid == ANCS_UUID_SERVICE &&
 			p_evt->params.discovered_db.srv_uuid.type == BLE_UUID_TYPE_VENDOR_BEGIN)
   {
-			mp_ble_ancs->conn_handle = p_evt->conn_handle;
-
-			// Find the handles of the ANCS characteristic.
-			uint32_t i;
-
-			for (i = 0; i < p_evt->params.discovered_db.char_count; i++)
+		// Find the handles of the ANCS characteristic.
+		for (I32U i = 0; i < p_evt->params.discovered_db.char_count; i++)
+		{
+			switch (p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid)
 			{
-					switch (p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid)
-					{
-							case ANCS_UUID_CHAR_CONTROL_POINT:
-									N_SPRINTF("[ANCS]: Control Point Characteristic found.\n\r");
-									m_service.control_point.properties   = p_chars[i].characteristic.char_props;
-									m_service.control_point.handle_decl  = p_chars[i].characteristic.handle_decl;
-									m_service.control_point.handle_value = p_chars[i].characteristic.handle_value;
-							    m_service.control_point.handle_cccd  = p_chars[i].cccd_handle;
-									break;
+				case ANCS_UUID_CHAR_CONTROL_POINT:
+						N_SPRINTF("[ANCS]: Control Point Characteristic found...");
+						m_service.control_point.properties   = p_chars[i].characteristic.char_props;
+						m_service.control_point.handle_decl  = p_chars[i].characteristic.handle_decl;
+						m_service.control_point.handle_value = p_chars[i].characteristic.handle_value;
+						m_service.control_point.handle_cccd  = p_chars[i].cccd_handle;
+						break;
 
-							case ANCS_UUID_CHAR_DATA_SOURCE:
-									N_SPRINTF("[ANCS]: Data Source Characteristic found.\n\r");
-									m_service.data_source.properties   = p_chars[i].characteristic.char_props;
-									m_service.data_source.handle_decl  = p_chars[i].characteristic.handle_decl;
-									m_service.data_source.handle_value = p_chars[i].characteristic.handle_value;
-							    m_service.data_source.handle_cccd  = p_chars[i].cccd_handle;
-									break;
+				case ANCS_UUID_CHAR_DATA_SOURCE:
+						N_SPRINTF("[ANCS]: Data Source Characteristic found...");
+						m_service.data_source.properties   = p_chars[i].characteristic.char_props;
+						m_service.data_source.handle_decl  = p_chars[i].characteristic.handle_decl;
+						m_service.data_source.handle_value = p_chars[i].characteristic.handle_value;
+						m_service.data_source.handle_cccd  = p_chars[i].cccd_handle;
+						break;
 
-							case ANCS_UUID_CHAR_NOTIFICATION_SOURCE:
-									N_SPRINTF("[ANCS]: Notification point Characteristic found.\n\r");
-									m_service.notif_source.properties   = p_chars[i].characteristic.char_props;
-									m_service.notif_source.handle_decl  = p_chars[i].characteristic.handle_decl;
-									m_service.notif_source.handle_value = p_chars[i].characteristic.handle_value;							
-							    m_service.notif_source.handle_cccd  = p_chars[i].cccd_handle;
-									break;
+				case ANCS_UUID_CHAR_NOTIFICATION_SOURCE:
+						N_SPRINTF("[ANCS]: Notification point Characteristic found...");
+						m_service.notif_source.properties   = p_chars[i].characteristic.char_props;
+						m_service.notif_source.handle_decl  = p_chars[i].characteristic.handle_decl;
+						m_service.notif_source.handle_value = p_chars[i].characteristic.handle_value;							
+						m_service.notif_source.handle_cccd  = p_chars[i].cccd_handle;
+						break;
 
-									default:
-									break;
-					}
-			}
-			evt.evt_type = BLE_ANCS_C_EVT_DISCOVER_COMPLETE;
-			mp_ble_ancs->evt_handler(&evt);
+						default:
+						break;
+			 }
+		 }
+    
+		 a->state = BLE_ANCS_STATE_DISCOVER_COMPLETE;
 	}
 	else
 	{
-			evt.evt_type = BLE_ANCS_C_EVT_DISCOVER_FAILED;
-			mp_ble_ancs->evt_handler(&evt);
+     a->state = BLE_ANCS_STATE_DISCOVER_FAILED;
 	}
 }
 
 
 /**@brief Function for passing any pending request from the buffer to the stack.
  */
-static void tx_buffer_process(void)
+static void _tx_buffer_process(void)
 {
-	if (m_tx_index != m_tx_insert_index)
-    {
-			uint32_t err_code;
-			
-			if(m_tx_index >=2){
-				
-		  	m_tx_index=0;
-			}
-			
-			if (m_tx_buffer[m_tx_index].type == READ_REQ) {
-			
-				err_code = sd_ble_gattc_read(m_tx_buffer[m_tx_index].conn_handle, m_tx_buffer[m_tx_index].req.read_handle, 0);
-			}
-			else {
-			
-				err_code = sd_ble_gattc_write(m_tx_buffer[m_tx_index].conn_handle,&m_tx_buffer[m_tx_index].req.write_req.gattc_params);
-			}
-			if (err_code == NRF_SUCCESS){
-				m_tx_index++;
-			}
-  }
+	I32U err_code;
+	
+	if (m_tx_index != m_tx_insert_index) {
+   
+		if(m_tx_index >=2)
+		  m_tx_index=0;
 
+		err_code = sd_ble_gattc_write(cling.ble.conn_handle,&m_tx_buffer[m_tx_index].req.write_req.gattc_params);
+		if (err_code == NRF_SUCCESS)
+				m_tx_index++;
+  }
 }
 
 void ANCS_nflash_store_one_message(I8U *data)
 {
 	//use message 4k space from nflash
 	I32U addr=SYSTEM_NOTIFICATION_SPACE_START;
+	
+	I8U *p  = &data[cling.ancs.pkt.title_len+cling.ancs.pkt.message_len+2];
+	I8U len = (256 - cling.ancs.pkt.title_len - cling.ancs.pkt.message_len - 2);
+
+	//Clear the unused data space.
+	memset(p,0,len);
 	
 	addr += (cling.ancs.message_total-1)*256;
 	FLASH_Write_App(addr, data, 128);
@@ -281,441 +177,380 @@ void ANCS_nflash_store_one_message(I8U *data)
 	N_SPRINTF("[ANCS] ADDR :%d, %02x, %02x, %02x, %02x",addr, data[0], data[1], data[2], data[3]);		
 }
 
-static void _ancs_parse_factory_init()
+
+/**@brief Function for parsing received notification attribute response data.*/
+static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 {
+  ANCS_CONTEXT *a = &cling.ancs;
+	static I16U  current_len,buff_idx;
 
-  m_parse_state = COMMAND_ID;
-	title_or_message_index = ANCS_ATTR_TITLE_FLAG;	
-}
-
-
-/**@brief Function for parsing received notification attribute response data.
- */
-static void parse_get_notif_attrs_response( const uint8_t *data, int len)
-{
-    static uint8_t *ptr;
-    static uint16_t current_len;
-    static ble_ancs_c_evt_t        evt;
-    static uint16_t buff_idx;
-    int i;
-    //static uint16_t reference_len=32;
-    for (i = 0; i < len; i++)
+  for (I16U i = 0; i < len; i++)
+  {
+    switch (a->parse_state)
     {
-        switch (m_parse_state)
+      case PARSE_STAT_COMMAND_ID:
+			{
+			  if(data[i] != 0){ 
+				 //parse command error ,then give up parsing.
+				 	a->parse_state = PARSE_STAT_COMMAND_ID;
+				 return;
+			  }
+			  a->parse_state = PARSE_STAT_NOTIFICATION_UID_1;
+			  break;
+			}
+		  case PARSE_STAT_NOTIFICATION_UID_1:
+			{
+			  ancs_notif_attr.uid = data[i];
+			  a->parse_state = PARSE_STAT_NOTIFICATION_UID_2;
+			  break;			
+			}					 
+      case PARSE_STAT_NOTIFICATION_UID_2:
+			{
+			  ancs_notif_attr.uid |= (data[i] << 8);
+			  a->parse_state = PARSE_STAT_NOTIFICATION_UID_3;
+			  break;			
+			}
+      case PARSE_STAT_NOTIFICATION_UID_3:
+      {
+			  ancs_notif_attr.uid |= (data[i] << 8);
+			  a->parse_state = PARSE_STAT_NOTIFICATION_UID_4;
+			  break;			
+			}
+      case PARSE_STAT_NOTIFICATION_UID_4:
+			{
+				ancs_notif_attr.uid |= (data[i] << 8);
+				a->parse_state = PARSE_STAT_ATTRIBUTE_TITLE_ID;
+				break;			
+			}
+		  case PARSE_STAT_ATTRIBUTE_TITLE_ID:
+			{
+        ancs_notif_attr.id = (ble_ancs_notif_attr_id_t)data[i];			
+				if(ancs_notif_attr.id != BLE_ANCS_NOTIF_ATTR_ID_TITLE){
+					//parse attr title id error,then give up parsing.
+				  	a->parse_state = PARSE_STAT_COMMAND_ID;
+				  N_SPRINTF("[ANCS] parse attr title id error :%d",ancs_notif_attr.id);
+					return;
+				}	
+				a->parse_state = PARSE_STAT_ATTRIBUTE_TITLE_LEN1;
+				break;			
+			}
+			case PARSE_STAT_ATTRIBUTE_TITLE_LEN1:
+			{
+				ancs_notif_attr.len=data[i];
+				a->parse_state = PARSE_STAT_ATTRIBUTE_TITLE_LEN2;
+				break;					
+			}
+      case PARSE_STAT_ATTRIBUTE_TITLE_LEN2:
+			{
+        ancs_notif_attr.len |= (data[i] << 8);			
+			  if(ancs_notif_attr.len > ANCS_SUPPORT_MAX_TITLE_LEN){ 
+				  //The length of the error ,then give up parsing.  
+				  a->parse_state = PARSE_STAT_COMMAND_ID;
+				  N_SPRINTF("[ANCS] get title len overstep the boundary --- parse error.");
+				  return;
+			  }
+        cling.ancs.pkt.title_len=(I8U)ancs_notif_attr.len;
+        N_SPRINTF("[ANCS] get attr title len :%d",ancs_notif_attr.len );
+        buff_idx = 0;
+        current_len = 0;							         
+				a->parse_state = PARSE_STAT_ATTRIBUTE_TITLE_READY;	
+	      break;				
+			}
+			case PARSE_STAT_ATTRIBUTE_TITLE_READY:
+			{
+				cling.ancs.pkt.buf[buff_idx++] = data[i];
+        current_len++;
+        if(current_len == cling.ancs.pkt.title_len)
         {
-        case COMMAND_ID:
-             //not store cmmand id
-				     if(data[i] != 0){
-							 
-							 //parse error.
-							 _ancs_parse_factory_init();
-							 return;
-						 }
-             m_parse_state = NOTIFICATION_UID1;
-             break;
-
-        case NOTIFICATION_UID1:
-             evt.attr.notif_uid = data[i];
-             m_parse_state = NOTIFICATION_UID2;
-             break;
-
-        case NOTIFICATION_UID2:
-					   evt.attr.notif_uid |= (data[i] << 8);
-             m_parse_state = NOTIFICATION_UID3;
-             break;
-
-        case NOTIFICATION_UID3:
-             evt.attr.notif_uid |= (data[i] << 8);
-             m_parse_state = NOTIFICATION_UID4;
-             break;
-
-        case NOTIFICATION_UID4:
-             evt.attr.notif_uid |= (data[i] << 8);
-             m_parse_state = ATTRIBUTE_ID;
-             break;
-
-        case ATTRIBUTE_ID:
-             evt.attr.attr_id = (ble_ancs_c_notif_attr_id_values_t)data[i];
-				     if((evt.attr.attr_id != BLE_ANCS_NOTIF_ATTR_ID_TITLE)&&(evt.attr.attr_id != BLE_ANCS_NOTIF_ATTR_ID_MESSAGE)){
-						 
-						 //parse error.
-						 _ancs_parse_factory_init();
-						 Y_SPRINTF("[ANCS] get attr id err :%d",evt.attr.attr_id);						  
-						 return;
-						 }
-             m_parse_state = ATTRIBUTE_LEN1;
-             break;
-
-        case ATTRIBUTE_LEN1:
-					   evt.attr.attr_len=data[i];
-             m_parse_state = ATTRIBUTE_LEN2;
-             break;
-
-        case ATTRIBUTE_LEN2:
-             evt.attr.attr_len |= (data[i] << 8);
-				     if(title_or_message_index == ANCS_ATTR_TITLE_FLAG){
-
-               if(evt.attr.attr_len > ANCS_SUPPORT_MAX_TITLE_LEN){
-								 
-								//parse error. 
-                _ancs_parse_factory_init();
-							  Y_SPRINTF("[ANCS] get title len overstep the boundary and parse err");
-						    return;
-						   }	
-								
-					     cling.ancs.pkt.title_len=(I8U)evt.attr.attr_len;
-						   ptr = cling.ancs.pkt.buf;
-	             N_SPRINTF("[ANCS] get attr title len  :%d",evt.attr.attr_len );	
-						}
-						else{
-							
-               if(evt.attr.attr_len > ANCS_SUPPORT_MAX_MESSAGE_LEN){
-								 
-								 //parse error.
-                 _ancs_parse_factory_init();
-							   Y_SPRINTF("[ANCS] get message len overstep the boundary and parse err");
-						     return;
-						   }	
-							 
-							 if(evt.attr.attr_len >= 190)
-								 evt.attr.attr_len=190;
-							 
-						   cling.ancs.pkt.message_len=(I8U)evt.attr.attr_len;
-						   ptr = &cling.ancs.pkt.buf[cling.ancs.pkt.title_len];	
-               N_SPRINTF("[ANCS] get attr message len  :%d",evt.attr.attr_len );							
-						}
-            m_parse_state = ATTRIBUTE_READY;
-
-            buff_idx = 0;
-            current_len = 0;							
-            break;
-
-        case ATTRIBUTE_READY:
-					   ptr [buff_idx++] = data[i];
-             current_len++;
-
-             if (current_len == evt.attr.attr_len)
-             {
-                if(title_or_message_index == ANCS_ATTR_TITLE_FLAG){
-								
-								  title_or_message_index=ANCS_ATTR_MESSAGE_FLAG;
-									m_parse_state = ATTRIBUTE_ID;
-								}
-                else {
-									
-								  title_or_message_index = ANCS_ATTR_TITLE_FLAG;	
-								  m_parse_state = COMMAND_ID;
-								  cling.ancs.ancs_attr_store_flag=TRUE;
-									return;
-								}
-            }
-            break;
+          a->parse_state = PARSE_STAT_ATTRIBUTE_MESSAGE_ID;	
+        }
+        break;					
+			}
+		  case PARSE_STAT_ATTRIBUTE_MESSAGE_ID:
+			{
+        ancs_notif_attr.id = (ble_ancs_notif_attr_id_t)data[i];			
+				if(ancs_notif_attr.id != BLE_ANCS_NOTIF_ATTR_ID_MESSAGE){
+					//parse attr message id error,then give up parsing.
+				  a->parse_state = PARSE_STAT_COMMAND_ID;
+				  N_SPRINTF("[ANCS] parse attr message id error :%d",ancs_notif_attr.id);
+					return;
+				}	
+				a->parse_state = PARSE_STAT_ATTRIBUTE_MESSAGE_LEN1;
+				break;			
+			}
+			case PARSE_STAT_ATTRIBUTE_MESSAGE_LEN1:
+			{
+				ancs_notif_attr.len=data[i];
+				a->parse_state = PARSE_STAT_ATTRIBUTE_MESSAGE_LEN2;
+				break;					
+			}
+      case PARSE_STAT_ATTRIBUTE_MESSAGE_LEN2:
+			{
+        ancs_notif_attr.len |= (data[i] << 8);			
+			  if(ancs_notif_attr.len > ANCS_SUPPORT_MAX_MESSAGE_LEN){ 
+				  //The length of the error ,then give up parsing.  
+				  a->parse_state = PARSE_STAT_COMMAND_ID;
+				  N_SPRINTF("[ANCS] get attr message len overstep the boundary and parse err");
+				  return;
+			  }
+				if(ancs_notif_attr.len >= 190)
+			    ancs_notif_attr.len=190;
 				
+        cling.ancs.pkt.message_len=(I8U)ancs_notif_attr.len;
+        N_SPRINTF("[ANCS] get attr title len :%d",ancs_notif_attr.len );		
+        buff_idx = 0;
+        current_len = 0;							
+				a->parse_state = PARSE_STAT_ATTRIBUTE_MESSAGE_READY;	
+	      break;				
+			}
+			case PARSE_STAT_ATTRIBUTE_MESSAGE_READY:
+			{
+				cling.ancs.pkt.buf[cling.ancs.pkt.title_len+(buff_idx++)] = data[i];
+        current_len++;
+        if(current_len == cling.ancs.pkt.message_len)
+        {
+          a->parse_state = PARSE_STAT_COMMAND_ID;	
+					//start store notific attr...
+					a->state = BLE_ANCS_STATE_NOTIF_ATTRIBUTE;
+        }
+        break;					
+			}			
     }
   }
 }
 
 
 /**@brief Function for checking if data in an iOS notification is out of bounds.*/
-
-static uint32_t ble_ancs_verify_notification_format(const ble_ancs_c_evt_notif_t  notif)
+static I32U _ancs_verify_notification_format(const ble_ancs_notif_t  notif)
 {
-    if(   (notif.evt_id >= BLE_ANCS_NB_OF_EVT_ID)
-       || (notif.category_id >= BLE_ANCS_NB_OF_CATEGORY_ID))
-    {
-        return NRF_ERROR_INVALID_PARAM;
-    }
-    return NRF_SUCCESS;
+	if((notif.evt_id >= BLE_ANCS_NB_OF_EVT_ID)|| (notif.category_id >= BLE_ANCS_NB_OF_CATEGORY_ID))
+		return NRF_ERROR_INVALID_PARAM;
+	else
+	  return NRF_SUCCESS;
 }
 
 
-
 /**@brief Function for receiving and validating notifications received from the Notification Provider.*/
-
-static void parse_notif(const ble_ancs_c_t * p_ancs,
-                        ble_ancs_c_evt_t   * p_ancs_evt,
-                        const uint8_t      * p_data_src,
-                        const uint16_t       hvx_data_len)
+static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 {
-    uint32_t err_code;
-    if (hvx_data_len != BLE_ANCS_NOTIFICATION_DATA_LENGTH)
-    {
-        m_ancs_evt.evt_type = BLE_ANCS_C_EVT_INVALID_NOTIF;
-        p_ancs->evt_handler(&m_ancs_evt);
-    }
+	I32U err_code;
+	ANCS_CONTEXT *a = &cling.ancs;	
+	
+	if (notif_len != BLE_ANCS_NOTIFICATION_DATA_LENGTH)
+	  //Invalid notific length
+	  return;
 
-    /*lint --e{415} --e{416} -save suppress Warning 415: possible access out of bond */
-    p_ancs_evt->notif.evt_id                    =
-            (ble_ancs_c_evt_id_values_t) p_data_src[BLE_ANCS_NOTIF_EVT_ID_INDEX];
+	ancs_notif.evt_id         =  (ble_ancs_evt_id_t) p_data[BLE_ANCS_NOTIF_EVT_ID_INDEX];
 
-    p_ancs_evt->notif.evt_flags.silent          =
-            (p_data_src[BLE_ANCS_NOTIF_FLAGS_INDEX] >> BLE_ANCS_EVENT_FLAG_SILENT) & 0x01;
+	ancs_notif.evt_flags      =   p_data[BLE_ANCS_NOTIF_FLAGS_INDEX];
+	
+	ancs_notif.category_id    =   p_data[BLE_ANCS_NOTIF_CATEGORY_ID_INDEX];
 
-    p_ancs_evt->notif.evt_flags.important       =
-            (p_data_src[BLE_ANCS_NOTIF_FLAGS_INDEX] >> BLE_ANCS_EVENT_FLAG_IMPORTANT) & 0x01;
+	ancs_notif.category_count =   p_data[BLE_ANCS_NOTIF_CATEGORY_CNT_INDEX];
+	
+	ancs_notif.notif_uid      =   uint32_decode(&p_data[BLE_ANCS_NOTIF_NOTIF_UID]);
 
-    p_ancs_evt->notif.evt_flags.pre_existing    =
-            (p_data_src[BLE_ANCS_NOTIF_FLAGS_INDEX] >> BLE_ANCS_EVENT_FLAG_PREEXISTING) & 0x01;
-
-    p_ancs_evt->notif.evt_flags.positive_action =
-            (p_data_src[BLE_ANCS_NOTIF_FLAGS_INDEX] >> BLE_ANCS_EVENT_FLAG_POSITIVE_ACTION) & 0x01;
-
-    p_ancs_evt->notif.evt_flags.negative_action =
-            (p_data_src[BLE_ANCS_NOTIF_FLAGS_INDEX] >> BLE_ANCS_EVENT_FLAG_NEGATIVE_ACTION) & 0x01;
-
-    p_ancs_evt->notif.category_id               =
-        (ble_ancs_c_category_id_values_t) p_data_src[BLE_ANCS_NOTIF_CATEGORY_ID_INDEX];
-
-    p_ancs_evt->notif.category_count            = p_data_src[BLE_ANCS_NOTIF_CATEGORY_CNT_INDEX];
-    p_ancs_evt->notif.notif_uid = uint32_decode(&p_data_src[BLE_ANCS_NOTIF_NOTIF_UID]);
-    /*lint -restore*/
-
-    err_code = ble_ancs_verify_notification_format(m_ancs_evt.notif);
-    if (err_code == NRF_SUCCESS)
-    {
-        m_ancs_evt.evt_type = BLE_ANCS_C_EVT_NOTIF;
-    }
-    else
-    {
-        m_ancs_evt.evt_type = BLE_ANCS_C_EVT_INVALID_NOTIF;
-    }
-
-    p_ancs->evt_handler(&m_ancs_evt);
+	err_code = _ancs_verify_notification_format(ancs_notif);
+	if (err_code != NRF_SUCCESS)
+	//Invalid notific type	
+	  return;
+	
+	//ANCS state machine busy,waiting until the free.
+	if(a->state != BLE_ANCS_STATE_IDLE)
+		return;
+	
+	a->state =  BLE_ANCS_STATE_NOTIF;
 }
 
 
 /**@brief Function for receiving and validating notifications received from the Notification Provider.
- * 
- * @param[in] p_ancs    Pointer to an ANCS instance to which the event belongs.
  * @param[in] p_ble_evt Bluetooth stack event.
  */
-static void on_evt_gattc_notif(ble_ancs_c_t * p_ancs, const ble_evt_t * p_ble_evt)
+static void _on_evt_gattc_notif(const ble_evt_t * p_ble_evt)
 {
-    const ble_gattc_evt_hvx_t * p_notif = &p_ble_evt->evt.gattc_evt.params.hvx;
+	const ble_gattc_evt_hvx_t * p_notif = &p_ble_evt->evt.gattc_evt.params.hvx;
 
-    if (p_notif->handle == m_service.notif_source.handle_value)
-		{
-			  Y_SPRINTF("[ANCS] get notif source len is :%d",p_notif->len);
-			  BLE_UUID_COPY_INST(m_ancs_evt.uuid, m_service.notif_source.uuid);
-        parse_notif(p_ancs, &m_ancs_evt,p_notif->data,p_notif->len);
-    }
-
-    else if (p_notif->handle == m_service.data_source.handle_value)
-		{
-			  Y_SPRINTF("[ANCS] get data source len is :%d",p_notif->len);
-	      BLE_UUID_COPY_INST(m_ancs_evt.uuid, m_service.data_source.uuid);
-        parse_get_notif_attrs_response(p_notif->data, p_notif->len);
-    }
-    else
-    {
-        // No applicable action.
-    }
+	if (p_notif->handle == m_service.notif_source.handle_value)
+	{
+	  N_SPRINTF("[ANCS] get notif source len :%d",p_notif->len);
+	  _ancs_parse_notif(p_notif->data,p_notif->len);
+	}
+	else if (p_notif->handle == m_service.data_source.handle_value)
+	{
+		N_SPRINTF("[ANCS] get data source len :%d",p_notif->len);
+		_parse_get_notif_attrs_response(p_notif->data, p_notif->len);
+	}
+	else
+	{
+		// No applicable action.
+	}
 }
 
-/**@brief Function for handling write response events.
- */
-static void on_evt_write_rsp()
+/**@brief Function for handling write response events.*/
+static void _on_evt_write_rsp(void)
 {
-    tx_buffer_process();
+  _tx_buffer_process();
 }
 
 
-void ble_ancs_c_on_device_manager_evt(ble_ancs_c_t      * p_ans,
-                                      dm_handle_t const * p_handle,
-                                      dm_event_t const  * p_dm_evt)
+void ANCS_on_ble_evt(const ble_evt_t * p_ble_evt)
 {
-    switch (p_dm_evt->event_id)
-    {
-        case DM_EVT_CONNECTION:
-            // Fall through.
-        case DM_EVT_SECURITY_SETUP_COMPLETE:
-            p_ans->central_handle = p_handle->device_id;
-            break;
+	switch (p_ble_evt->header.evt_id)
+	{
+		case BLE_GATTC_EVT_WRITE_RSP:
+				 _on_evt_write_rsp();
+				 break;
 
-        default:
-            // Do nothing.
-            break;
-    }
+		case BLE_GATTC_EVT_HVX:
+				 _on_evt_gattc_notif(p_ble_evt);
+				 break;
+
+		default:
+				 break;
+	}
 }
 
 
-void ble_ancs_c_on_ble_evt(ble_ancs_c_t * p_ancs, const ble_evt_t * p_ble_evt)
+static I32U _ble_ancs_init(void)
 {
-    uint16_t evt = p_ble_evt->header.evt_id;
+	ANCS_CONTEXT *a = &cling.ancs;
+	
+	m_tx_insert_index = 0;
+	m_tx_index        = 0;
+	
+	a->state = BLE_ANCS_STATE_IDLE;	
+	a->parse_state = PARSE_STAT_COMMAND_ID;	
 
-    switch (evt)
-    {
-        case BLE_GATTC_EVT_WRITE_RSP:
-					   N_SPRINTF("[ANCS] gattc evt white rsp ...");
-						 on_evt_write_rsp();
-            break;
+	memset(&m_service, 0, sizeof(ble_ancs_c_service_t));
+	memset(m_tx_buffer, 0, sizeof(m_tx_buffer));
+	
+	m_service.handle = BLE_GATT_HANDLE_INVALID;
 
-        case BLE_GATTC_EVT_HVX:
-					   N_SPRINTF("[ANCS] gattc evt hex ...");
-             on_evt_gattc_notif(p_ancs, p_ble_evt);
-            break;
+	ble_uuid_t ancs_uuid;
+	ancs_uuid.uuid = ANCS_UUID_SERVICE;
+	ancs_uuid.type = BLE_UUID_TYPE_VENDOR_BEGIN;
 
-        default:
-            break;
-    }
-}
-
-
-uint32_t ble_ancs_c_init(ble_ancs_c_t * p_ancs, const ble_ancs_c_init_t * p_ancs_init)
-{
-    if ((p_ancs == NULL) || p_ancs_init == NULL || (p_ancs_init->evt_handler == NULL))
-    {
-        return NRF_ERROR_NULL;
-    }
-
-    mp_ble_ancs = p_ancs;
-
-    mp_ble_ancs->evt_handler    = p_ancs_init->evt_handler;
-    mp_ble_ancs->error_handler  = p_ancs_init->error_handler;
-    mp_ble_ancs->service_handle = BLE_GATT_HANDLE_INVALID;
-    mp_ble_ancs->central_handle = DM_INVALID_ID;
-    mp_ble_ancs->conn_handle    = BLE_CONN_HANDLE_INVALID;
-
-    memset(&m_service, 0, sizeof(ble_ancs_c_service_t));
-    memset(m_tx_buffer, 0, sizeof(m_tx_buffer));
-
-    m_service.handle = BLE_GATT_HANDLE_INVALID;
-
-    ble_uuid_t ancs_uuid;
-    ancs_uuid.uuid = ANCS_UUID_SERVICE;
-    ancs_uuid.type = BLE_UUID_TYPE_VENDOR_BEGIN;
-
-    return ble_db_discovery_evt_register(&ancs_uuid, db_discover_evt_handler);
+	return ble_db_discovery_evt_register(&ancs_uuid, db_discover_evt_handler);
 }
 
 
 /**@brief Function for creating a TX message for writing a CCCD.*/
 
-static uint32_t cccd_configure(const uint16_t conn_handle, const uint16_t handle_cccd, bool enable)
+static I32U cccd_configure(const uint16_t conn_handle, const uint16_t handle_cccd, bool enable)
 {
-    tx_message_t * p_msg;
-    uint16_t       cccd_val = enable ? BLE_CCCD_NOTIFY_BIT_MASK : 0;
+	tx_message_t * p_msg;
+	I16U  cccd_val = enable ? BLE_CCCD_NOTIFY_BIT_MASK : 0;
 
-	  if(m_tx_insert_index >= 2){
-			
-		  m_tx_insert_index	= 0;
-		}
-		
-    p_msg              = &m_tx_buffer[m_tx_insert_index++];
-
-    p_msg->req.write_req.gattc_params.handle   = handle_cccd;
-    p_msg->req.write_req.gattc_params.len      = 2;
-    p_msg->req.write_req.gattc_params.p_value  = p_msg->req.write_req.gattc_value;
-    p_msg->req.write_req.gattc_params.offset   = 0;
-    p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
-    p_msg->req.write_req.gattc_value[0]        = LSB(cccd_val);
-    p_msg->req.write_req.gattc_value[1]        = MSB(cccd_val);
-    p_msg->conn_handle                         = conn_handle;
-    p_msg->type                                = WRITE_REQ;
-
-    tx_buffer_process();
-    return NRF_SUCCESS;
-}
-
-
-uint32_t ble_ancs_c_notif_source_notif_enable(void)
-{
-    N_SPRINTF("[ANCS]: Enable Notification Source notifications. writing to handle: %i \n\r",
-        m_service.notif_source.handle_cccd);
-    return cccd_configure(cling.ble.conn_handle, m_service.notif_source.handle_cccd, true);
-}
-
-
-uint32_t ble_ancs_c_notif_source_notif_disable(void)
-{
-    return cccd_configure(cling.ble.conn_handle, m_service.notif_source.handle_cccd, false);
-}
-
-
-uint32_t ble_ancs_c_data_source_notif_enable(void)
-{
-    N_SPRINTF("[ANCS]: Enable Data Source notifications. Writing to handle: %i \n\r",
-        m_service.data_source.handle_cccd);
-    return cccd_configure(cling.ble.conn_handle, m_service.data_source.handle_cccd, true);
-}
-
-
-uint32_t ble_ancs_c_data_source_notif_disable(void)
-{
-    return cccd_configure(cling.ble.conn_handle, m_service.data_source.handle_cccd, false);
-}
-
-
-uint32_t ble_ancs_get_notif_attrs( const uint32_t       p_uid)
-{
-	  I16U title_max_len=0;
-	  I16U message_max_len=0;	
-    tx_message_t * p_msg;
-    uint32_t    index    = 0;
- 
-	  if(m_tx_insert_index >= 2){
-			
-		  m_tx_insert_index	= 0;
-		}
-		
-    p_msg              = &m_tx_buffer[m_tx_insert_index++];
-   
-    p_msg->req.write_req.gattc_params.handle   = m_service.control_point.handle_value;
-    p_msg->req.write_req.gattc_params.p_value  = p_msg->req.write_req.gattc_value;
-    p_msg->req.write_req.gattc_params.offset   = 0;
-    p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
-
-    //Command ID.
-    p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_COMMAND_ID_GET_NOTIF_ATTRIBUTES;
-    
-    //Encode Notification UID.
-    index += uint32_encode(p_uid, &p_msg->req.write_req.gattc_value[index]);
+	if(m_tx_insert_index >= 2)
+		m_tx_insert_index	= 0;
 	
-    //Attribute ID.
-	  p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_NOTIF_ATTR_ID_TITLE;
-		
-		//MAX title len
-		title_max_len = ANCS_SUPPORT_MAX_TITLE_LEN;
-	  p_msg->req.write_req.gattc_value[index++] = (uint8_t) (title_max_len);
-    p_msg->req.write_req.gattc_value[index++] = (uint8_t) (title_max_len >> 8);
+	p_msg              = &m_tx_buffer[m_tx_insert_index++];
 
-    //Encode Attribute ID.
-	  p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_NOTIF_ATTR_ID_MESSAGE;
-	 
-	  //MAX message len
-	  message_max_len = ANCS_SUPPORT_MAX_MESSAGE_LEN;
-	  p_msg->req.write_req.gattc_value[index++] = (uint8_t) (message_max_len);
-    p_msg->req.write_req.gattc_value[index++] = (uint8_t) (message_max_len >> 8); 
-	 
-    p_msg->req.write_req.gattc_params.len = index;
-    p_msg->conn_handle                    = cling.ble.conn_handle;
-    p_msg->type                           = WRITE_REQ;
+	p_msg->req.write_req.gattc_params.handle   = handle_cccd;
+	p_msg->req.write_req.gattc_params.len      = 2;
+	p_msg->req.write_req.gattc_params.p_value  = p_msg->req.write_req.gattc_value;
+	p_msg->req.write_req.gattc_params.offset   = 0;
+	p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
+	p_msg->req.write_req.gattc_value[0]        = LSB(cccd_val);
+	p_msg->req.write_req.gattc_value[1]        = MSB(cccd_val);
+	p_msg->conn_handle                         = conn_handle;
+	p_msg->type                                = WRITE_REQ;
 
-    tx_buffer_process();
+	_tx_buffer_process();
+	return NRF_SUCCESS;
+}
 
-    return NRF_SUCCESS;
+
+static I32U _ancs_c_notif_source_notif_enable(void)
+{
+	N_SPRINTF("[ANCS]: Enable Notification Source notifications. writing to handle: %i",m_service.notif_source.handle_cccd);
+	return cccd_configure(cling.ble.conn_handle, m_service.notif_source.handle_cccd, true);
+}
+
+#if 0
+static I32U _ancs_c_notif_source_notif_disable(void)
+{
+	return cccd_configure(cling.ble.conn_handle, m_service.notif_source.handle_cccd, false);
+}
+#endif
+
+static I32U _ancs_c_data_source_notif_enable(void)
+{
+	N_SPRINTF("[ANCS]: Enable Data Source notifications. Writing to handle: %i",m_service.data_source.handle_cccd);
+	return cccd_configure(cling.ble.conn_handle, m_service.data_source.handle_cccd, true);
+}
+
+#if 0
+static I32U _ancs_c_data_source_notif_disable(void)
+{
+  return cccd_configure(cling.ble.conn_handle, m_service.data_source.handle_cccd, false);
+}
+#endif
+
+static I32U _ble_ancs_get_notif_attrs( const I32U p_uid)
+{
+	I16U title_max_len=0;
+	I16U message_max_len=0;	
+	tx_message_t * p_msg;
+	I16U    index    = 0;
+
+	if(m_tx_insert_index >= 2)
+		m_tx_insert_index	= 0;
+
+	p_msg = &m_tx_buffer[m_tx_insert_index++];
+ 
+	p_msg->req.write_req.gattc_params.handle   = m_service.control_point.handle_value;
+	p_msg->req.write_req.gattc_params.p_value  = p_msg->req.write_req.gattc_value;
+	p_msg->req.write_req.gattc_params.offset   = 0;
+	p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
+
+	//Command ID.
+	p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_COMMAND_ID_GET_NOTIF_ATTRIBUTES;
+	
+	//Encode Notification UID.
+	index += uint32_encode(p_uid, &p_msg->req.write_req.gattc_value[index]);
+
+	//Attribute ID.
+	p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_NOTIF_ATTR_ID_TITLE;
+	
+	//MAX title len
+	title_max_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+	p_msg->req.write_req.gattc_value[index++] = (I8U) (title_max_len);
+	p_msg->req.write_req.gattc_value[index++] = (I8U) (title_max_len >> 8);
+
+	//Encode Attribute ID.
+	p_msg->req.write_req.gattc_value[index++] = BLE_ANCS_NOTIF_ATTR_ID_MESSAGE;
+ 
+	//MAX message len
+	message_max_len = ANCS_SUPPORT_MAX_MESSAGE_LEN;
+	p_msg->req.write_req.gattc_value[index++] = (I8U) (message_max_len);
+	p_msg->req.write_req.gattc_value[index++] = (I8U) (message_max_len >> 8); 
+ 
+	p_msg->req.write_req.gattc_params.len = index;
+	p_msg->conn_handle                    = cling.ble.conn_handle;
+	p_msg->type                           = WRITE_REQ;
+
+	_tx_buffer_process();
+
+	return NRF_SUCCESS;
 }
 
 
 
-uint32_t ble_ancs_c_request_attrs(const ble_ancs_c_evt_notif_t  notif)
+static I32U _ancs_request_attrs_pro(const ble_ancs_notif_t  notif)
 {
-
-    uint32_t err_code;
-    err_code = ble_ancs_verify_notification_format(notif);
-    if (err_code != NRF_SUCCESS)
-    {
-			  Y_SPRINTF("[ANCS] verify notification format failed ");	
-        return err_code;
-    }
-
-    err_code      = ble_ancs_get_notif_attrs( notif.notif_uid);
-  
-    if (err_code != NRF_SUCCESS)
-    {
-        return err_code;
-    }
-    return NRF_SUCCESS;
+	I32U err_code;
+	
+  if(ancs_notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_ADDED){
+		
+	  err_code = _ble_ancs_get_notif_attrs(notif.notif_uid);
+	}
+	
+	if (err_code != NRF_SUCCESS)
+	{
+			return err_code;
+	}
+	return NRF_SUCCESS;
 }
 
 
@@ -723,217 +558,172 @@ uint32_t ble_ancs_c_request_attrs(const ble_ancs_c_evt_notif_t  notif)
  *
  * @details This function is called when a successful connection has been established.
  */
-static void apple_notification_setup(void)
+static void _apple_notification_setup(void)
 {
-    uint32_t err_code;
+	I32U err_code;
 
-    nrf_delay_ms(100); // Delay because we cannot add a CCCD to close to starting encryption. iOS specific.
+  //Delay because we cannot add a CCCD to close to starting encryption. iOS specific.
+	nrf_delay_ms(100);
 
-    err_code = ble_ancs_c_notif_source_notif_enable();	
-    APP_ERROR_CHECK(err_code);
+	err_code = _ancs_c_notif_source_notif_enable();	
+	APP_ERROR_CHECK(err_code);
 
-    err_code = ble_ancs_c_data_source_notif_enable();
-    APP_ERROR_CHECK(err_code);
-	
-}
-
-
-/**@brief Function for printing an iOS notification.
- *
- * @param[in] p_notif  Pointer to the iOS notification.
- */
-static void notif_print(ble_ancs_c_evt_notif_t * p_notif)
-{
-	  N_SPRINTF("[ANCS] Event:       %d", p_notif->evt_id);
-    N_SPRINTF("[ANCS] Category ID: %d", p_notif->category_id);
-    N_SPRINTF("[ANCS] Category Cnt:%u", (unsigned int) p_notif->category_count);
-    N_SPRINTF("[ANCS] UID:         %u", (unsigned int) p_notif->notif_uid);
-}
-						 
-
-
-
-/**@brief Function for handling the Apple Notification Service client.
- *
- * @details This function is called for all events in the Apple Notification client that
- *          are passed to the application.
- *
- * @param[in] p_evt  Event received from the Apple Notification Service client.
- */
-static void on_ancs_c_evt(ble_ancs_c_evt_t * p_evt)
-{
-    //uint32_t err_code = NRF_SUCCESS;
-	
-    switch (p_evt->evt_type)
-    {
-        case BLE_ANCS_C_EVT_DISCOVER_COMPLETE:
-				    {
-              N_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");
-							
-							apple_notification_setup();
-							
-							_ancs_parse_factory_init();
-	
-		          ancs_timer =CLK_get_system_time();
-							
-							cling.ancs.filtering_flag = FALSE;
-						}
-            break;
-
-        case BLE_ANCS_C_EVT_NOTIF:
-				    {	
-
-							#ifdef _ENABLE_UART_
-							notif_print(&p_evt->notif);	
-              #endif	
-
-							ancs_t_curr =CLK_get_system_time();
-							
-		          ancs_t_diff = (ancs_t_curr - ancs_timer);
-							
-		          if (ancs_t_diff >= ANCS_FILTERING_OLD_MSG_DELAY_TIME)
-								cling.ancs.filtering_flag = TRUE;
-
-							if(cling.ancs.filtering_flag == TRUE){
-								
-								if(p_evt->notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_ADDED){
-																			
-								  ancs_notif=p_evt->notif;
-									
-							    cling.ancs.ancs_attr_get_flag=TRUE;
-             															
-								}
-							}												
-				    }
-            break;
-
-        case BLE_ANCS_C_EVT_DISCOVER_FAILED:
-            // ANCS not found.
-				    N_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
-			
-				    if (cling.gcp.host_type == HOST_TYPE_IOS) {
-							
-				      if(BTLE_is_connected()){
-							
-						  	BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);	
-						  }
-					  }
-            break;
-
-        default:
-            // No implementation needed.
-            break;
-    }
-}
-
-static void apple_notification_error_handler(uint32_t nrf_error)
-{
-    APP_ERROR_HANDLER(nrf_error);
+	err_code = _ancs_c_data_source_notif_enable();
+	APP_ERROR_CHECK(err_code);
 }
 
 
 void ANCS_service_add(void)
 {
-    ble_ancs_c_init_t ancs_init_obj;
-    ble_uuid_t        service_uuid;
-    uint32_t          err_code;
+	ble_uuid_t    service_uuid;
+	I8U           m_ancs_uuid_type;        
+	I32U          err_code;
 
-    err_code = sd_ble_uuid_vs_add(&ble_ancs_base_uuid128, &m_ancs_uuid_type);
-    APP_ERROR_CHECK(err_code);
+	err_code = sd_ble_uuid_vs_add(&ble_ancs_base_uuid128, &m_ancs_uuid_type);
+	APP_ERROR_CHECK(err_code);
 
-    err_code = sd_ble_uuid_vs_add(&ble_ancs_cp_base_uuid128, &service_uuid.type);
-    APP_ERROR_CHECK(err_code);
+	err_code = sd_ble_uuid_vs_add(&ble_ancs_cp_base_uuid128, &service_uuid.type);
+	APP_ERROR_CHECK(err_code);
 
-    err_code = sd_ble_uuid_vs_add(&ble_ancs_ns_base_uuid128, &service_uuid.type);
-    APP_ERROR_CHECK(err_code);
+	err_code = sd_ble_uuid_vs_add(&ble_ancs_ns_base_uuid128, &service_uuid.type);
+	APP_ERROR_CHECK(err_code);
 
-    err_code = sd_ble_uuid_vs_add(&ble_ancs_ds_base_uuid128, &service_uuid.type);
-    APP_ERROR_CHECK(err_code);
+	err_code = sd_ble_uuid_vs_add(&ble_ancs_ds_base_uuid128, &service_uuid.type);
+	APP_ERROR_CHECK(err_code);
 
-    memset(&ancs_init_obj, 0, sizeof(ancs_init_obj));
-
-    ancs_init_obj.evt_handler   = on_ancs_c_evt;
-    ancs_init_obj.error_handler = apple_notification_error_handler;
-
-    err_code = ble_ancs_c_init(&cling.ancs.m_ancs_c, &ancs_init_obj);
-    APP_ERROR_CHECK(err_code);
+	err_code = _ble_ancs_init();
+	APP_ERROR_CHECK(err_code);
 }
 
-static BOOLEAN _ancs_supported_is_enable(void)
+static void _ancs_start_notific_filtering()
 {
+	ancs_timer =CLK_get_system_time();
 
+	cling.ancs.filtering_flag = FALSE;
+}
+	
+
+static BOOLEAN _ancs_query_notific_is_new()
+{
+	ancs_t_curr =  CLK_get_system_time();		
+	ancs_t_diff = (ancs_t_curr - ancs_timer);
+	
+	if (ancs_t_diff >= ANCS_FILTERING_OLD_MSG_DELAY_TIME)
+		cling.ancs.filtering_flag = TRUE;
+	
+	if(cling.ancs.filtering_flag == TRUE)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+
+static BOOLEAN _ancs_supported_is_enable()
+{
 	I16U id_mask;
 	
-	// If none of categories is supported, we do nothing
+  // If none of categories is supported, we do nothing
 	if (cling.ancs.supported_categories == 0)
 		return FALSE;
 	
-	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER) {
-		// If this is a "OTHER" category, we should support it unless user only purposely enables 'incoming call'
-		if (cling.ancs.supported_categories == 0x01)
-			return FALSE;
-		else
-			return TRUE;
-	}
-
-	// Check whether corresponding category is enabled
-	id_mask = 1 << (ancs_notif.category_id-1);	
+	// If this is a "OTHER" category, we bond with 'SOCIAL' for the present.
+	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER) 
+		ancs_notif.category_id  = BLE_ANCS_CATEGORY_ID_SOCIAL;
 	
+	if (ancs_notif.category_id > BLE_ANCS_CATEGORY_ID_ENTERTAINMENT)
+		ancs_notif.category_id = BLE_ANCS_CATEGORY_ID_SOCIAL;
+
+	// Check whether corresponding category is enabled	
+	id_mask = 1 << (ancs_notif.category_id-1);	
+			
 	if (id_mask & cling.ancs.supported_categories) 
 		return TRUE;
-
+	
 	return FALSE;
 }
 
-static void _ancs_store_attr_pro(void)
+static void _ancs_store_attrs_pro(void)
 {
-	
-		 N_SPRINTF("[ANCS] start store attr message to nflash ... ");							
-			
-		 // when a new notification message arrives, start notification state machine
-		 // Do not notify user if not set supported
-	   if(_ancs_supported_is_enable())
-		 NOTIFIC_start_notifying(ancs_notif.category_id);
-								
-		 if(cling.ancs.message_total >= 16) {
-				
-			 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
-		 
-			 Y_SPRINTF("[ANCS] message is full, go erase the message space");
 
-			 cling.ancs.message_total = 0;
-		 }
-		 
-		 cling.ancs.message_total++;		
-		 Y_SPRINTF("[ANCS] message total is :%d ",cling.ancs.message_total);
+	N_SPRINTF("[ANCS] start store attr message to nflash ... ");							
+		
+  // when a new notification message arrives, start notification state machine
+  // Do not notify user if not set supported
+  if(_ancs_supported_is_enable())
+    NOTIFIC_start_notifying(ancs_notif.category_id);
+						
+  if(cling.ancs.message_total >= 16) {
+		
+	  FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+ 
+	  N_SPRINTF("[ANCS] message is full, go erase the message space");
 
-		ANCS_nflash_store_one_message((I8U *)&cling.ancs.pkt);
-		 	 	
+	  cling.ancs.message_total = 0;
+  }
+ 
+  cling.ancs.message_total++;		
+  N_SPRINTF("[ANCS] message total is :%d ",cling.ancs.message_total);
+
+	ANCS_nflash_store_one_message((I8U *)&cling.ancs.pkt);	 	 	
 }
 
+
+/**@brief handling the Apple Notification Service client.*/
 void ANCS_state_machine(void)
 {
-
-	if(!BTLE_is_connected())
-		return;
-
-  if(cling.ancs.ancs_attr_get_flag == TRUE){
-					
-	  ble_ancs_c_request_attrs(ancs_notif);		
-
-    cling.ancs.ancs_attr_get_flag = FALSE;	
-	}
+	ANCS_CONTEXT *a = &cling.ancs;
 	
-	if(cling.ancs.ancs_attr_store_flag == TRUE){
+  switch (a->state)
+  {
+		case BLE_ANCS_STATE_IDLE:
+			break;
+		
+		case BLE_ANCS_STATE_DISCOVER_COMPLETE:
+		{	    
+			N_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");			
+			//Enable ancs notifiction.
+			_apple_notification_setup();
+			
+			//Attrs parse state init.
+			a->parse_state = PARSE_STAT_COMMAND_ID;
 
-    _ancs_store_attr_pro();	
-	
-		cling.ancs.ancs_attr_store_flag=FALSE;			
-	}
+			//Record the current time for Filtering old notifiction.
+			_ancs_start_notific_filtering();
 
+			a->state = BLE_ANCS_STATE_IDLE;		
+		  break;	
+		}
+				
+    case BLE_ANCS_STATE_NOTIF:
+		{	
+      if(_ancs_query_notific_is_new()){
+				N_SPRINTF("[ANCS] Start request access to notify the specific content.");	
+        _ancs_request_attrs_pro(ancs_notif);						
+			}
+      a->state = BLE_ANCS_STATE_IDLE;			
+      break;			
+		}
+  	
+		case BLE_ANCS_STATE_NOTIF_ATTRIBUTE:
+		{
+			N_SPRINTF("[ANCS] Start store the specific content of notify.");	
+			//Store notifiction data to nflash.
+		  _ancs_store_attrs_pro();	
+			a->state = BLE_ANCS_STATE_IDLE;
+		  break;
+		}
+		
+    case BLE_ANCS_STATE_DISCOVER_FAILED:
+		{    
+		  N_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
+		  if (cling.gcp.host_type == HOST_TYPE_IOS) 
+				BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
+			a->state = BLE_ANCS_STATE_IDLE;
+      break;		
+		}
+    default:
+      // No implementation needed.
+      break;
+    }
 }
-	
-
-
-
 #endif

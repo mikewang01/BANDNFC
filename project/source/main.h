@@ -81,7 +81,10 @@
 #include "sleep.h"
 #include "reminder.h"
 #include "notific.h"
+#ifdef _ENABLE_ANCS_
 #include "ancs.h"
+#include "ble_ancs_c.h"
+#endif
 #include "homekey.h"
 #include "Font.h"
 #include "ppg.h"
@@ -107,11 +110,6 @@ enum {
 };
 
 typedef struct tagCLING_TIME_CTX {
-	//
-	BOOLEAN local_minute_updated;
-	BOOLEAN local_noon_updated;
-	BOOLEAN local_day_updated;
-	
 	// Time difference
 	I32U time_since_1970;
 	// Tick count
@@ -128,6 +126,11 @@ typedef struct tagCLING_TIME_CTX {
 	// System clock interval
 	BOOLEAN operation_clk_enabled;
 	I32U operation_clk_start_in_ms;
+	
+	//
+	BOOLEAN local_minute_updated;
+	BOOLEAN local_noon_updated;
+	BOOLEAN local_day_updated;
 	
 } CLING_TIME_CTX;
 
@@ -155,9 +158,6 @@ typedef struct tagSYSTEM_CTX {
 	
 	// System power status
 	BOOLEAN b_powered_up;
-	
-	// Simulation mode
-	BOOLEAN simulation_mode;
 	
 	/// MCU Registers
 	I8U mcu_reg[SYSTEM_REGISTER_MAX];
@@ -242,6 +242,9 @@ typedef struct tagCLING_MAIN_CTX {
 	
 	// uv index
 	UV_CTX uv;
+	
+	// font context
+	FONT_CTX font;
 	
 } CLING_MAIN_CTX;
 

@@ -386,7 +386,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 	I8U calories_diff;
 	I16U denom_stats;
 
-	if (cling.system.simulation_mode) {
+#ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
 		diff->walking = (I8U)SIM_get_current_activity(TRACKING_WALK);
 		diff->running = (I8U)SIM_get_current_activity(TRACKING_RUN);
 		diff->distance = (I8U)SIM_get_current_activity(TRACKING_DISTANCE);
@@ -413,7 +413,8 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				diff->activity_count = 50;
 			}
 		}
-	} else {
+		return;
+#endif
 		// Update the activity minute granularity
 		diff->walking = a->day.walking - a->day_stored.walking;
 		diff->running = a->day.running - a->day_stored.running;
@@ -446,6 +447,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 					calories_diff = 58;
 				} else {
 					calories_diff = 33;
+					
 				}
 			} else {
 				calories_diff = _get_calories_per_minute(cling.activity.workout_type);
@@ -457,6 +459,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		else {
 			calories_diff = 18; // 1.1 for rest
 		}
+
 		if (b_minute_update) {
 			a->day.calories += calories_diff;
 
@@ -474,7 +477,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		diff->calories = (a->day.calories - a->day_stored.calories) >> 4; // calories, normalized by 16
 		
 		N_SPRINTF("+++ sleep_state: %d", cling.sleep.state);
-	}
 }
 
 static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
@@ -484,12 +486,13 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 	
 	t_curr = CLK_get_system_time() - cling.activity.step_detect_ts;
 	
-	if (cling.system.simulation_mode) {
-		vital->skin_temperature = SIM_get_current_activity(TRACKING_SKIN_TEMPERATURE);
-		vital->heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
-		vital->skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
-	} else {
-		touch_time = TOUCH_get_skin_touch_time();
+#ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
+	vital->skin_temperature = SIM_get_current_activity(TRACKING_SKIN_TEMPERATURE);
+	vital->heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
+	vital->skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
+	return;
+#endif
+	touch_time = TOUCH_get_skin_touch_time();
 		
 		// Debouncing logic for skin touch detection
 		//
@@ -529,8 +532,6 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 
 			}
 		}
-		
-	}
 }
 
 void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
@@ -542,17 +543,11 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 	_get_activity_diff(&diff, FALSE);
 	
 	// Get vital signal
-	if (cling.system.simulation_mode) {
+#ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
 		vital.skin_temperature = SIM_get_current_activity(TRACKING_SKIN_TEMPERATURE);
 		vital.heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
 		vital.skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
-	} else {
-		vital.skin_temperature = cling.therm.current_temperature;
-		vital.heart_rate = cling.hr.current_rate;
-		vital.skin_touch_pads = TOUCH_get_skin_pad();
-	}
-
-	if (cling.system.simulation_mode) {
+	
 		// Get activity minute granularity
 		// Note here, we have minute offset to UTC time.
 		pminute->epoch = cling.time.time_since_1970;
@@ -566,7 +561,10 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 		pminute->heart_rate = vital.heart_rate+(cling.time.local.second%3);
 		pminute->skin_touch_pads = vital.skin_touch_pads;
 		pminute->uv_and_activity_type = 4; // UV index: 4 for simulation
-	} else {
+#else
+		vital.skin_temperature = cling.therm.current_temperature;
+		vital.heart_rate = cling.hr.current_rate;
+		vital.skin_touch_pads = TOUCH_get_skin_pad();
 		pminute->epoch = cling.time.time_since_1970;
 		pminute->distance = diff.distance;
 		pminute->sleep_state = diff.sleep_state;
@@ -584,8 +582,8 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 		pminute->uv_and_activity_type = 0;
 #endif
 		pminute->uv_and_activity_type |= cling.activity.workout_type<<4;
-	}
-	
+#endif
+
 	// For compatibility, we set activity count flag
 	pminute->activity_count |= 0x8000;
 }

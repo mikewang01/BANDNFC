@@ -172,7 +172,7 @@ void USER_setup_profile(I8U *data)
 	stride_in_cm = *pdata++; // stride
 	stride_in_cm |= (*pdata++)<<8; // 
 	
-	Y_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
+	N_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
 	
 	// Initialize stride length and weight for distance calculation
 	u->profile.stride_in_cm = stride_in_cm; // In center meters
@@ -270,7 +270,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	u->b_navigation_wrist_shake = FALSE;
 	setting_length -= 2;
 
-	Y_SPRINTF("\n%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", 
+	N_SPRINTF("\n%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", 
 		u->ppg_day_interval,
 		u->ppg_night_interval,
 		u->skin_temp_day_interval,
@@ -290,7 +290,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->idle_state = IDLE_ALERT_STATE_IDLE;
 
 		setting_length -= 3;
-		Y_SPRINTF("\n\n idle alert: %d, %d, %d", u->idle_time_in_minutes, u->idle_time_start, u->idle_time_end);
+		N_SPRINTF("\n\n idle alert: %d, %d, %d", u->idle_time_in_minutes, u->idle_time_start, u->idle_time_end);
 	} else {
 		return;
 	}
@@ -300,7 +300,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->screen_on_heart_rate = *pdata++;
 		
 		setting_length -= 2;
-		Y_SPRINTF("\n screen on: %d,%d\n", u->screen_on_general, u->screen_on_heart_rate);
+		N_SPRINTF("\n screen on: %d,%d\n", u->screen_on_general, u->screen_on_heart_rate);
 	} else {
 		return;
 	}
@@ -308,13 +308,13 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	if (setting_length >= 1) {
 		cling.sleep.m_sensitive_mode = (SLEEP_SENSITIVE_MODE)(*pdata++);
 		setting_length --;
-		Y_SPRINTF("\n sleep sensitivity level: %d", cling.sleep.m_sensitive_mode);
+		N_SPRINTF("\n sleep sensitivity level: %d", cling.sleep.m_sensitive_mode);
 	}
 	
 	if (setting_length >= 1) {
 		u->b_reminder_off_weekends = *pdata++;
 		setting_length --;
-		Y_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
+		N_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
 	}
 }
 

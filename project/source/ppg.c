@@ -270,7 +270,7 @@ static void _ppg_sample_proc()
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
 	filt_sample = (I16S)low_pass_filter_val;
 	
-  if (t_diff> 6) {
+  if (t_diff> 10) {
 //if (TRUE) {
 		N_SPRINTF("%d  %d", filt_sample, sample);
 		N_SPRINTF("%d",      sample);
@@ -337,9 +337,12 @@ void ppg_Init_Sensor()
 //  B_PS_LED_22_4MA,
     B_PS_LED_44_8MA,  
   };
+	
+	BASE_delay_msec(50);
 
-	ppg_Send_Command_Reset();	
-//BASE_delay_msec(10);
+	ppg_Send_Command_Reset();
+
+  BASE_delay_msec(10);
 
   ppg_write_reg(REGS_HW_KEY, reg_defaults[REGS_HW_KEY]);
 
@@ -366,12 +369,12 @@ void ppg_Enable_Sensor()
 #if 0
 	// TBD: Need Tuning...
   ppg_Send_Command_SET(PS_ENCODING, 0x60);       // LSB 16 bits of 17bit ADC      // 0x60
-  ppg_Send_Command_SET(PS_ADC_GAIN, 0x03);       // PS_ADC_GAIN
+  ppg_Send_Command_SET(PS_ADC_GAIN, 0x03);
   ppg_Send_Command_SET(PS1_ADCMUX,  0x03);       // 
-  ppg_Send_Command_SET(PS_ADC_MISC, 0x04);       // PS_ADC_GAIN
+  ppg_Send_Command_SET(PS_ADC_MISC, 0x04);
 	
   ppg_Send_Command_SET(ALS_ENCODING, 0x30);
-  ppg_Send_Command_SET(PS1_ADCMUX, 0x00);
+//ppg_Send_Command_SET(PS1_ADCMUX, 0x00);
 #endif
 }
 
@@ -501,7 +504,7 @@ void PPG_state_machine()
 				if (t_diff > 2) {
           ppg_Disable_Sensor();					       // Turn off ppg sensor module
           h->state = PPG_STAT_DUTY_OFF;
-          Y_SPRINTF("[PPG] PPG (No skin touch) State off, %d, %d", t_diff, cling.ui.state);
+          N_SPRINTF("[PPG] PPG (No skin touch) State off, %d, %d", t_diff, cling.ui.state);
 				}
 
 				break;
@@ -523,7 +526,7 @@ void PPG_state_machine()
   			if (t_diff > PPG_HR_MEASURING_TIMEOUT && !_is_user_viewing_heart_rate() ) {
           ppg_Disable_Sensor();					       // Turn off ppg sensor module
           h->state = PPG_STAT_DUTY_OFF;
-          Y_SPRINTF("[PPG] PPG (TIME OUT) State off, %d, %d", t_diff, cling.ui.state);
+          N_SPRINTF("[PPG] PPG (TIME OUT) State off, %d, %d", t_diff, cling.ui.state);
 				}
 			}
 		}
@@ -540,7 +543,7 @@ void PPG_state_machine()
 				t_threshold = PPG_MEASURING_PERIOD_FOREGROUND;
 				if ( t_diff > t_threshold ) {
 						h->state = PPG_STAT_DUTY_ON;
-						Y_SPRINTF("[PPG] PPG State on (force)");
+						N_SPRINTF("[PPG] PPG State on (force)");
 				}
 			} else {
 				//t_threshold = cling.user_data.ppg_day_interval>>10;
@@ -572,7 +575,7 @@ void PPG_state_machine()
 					break;
 				}
 
-				Y_SPRINTF("[PPG] start ppg, %d, %d", t_sec, h->m_measuring_timer_in_s);
+				N_SPRINTF("[PPG] start ppg, %d, %d", t_sec, h->m_measuring_timer_in_s);
 
 				// otherwise, using optical sensor to double check
 				h->state = PPG_STAT_DUTY_ON;

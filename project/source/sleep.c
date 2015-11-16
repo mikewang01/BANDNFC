@@ -470,7 +470,7 @@ void SLEEP_algorithms_proc(ACC_AXIS *xyz)
 	_sleep_main_state();
 }
 
-#ifdef USING_VIRTUAL_ACTIVITY_SIM
+#ifdef _SLEEP_SIMULATION_
 
 
 void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)

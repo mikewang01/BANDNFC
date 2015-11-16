@@ -119,7 +119,7 @@ I8U _get_battery_perc()
 		if (!BATT_is_charging()) {
 			// No DC-in then, put device into a super-low power state
 			//
-			Y_SPRINTF("[BATT] low power shut-down (reading: %d, )", b->volts_reading);
+			N_SPRINTF("[BATT] low power shut-down (reading: %d, )", b->volts_reading);
 		
 			GPIO_system_powerdown();
 			RTC_system_shutdown_timer();
@@ -184,14 +184,14 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 			
 		// Disconnect BLE if device is connected.
 		if (BTLE_is_connected()) {
-			Y_SPRINTF("[RTC] disconnect, unauthorized device");
+			N_SPRINTF("[RTC] disconnect, unauthorized device");
 			// Disconnect BLE service
 			BTLE_disconnect(BTLE_DISCONN_REASON_SYSTEM_SHUTDOWN);
 		}
 		
 		// No DC-in then, put device into a super-low power state
 		//
-		Y_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
+		N_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
 		
 		GPIO_system_powerdown();
 		RTC_system_shutdown_timer();
@@ -219,7 +219,7 @@ static void _battery_adc_acquired(BATT_CTX *b, I32U t_curr)
 			cling.system.mcu_reg[REGISTER_MCU_BATTERY] = b->battery_measured_perc;
 		}
 		
-		Y_SPRINTF("[BATT] initial battery: %d, %d", b->battery_measured_perc, b->volts_reading);
+		N_SPRINTF("[BATT] initial battery: %d, %d", b->battery_measured_perc, b->volts_reading);
 		
 		// If charger is in a charging state, we should initialize "vBAse" and "timebase"
 		if (b->charging_state == CHARGER_IN_CHARGING) {
@@ -237,7 +237,7 @@ static void _battery_adc_acquired(BATT_CTX *b, I32U t_curr)
 			}
 		}
 						
-		Y_SPRINTF("[BATT] measured perc: %d, %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY], b->volts_reading);
+		N_SPRINTF("[BATT] measured perc: %d, %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY], b->volts_reading);
 		
 	}
 
@@ -259,14 +259,14 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 		b->non_charging_accumulated_active_sec = 0;
 		if (b->charging_state != CHARGER_IN_CHARGING) {
 			b->toggling_number ++;
-			Y_SPRINTF("[BATT] ---5+ V is supplied (%d)---", b->toggling_number);
+			N_SPRINTF("[BATT] ---5+ V is supplied (%d)---", b->toggling_number);
 			b->charging_state = CHARGER_IN_CHARGING;
 			b->charging_timebase = t_curr;
 			if (b->state_switching_duration > 5) {
 				// Turn on OLED panel
 				b->state_switching_duration = 0;
 				if (b->toggling_number >= 10) {
-						Y_SPRINTF("[BATT] --- Charger reset (Supplied: %d, %d)---", b->state_switching_duration, b->toggling_number);
+						N_SPRINTF("[BATT] --- Charger reset (Supplied: %d, %d)---", b->state_switching_duration, b->toggling_number);
 						GPIO_charger_reset();
 				}
 				b->toggling_number = 0;
@@ -300,7 +300,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 					// Update battery level during charging.
 					cling.system.mcu_reg[REGISTER_MCU_BATTERY] = t_diff;
 				
-					Y_SPRINTF("[BATT] battery update: %d", t_diff);
+					N_SPRINTF("[BATT] battery update: %d", t_diff);
 				}
 			}
 		}
@@ -309,14 +309,14 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 		if (b->charging_state != CHARGER_REMOVED) {
 			b->toggling_number ++;
 			b->charging_state = CHARGER_REMOVED;
-			Y_SPRINTF("[BATT] ---5+ V is removed (%d, %d)---", b->toggling_number, cling.lps.b_low_power_mode);
+			N_SPRINTF("[BATT] ---5+ V is removed (%d, %d)---", b->toggling_number, cling.lps.b_low_power_mode);
 			b->charging_timebase = t_curr;
 			
 			// If charger is automatically removed because of fully charge, then set to a high percentage
 			if (cling.lps.b_low_power_mode) {
 				if (t_curr > (cling.lps.ts + 5000)) {
 					cling.system.mcu_reg[REGISTER_MCU_BATTERY] = b->battery_measured_perc;
-					Y_SPRINTF("[BATT] --- fully charged: %d ---", b->battery_measured_perc);
+					N_SPRINTF("[BATT] --- fully charged: %d ---", b->battery_measured_perc);
 				}
 			}
 			
@@ -329,7 +329,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 				// Turn on OLED panel
 				b->state_switching_duration = 0;
 				if (b->toggling_number >= 10) {
-						Y_SPRINTF("[BATT] --- Charger reset (Removed: %d, %d)---", b->state_switching_duration, b->toggling_number);
+						N_SPRINTF("[BATT] --- Charger reset (Removed: %d, %d)---", b->state_switching_duration, b->toggling_number);
 
 						GPIO_charger_reset();
 				}
@@ -353,9 +353,9 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 		cling.batt.adc_state = CHARGER_ADC_ACQUIRED;
 
 		if (BATT_is_charging()) {
-			Y_SPRINTF("[BATT] Measureing (charging) - adc: %d", cling.batt.volts_reading); 
+			N_SPRINTF("[BATT] Measureing (charging) - adc: %d", cling.batt.volts_reading); 
 		} else {
-			Y_SPRINTF("[BATT] Measureing (discharging) - adc: %d", cling.batt.volts_reading); 
+			N_SPRINTF("[BATT] Measureing (discharging) - adc: %d", cling.batt.volts_reading); 
 		}
 	}		
 #endif
@@ -403,6 +403,6 @@ void BATT_start_first_measure()
 	cling.batt.b_initial_measuring = TRUE;
 	cling.batt.adc_state = CHARGER_ADC_ACQUIRED;
 	
-	Y_SPRINTF("[BATT] start first measure - adc: %d", cling.batt.volts_reading);
+	N_SPRINTF("[BATT] start first measure - adc: %d", cling.batt.volts_reading);
 #endif
 }

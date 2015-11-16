@@ -294,8 +294,7 @@ static BOOLEAN _critical_info_restored()
 	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
 	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 
-	// Restoring system running mode
-	cling.system.simulation_mode = p_byte_addr[50];
+	// 50: reserved
 	
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
@@ -305,10 +304,13 @@ static BOOLEAN _critical_info_restored()
 	// Restore Skin touch
 	cling.touch.b_skin_touch = p_byte_addr[54];
 
-	// 55: Reservered.
+	// 55: clock orientation.
+	cling.ui.clock_orientation = p_byte_addr[55];
 	
 	// Restore battery level
 	if (p_byte_addr[56] == 0)
+		cling.batt.b_no_batt_restored = TRUE;
+	else if (p_byte_addr[56] > 100)
 		cling.batt.b_no_batt_restored = TRUE;
 	else 
 		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = p_byte_addr[56];
@@ -522,8 +524,7 @@ BOOLEAN SYSTEM_backup_critical()
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
 	
-	// Store simualtion mode
-	critical[50] = cling.system.simulation_mode;
+	// 50: reserved
 	
 	// Store total reminders
 	critical[51] = cling.reminder.total;
@@ -533,8 +534,9 @@ BOOLEAN SYSTEM_backup_critical()
 	// Store skin touch type
 	critical[54] = cling.touch.b_skin_touch;
 
-	// 55: Reserved
-
+	// 55: Clock orientation
+	critical[55] = cling.ui.clock_orientation;
+	
 	// Store battery level
 	critical[56] = cling.system.mcu_reg[REGISTER_MCU_BATTERY];
 	if (critical[56] == 0) {

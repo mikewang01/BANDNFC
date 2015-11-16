@@ -557,6 +557,12 @@ static void _update_w_r_activity(CLASSIFIER_STAT *c)
 
     // Update walking and running vote
     c->w_r_votes[0] = c->apu_p2p-(I32S)CLASSIFIER_WRC_1_TH;
+    if (c->apu_p2p > CLASSIFIER_WRC_1_TH) {
+    } 
+    if (c->apu_p2p > CLASSIFIER_WRC_2_TH) {
+    } 
+    if (c->apu_p2p > CLASSIFIER_WRC_3_TH) {
+    }
 }
 
 static void _update_car_exiting(CLASSIFIER_STAT *c)
@@ -661,12 +667,106 @@ static void _update_classifier_stat(ACCELEROMETER_3D in, I32S apu, BOOLEAN b_ste
     }
 }
 
+static void _update_kc(ACCELEROMETER_3D *ap_integ, 
+                       ANTI_CHEATING_CTX *ac)
+{
+    if (!ac->ap_acc.samples) {
+        ap_integ->x = 0;
+        ap_integ->y = 0;
+        ap_integ->z = 0;
+    } else {
+        ap_integ->x = ac->ap_acc.x/ac->ap_acc.samples;
+        ap_integ->y = ac->ap_acc.y/ac->ap_acc.samples;
+        ap_integ->z = ac->ap_acc.z/ac->ap_acc.samples;
+    }
+    ac->ap_acc.x = ac->ap_prev.x;
+    ac->ap_acc.y = ac->ap_prev.y;
+    ac->ap_acc.z = ac->ap_prev.z;
+    ac->ap_acc.samples = 1;
+}
+
+static void _acc_a_prime(ANTI_CHEATING_CTX *ac)
+{
+    ac->ap_acc.x += ac->ap_prev.x;
+    ac->ap_acc.y += ac->ap_prev.y;
+    ac->ap_acc.z += ac->ap_prev.z;
+    ac->ap_acc.samples ++;
+}
+
+// Using A' to figure out linear motion cheating activities
+//
+// A' magnitude goes like sinesoidal curve, each step we expect
+// 2 full cycles of A' magnitude.
+//
+// VF,  VB:  time integration of A'  from Max1  of  |A'|**2 to Max2 of |A'|**2.
+// VL,  VR:  time integration of A'  from Min1 of  |A'|**2 to Min2 of  |A'|**2.
+//
+// Calculation point is triggered when A' goes down.
+//
+static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
+{
+    CLASSIFIER_STAT *c = &gPDM.classifier;
+    ANTI_CHEATING_CTX *ac = &c->anti_cheating;
+    I32S peak;
+
+    // Find a global minima/maxima
+    peak = ac->ap_mag_prev[2];
+
+    if (peak <= ap_mag) {
+        if (ac->ap_mag_dir == GENERAL_DIR_UP) {
+            _acc_a_prime(ac);
+        } else {
+            // Make sure all those magnitudes are greater than peak
+            if ((peak <= ac->ap_mag_prev[0]) &&
+                (peak <= ac->ap_mag_prev[1]) &&
+                (peak <= ac->ap_mag_prev[3]))
+            {
+                // A prime down update
+                // Update Kc for anti-cheating
+                _update_kc(&ac->ap_dw, ac);
+                ac->ap_mag_dir = GENERAL_DIR_UP;
+                
+            } else {
+                _acc_a_prime(ac);
+            }
+        }
+    } else {
+        if (ac->ap_mag_dir == GENERAL_DIR_DOWN) {
+            _acc_a_prime(ac);
+        } else {
+            if ((peak >= ac->ap_mag_prev[0]) &&
+                (peak >= ac->ap_mag_prev[1]) &&
+                (peak >= ac->ap_mag_prev[3]))
+            {
+                // Update Kc for anti-cheating
+                _update_kc(&ac->ap_up, ac);
+                ac->ap_mag_dir = GENERAL_DIR_DOWN;
+                
+            } else {
+                _acc_a_prime(ac);
+            }
+        }
+    }
+
+    ac->ap_prev = A_prime;
+    ac->ap_mag_prev[0] = ac->ap_mag_prev[1];
+    ac->ap_mag_prev[1] = ac->ap_mag_prev[2];
+    ac->ap_mag_prev[2] = ac->ap_mag_prev[3];
+    ac->ap_mag_prev[3] = ap_mag;
+
+}
 
 static void _classifier_stat_update(ACCELEROMETER_3D in, BOOLEAN b_step)
 {
     CLASSIFIER_STAT *c = &gPDM.classifier;
+    I32S Ap_mag_main;  // magnitude of A prime
     I32U ts_s, ts_e;
 	
+    Ap_mag_main = _comp_magnitude(gPDM.A_prime, 0);
+
+    // Integrate A' for anti-cheating
+    _ap_integration(Ap_mag_main, gPDM.A_prime);
+
     if (b_step) {
         // Looking back past 8 steps, and calculate the pace
         ts_s = c->step_ts[0];
@@ -818,7 +918,7 @@ static I32S _get_classify_win_siz(CLASSIFIER_STAT *c, I32U ts_th)
 
     return win_siz;
 }
-#if 0
+
 // If a step coming through all classification, we finally validate it against pace
 // make sure it is consistent
 static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U idx)
@@ -849,7 +949,6 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
     }
     return motion;
 }
-#endif
 
 static MOTION_TYPE _CAR_classify(CLASSIFIER_STAT *c, MOTION_TYPE motion)
 {
@@ -901,7 +1000,13 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
 {
     MOTION_TYPE motion = MOTION_UNKNOWN;
     I32S win_siz;
+    ANTI_CHEATING_CTX *ac = &c->anti_cheating;
     
+    //
+    // The classification follows a sequence as (Walking/Running) -> (StairsUp) -> (Car) -> (Cheating)
+    //
+    ac->factor = 0;
+
     // 1/ get the window size (4 seconds of statistics) for classification
     win_siz = _get_classify_win_siz(c, gPDM.sps<<2);
 
@@ -909,13 +1014,14 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
     //    Votes are from a span of CLASSIFICATION_TIME_SPAN
     motion = _WALKING_RUNNING_classify(c, win_siz);
 
+		if (cling.activity.workout_type == WORKOUT_NONE) {
+			// 3/ Car (moving vechicle) Classication
+			motion = _CAR_classify(c, motion);
+
+			// 4/ Validate the step against the noise
+			motion = _noise_validate(c, motion, step_idx);
+		}
 		
-    // 5/ Car (moving vechicle) Classication
-    motion = _CAR_classify(c, motion);
-#if 0
-    // 6/ Validate the step against the noise
-    motion = _noise_validate(c, motion, step_idx);
-#endif
     // 7/ Update classification status
     _update_classification_status(c, motion, step_idx);
 
@@ -1132,14 +1238,13 @@ static BOOLEAN _motion_classification()
 
 	// Pre-classifcation, filtering out random steps
 	if (!c->start_normal_activity) {
-
 			// Make sure we are not in working out mode
 			if (cling.activity.workout_type == WORKOUT_NONE) {
 				if (_is_noise_non_step(c)) {
 						 return FALSE;
 				} 
 			}
-			
+
 			// Start normal classification
 			c->start_normal_activity = TRUE;
 

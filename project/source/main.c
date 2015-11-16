@@ -260,9 +260,6 @@ static void _cling_global_init()
 	// Version initialization
 	cling.system.mcu_reg[REGISTER_MCU_HW_REV] = 0; // Board version is yet to be supported, initialized to 0.
 	
-	// HW INFO
-	cling.system.mcu_reg[REGISTER_MCU_HWINFO] = 1;
-	
 	// BATTERY LEVEL
 	cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 50; 
 	
@@ -377,13 +374,6 @@ int main(void)
 	//
 	SYSTEM_init();
 
-#ifdef USING_VIRTUAL_ACTIVITY_SIM
-	SIM_init();
-#endif
-
-	// Make sure we don't turn on simulation mode by mistake
-	cling.system.simulation_mode = 0;
-
 #ifdef _ENABLE_FONT_TRANSFER_
 	FONT_flash_setup();
 #endif
@@ -394,10 +384,10 @@ int main(void)
 	_system_startup();
 	
 	Y_SPRINTF("[MAIN] Entering main loop");
-	
+		
 	// Enter main loop.
 	while (LOOP_FOREVER)
-	{
+	{		
 		// Feed watchdog every 4 seconds upon RTC interrupt
 		Watchdog_Feed();
 

@@ -140,11 +140,11 @@ typedef struct tagCP_TX_CTX {
 } CP_TX_CTX;
 
 typedef struct tagCP_RX_CTX {
+	I32U msg_len;
+	I32U msg_file_len;
 	I16U UUID;
 	I8U msg_type;
-	I32U msg_len;
 	I8U msg_file_name_len;
-	I32U msg_file_len;
 	I8U rcving_offset;
 	CLING_FILE f;
 	BOOLEAN file_wr_active;

@@ -54,7 +54,6 @@ void HOMEKEY_check_on_hook_change()
 		Y_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
 		if (k->temp_st == ON_CLICK) {
-			k->click_on_ts = t_curr;
 		
 			// Make sure OLED display panel is faced up.
 			if (LINK_is_authorized()) {

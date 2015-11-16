@@ -244,13 +244,12 @@ void OLED_state_machine(void)
 				cling.ui.clock_sec_blinking = TRUE;
 				{
 					// If screen is turned, dismiss the secondary reminder vibration 
-					if (cling.reminder.state == REMINDER_STATE_SECOND_REMINDER) {
-						N_SPRINTF("[OLED] state reminder: %d,", cling.reminder.state);
+					if (cling.reminder.state != REMINDER_STATE_IDLE) {
 						UI_switch_state(UI_STATE_REMINDER, 0);
-						cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 						cling.reminder.ui_hh = cling.time.local.hour;
 						cling.reminder.ui_mm = cling.time.local.minute;
 						cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
+						Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
 					}
 				
 					if (cling.notific.state != NOTIFIC_STATE_IDLE) {

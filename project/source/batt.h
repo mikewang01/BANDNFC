@@ -38,11 +38,11 @@ typedef struct tagBATT_CTX {
 	I16U charging_overall_time;
 	I16U volts_reading;
 	I16U level_update_timebase;		// Battery percentage update timer -- 15 seconds
+	I16U shut_down_time;
 	I8U charging_state;
 	I8U adc_state;
 	I8U state_switching_duration;
 	I8U toggling_number;
-	I16U shut_down_time;
 	I8U battery_measured_perc;
 	BOOLEAN b_initial_measuring;
 	BOOLEAN b_no_batt_restored;
