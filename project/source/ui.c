@@ -577,6 +577,7 @@ static I8U _ui_touch_sensing()
 	if ((gesture >= TOUCH_SWIPE_LEFT) && (gesture <= TOUCH_BUTTON_SINGLE))
 	{
 		if (cling.reminder.state != REMINDER_STATE_IDLE) {
+			Y_SPRINTF("[UI] check for next reminder upon touch");
 			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 		}
 	}
@@ -983,14 +984,14 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 	if (mode == UI_MIDDLE_MODE_CLOCK) {
 		if (cling.ui.clock_orientation == 1) {
 			len = _fill_local_clock((char *)string);
-			Y_SPRINTF("[UI] flip clock (h): %d", cling.ui.clock_orientation);
+			N_SPRINTF("[UI] flip clock (h): %d", cling.ui.clock_orientation);
 		} else if (cling.ui.clock_orientation == 2) {
-			Y_SPRINTF("[UI] flip clock (v-270): %d", cling.ui.clock_orientation);
+			N_SPRINTF("[UI] flip clock (v-270): %d", cling.ui.clock_orientation);
 			_fill_vertical_local_clock(TRUE);
 			len = 0;
 			b_center = FALSE;
 		} else {
-			Y_SPRINTF("[UI] flip clock (v-90): %d", cling.ui.clock_orientation);
+			N_SPRINTF("[UI] flip clock (v-90): %d", cling.ui.clock_orientation);
 			_fill_vertical_local_clock(FALSE);
 			len = 0;
 			b_center = FALSE;
@@ -2902,7 +2903,7 @@ void UI_state_machine()
 
 					if (BATT_is_low_battery())
 					{
-						N_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
+						Y_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 						u->state = UI_STATE_LOW_POWER;
 					} else {
 						UI_switch_state(UI_STATE_APPEAR, 1000);
@@ -2973,7 +2974,7 @@ void UI_state_machine()
 					u->frame_index = UI_DISPLAY_SMART_INCOMING_CALL;
 				else
 					u->frame_index = UI_DISPLAY_SMART_INCOMING_MESSAGE;
-				
+								
 				// Go display incoming message/call
 				_display_frame_smart(u->frame_index, TRUE);
 			} else {

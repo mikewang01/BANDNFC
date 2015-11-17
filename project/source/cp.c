@@ -944,6 +944,7 @@ static void _pending_process()
 		case CP_MSG_TYPE_ANDROID_NOTIFY:
 		{
 #ifdef _ENABLE_ANCS_
+			Y_SPRINTF("[CP] android notif received");
 			NOTIFIC_smart_phone_notify(p->msg+1);
 #endif
 			break;

@@ -181,7 +181,7 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 		 
 		cling.ancs.message_total++;		
 		
-		N_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
+		Y_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
 	 
 		// title len, message len, ....
 		ANCS_nflash_store_one_message(data+2);

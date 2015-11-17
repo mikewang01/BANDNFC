@@ -91,12 +91,13 @@ void RTC_timer_handler( void * p_context )
 		cling.time.local_minute = cling.time.local.minute;
 		
 		if (
-			   cling.user_data.idle_time_in_minutes>0 && 
-				 cling.time.local.hour>=cling.user_data.idle_time_start && 
-				 cling.time.local.hour< cling.user_data.idle_time_end
+			   (cling.user_data.idle_time_in_minutes>0) && 
+				 (cling.time.local.hour>=cling.user_data.idle_time_start) && 
+				 (cling.time.local.hour< cling.user_data.idle_time_end)
 			 )
     {
 			cling.user_data.idle_minutes_countdown --;
+			Y_SPRINTF("[RTC] idle alert countdown - %d", cling.user_data.idle_minutes_countdown);
 		}
 		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
 	}	
@@ -108,7 +109,7 @@ void RTC_timer_handler( void * p_context )
 		// Reset reminder
 		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 
-		N_SPRINTF("[RTC] local day updated");
+		Y_SPRINTF("[RTC] local day updated");
 	}
 
 	// Testing, assuming user sleeps around 22:00 at night

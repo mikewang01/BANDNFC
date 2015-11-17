@@ -384,7 +384,7 @@ int main(void)
 	_system_startup();
 	
 	Y_SPRINTF("[MAIN] Entering main loop");
-		
+	
 	// Enter main loop.
 	while (LOOP_FOREVER)
 	{		

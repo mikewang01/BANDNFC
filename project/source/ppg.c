@@ -547,15 +547,15 @@ void PPG_state_machine()
 				}
 			} else {
 				//t_threshold = cling.user_data.ppg_day_interval>>10;
-				t_threshold = PPG_MEASURING_PERIOD_BACKGROUND;
+				t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_DAY;
 				
 				// If user is asleep, we reduce the duty cycle by 2
 				if ((cling.sleep.state == SLP_STAT_LIGHT) || 
 						(cling.sleep.state == SLP_STAT_SOUND) || 
 						(cling.sleep.state == SLP_STAT_REM)) 
 				{
-					t_threshold = cling.user_data.ppg_night_interval>>10;
-//        t_threshold = 1800;
+					//t_threshold = cling.user_data.ppg_night_interval>>10;
+					t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_NIGHT;
 					N_SPRINTF("[PPG] sleeping mode: %d", t_threshold);
 				}
 

@@ -164,11 +164,7 @@ void ANCS_nflash_store_one_message(I8U *data)
 	//use message 4k space from nflash
 	I32U addr=SYSTEM_NOTIFICATION_SPACE_START;
 	
-	I8U *p  = &data[cling.ancs.pkt.title_len+cling.ancs.pkt.message_len+2];
-	I8U len = (256 - cling.ancs.pkt.title_len - cling.ancs.pkt.message_len - 2);
-
-	//Clear the unused data space.
-	memset(p,0,len);
+	N_SPRINTF("[ANCS] nflash store message: %d, %d, %d", cling.ancs.pkt.title_len, cling.ancs.pkt.message_len, cling.ancs.message_total);
 	
 	addr += (cling.ancs.message_total-1)*256;
 	FLASH_Write_App(addr, data, 128);
@@ -358,7 +354,7 @@ static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 	//ANCS state machine busy,waiting until the free.
 	if(a->state != BLE_ANCS_STATE_IDLE)
 		return;
-	
+
 	a->state =  BLE_ANCS_STATE_NOTIF;
 }
 
@@ -629,13 +625,10 @@ static BOOLEAN _ancs_supported_is_enable()
 	// If this is a "OTHER" category, we bond with 'SOCIAL' for the present.
 	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER) 
 		ancs_notif.category_id  = BLE_ANCS_CATEGORY_ID_SOCIAL;
-	
-	if (ancs_notif.category_id > BLE_ANCS_CATEGORY_ID_ENTERTAINMENT)
-		ancs_notif.category_id = BLE_ANCS_CATEGORY_ID_SOCIAL;
 
 	// Check whether corresponding category is enabled	
 	id_mask = 1 << (ancs_notif.category_id-1);	
-			
+
 	if (id_mask & cling.ancs.supported_categories) 
 		return TRUE;
 	
@@ -644,7 +637,9 @@ static BOOLEAN _ancs_supported_is_enable()
 
 static void _ancs_store_attrs_pro(void)
 {
-
+	I8U *p;
+	I8U len;
+	
 	N_SPRINTF("[ANCS] start store attr message to nflash ... ");							
 		
   // when a new notification message arrives, start notification state machine
@@ -663,7 +658,13 @@ static void _ancs_store_attrs_pro(void)
  
   cling.ancs.message_total++;		
   N_SPRINTF("[ANCS] message total is :%d ",cling.ancs.message_total);
+	
+	p  = &cling.ancs.pkt.buf[cling.ancs.pkt.title_len+cling.ancs.pkt.message_len];
+	len = (254 - cling.ancs.pkt.title_len - cling.ancs.pkt.message_len);
 
+	//Clear the unused data space.
+	memset(p,0,len);
+	
 	ANCS_nflash_store_one_message((I8U *)&cling.ancs.pkt);	 	 	
 }
 

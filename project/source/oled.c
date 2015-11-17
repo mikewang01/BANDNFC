@@ -244,7 +244,7 @@ void OLED_state_machine(void)
 				cling.ui.clock_sec_blinking = TRUE;
 				{
 					// If screen is turned, dismiss the secondary reminder vibration 
-					if (cling.reminder.state != REMINDER_STATE_IDLE) {
+					if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
 						UI_switch_state(UI_STATE_REMINDER, 0);
 						cling.reminder.ui_hh = cling.time.local.hour;
 						cling.reminder.ui_mm = cling.time.local.minute;

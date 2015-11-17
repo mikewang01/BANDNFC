@@ -12,7 +12,6 @@ enum {
 	IDLE_ALERT_STATE_IDLE,
 	IDLE_ALERT_STATE_COUNT_DOWN,
 	IDLE_ALERT_STATE_NOTIFY,
-	IDLE_ALERT_STATE_RESET
 };
 			
 typedef struct tagUSER_PROFILE_CTX {
@@ -55,6 +54,7 @@ typedef struct tagUSER_DATA {
 	I8U idle_state;
 	I8U idle_time_in_minutes;
 	I8U idle_minutes_countdown;
+	I8U idle_step_countdown;
 	I8U idle_time_start;
 	I8U idle_time_end;
 	

@@ -15,25 +15,16 @@
 #include "main.h"
 
 static BOOLEAN _is_idle_alert_allowed()
-{
-	I8U  activity_type = PEDO_get_motion_type();
-	
-	if (OTA_if_enabled()) {
-		return FALSE;
-	}
-	
+{	
   if (cling.sleep.state==SLP_STAT_LIGHT || cling.sleep.state==SLP_STAT_SOUND) {
 		return FALSE;
   }
 	
-	if (activity_type==MOTION_WALKING || activity_type==MOTION_RUNNING) {
+	if (!TOUCH_is_skin_touched()) {
 		return FALSE;
-  }
+	}
 	
-	if (TOUCH_is_skin_touched())
-		return TRUE;
-
-	return FALSE;
+	return TRUE;
 }
 
 void USER_data_init()
@@ -154,7 +145,7 @@ void USER_store_device_param(I8U *data)
 	// Finally, we put in the length
 	data[0] = setting_length;
 	
-	N_SPRINTF("[USER] critical store device param: %d", setting_length);
+	Y_SPRINTF("[USER] critical store device param: %d", setting_length);
 }
 
 void USER_setup_profile(I8U *data)
@@ -209,10 +200,13 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	value <<= 8; // 
 	value |= *pdata++; // 
 	// 5 minutes is the minimum
-	if (value < 300000)
-		return;
+#if 0 // Not used
+	if (value < 300000) {
+		Y_SPRINTF("[USER] illegal setting(day-hr): %d", value);
+		//return;
+	}
 	u->ppg_day_interval = value;
-	
+#endif
 	setting_length -= 4;
 
 	value = *pdata++; // night interval
@@ -223,9 +217,13 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	value <<= 8; // 
 	value |= *pdata++; // 
 	// 5 minutes is the minimum
-	if (value < 300000)
-		return;
+#if 0 // not used
+	if (value < 300000) {
+		Y_SPRINTF("[USER] illegal setting(night-hr): %d", value);
+		//return;
+	}
 	u->ppg_night_interval = value;
+#endif
 	setting_length -= 4;
 
 	value = *pdata++; // night interval
@@ -236,9 +234,14 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	value <<= 8; // 
 	value |= *pdata++; // 
 	// 5 minutes is the minimum
-	if (value < 300000)
-		return;
+#if 0 // Not used
+	if (value < 300000) {
+		Y_SPRINTF("[USER] illegal setting(day-temp): %d", value);
+
+		//return;
+	}
 	u->skin_temp_day_interval = value;
+#endif
 	setting_length -= 4;
 
 	value = *pdata++; // night interval
@@ -249,12 +252,16 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	value <<= 8; // 
 	value |= *pdata++; // 
 	// 5 minutes is the minimum
-	if (value < 300000)
-		return;
-	u->skin_temp_night_interval = value;
-	setting_length -= 4;
-	u->skin_temp_day_interval = 5000;
+#if 0 // Not used
+	if (value < 300000) {
+				Y_SPRINTF("[USER] illegal setting(night-temp): %d", value);
 
+		//return;
+	}
+	u->skin_temp_night_interval = value;
+	u->skin_temp_day_interval = 5000;
+#endif
+	setting_length -= 4;
 	// gesture recognition
 	u->b_screen_wrist_flip = *pdata++;
 	u->b_screen_press_hold_1 = *pdata++;
@@ -270,7 +277,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	u->b_navigation_wrist_shake = FALSE;
 	setting_length -= 2;
 
-	N_SPRINTF("\n%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", 
+	Y_SPRINTF("\n%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", 
 		u->ppg_day_interval,
 		u->ppg_night_interval,
 		u->skin_temp_day_interval,
@@ -290,7 +297,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->idle_state = IDLE_ALERT_STATE_IDLE;
 
 		setting_length -= 3;
-		N_SPRINTF("\n\n idle alert: %d, %d, %d", u->idle_time_in_minutes, u->idle_time_start, u->idle_time_end);
+		Y_SPRINTF("\n\n idle alert: %d, %d, %d", u->idle_time_in_minutes, u->idle_time_start, u->idle_time_end);
 	} else {
 		return;
 	}
@@ -324,39 +331,42 @@ void USER_state_machine()
 	
 	switch (u->idle_state) {
 		case IDLE_ALERT_STATE_IDLE:
-			u->idle_minutes_countdown = u->idle_time_in_minutes;
-			if (_is_idle_alert_allowed()) {
-  		  if (
-  		  	   cling.user_data.idle_time_in_minutes>0 && 
-  		  		 cling.time.local.hour>=cling.user_data.idle_time_start && 
-  		  		 cling.time.local.hour< cling.user_data.idle_time_end && 
-			  		 cling.time.local.second<1
-  		  	 )
-					 u->idle_state = IDLE_ALERT_STATE_COUNT_DOWN;
-      }
+			if (u->idle_time_in_minutes > 0) {
+				if (cling.time.local.hour>=cling.user_data.idle_time_start) {
+					if (cling.time.local.hour < cling.user_data.idle_time_end) {
+						u->idle_minutes_countdown = u->idle_time_in_minutes;
+						u->idle_step_countdown = 64;
+						u->idle_state = IDLE_ALERT_STATE_COUNT_DOWN;
+						Y_SPRINTF("[USER] reset idle alert: %d, %d", u->idle_minutes_countdown, u->idle_step_countdown);
+					}
+				}
+			}
 			break;
 
 		case IDLE_ALERT_STATE_COUNT_DOWN:
-			if (_is_idle_alert_allowed()) {
-				if (!u->idle_minutes_countdown)
-					u->idle_state = IDLE_ALERT_STATE_NOTIFY;
-				else if (!cling.user_data.idle_time_in_minutes)
+			if (u->idle_minutes_countdown ==0) {
+				if (u->idle_time_in_minutes == 0) {
 					u->idle_state = IDLE_ALERT_STATE_IDLE;
-			} else {
-				u->idle_state = IDLE_ALERT_STATE_IDLE;
+				} else if (cling.time.local.hour < cling.user_data.idle_time_start) {
+					u->idle_state = IDLE_ALERT_STATE_IDLE;
+				} else if (cling.time.local.hour >= cling.user_data.idle_time_end) {
+					u->idle_state = IDLE_ALERT_STATE_IDLE;
+				} else {
+					if (_is_idle_alert_allowed()) {
+						u->idle_state = IDLE_ALERT_STATE_NOTIFY;
+						Y_SPRINTF("[USER] start idle alert");
+					}
+				}
 	    }
 			break;
 
 		case IDLE_ALERT_STATE_NOTIFY:
 			NOTIFIC_start_idle_alert();
-			u->idle_state = IDLE_ALERT_STATE_RESET;
-			break;
-			
-		case IDLE_ALERT_STATE_RESET:
 			u->idle_state = IDLE_ALERT_STATE_IDLE;
 			break;
 			
 		default:
+			u->idle_state = IDLE_ALERT_STATE_IDLE;
 			break;
   }
 }

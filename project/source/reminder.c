@@ -39,7 +39,7 @@ void REMINDER_setup(I8U *msg)
 
 	memcpy(pdata, msg + 1, 64);
 	FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 64); // Maximum 32 entries
-	N_SPRINTF("[CP] reminder update, len: %d", cling.reminder.total);
+	Y_SPRINTF("[CP] reminder update, len: %d", cling.reminder.total);
 	cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 }
 
@@ -138,7 +138,7 @@ void REMINDER_state_machine()
 		case REMINDER_STATE_IDLE:
 		{
 			if (_check_reminder()) {
-				N_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+				Y_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 				cling.reminder.state = REMINDER_STATE_ON;
 				// Reset vibration times
 				cling.reminder.vibrate_time = 0;
@@ -191,7 +191,7 @@ void REMINDER_state_machine()
 			if (t_curr > (cling.reminder.ts + REMINDER_SECOND_REMINDER_LATENCY)) {
 				if (cling.reminder.second_vibrate_time >= SECOND_REMINDER_TIME) {
 					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-					N_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
+					Y_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
 				} else {
 					N_SPRINTF("[REMINDER] second reminder on");
 					cling.reminder.state = REMINDER_STATE_ON;					

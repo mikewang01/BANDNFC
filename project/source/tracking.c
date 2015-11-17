@@ -219,12 +219,24 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			cling.activity.step_detect_ts = CLK_get_system_time();
 			SLEEP_wake_up_upon_motion();
 			BATT_charging_update_steps(1);
+			if (cling.user_data.idle_step_countdown > 0) {
+				cling.user_data.idle_step_countdown --;
+			} else {
+				cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
+				Y_SPRINTF("[USER] reset idle alert due to walking");
+			}
 		} else if (act_motion == MOTION_RUNNING) {
 			cling.activity.day.running ++;
 			cling.activity.day.distance += _get_stride_length(); // 1.41 meters
 			cling.activity.step_detect_ts = CLK_get_system_time();
 			SLEEP_wake_up_upon_motion();
 			BATT_charging_update_steps(1);
+			if (cling.user_data.idle_step_countdown > 0) {
+				cling.user_data.idle_step_countdown --;
+			} else {
+				cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
+				Y_SPRINTF("[USER] reset idle alert due to running");
+			}
 		}
 	}
 }
