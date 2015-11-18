@@ -1727,6 +1727,8 @@ static void _core_home_display_horizontal(I8U middle, I8U bottom, BOOLEAN b_rend
 {
 	BOOLEAN b_charging = FALSE;
 	BOOLEAN b_conn = FALSE;
+	I8U i;
+	I8U *p0, *p1, *p2, *p3;
 	
 	// Main info
 	_middle_row_render(middle, TRUE);
@@ -1752,6 +1754,23 @@ static void _core_home_display_horizontal(I8U middle, I8U bottom, BOOLEAN b_rend
 
 	// Info on the left
 	_right_row_render(bottom);
+	
+	// For clock page, we clean up a bit for the 'more' icon
+	
+	if ((middle == UI_MIDDLE_MODE_CLOCK) && cling.ui.b_detail_page) {
+		p0 = cling.ui.p_oled_up+110;
+		p1 = p0 + 128;
+		p2 = p1 + 128;
+		p3 = p2 + 128;
+		for (i = 110; i < 128; i ++) {
+			*p0++ = 0;
+			*p1++ = 0;
+			*p2++ = 0;
+			*p3++ = 0;
+		}
+		Y_SPRINTF("[UI] clean up space for detail icon");
+		_render_icon_more(110);
+	}
 	
 	if (b_render) {
 		// Finally, we render the frame

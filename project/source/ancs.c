@@ -717,8 +717,12 @@ void ANCS_state_machine(void)
     case BLE_ANCS_STATE_DISCOVER_FAILED:
 		{    
 		  N_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
-		  if (cling.gcp.host_type == HOST_TYPE_IOS) 
-				BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
+		  if (cling.gcp.host_type == HOST_TYPE_IOS) {
+				
+				if(BTLE_is_connected())
+					BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
+			}
+				
 			a->state = BLE_ANCS_STATE_IDLE;
       break;		
 		}

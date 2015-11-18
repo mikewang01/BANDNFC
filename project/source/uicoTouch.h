@@ -20,7 +20,7 @@ typedef struct tagUICOTOUCH_RESPONSE_CTX {
 
 // Time difference
 void UICO_init(void);
-I8U UICO_main(void);
+I8U  UICO_main(void);
 void UICO_set_power_mode(UICO_POWER_MODE mode);
 void UICO_dbg_write_read(I8U *obuf, I8U len, I8U *ibuf);
 /*start calibration api reference*/

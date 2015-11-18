@@ -14,7 +14,7 @@
 #endif
 #include "standard_types.h"
 
-#define SECURITY_REQUEST_DELAY          APP_TIMER_TICKS(1500, APP_TIMER_PRESCALER)   /**< Delay after connection until security request is sent, if necessary (ticks). */
+#define SECURITY_REQUEST_DELAY          APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)      /**< Delay after connection until security request is sent, if necessary (ticks). */
 
 #define APP_TIMER_PRESCALER                  0                                          /**< Value of the RTC1 PRESCALER register. */
 

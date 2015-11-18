@@ -911,7 +911,8 @@ static void _pending_process()
 		{
 			// Disconnect BLE service
 			N_SPRINTF("[CP] BLE disconnecting ...");
-			BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
+			if(BTLE_is_connected())
+			  BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
 			break;
 		}
 		case CP_MSG_TYPE_SET_ANCS:

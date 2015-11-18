@@ -402,7 +402,8 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
             // Disconnect on GATT Server and Client timeout events.
 				
 						Y_SPRINTF("[BTLE] GATTS - BLE disconnect");
-						BTLE_disconnect(BTLE_DISCONN_REASON_GATT_TIMEOUT);
+				    if(BTLE_is_connected())
+						  BTLE_disconnect(BTLE_DISCONN_REASON_GATT_TIMEOUT);
             break;
 
         default:

@@ -153,7 +153,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	BOOLEAN b_detail_page;
 	
 	// Clock orientation
-	BOOLEAN clock_orientation;
+	I8U clock_orientation;
 	
 } UI_ANIMATION_CTX;
 
