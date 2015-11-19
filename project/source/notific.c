@@ -70,9 +70,9 @@ void NOTIFIC_start_idle_alert()
 	cling.notific.vibrate_time = 0;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
-	//UI_turn_on_display(UI_STATE_IDLE, 3000);
+	UI_turn_on_display(UI_STATE_IDLE_ALERT, 3000);
 	
-	N_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 }
 
 void NOTIFIC_state_machine()

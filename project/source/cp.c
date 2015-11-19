@@ -293,7 +293,7 @@ static void _create_dev_info_msg()
 	if (file_available < 0)
 		file_available = 0;
 	
-	N_SPRINTF("[CP] @@@@ file available: %d, mem: %d", file_available, free);
+	Y_SPRINTF("[CP] @@@@ file available: %d, mem: %d", file_available, free);
 
 	// Creat a new message
 	t->msg_id ++;

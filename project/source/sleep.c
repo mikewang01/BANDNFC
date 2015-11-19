@@ -393,7 +393,12 @@ void SLEEP_minute_proc()
   else
   	_update_activity_status_register(0);
 	
-	N_SPRINTF("%d  %d", slp->state, slp->m_activity_per_min);
+	Y_SPRINTF("[SLEEP] activity per min:  %d", slp->m_activity_per_min);
+	
+	// Update no charging parameters
+	if (slp->m_activity_per_min >= AWAKE_ACTIVITY_PER_MIN_THRESHOLD_LOW) {
+		BATT_exit_charging_state(60);
+	}
 	
 	// count successive  stationary minutes
 	slp->activity_status_per_min <<= 1;

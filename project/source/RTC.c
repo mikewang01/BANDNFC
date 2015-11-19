@@ -55,7 +55,6 @@ void RTC_timer_handler( void * p_context )
 	// update battery measuring timer
 	cling.batt.level_update_timebase += tick_in_s;
 	BATT_update_charging_time(tick_in_s);
-	BATT_exit_charging_state(tick_in_s);
 
 	// update radio duty cycling
 	cling.time.system_clock_in_sec += tick_in_s;
@@ -89,7 +88,6 @@ void RTC_timer_handler( void * p_context )
 	if (cling.time.local.minute != cling.time.local_minute) {
 		cling.time.local_minute_updated = TRUE;
 		cling.time.local_minute = cling.time.local.minute;
-		
 		if (
 			   (cling.user_data.idle_time_in_minutes>0) && 
 				 (cling.time.local.hour>=cling.user_data.idle_time_start) && 

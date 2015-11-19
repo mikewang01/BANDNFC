@@ -319,10 +319,12 @@ static BOOLEAN _critical_info_restored()
 	else 
 		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = p_byte_addr[56];
 		
-	N_SPRINTF("[SYSTEM] restore battery at: %d", p_byte_addr[56]);
+	Y_SPRINTF("[SYSTEM] restore battery at: %d", p_byte_addr[56]);
 
 	cling.batt.non_charging_accumulated_active_sec = p_byte_addr[57];
 	cling.batt.non_charging_accumulated_steps = p_byte_addr[58];
+	Y_SPRINTF("[SYSTEM] restore charging param: %d, %d", p_byte_addr[57], p_byte_addr[58]);
+
 	cling.ui.fonts_cn = p_byte_addr[59];
 	cling.gcp.host_type = p_byte_addr[60];
 
@@ -544,11 +546,13 @@ BOOLEAN SYSTEM_backup_critical()
 		critical[56] = 1;
 	}
 	
-	N_SPRINTF("[SYSTEM] backup battery at: %d", critical[56]);
+	Y_SPRINTF("[SYSTEM] backup battery at: %d", critical[56]);
 	
 	critical[57] = cling.batt.non_charging_accumulated_active_sec;
 	critical[58] = cling.batt.non_charging_accumulated_steps;
 	critical[59] = cling.ui.fonts_cn;
+	Y_SPRINTF("[SYSTEM] Backup charging param: %d, %d", cling.batt.non_charging_accumulated_active_sec, 
+		cling.batt.non_charging_accumulated_steps);
 
 	// Store the  phone type
 	critical[60] = cling.gcp.host_type;

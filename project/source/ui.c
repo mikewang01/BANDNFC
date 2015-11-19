@@ -1116,7 +1116,10 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 				}
 			}
 		} else {
-				len = sprintf((char *)string, "0:00");
+//			len = sprintf((char *)string, "0:00");
+  		  len = 0;
+  		  string[len++] = ICON_MIDDLE_NO_SKIN_TOUCH;
+  		  string[len] = 0;
 		}
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_HEART_RATE) {
@@ -1845,6 +1848,24 @@ static void _display_weather(UI_ANIMATION_CTX *u, BOOLEAN b_render)
 		_core_display_horizontal(UI_TOP_MODE_WEATHER, UI_MIDDLE_MODE_WEATHER, UI_BOTTOM_MODE_CLOCK, b_render);
 }
 
+static void _display_idle_alert()
+{
+	I8U len1;
+	I8U string1[32];
+
+	memset(cling.ui.p_oled_up, 0, 512);
+	
+	if (cling.ui.fonts_cn) {
+		len1 = sprintf((char *)string1, "该起来动动了");
+	} else {
+		len1 = sprintf((char *)string1, "time for a move");
+	}
+
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string1, 16, TRUE);
+
+	_render_screen();
+}
+
 static void _display_frame_workout(I8U index, BOOLEAN b_render)
 {
 	I8U string1[32];
@@ -1859,7 +1880,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "徒步");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Walk");
 			}
 			len2 = sprintf((char *)string2, "-,,,,,,,,");
@@ -1870,7 +1890,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "跑步");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Run");
 			}
 			len2 = sprintf((char *)string2, ",-,,,,,,,");
@@ -1881,7 +1900,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "划船");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Row");
 			}
 			len2 = sprintf((char *)string2, ",,-,,,,,,");
@@ -1891,9 +1909,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		{
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "椭圆机 ");
-//			len1 = sprintf((char *)string1, "椭圆");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Elliptical");
 			}
 			len2 = sprintf((char *)string2, ",,,-,,,,,");
@@ -1903,9 +1919,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		{
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "爬楼梯 ");
-//			len1 = sprintf((char *)string1, "楼梯");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Stairs");
 			}
 			len2 = sprintf((char *)string2, ",,,,-,,,,");
@@ -1916,7 +1930,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "单车");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Cycle");
 			}
 			len2 = sprintf((char *)string2, ",,,,,-,,,");
@@ -1926,9 +1939,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		{
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "有氧操 ");
-//			len1 = sprintf((char *)string1, "有氧");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Aerobic");
 			}
 			len2 = sprintf((char *)string2, ",,,,,,-,,");
@@ -1940,7 +1951,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 				// No Chinese for piloxing
 				len1 = sprintf((char *)string1, "Piloxing");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Piloxing");
 			}
 			len2 = sprintf((char *)string2, ",,,,,,,-,");
@@ -1951,7 +1961,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "其它");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Others");
 			}
 			len2 = sprintf((char *)string2, ",,,,,,,,-");
@@ -1962,7 +1971,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "户外");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Outdoor");
 			}
 			len2 = sprintf((char *)string2, "-,");
@@ -1973,7 +1981,6 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 			if (cling.ui.fonts_cn) {
 				len1 = sprintf((char *)string1, "室内");
 			} else {
-				//display_one_Chinese_characters("zhou
 				len1 = sprintf((char *)string1, "Indoor");
 			}
 			len2 = sprintf((char *)string2, ",-");
@@ -2943,11 +2950,10 @@ void UI_state_machine()
 				_display_unauthorized_home();
 				
 				// Link re-initialization
-				//LINK_init();
-				Y_SPRINTF("[UI] Link status re-initialization");
+				N_SPRINTF("[UI] Link status re-initialization");
 			} else if (t_curr > u->display_to_base + u->frame_interval) {
 				u->display_to_base = t_curr;
-				Y_SPRINTF("[UI] display to at authorization: %d", u->display_to_base);
+				N_SPRINTF("[UI] display to at authorization: %d", u->display_to_base);
 				u->frame_interval = 1000;
 				if (LINK_is_authorizing()) {
 					t_diff = t_curr - cling.link.link_ts;
@@ -3014,6 +3020,21 @@ void UI_state_machine()
 				Y_SPRINTF("[UI] low power shown");
 				u->state_init = FALSE;
 				_display_charging(cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
+				u->touch_time_stamp = t_curr;
+			}
+			else {
+				if (t_curr > (u->touch_time_stamp+2000)) {
+					UI_switch_state(UI_STATE_APPEAR, 1000);
+				}
+			}
+			break;
+		}
+		case UI_STATE_IDLE_ALERT:
+		{
+			if (u->state_init) {
+				Y_SPRINTF("[UI] idle alert shown");
+				u->state_init = FALSE;
+				_display_idle_alert();
 				u->touch_time_stamp = t_curr;
 			}
 			else {
@@ -3230,3 +3251,5 @@ void UI_reset_workout_mode()
 		cling.activity.workout_place = WORKOUT_PLACE_NONE;
 	}
 }
+
+
