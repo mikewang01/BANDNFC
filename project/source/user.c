@@ -145,7 +145,7 @@ void USER_store_device_param(I8U *data)
 	// Finally, we put in the length
 	data[0] = setting_length;
 	
-	Y_SPRINTF("[USER] critical store device param: %d", setting_length);
+	N_SPRINTF("[USER] critical store device param: %d", setting_length);
 }
 
 void USER_setup_profile(I8U *data)

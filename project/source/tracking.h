@@ -158,6 +158,7 @@ typedef struct tagTRACKING_CTX {
 	I32U workout_time_stamp_stop;
 	I8U workout_type;
 	I8U workout_place;
+	BOOLEAN b_workout_active;
 } TRACKING_CTX;
 
 BOOLEAN TRACKING_is_not_active(void);

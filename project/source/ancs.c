@@ -38,6 +38,7 @@ static ble_ancs_notif_attr_t   ancs_notif_attr;
 	
 static I32U      ancs_timer;
 static I32U      ancs_t_curr, ancs_t_diff;		
+	
 
 /**@brief 128-bit service UUID for the Apple Notification Center Service.*/
 const ble_uuid128_t ble_ancs_base_uuid128 =
@@ -137,6 +138,7 @@ static void db_discover_evt_handler(ble_db_discovery_evt_t * p_evt)
 	}
 	else
 	{
+		 ancs_timer = CLK_get_system_time();	
      a->state = BLE_ANCS_STATE_DISCOVER_FAILED;
 	}
 }
@@ -717,13 +719,20 @@ void ANCS_state_machine(void)
     case BLE_ANCS_STATE_DISCOVER_FAILED:
 		{    
 		  N_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
-		  if (cling.gcp.host_type == HOST_TYPE_IOS) {
+		
+			ancs_t_curr =  CLK_get_system_time();		
+	    ancs_t_diff = (ancs_t_curr - ancs_timer);
+			
+			if(ancs_t_diff >= ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME){
 				
-				if(BTLE_is_connected())
-					BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
-			}
+		    if (cling.gcp.host_type == HOST_TYPE_IOS) {
 				
-			a->state = BLE_ANCS_STATE_IDLE;
+				  if(BTLE_is_connected())
+					  BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
+			  }
+				
+			  a->state = BLE_ANCS_STATE_IDLE;
+		}
       break;		
 		}
     default:

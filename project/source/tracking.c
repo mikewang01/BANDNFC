@@ -146,10 +146,12 @@ static I8U _get_stride_length()
 	stride *= ratio;
 	
 	// Check whether it is a indoor running, ratio down by 1.3
-	if (cling.activity.workout_place == WORKOUT_PLACE_INDOOR) {
-		if (pace > 2.5) {
-			if (cling.activity.workout_type == WORKOUT_RUN) {
-				stride /= 1.3;
+	if (cling.activity.b_workout_active) {
+		if (cling.activity.workout_place == WORKOUT_PLACE_INDOOR) {
+			if (pace > 2.5) {
+				if (cling.activity.workout_type == WORKOUT_RUN) {
+					stride /= 1.3;
+				}
 			}
 		}
 	}
@@ -436,7 +438,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		N_SPRINTF("[tracking] diff: %d, %d, %d", diff->walking, a->day.walking, a->day_stored.walking);
 
 		if (diff->running > 0) {
-			if (cling.activity.workout_type == WORKOUT_NONE) {
+			if (!cling.activity.b_workout_active) {
 				if (diff->running > 50) {
 					calories_diff = 208; // 12.5 for running
 				} else if (diff->walking > diff->running) {
@@ -452,7 +454,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 			}
 		}
 		else if (diff->walking > 0) {
-			if (cling.activity.workout_type == WORKOUT_NONE) {
+			if (!cling.activity.b_workout_active) {
 				if (diff->walking > 50) {
 					calories_diff = 108;  // 6.2 for walking
 				} else if (diff->walking > 20) {
@@ -556,44 +558,46 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 	
 	// Get vital signal
 #ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
-		vital.skin_temperature = SIM_get_current_activity(TRACKING_SKIN_TEMPERATURE);
-		vital.heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
-		vital.skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
-	
-		// Get activity minute granularity
-		// Note here, we have minute offset to UTC time.
-		pminute->epoch = cling.time.time_since_1970;
-		pminute->walking = diff.walking*cling.time.local.second/60;
-		pminute->running = diff.running*cling.time.local.second/60;
-		pminute->distance = diff.distance*cling.time.local.second/60;
-		pminute->calories = diff.calories*cling.time.local.second/60;
-		pminute->sleep_state = diff.sleep_state;
-		pminute->activity_count = diff.activity_count;
-		pminute->skin_temperature = vital.skin_temperature;
-		pminute->heart_rate = vital.heart_rate+(cling.time.local.second%3);
-		pminute->skin_touch_pads = vital.skin_touch_pads;
-		pminute->uv_and_activity_type = 4; // UV index: 4 for simulation
+	vital.skin_temperature = SIM_get_current_activity(TRACKING_SKIN_TEMPERATURE);
+	vital.heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
+	vital.skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
+
+	// Get activity minute granularity
+	// Note here, we have minute offset to UTC time.
+	pminute->epoch = cling.time.time_since_1970;
+	pminute->walking = diff.walking*cling.time.local.second/60;
+	pminute->running = diff.running*cling.time.local.second/60;
+	pminute->distance = diff.distance*cling.time.local.second/60;
+	pminute->calories = diff.calories*cling.time.local.second/60;
+	pminute->sleep_state = diff.sleep_state;
+	pminute->activity_count = diff.activity_count;
+	pminute->skin_temperature = vital.skin_temperature;
+	pminute->heart_rate = vital.heart_rate+(cling.time.local.second%3);
+	pminute->skin_touch_pads = vital.skin_touch_pads;
+	pminute->uv_and_activity_type = 4; // UV index: 4 for simulation
 #else
-		vital.skin_temperature = cling.therm.current_temperature;
-		vital.heart_rate = cling.hr.current_rate;
-		vital.skin_touch_pads = TOUCH_get_skin_pad();
-		pminute->epoch = cling.time.time_since_1970;
-		pminute->distance = diff.distance;
-		pminute->sleep_state = diff.sleep_state;
-		pminute->walking = diff.walking;
-		pminute->running = diff.running;
-		pminute->calories = diff.calories;
-		pminute->activity_count = diff.activity_count;
-		pminute->skin_temperature = vital.skin_temperature;
-		pminute->heart_rate = vital.heart_rate;
-		pminute->skin_touch_pads = vital.skin_touch_pads;
+	vital.skin_temperature = cling.therm.current_temperature;
+	vital.heart_rate = cling.hr.current_rate;
+	vital.skin_touch_pads = TOUCH_get_skin_pad();
+	pminute->epoch = cling.time.time_since_1970;
+	pminute->distance = diff.distance;
+	pminute->sleep_state = diff.sleep_state;
+	pminute->walking = diff.walking;
+	pminute->running = diff.running;
+	pminute->calories = diff.calories;
+	pminute->activity_count = diff.activity_count;
+	pminute->skin_temperature = vital.skin_temperature;
+	pminute->heart_rate = vital.heart_rate;
+	pminute->skin_touch_pads = vital.skin_touch_pads;
 #ifdef _ENABLE_UV_
-		pminute->uv_and_activity_type = (cling.uv.max_uv+5)/10;
-		pminute->uv_and_activity_type &= 0x0f;
+	pminute->uv_and_activity_type = (cling.uv.max_uv+5)/10;
+	pminute->uv_and_activity_type &= 0x0f;
 #else
-		pminute->uv_and_activity_type = 0;
+	pminute->uv_and_activity_type = 0;
 #endif
+	if (cling.activity.b_workout_active) {
 		pminute->uv_and_activity_type |= cling.activity.workout_type<<4;
+	}
 #endif
 
 	// For compatibility, we set activity count flag
@@ -634,8 +638,10 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->uv_and_activity_type = 0;
 #endif
 
-	pminute->uv_and_activity_type |= cling.activity.workout_type<<4;
-
+	if (cling.activity.b_workout_active) {
+		pminute->uv_and_activity_type |= cling.activity.workout_type<<4;
+	}
+	
 	N_SPRINTF("MINUTE UPDATE: %08x, %04x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %04x, %02x",
 		pminute->epoch, pminute->skin_temperature, pminute->walking, pminute->running, pminute->calories, 
 		pminute->distance, pminute->sleep_state, pminute->heart_rate, pminute->skin_touch_pads, pminute->activity_count,

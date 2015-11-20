@@ -187,11 +187,13 @@ void HAL_ancs_delete_bond_info(void)
 {
 #ifdef _ENABLE_ANCS_
     Y_SPRINTF("[HAL] pairing error - delete bond info and BLE disconnect");
+    if(cling.gcp.host_type == HOST_TYPE_IOS){
+			
+      HAL_device_manager_init(TRUE);
 
-    HAL_device_manager_init(TRUE);
-
-    if(BTLE_is_connected())
-        BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);
+      if(BTLE_is_connected())
+         BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);
+		}
 #endif
 }
 

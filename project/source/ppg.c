@@ -539,7 +539,7 @@ void PPG_state_machine()
 				break;
 		
 			t_diff = t_sec - h->m_measuring_timer_in_s;
-			if (_is_user_viewing_heart_rate() || (cling.activity.workout_type != WORKOUT_NONE)) {
+			if (_is_user_viewing_heart_rate() || cling.activity.b_workout_active) {
 				t_threshold = PPG_MEASURING_PERIOD_FOREGROUND;
 				if ( t_diff > t_threshold ) {
 						h->state = PPG_STAT_DUTY_ON;

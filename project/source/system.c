@@ -546,7 +546,7 @@ BOOLEAN SYSTEM_backup_critical()
 		critical[56] = 1;
 	}
 	
-	Y_SPRINTF("[SYSTEM] backup battery at: %d", critical[56]);
+	N_SPRINTF("[SYSTEM] backup battery at: %d", critical[56]);
 	
 	critical[57] = cling.batt.non_charging_accumulated_active_sec;
 	critical[58] = cling.batt.non_charging_accumulated_steps;

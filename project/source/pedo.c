@@ -1014,7 +1014,7 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
     //    Votes are from a span of CLASSIFICATION_TIME_SPAN
     motion = _WALKING_RUNNING_classify(c, win_siz);
 
-		if (cling.activity.workout_type == WORKOUT_NONE) {
+		if (cling.activity.b_workout_active) {
 			// 3/ Car (moving vechicle) Classication
 			motion = _CAR_classify(c, motion);
 
@@ -1239,7 +1239,7 @@ static BOOLEAN _motion_classification()
 	// Pre-classifcation, filtering out random steps
 	if (!c->start_normal_activity) {
 			// Make sure we are not in working out mode
-			if (cling.activity.workout_type == WORKOUT_NONE) {
+			if (cling.activity.b_workout_active) {
 				if (_is_noise_non_step(c)) {
 						 return FALSE;
 				} 

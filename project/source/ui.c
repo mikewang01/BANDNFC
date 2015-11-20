@@ -210,8 +210,10 @@ static void _operation_mode_switch(I8U gesture)
 		
 		if (index == UI_DISPLAY_STOPWATCH_START) {
 			cling.activity.workout_time_stamp_start = CLK_get_system_time();
+			cling.activity.workout_time_stamp_stop = cling.activity.workout_time_stamp_start;
 			cling.activity.workout_Calories_start = cling.activity.day.calories;
 			cling.activity.workout_Calories_acc = 0;
+			cling.activity.b_workout_active = TRUE;
 			return;
 		}
 		
@@ -219,6 +221,7 @@ static void _operation_mode_switch(I8U gesture)
 			cling.activity.workout_time_stamp_stop = CLK_get_system_time();
 			cling.activity.workout_type = WORKOUT_NONE;
 			cling.activity.workout_place = WORKOUT_PLACE_NONE;
+			cling.activity.b_workout_active = FALSE;
 			return;
 		}
 	}
@@ -389,6 +392,9 @@ static void _perform_ui_with_button_click(UI_ANIMATION_CTX *u)
 		p_matrix = ui_matrix_button;
 		
 		// Update frame index
+		if (!cling.activity.b_workout_active)
+			cling.activity.workout_type = WORKOUT_NONE;
+		
 		if (cling.activity.workout_type > WORKOUT_NONE) {
 			u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
 		} else {
@@ -500,6 +506,9 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 
 		// Update frame index
 		if (u->frame_index == UI_DISPLAY_SMART_INCOMING_CALL) {
+			if (!cling.activity.b_workout_active)
+				cling.activity.workout_type = WORKOUT_NONE;
+			
 			if (cling.activity.workout_type > WORKOUT_NONE) {
 				u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
 			} else {
@@ -2199,7 +2208,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 			b_center = FALSE;
 			_display_stopwatch_core(string1, len1, string2, len2, UI_TOP_MODE_WORKOUT_STOP, b_center);
 			
-			Y_SPRINTF("[UI] stopwatch stop: %d:%d.%d (%d,%d)", hour, minute, second, CLK_get_system_time(), cling.activity.workout_time_stamp_start);
+			N_SPRINTF("[UI] stopwatch stop: %d:%d.%d (%d,%d)", hour, minute, second, CLK_get_system_time(), cling.activity.workout_time_stamp_start);
 			break;
 		} 
 		case UI_DISPLAY_STOPWATCH_RESULT:
@@ -2826,6 +2835,10 @@ static void _restore_ui_index()
 			(u->frame_cached_index == UI_DISPLAY_SMART_APP_NOTIF) ||
 			(u->frame_cached_index == UI_DISPLAY_SMART_DETAIL_NOTIF))
 	{
+		// Make sure it is activity workout alive
+		if (!cling.activity.b_workout_active)
+			cling.activity.workout_type = WORKOUT_NONE;
+		
 		if (cling.activity.workout_type > WORKOUT_NONE) {
 			u->frame_cached_index = UI_DISPLAY_STOPWATCH_STOP;
 		} else {
@@ -3223,16 +3236,6 @@ void UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	}
 }
 
-I8U UI_get_workout_mode()
-{
-	if (cling.ui.frame_index < UI_DISPLAY_STOPWATCH_STOP)
-		return WORKOUT_NONE;
-	if (cling.ui.frame_index > UI_DISPLAY_STOPWATCH_CALORIES)
-		return WORKOUT_NONE;
-	
-	return cling.activity.workout_type;
-}
-
 void UI_reset_workout_mode()
 {
 	if (cling.ui.frame_index < UI_DISPLAY_STOPWATCH_STOP) {
@@ -3240,15 +3243,18 @@ void UI_reset_workout_mode()
 		if (cling.ui.frame_index < UI_DISPLAY_SMART) {
 			cling.activity.workout_type = WORKOUT_NONE;
 			cling.activity.workout_place = WORKOUT_PLACE_NONE;
+			cling.activity.b_workout_active = FALSE;
 		} else if (cling.ui.frame_index > UI_DISPLAY_SMART_END) {
 			cling.activity.workout_type = WORKOUT_NONE;
 			cling.activity.workout_place = WORKOUT_PLACE_NONE;
+			cling.activity.b_workout_active = FALSE;
 		}
 	}
 	
 	if (cling.ui.frame_index > UI_DISPLAY_STOPWATCH_CALORIES) {
 		cling.activity.workout_type = WORKOUT_NONE;
 		cling.activity.workout_place = WORKOUT_PLACE_NONE;
+		cling.activity.b_workout_active = FALSE;
 	}
 }
 
