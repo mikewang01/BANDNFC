@@ -3051,8 +3051,9 @@ void UI_state_machine()
 				u->touch_time_stamp = t_curr;
 			}
 			else {
-				if (t_curr > (u->touch_time_stamp+2000)) {
-					UI_switch_state(UI_STATE_APPEAR, 1000);
+				if (t_curr > (u->touch_time_stamp+4000)) {
+					u->state = UI_STATE_DARK;
+					Y_SPRINTF("[UI] Idle alert is ended");
 				}
 			}
 			break;
