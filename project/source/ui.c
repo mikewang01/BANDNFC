@@ -57,28 +57,31 @@ static I8U _get_max_detail_depth()
 	acc_data_pos = 0;
 	while(acc_data_pos < 128)
 	{
-		if((data[acc_data_pos] >= 0x20)&&(data[acc_data_pos]<=0x7e))//ascii
-		{
+		// ASCII code encode format.
+		if((data[acc_data_pos] >= 0x20)&&(data[acc_data_pos]<=0x7e)){
+		
 			if (curr_pixel_pos >= 112) {
 				curr_line_pos++;
 				curr_pixel_pos = 0;
-			} 
-			acc_data_pos+=1;//one  ascii characters need 1 bytes
+			}
+      // One ascii characters occupy 1 Byte.			
+			acc_data_pos += 1;
 			curr_pixel_pos += 8;
-			continue;
 		}
-		if((data[acc_data_pos]&0x80)==0x80)//chinese characters  Byte highest=1;	 
-		{
+		// Chinese characters Utf-8 encode format.
+		else if(((data[acc_data_pos]&0xF0) == 0xE0)&&((data[acc_data_pos+1]&0xC0) == 0x80)&&((data[acc_data_pos+2]&0xC0) == 0x80)){
+
 			if (curr_pixel_pos >= 104) {
 				curr_line_pos++;
 				curr_pixel_pos = 0;
 			}
-			acc_data_pos+=3;//one  utf-8  chinese characters need 1 bytes
+			// One UTF-8 chinese characters occupy 3 Bytes.
+			acc_data_pos += 3;
 			curr_pixel_pos += 16;
-			continue;
 		}
-		
-		break;
+		else
+			// Is not within the scope of the can display,continue to read the next.
+			acc_data_pos++;
 	}
 	if (curr_pixel_pos > 0)
 		curr_line_pos ++;
@@ -1907,7 +1910,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_ROW:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "划船");
+				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
+				  len1 = sprintf((char *)string1, "劃船");
+				else
+					len1 = sprintf((char *)string1, "划船");	
 			} else {
 				len1 = sprintf((char *)string1, "Row");
 			}
@@ -1917,7 +1923,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_ELLIPTICAL:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "椭圆机 ");
+				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
+				  len1 = sprintf((char *)string1, "橢圓機 ");
+				else
+				  len1 = sprintf((char *)string1, "椭圆机 ");	
 			} else {
 				len1 = sprintf((char *)string1, "Elliptical");
 			}
@@ -1927,7 +1936,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_STAIRS:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "爬楼梯 ");
+				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
+				  len1 = sprintf((char *)string1, "爬樓梯 ");
+				else
+				  len1 = sprintf((char *)string1, "爬楼梯 ");	
 			} else {
 				len1 = sprintf((char *)string1, "Stairs");
 			}
@@ -1937,7 +1949,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_CYCLING:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "单车");
+				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
+				  len1 = sprintf((char *)string1, "單車");
+				else
+				  len1 = sprintf((char *)string1, "单车");	
 			} else {
 				len1 = sprintf((char *)string1, "Cycle");
 			}
@@ -1978,7 +1993,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_OUTDOOR:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "户外");
+				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
+				  len1 = sprintf((char *)string1, "戶外");
+				else
+				  len1 = sprintf((char *)string1, "户外");		
 			} else {
 				len1 = sprintf((char *)string1, "Outdoor");
 			}
@@ -1988,7 +2006,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_INDOOR:
 		{
 			if (cling.ui.fonts_cn) {
-				len1 = sprintf((char *)string1, "室内");
+				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
+				  len1 = sprintf((char *)string1, "室內");
+				else
+				  len1 = sprintf((char *)string1, "室内");	
 			} else {
 				len1 = sprintf((char *)string1, "Indoor");
 			}

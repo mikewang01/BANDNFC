@@ -288,6 +288,9 @@ void SLEEP_minute_proc()
     if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
+
+		// As user is currently in sleep state, reset idle alert
+		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
 	}
 	
 	// monitoring sleep stage switching.

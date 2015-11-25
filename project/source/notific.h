@@ -22,7 +22,6 @@ typedef enum {
 	NOTIFIC_STATE_OFF,
 	NOTIFIC_STATE_REPEAT,
 	NOTIFIC_STATE_SECOND_REMINDER,
-	NOTIFIC_STATE_CHECK_NEXT_REMINDER,
 } NOTIFIC_STATE_TYPE;
 
 typedef struct tagNOTIFIC_CTX {
@@ -47,7 +46,6 @@ I8U NOTIFIC_get_message_total(void);
 I8U NOTIFIC_get_app_name(I8U index, char *app_name);
 I8U NOTIFIC_get_app_message_detail(I8U index, char *string);
 I8U NOTIFIC_get_callerID(char *string);
-void NOTIFIC_test(void);
 BOOLEAN NOTIFIC_is_user_viewing_message(void);
 
 #endif  // __NOTIFIC_HEADER__

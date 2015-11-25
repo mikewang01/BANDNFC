@@ -253,11 +253,14 @@ void OLED_state_machine(void)
 					}
 				
 					if (cling.notific.state != NOTIFIC_STATE_IDLE) {
-#ifdef _ENABLE_ANCS_						
+#ifdef _ENABLE_ANCS_		
+					if (BATT_is_low_battery()) {
+						cling.notific.state = NOTIFIC_STATE_IDLE;
+					} else {
 						if (cling.notific.cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL) {
 							UI_switch_state(UI_STATE_NOTIFIC, 0);
 						}
-				
+					}
 #endif	
 	}						
 				}
