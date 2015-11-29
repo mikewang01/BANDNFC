@@ -49,10 +49,17 @@ enum
 
 typedef struct tagANCS_PACKET {
 	
-	I8U   title_len;
-	I8U   message_len;
-	I8U   buf[254];
+	I8U  title_len;
+	I8U  message_len;
+	I8U  buf[254];
 } ANCS_PACKET;
+
+
+enum {
+	BOND_STATE_UNCLEAR=0,
+	BOND_STATE_SUCCESSED,
+	BOND_STATE_ERROR
+};
 
 
 typedef struct tagANCS_CONTEXT {
@@ -62,7 +69,7 @@ typedef struct tagANCS_CONTEXT {
 	// Parse attrs state
   ANCS_PARSE_STATES	 parse_state;
 	
-  // stored notific	data
+  // Stored notific	data
   ANCS_PACKET  pkt;	
 	
 	// The number of the notification
@@ -71,8 +78,11 @@ typedef struct tagANCS_CONTEXT {
 	// Notify reminder switch by user set.
 	I16U supported_categories;
 	
-	//filtering old notify flag
-  I8U  filtering_flag;
+	// Filtering old notify flag.
+  I8U filtering_flag;
+	
+	// Bond infomation delete state.
+	I8U bond_state;
 } ANCS_CONTEXT;
 
 

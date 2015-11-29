@@ -294,7 +294,8 @@ static BOOLEAN _critical_info_restored()
 	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
 	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 
-	// 50: reserved
+  // Restore ancs pair bond state.
+	cling.ancs.bond_state = p_byte_addr[50];
 	
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
@@ -400,13 +401,7 @@ void SYSTEM_init(void)
 	
 	// Check whether this is a authenticated device
 	LINK_init();
-	
-	if (LINK_is_authorized()) 
-	    HAL_device_manager_init(FALSE);	
-	else
-		  //delete	bond info
-		  HAL_device_manager_init(TRUE);	
-	
+
 	// If our FAT file system is NOT mounted, please erase NOR flash, and create it
 	if(!FAT_chk_mounted())
 	{
@@ -447,6 +442,18 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	_critical_info_restored();
+	
+	if ((!LINK_is_authorized()) || (cling.ancs.bond_state == BOND_STATE_ERROR)){
+		// Delete	bond infomation.
+		Y_SPRINTF("[MAIN] device manger init delete bond infomation");
+	  HAL_device_manager_init(TRUE);
+    cling.ancs.bond_state = BOND_STATE_UNCLEAR;		
+	}
+	else{
+		// Reserve	bond infomation.
+		Y_SPRINTF("[MAIN] device manger init reserve bond infomation :%d",cling.ancs.bond_state);
+		HAL_device_manager_init(FALSE);	
+	}	
 	
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
@@ -525,7 +532,8 @@ BOOLEAN SYSTEM_backup_critical()
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
 	
-	// 50: reserved
+  // Store ancs pair bond state.
+	critical[50] = cling.ancs.bond_state;
 	
 	// Store total reminders
 	critical[51] = cling.reminder.total;

@@ -30,8 +30,4 @@ BOOLEAN HAL_set_conn_params(BOOLEAN b_fast);
 BOOLEAN HAL_set_slow_conn_params(void);
 void HAL_disconnect_for_fast_connection(void);
 
-#ifdef _ENABLE_ANCS_
-void HAL_ancs_delete_bond_info(void);
-#endif
-
 #endif

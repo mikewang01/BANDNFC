@@ -48,6 +48,7 @@
 #include "pstorage.h"
 #include "ancs.h"
 #include "ble_db_discovery.h"
+#include "system.h"
 #endif
 #include "sysflash_rw.h"
 
@@ -137,64 +138,54 @@ ble_gap_sec_params_t m_ancs_sec_params = {
  * @param[in] p_context  Pointer used for passing context information from the
  *                       app_start_timer() call to the time-out handler.
  */
-static void sec_req_timeout_handler(void * p_context)
+static void _sec_req_timeout_handler(void * p_context)
 {
+  dm_security_status_t status;
+  I32U err_code;
 
-    dm_security_status_t status;
-    I32U err_code;
+	if(cling.gcp.host_type != HOST_TYPE_IOS)
+		return;
+	
+  if(cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID) {
+		// Inquire current device whether has paired.
+    err_code = dm_security_status_req(&m_peer_handle, &status);
+    APP_ERROR_CHECK(err_code);
 
-    if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID) {
-        err_code = dm_security_status_req(&m_peer_handle, &status);
-        APP_ERROR_CHECK(err_code);
+    if (status == NOT_ENCRYPTED) {
+      // Start request pair with IOS phone.
+      err_code = sd_ble_gap_authenticate(cling.ble.conn_handle, &m_ancs_sec_params);
 
-        if (status == NOT_ENCRYPTED) {
-
-            err_code = sd_ble_gap_authenticate(cling.ble.conn_handle, &m_ancs_sec_params);
-
-            if(err_code == NRF_SUCCESS)
-                Y_SPRINTF("[HAL] Successfully initiated authentication procedure.");
-            APP_ERROR_CHECK(err_code);
-        }
-
+      if(err_code == NRF_SUCCESS){
+				// Pair successed.
+        Y_SPRINTF("[HAL] Successfully initiated authentication procedure.");
+				cling.ancs.bond_state = BOND_STATE_SUCCESSED;
+      }
+			APP_ERROR_CHECK(err_code);
     }
+	}
 }
 
 
-/**@brief Function for initializing the timer module.
+/**@brief Function for initializing the pair timer module.
  */
 static void _ancs_pair_req_timer_init(void)
 {
-    uint32_t err_code;
+	I32U err_code;
 
-    err_code = app_timer_create(&m_ancs_pair_timer_id,
-                                APP_TIMER_MODE_SINGLE_SHOT,
-                                sec_req_timeout_handler);
-
-    N_SPRINTF("[HAL] sec req timer err :%d", err_code);
-    APP_ERROR_CHECK(err_code);
+	err_code = app_timer_create(&m_ancs_pair_timer_id,
+															APP_TIMER_MODE_SINGLE_SHOT,
+															_sec_req_timeout_handler);
+	APP_ERROR_CHECK(err_code);
 }
 
-/**@brief Function for initializing the database discovery module.
- */
+
+/**@brief Function for initializing the database discovery module.*/
 static void _ancs_service_discovery_init(void)
 {
-    uint32_t err_code = ble_db_discovery_init();
-    APP_ERROR_CHECK(err_code);
-}
-
-
-void HAL_ancs_delete_bond_info(void)
-{
-#ifdef _ENABLE_ANCS_
-    Y_SPRINTF("[HAL] pairing error - delete bond info and BLE disconnect");
-    if(cling.gcp.host_type == HOST_TYPE_IOS){
-			
-      HAL_device_manager_init(TRUE);
-
-      if(BTLE_is_connected())
-         BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);
-		}
-#endif
+	I32U err_code;
+	
+  err_code = ble_db_discovery_init();
+  APP_ERROR_CHECK(err_code);
 }
 
 
@@ -205,36 +196,49 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
         dm_event_t const  * p_event,
         ret_code_t        event_result)
 {
-    uint32_t err_code;
+  I32U err_code;
 
-    switch(p_event->event_id) {
-
-        case DM_EVT_LINK_SECURED:
-            APP_ERROR_CHECK(event_result);
+	//if((event_result == BLE_GAP_SEC_STATUS_UNSPECIFIED) || (event_result == DM_DEVICE_CONTEXT_FULL)){
+	if(event_result == DM_DEVICE_CONTEXT_FULL){
+		// If it's not IOS phone,do nothing.
+		if(cling.gcp.host_type == HOST_TYPE_IOS){
+		  // If pair error,delete bond infomation and reset system.
+		  Y_SPRINTF("[HAL] device manger error event result :%04x",event_result);
+		  cling.ancs.bond_state = BOND_STATE_ERROR;			
+		}
+	}
+	
+  switch(p_event->event_id) {
+		
+		case DM_EVT_LINK_SECURED:
+		{
+			if(event_result != BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP)
+			  APP_ERROR_CHECK(event_result);
 #ifdef _ENABLE_ANCS_
-            if (cling.gcp.host_type == HOST_TYPE_IOS) {
-
-                err_code = ble_db_discovery_start(&m_ble_db_discovery, cling.ble.conn_handle);
-
-                APP_ERROR_CHECK(err_code);
-            }
+			if(cling.gcp.host_type == HOST_TYPE_IOS){
+        // Start discovery ancs service.
+				err_code = ble_db_discovery_start(&m_ble_db_discovery, cling.ble.conn_handle);
+				APP_ERROR_CHECK(err_code);
+			}
 #endif
-            break;
-
-        case DM_EVT_CONNECTION:
-            APP_ERROR_CHECK(event_result);
+			break;
+		}
+		case DM_EVT_CONNECTION:
+		{
+			if(event_result != BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP)
+			  APP_ERROR_CHECK(event_result);
 #ifdef _ENABLE_ANCS_
-            m_peer_handle = (*p_handle);
-            if (cling.gcp.host_type == HOST_TYPE_IOS) {
-
-                err_code = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);
-                APP_ERROR_CHECK(err_code);
-            }
+			m_peer_handle = (*p_handle);
+			if (cling.gcp.host_type == HOST_TYPE_IOS) {
+				// Start do pairing.
+				err_code = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);
+				APP_ERROR_CHECK(err_code);
+			}
 #endif
-            break;
-
-        default:
-            break;
+			break;
+		}
+		default:
+			break;
     }
 
     return NRF_SUCCESS;

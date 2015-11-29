@@ -133,13 +133,15 @@ static void db_discover_evt_handler(ble_db_discovery_evt_t * p_evt)
 						break;
 			 }
 		 }
-    
+     // ANCS state switching to "DISCOVER COMPLETE".
 		 a->state = BLE_ANCS_STATE_DISCOVER_COMPLETE;
 	}
 	else
 	{
-		 ancs_timer = CLK_get_system_time();	
-     a->state = BLE_ANCS_STATE_DISCOVER_FAILED;
+		// Record the current time ,disconnecting BLE after 60 seconds.
+		ancs_timer = CLK_get_system_time();	
+		// ANCS state switching to "DISCOVER FAILED".
+    a->state = BLE_ANCS_STATE_DISCOVER_FAILED;
 	}
 }
 
@@ -189,7 +191,7 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
       case PARSE_STAT_COMMAND_ID:
 			{
 			  if(data[i] != 0){ 
-				 //parse command error ,then give up parsing.
+				 // Parse command error ,then give up parsing.
 				 	a->parse_state = PARSE_STAT_COMMAND_ID;
 				 return;
 			  }
@@ -224,7 +226,7 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 			{
         ancs_notif_attr.id = (ble_ancs_notif_attr_id_t)data[i];			
 				if(ancs_notif_attr.id != BLE_ANCS_NOTIF_ATTR_ID_TITLE){
-					//parse attr title id error,then give up parsing.
+					// Parse attr title id error,then give up parsing.
 				  	a->parse_state = PARSE_STAT_COMMAND_ID;
 				  N_SPRINTF("[ANCS] parse attr title id error :%d",ancs_notif_attr.id);
 					return;
@@ -242,7 +244,7 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 			{
         ancs_notif_attr.len |= (data[i] << 8);			
 			  if(ancs_notif_attr.len > ANCS_SUPPORT_MAX_TITLE_LEN){ 
-				  //The length of the error ,then give up parsing.  
+				  // The length of the error ,then give up parsing.  
 				  a->parse_state = PARSE_STAT_COMMAND_ID;
 				  N_SPRINTF("[ANCS] get title len overstep the boundary --- parse error.");
 				  return;
@@ -268,7 +270,7 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 			{
         ancs_notif_attr.id = (ble_ancs_notif_attr_id_t)data[i];			
 				if(ancs_notif_attr.id != BLE_ANCS_NOTIF_ATTR_ID_MESSAGE){
-					//parse attr message id error,then give up parsing.
+					// parse attr message id error,then give up parsing.
 				  a->parse_state = PARSE_STAT_COMMAND_ID;
 				  N_SPRINTF("[ANCS] parse attr message id error :%d",ancs_notif_attr.id);
 					return;
@@ -286,7 +288,7 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 			{
         ancs_notif_attr.len |= (data[i] << 8);			
 			  if(ancs_notif_attr.len > ANCS_SUPPORT_MAX_MESSAGE_LEN){ 
-				  //The length of the error ,then give up parsing.  
+				  // The length of the error ,then give up parsing.  
 				  a->parse_state = PARSE_STAT_COMMAND_ID;
 				  N_SPRINTF("[ANCS] get attr message len overstep the boundary and parse err");
 				  return;
@@ -308,7 +310,7 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
         if(current_len == cling.ancs.pkt.message_len)
         {
           a->parse_state = PARSE_STAT_COMMAND_ID;	
-					//start store notific attr...
+					// ANCS state switching to "NOTIF ATTRIBUTE".
 					a->state = BLE_ANCS_STATE_NOTIF_ATTRIBUTE;
         }
         break;					
@@ -335,7 +337,7 @@ static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 	ANCS_CONTEXT *a = &cling.ancs;	
 	
 	if (notif_len != BLE_ANCS_NOTIFICATION_DATA_LENGTH)
-	  //Invalid notific length
+	  // Invalid notific length
 	  return;
 
 	ancs_notif.evt_id         =  (ble_ancs_evt_id_t) p_data[BLE_ANCS_NOTIF_EVT_ID_INDEX];
@@ -350,13 +352,14 @@ static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 
 	err_code = _ancs_verify_notification_format(ancs_notif);
 	if (err_code != NRF_SUCCESS)
-	//Invalid notific type	
+	// Invalid notific type	
 	  return;
 	
-	//ANCS state machine busy,waiting until the free.
+	// ANCS state machine busy,waiting until the free.
 	if(a->state != BLE_ANCS_STATE_IDLE)
 		return;
 
+	// ANCS state switching to "NOTIF".
 	a->state =  BLE_ANCS_STATE_NOTIF;
 }
 
@@ -671,10 +674,31 @@ static void _ancs_store_attrs_pro(void)
 }
 
 
+static void _ancs_delete_bond_info(void)
+{
+#ifdef _ENABLE_ANCS_
+	Y_SPRINTF("[ANCS] bond error - delete bond infomation and reset system");
+	
+	if(cling.gcp.host_type != HOST_TYPE_IOS)
+		return;
+	
+	// Reset system.
+	SYSTEM_restart_from_reset_vector();		
+#endif
+}
+
 /**@brief handling the Apple Notification Service client.*/
 void ANCS_state_machine(void)
 {
 	ANCS_CONTEXT *a = &cling.ancs;
+
+	// If it's not IOS phone,do nothing.
+	if(cling.gcp.host_type != HOST_TYPE_IOS)
+		return;
+	
+	// If pair error,delete bond infomation and reset system.
+	if(cling.ancs.bond_state == BOND_STATE_ERROR)
+    _ancs_delete_bond_info();
 	
   switch (a->state)
   {
@@ -684,13 +708,13 @@ void ANCS_state_machine(void)
 		case BLE_ANCS_STATE_DISCOVER_COMPLETE:
 		{	    
 			N_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");			
-			//Enable ancs notifiction.
+			// Enable ancs notifiction.
 			_apple_notification_setup();
 			
-			//Attrs parse state init.
+			// Attrs parse state init.
 			a->parse_state = PARSE_STAT_COMMAND_ID;
 
-			//Record the current time for Filtering old notifiction.
+			// Record the current time for Filtering old notifiction.
 			_ancs_start_notific_filtering();
 
 			a->state = BLE_ANCS_STATE_IDLE;		
@@ -710,7 +734,7 @@ void ANCS_state_machine(void)
 		case BLE_ANCS_STATE_NOTIF_ATTRIBUTE:
 		{
 			N_SPRINTF("[ANCS] Start store the specific content of notify.");	
-			//Store notifiction data to nflash.
+			// Store notifiction data to nflash.
 		  _ancs_store_attrs_pro();	
 			a->state = BLE_ANCS_STATE_IDLE;
 		  break;
