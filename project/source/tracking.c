@@ -746,6 +746,7 @@ static void _logging_per_minute()
 	SLEEP_minute_proc();
 	
 	N_SPRINTF("[LOGGING2] %08x %08x %08x %08x", tracking_minute[0], tracking_minute[1], tracking_minute[2], tracking_minute[3]);
+	Y_SPRINTF("-- logging ---: %d, %d", a->tracking_flash_offset, minute.epoch);
 
 	minute.epoch |= 0x80000000;  // Set un-read flag
 	memcpy(tracking_minute, &minute, 16);
@@ -759,7 +760,6 @@ static void _logging_per_minute()
 	// Update the buffer length
 	a->tracking_flash_offset += 16;
 	
-	N_SPRINTF("-- tracking offset (logging) ---: %d", a->tracking_flash_offset);
 
 	// Erase next block we now just switch to a new space
 	if ((a->tracking_flash_offset & 0x0fff) == 0) {
@@ -1084,7 +1084,7 @@ void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
 		offset += 16;
 
 		minute->epoch &= 0x7fffffff;
-		if (minute->epoch > epoch_start) {
+		if (minute->epoch >= epoch_start) {
 
 			
 			// 5. Sleep times + sleep duration
@@ -1150,7 +1150,7 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 		offset += 16;
 
 		minute->epoch &= 0x7fffffff;
-		if (minute->epoch > epoch_start) {
+		if (minute->epoch >= epoch_start) {
 			steps_in_a_minute = minute->walking+minute->running;
 			
 			// 1. Accumulating steps

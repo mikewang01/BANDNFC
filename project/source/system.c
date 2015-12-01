@@ -273,7 +273,7 @@ static BOOLEAN _critical_info_restored()
 	// Restoring the time zone info
 	t->time_zone = p_byte_addr[49];
 	
-	RTC_get_local_clock(&cling.time.local);
+	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 
 	// Get current local minute
 	cling.time.local_day = cling.time.local.day;
@@ -293,19 +293,19 @@ static BOOLEAN _critical_info_restored()
 	// Get sleep seconds by noon
 	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
 	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
-
+#ifdef _ENABLE_ANCS_
   // Restore ancs pair bond state.
 	cling.ancs.bond_state = p_byte_addr[50];
-	
+#endif
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
-
+#ifdef _ENABLE_ANCS_
 	// Restore ancs supported set.
 	cling.ancs.supported_categories = p_byte_addr[52];
   cling.ancs.supported_categories = (cling.ancs.supported_categories << 8) | p_byte_addr[53];	
 	
 	Y_SPRINTF("[SYSTEM] restored ANCS categories: %04x", cling.ancs.supported_categories);
-
+#endif
 	// Restore Skin touch
 	cling.touch.b_skin_touch = p_byte_addr[54];
 
@@ -326,7 +326,7 @@ static BOOLEAN _critical_info_restored()
 	cling.batt.non_charging_accumulated_steps = p_byte_addr[58];
 	Y_SPRINTF("[SYSTEM] restore charging param: %d, %d", p_byte_addr[57], p_byte_addr[58]);
 
-	cling.ui.fonts_cn = p_byte_addr[59];
+	cling.ui.fonts_type = p_byte_addr[59];
 	cling.gcp.host_type = p_byte_addr[60];
 
 	// Minute file critical timing info
@@ -442,7 +442,7 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	_critical_info_restored();
-	
+#ifdef _ENABLE_ANCS_
 	if ((!LINK_is_authorized()) || (cling.ancs.bond_state == BOND_STATE_ERROR)){
 		// Delete	bond infomation.
 		Y_SPRINTF("[MAIN] device manger init delete bond infomation");
@@ -454,7 +454,7 @@ void SYSTEM_init(void)
 		Y_SPRINTF("[MAIN] device manger init reserve bond infomation :%d",cling.ancs.bond_state);
 		HAL_device_manager_init(FALSE);	
 	}	
-	
+#endif
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();
@@ -531,17 +531,17 @@ BOOLEAN SYSTEM_backup_critical()
 	
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
-	
+#ifdef _ENABLE_ANCS_
   // Store ancs pair bond state.
 	critical[50] = cling.ancs.bond_state;
-	
+#endif
 	// Store total reminders
 	critical[51] = cling.reminder.total;
-	
+#ifdef _ENABLE_ANCS_
 	// Store ancs supported set.
 	critical[52] = (I8U)((cling.ancs.supported_categories>>8) & 0xFF);
 	critical[53] = (I8U)((cling.ancs.supported_categories) & 0xFF);
-	
+#endif
 	// Store skin touch type
 	critical[54] = cling.touch.b_skin_touch;
 
@@ -558,8 +558,8 @@ BOOLEAN SYSTEM_backup_critical()
 	
 	critical[57] = cling.batt.non_charging_accumulated_active_sec;
 	critical[58] = cling.batt.non_charging_accumulated_steps;
-	critical[59] = cling.ui.fonts_cn;
-	Y_SPRINTF("[SYSTEM] Backup charging param: %d, %d", cling.batt.non_charging_accumulated_active_sec, 
+	critical[59] = cling.ui.fonts_type;
+	N_SPRINTF("[SYSTEM] Backup charging param: %d, %d", cling.batt.non_charging_accumulated_active_sec, 
 		cling.batt.non_charging_accumulated_steps);
 
 	// Store the  phone type

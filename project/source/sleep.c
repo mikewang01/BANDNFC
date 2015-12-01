@@ -396,7 +396,7 @@ void SLEEP_minute_proc()
   else
   	_update_activity_status_register(0);
 	
-	Y_SPRINTF("[SLEEP] activity per min:  %d", slp->m_activity_per_min);
+	N_SPRINTF("[SLEEP] activity per min:  %d", slp->m_activity_per_min);
 	
 	// Update no charging parameters
 	if (slp->m_activity_per_min >= AWAKE_ACTIVITY_PER_MIN_THRESHOLD_LOW) {

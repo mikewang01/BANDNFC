@@ -560,7 +560,7 @@ void FILE_fclose(FILE_CTX *f)
 		// Set file tributes
 		ROOT_SetFileType(f->file_idx, ROOT_GetFileType(f->file_idx) | FILE_TYPE_ACTIVITY);
 		
-		Y_SPRINTF("[FS] file close, crc: %04x", f->crc);
+		N_SPRINTF("[FS] file close, crc: %04x", f->crc);
 
 		// Set CRC
 		ROOT_SetFileCRC(f->file_idx, f->crc);

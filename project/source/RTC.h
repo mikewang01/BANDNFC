@@ -58,7 +58,7 @@ void RTC_stop_operation_clk( void );
 void RTC_system_shutdown_timer(void);
 
 // Get desired clock from UTC time
-void RTC_get_local_clock(SYSTIME_CTX *local);
+void RTC_get_local_clock(I32U epoch_start, SYSTIME_CTX *local);
 void RTC_get_delta_clock_forward(SYSTIME_CTX *delta, I8U offset);
 void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset);
 

@@ -91,7 +91,7 @@ void SIM_init()
 	t->time_since_1970 += 365 * 24 * 60 * 60;  // year
 	t->time_since_1970 += (31 + 30 + 31 + 31 + 30 + 8) * 24 * 60 * 60; // days
 	t->time_since_1970 -= 18 * 60 * 60;
-	RTC_get_local_clock(&cling.time.local);
+	RTC_get_local_clock(t->time_since_1970, &cling.time.local);
 
 	Y_SPRINTF("[SIM] virtual device gets initialized");
 	
@@ -199,7 +199,7 @@ static MINUTE_TRACKING_CTX _get_activity_with_epoch()
 	SYSTIME_CTX local;
 	I32U i; // Time offset in minute)
 	
-	RTC_get_local_clock(&local);
+	RTC_get_local_clock(cling.time.time_since_1970, &local);
 
 	i = local.hour*60+local.minute;
 	

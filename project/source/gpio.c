@@ -386,11 +386,11 @@ void GPIO_therm_adc_config(void)
 
 void GPIO_vibrator_on_block(I8U latency)
 {
+#ifndef _CLING_PC_SIMULATION_
 	I32U t_curr = CLK_get_system_time();
 	I32U t_diff = 0;
 	RTC_start_operation_clk();
 	_gpio_cfg_output(GPIO_VIBRATOR_EN, TRUE);
-	
 	while (t_diff < latency) {
 		// Feed watchdog every 4 seconds upon RTC interrupt
 		Watchdog_Feed();
@@ -403,6 +403,7 @@ void GPIO_vibrator_on_block(I8U latency)
 	}
 	
 	_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);
+#endif
 }
 
 void GPIO_vibrator_set(BOOLEAN b_on)

@@ -2,27 +2,6 @@
 #include <stdint.h>
 
 
-// Lcd display mode conversion  W -> Y 
-static void _font_display_mode_conversion(I8U *getdate,I8U *putdata,I8U high,I8U width)
-{
-	I16U i,j,wbyte;
-	I8U  i_8;
-	wbyte = (width+7)/8;
-
-	for(i = 0; i < high; i++)
-	{
- 		for(j = 0; j < width; j++)
-		{
-			i_8 = i/8;
-			if((*(putdata+wbyte*i+j/8)&(0x80>>(j%8))) > 0)
-				getdate[i_8*width+j] |= (0x01<<(i%8));
-			else
-				getdate[i_8*width+j] &= (~(0x01<<(i%8)));
-		}	
-	}
-}
-
-
 // UTF-8 code(3 btye) converted to  unicode code (2 btye).
 static I16U _font_utf_to_unicode(I8U *UTF_8_in)
 {
@@ -34,6 +13,7 @@ static I16U _font_utf_to_unicode(I8U *UTF_8_in)
 }
 
 
+// Read one 5x7 size ascii characters.
 static void _font_read_one_5x7_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 {
 	I32U addr_in = FONT_ASCII_5X7_SPACE_START;;
@@ -44,6 +24,7 @@ static void _font_read_one_5x7_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 }
 
 
+// Read one 8x16 size ascii characters.
 static void _font_read_one_8x16_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 {
 	I32U addr_in = FONT_ASCII_8X16_SPACE_START;;
@@ -58,80 +39,24 @@ static void _font_read_one_8x16_ascii(I8U ASCIICode,I16U len, I8U *dataBuf)
 static void _font_read_one_simple_Chinese_characters(I8U *utf_8,I16U len, I8U *dataBuf)
 {
 	I32U addr_in = FONT_SIMPLE_CHINESE_SPACE_START;
-  I16U unicode_16;	
-	I8U  replace_string[16];
+  I16U unicode;	
+	I8U  data[16];
 
-	unicode_16=_font_utf_to_unicode(utf_8);
-	I8U MSB=(I8U)(unicode_16 >>8);
-	I8U LSB=(I8U)unicode_16;
+	unicode = _font_utf_to_unicode(utf_8);
 
-	if((MSB<0x4E) || (MSB>0x9F)) {
+	if(unicode < 0x4E00 || unicode > 0x9FA5)  {
     N_SPRINTF("[FONTS] No search to the simple Chinese characters ...");	
 		memset(dataBuf, 0, 32);
-		
-		// Use some predefined characters ("")in here.
-		_font_read_one_8x16_ascii('"',16,replace_string);
-		memcpy(dataBuf+4,replace_string,8);
-		memcpy(dataBuf+16,&replace_string[8],8);		
+		// Use succedaneous ascii characters (' " ')in here.
+		_font_read_one_8x16_ascii('"',16,data);
+		memcpy(dataBuf+4,data,8);
+		memcpy(dataBuf+20,&data[8],8);		
     return;		
 	}
 	
-	addr_in += ((MSB*256+LSB-0x4E00)<<5);
+	addr_in += ((unicode - 0x4E00) << 5);
 	NOR_readData(addr_in, len, dataBuf);	
-
-}
-
-// Read one 16x16 size traditional chinese characters.
-static void _font_read_one_traditional_Chinese_characters(I8U *utf_8,I16U len, I8U *dataBuf)
-{
-	I32U BaseAdd = FONT_TRADITIONAL_CHINESE_SPACE_START;
-	I32U addr;
-  I16U unicode_16;		
-	I8U  data[32];	
-	I8U  replace_string[16];
-	
-	memset(dataBuf,0,30);
-	
-	unicode_16=_font_utf_to_unicode(utf_8);
-
-	// UNICODE3.0
-  if(unicode_16 >=0x4E00 && unicode_16 <= 0x9FA5) 
-    addr =(unicode_16-0x4E00)*32+ BaseAdd; 
-  else{
-		
-	  N_SPRINTF("[FONTS] No search to the traditional Chinese characters ...");	
-		// Use some predefined characters ("")in here
-		_font_read_one_8x16_ascii('"',16,replace_string);
-		memcpy(dataBuf+4,replace_string,8);
-		memcpy(dataBuf+16,&replace_string[8],8);	
-    return;		
-	}
-	
-	if(addr >= 1048544)
-    addr = 1048544;
-		
-	NOR_readData(addr, 32, data);	
-	
-	_font_display_mode_conversion(dataBuf,data,16,16);
-}
-
-
-//:08 :00 :08 :00 :0f :fc
-// Get chinese font type
-void FONT_init(void)
-{    
-  I32U addr = (376832 + 4096 + 40960);
-	I8U  data[6];
-	
-	NOR_readData(addr, 6, data);	
-	
-	N_SPRINTF("[FONTS] font init read data :%02x :%02x :%02x :%02x :%02x :%02x",data[0],data[1],data[2],data[3],data[4],data[5]);
-
-	if((data[0]==0x08)&&(data[1]==0x00)&&(data[2]==0x08)&&(data[3]==0x00)&&(data[4]==0x0f)&&(data[5]==0xfc))
-	  cling.font.font_type = FONT_TYPE_TRADITIONAL_CHINESE;
-	else
-	  cling.font.font_type = FONT_TYPE_SIMPLE_CHINESE;	
-}
+}	
 
 
 #ifdef _ENABLE_FONT_TRANSFER_
@@ -386,10 +311,7 @@ I8U FONT_load_characters(I8U *ptr,char *data,I8U height, BOOLEAN b_center)
 		// Chinese characters Utf-8 encode format.	 
     else if(((data[str_pos]&0xF0) == 0xE0)&&((data[str_pos+1]&0xC0) == 0x80)&&((data[str_pos+2]&0xC0) == 0x80)){
 			
-      if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-			 	_font_read_one_traditional_Chinese_characters((I8U*)(data+str_pos),32,font_data);
-		  else	
-			  _font_read_one_simple_Chinese_characters((I8U*)(data+str_pos),32,font_data);
+		  _font_read_one_simple_Chinese_characters((I8U*)(data+str_pos),32,font_data);
 
 		  if(b_center == TRUE){
 				

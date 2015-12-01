@@ -202,7 +202,6 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 I8U NOTIFIC_get_message_total(void)
 {
 
-#ifdef _ENABLE_ANCS_
 #ifdef _NOTIFIC_TESTING_
 	return 5;
 #endif
@@ -210,9 +209,6 @@ I8U NOTIFIC_get_message_total(void)
 		cling.ancs.message_total = 16;
 	
 	return cling.ancs.message_total;
-#else
-	return 0;
-#endif
 }
 #endif
 

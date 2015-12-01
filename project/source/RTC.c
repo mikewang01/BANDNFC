@@ -82,7 +82,7 @@ void RTC_timer_handler( void * p_context )
 #endif
 
 	// Indicates a second-based RTC interrupt
-	RTC_get_local_clock(&cling.time.local);
+	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 
 	// Check if we have minute passed by, or 
 	if (cling.time.local.minute != cling.time.local_minute) {
@@ -95,7 +95,7 @@ void RTC_timer_handler( void * p_context )
 			 )
     {
 			cling.user_data.idle_minutes_countdown --;
-			Y_SPRINTF("[RTC] idle alert countdown - %d", cling.user_data.idle_minutes_countdown);
+			N_SPRINTF("[RTC] idle alert countdown - %d", cling.user_data.idle_minutes_countdown);
 		}
 		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
 	}	
@@ -222,12 +222,13 @@ void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset)
 	RTC_get_regular_time(epoch, delta);
 }
 
-void RTC_get_local_clock(SYSTIME_CTX *local)
+void RTC_get_local_clock(I32U epoch_start, SYSTIME_CTX *local)
 {
-	I32U epoch = cling.time.time_since_1970;
+	I32U epoch;
 	I32S time_diff_in_minute = cling.time.time_zone;
+	
 	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
-	epoch += time_diff_in_minute;
+	epoch = epoch_start + time_diff_in_minute;
 	
 	RTC_get_regular_time(epoch, local);
 

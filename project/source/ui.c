@@ -94,7 +94,7 @@ static I8U _get_max_detail_depth()
 static void _update_horizontal_level_1_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 {
 	I8U index = u->frame_prev_idx;
-	I8U max_frame_num;
+	I8U max_frame_num=0;
 	
 	if (index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
 		return;
@@ -1538,7 +1538,7 @@ static void _render_calendar(I8U *buf, SYSTIME_CTX time)
 	I8U len, offset=93;
 	char *week[] = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
 
-	if (cling.ui.fonts_cn) {
+	if (cling.ui.fonts_type) {
 		string[0] = ICON_DOW_IDX+time.dow;
 		
 		len = 1;
@@ -1581,7 +1581,7 @@ static void _render_dow_rotation(SYSTIME_CTX time, BOOLEAN b_90_degree)
 
 	memset(data_buf, 0, 128);
 	
-	if (cling.ui.fonts_cn) {
+	if (cling.ui.fonts_type) {
 		p0 = data_buf; // Add extra 10 pixels to make it center
 		pin = asset_content+asset_pos[ICON_DOW_IDX+time.dow];
 		for (j = 0; j < asset_len[ICON_DOW_IDX+time.dow]; j++) {
@@ -1867,9 +1867,13 @@ static void _display_idle_alert()
 
 	memset(cling.ui.p_oled_up, 0, 512);
 	
-	if (cling.ui.fonts_cn) {
+	if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){	
 		len1 = sprintf((char *)string1, "该起来动动了");
-	} else {
+	} 
+	else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
+		len1 = sprintf((char *)string1, "該起來動動了");
+	}
+	else {
 		len1 = sprintf((char *)string1, "time for a move");
 	}
 
@@ -1889,7 +1893,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 	switch (index) {
 		case UI_DISPLAY_WORKOUT_WALKING:
 		{
-			if (cling.ui.fonts_cn) {
+			if (cling.ui.fonts_type) {
 				len1 = sprintf((char *)string1, "徒步");
 			} else {
 				len1 = sprintf((char *)string1, "Walk");
@@ -1899,7 +1903,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_RUNNING:
 		{
-			if (cling.ui.fonts_cn) {
+			if (cling.ui.fonts_type) {
 				len1 = sprintf((char *)string1, "跑步");
 			} else {
 				len1 = sprintf((char *)string1, "Run");
@@ -1909,12 +1913,13 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_ROW:
 		{
-			if (cling.ui.fonts_cn) {
-				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-				  len1 = sprintf((char *)string1, "劃船");
-				else
-					len1 = sprintf((char *)string1, "划船");	
-			} else {
+			if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){	
+				len1 = sprintf((char *)string1, "划船");
+			}
+			else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
+				len1 = sprintf((char *)string1, "劃船");
+			}
+			else{
 				len1 = sprintf((char *)string1, "Row");
 			}
 			len2 = sprintf((char *)string2, ",,-,,,,,,");
@@ -1922,12 +1927,13 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_ELLIPTICAL:
 		{
-			if (cling.ui.fonts_cn) {
-				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-				  len1 = sprintf((char *)string1, "橢圓機 ");
-				else
-				  len1 = sprintf((char *)string1, "椭圆机 ");	
-			} else {
+			if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){
+				len1 = sprintf((char *)string1, "椭圆机 ");	
+			}
+			else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
+			  len1 = sprintf((char *)string1, "橢圓機 ");
+			}
+      else {
 				len1 = sprintf((char *)string1, "Elliptical");
 			}
 			len2 = sprintf((char *)string2, ",,,-,,,,,");
@@ -1935,12 +1941,13 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_STAIRS:
 		{
-			if (cling.ui.fonts_cn) {
-				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-				  len1 = sprintf((char *)string1, "爬樓梯 ");
-				else
-				  len1 = sprintf((char *)string1, "爬楼梯 ");	
-			} else {
+			if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){
+				len1 = sprintf((char *)string1, "爬楼梯 ");
+			}
+			else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
+				len1 = sprintf((char *)string1, "爬樓梯 "); 
+			}
+			else {
 				len1 = sprintf((char *)string1, "Stairs");
 			}
 			len2 = sprintf((char *)string2, ",,,,-,,,,");
@@ -1948,12 +1955,13 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_CYCLING:
 		{
-			if (cling.ui.fonts_cn) {
-				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-				  len1 = sprintf((char *)string1, "單車");
-				else
-				  len1 = sprintf((char *)string1, "单车");	
-			} else {
+			if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){
+        len1 = sprintf((char *)string1, "单车");
+			}
+      else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){		
+				len1 = sprintf((char *)string1, "單車");
+			}
+			else{
 				len1 = sprintf((char *)string1, "Cycle");
 			}
 			len2 = sprintf((char *)string2, ",,,,,-,,,");
@@ -1961,9 +1969,10 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_AEROBIC:
 		{
-			if (cling.ui.fonts_cn) {
+			if (cling.ui.fonts_type){
 				len1 = sprintf((char *)string1, "有氧操 ");
-			} else {
+			}
+		  else {
 				len1 = sprintf((char *)string1, "Aerobic");
 			}
 			len2 = sprintf((char *)string2, ",,,,,,-,,");
@@ -1971,7 +1980,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_PILOXING:
 		{
-			if (cling.ui.fonts_cn) {
+			if (cling.ui.fonts_type) {
 				// No Chinese for piloxing
 				len1 = sprintf((char *)string1, "Piloxing");
 			} else {
@@ -1982,7 +1991,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_OTHERS:
 		{
-			if (cling.ui.fonts_cn) {
+			if (cling.ui.fonts_type) {
 				len1 = sprintf((char *)string1, "其它");
 			} else {
 				len1 = sprintf((char *)string1, "Others");
@@ -1992,25 +2001,27 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_WORKOUT_OUTDOOR:
 		{
-			if (cling.ui.fonts_cn) {
-				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-				  len1 = sprintf((char *)string1, "戶外");
-				else
-				  len1 = sprintf((char *)string1, "户外");		
-			} else {
+			if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){
+				len1 = sprintf((char *)string1, "户外");	
+			}
+			else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
+			  len1 = sprintf((char *)string1, "戶外");
+			}
+      else {
 				len1 = sprintf((char *)string1, "Outdoor");
 			}
 			len2 = sprintf((char *)string2, "-,");
 			break;
 		}
 		case UI_DISPLAY_WORKOUT_INDOOR:
-		{
-			if (cling.ui.fonts_cn) {
-				if(cling.font.font_type == FONT_TYPE_TRADITIONAL_CHINESE)
-				  len1 = sprintf((char *)string1, "室內");
-				else
-				  len1 = sprintf((char *)string1, "室内");	
-			} else {
+		{	
+			if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){ 
+				len1 = sprintf((char *)string1, "室内");	
+			}
+			else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
+				len1 = sprintf((char *)string1, "室內");
+			}
+			else {
 				len1 = sprintf((char *)string1, "Indoor");
 			}
 			len2 = sprintf((char *)string2, ",-");

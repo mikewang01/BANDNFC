@@ -178,14 +178,14 @@ void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance,
 													 tx_data_buf, tx_data_size,rx_data, rx_cmd_size, rx_data_size, pin_sel);	
      
 		if(err_code == NRF_SUCCESS) {
-			N_SPRINTF("[SPI] tx rx error code: OK");
 			break;
 		}
-		if(i == (SPI_RETRYING_NUM - 1)){
 		Y_SPRINTF("[SPI] tx rx error code: %d", err_code);
-			// Enable SPI master
-		spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
-		cling.system.b_spi_0_ON = TRUE;		
+		if(i == (SPI_RETRYING_NUM - 1)){
+				// Enable SPI master
+			spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
+			cling.system.b_spi_0_ON = TRUE;		
+			Y_SPRINTF("[SPI] tx rx REINIT due to error code: %d", err_code);
 		}
 		BASE_delay_msec(1);	
 	}

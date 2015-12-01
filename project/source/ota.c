@@ -8,6 +8,7 @@
 
 #include "main.h"
 #include "sysflash_rw.h"
+#ifndef _CLING_PC_SIMULATION_
 #include "crc_abs.h"
 
 static void _start_OTA()
@@ -91,7 +92,7 @@ failed:
 		BASE_delay_msec(100);
     SYSTEM_restart_from_reset_vector();
 }
-
+#endif
 
 void OTA_main()
 {
@@ -103,7 +104,7 @@ void OTA_main()
     //
     // 3. cy.bin - touch IC firmware update
     //
-
+#ifndef _CLING_PC_SIMULATION_
     if (FILE_if_exists((I8U *)"ota_start.txt")) {
 
         Y_SPRINTF("[MAIN] found: ota_start.txt");
@@ -119,6 +120,7 @@ void OTA_main()
         } else if (FILE_if_exists((I8U *)"cy.bin") == TRUE) {
         }
     }
+#endif
 }
 
 BOOLEAN OTA_if_enabled()
@@ -151,7 +153,6 @@ void OTA_set_state(BOOLEAN b_enable)
         }
     }
 }
-
 
 
 

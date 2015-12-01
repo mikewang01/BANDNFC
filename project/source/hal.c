@@ -848,9 +848,6 @@ void HAL_init(void)
     // Keypad init
     HOMEKEY_click_init();
 
-    // FONT initializaiton
-    FONT_init();
-
 #ifdef _ENABLE_TOUCH_
     BASE_delay_msec(600);
     // Touch controller init

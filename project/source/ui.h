@@ -98,6 +98,12 @@ enum {
 	TRANSITION_DIR_DOWN
 };
 
+enum {
+	FONTS_TYPE_ENGLISH,
+	FONTS_TYPE_SIMPLE_CHINESE,
+	FONTS_TYPE_TRADITIONAL_CHINESE
+};
+
 #define FRAME_DEPTH_CALORIES 7
 #define FRAME_DEPTH_DISTANCE 7
 #define FRAME_DEPTH_STEP 7
@@ -147,7 +153,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	BOOLEAN true_display;
 	
 	// Fonts type
-	BOOLEAN fonts_cn;
+	BOOLEAN fonts_type;
 	
 	// detail page
 	BOOLEAN b_detail_page;

@@ -273,7 +273,7 @@ static void _cling_global_init()
 	// Shanghai: UTC +8 hours (units in 15 minutes) -> 8*(60/15) = 32 minutes
 	cling.time.time_zone = 32;
 	cling.time.time_since_1970 = 1400666400;
-	RTC_get_local_clock(&cling.time.local);
+	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 
 	// Get current local minute
 	cling.time.local_day = cling.time.local.day;

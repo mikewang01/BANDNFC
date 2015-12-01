@@ -370,24 +370,24 @@ static void _core_erase(I16U page_end, I32U addr)
 	// Note: each page is 4 KB
 	while (page_to_erase > 0) {
 		if (page_to_erase >= 256) {
-			N_SPRINTF("[FS] erase: %d, Whole chip", addr);
+			Y_SPRINTF("[FS] erase: %d, Whole chip", addr);
 			NFLASH_drv_sector_erasure(addr, ERASE_WHOLE_CHIP);
 			addr += 1048576;
 			page_to_erase -= 256;
 		} else if ((page_to_erase >= 16) && ((addr%65536) == 0)) {
-			N_SPRINTF("[FS] erase: %d, 64K", addr);
+			Y_SPRINTF("[FS] erase: %d, 64K", addr);
 			// we should erase 64 KB block
 			NFLASH_drv_sector_erasure(addr, ERASE_64K);
 			addr += 65536;
 			page_to_erase -= 16;
 		} else if ((page_to_erase >= 8) && ((addr%32768) == 0)) {
-			N_SPRINTF("[FS] erase: %d, 32K", addr);
+			Y_SPRINTF("[FS] erase: %d, 32K", addr);
 			// we should erase 32 KB block
 			NFLASH_drv_sector_erasure(addr, ERASE_32K);
 			addr += 32768;
 			page_to_erase -= 8;
 		} else {
-			N_SPRINTF("[FS] erase: %d, 4K", addr);
+			Y_SPRINTF("[FS] erase: %d, 4K", addr);
 			// we should erase 4 KB block
 			NFLASH_drv_sector_erasure(addr, ERASE_4K);
 			addr += 4096;

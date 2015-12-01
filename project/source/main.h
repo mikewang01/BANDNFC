@@ -243,9 +243,6 @@ typedef struct tagCLING_MAIN_CTX {
 	// uv index
 	UV_CTX uv;
 	
-	// font context
-	FONT_CTX font;
-	
 } CLING_MAIN_CTX;
 
 // CLING main context

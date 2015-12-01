@@ -21,7 +21,7 @@
 static void _sync_time_proc(I8U *data)
 {
 	DAY_TRACKING_CTX stored_day_total;
-	BOOLEAN b_activity_consistency = TRUE;
+	BOOLEAN b_activity_consistency = TRUE;//
 	
 	// Record time difference
 	cling.time.time_zone = data[0];
@@ -36,7 +36,7 @@ static void _sync_time_proc(I8U *data)
 
 	N_SPRINTF("[CP] time sync !! - %d, %d", cling.time.time_zone, cling.time.time_since_1970);
 
-	RTC_get_local_clock(&cling.time.local);
+	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 	
 	// Reset minute streaming amount;
 	BTLE_reset_streaming();
@@ -929,12 +929,8 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_SET_LANGUAGE:
 		{
-			
-			if (p->msg[1]) {
-				cling.ui.fonts_cn = TRUE; // display Chinese characters
-			} else {
-				cling.ui.fonts_cn = FALSE;
-			}
+			// Display fonts type.
+			cling.ui.fonts_type = p->msg[1];
 			break;
 		}
 		case CP_MSG_TYPE_SET_USER_PROFILE:
@@ -1275,12 +1271,11 @@ void CP_create_register_rd_msg()
 	memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
 
 }
-#ifdef _JACOB_TESTING_
-static I32U tttt = 0;
-#endif
+
 static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U mode, I16U same_entry_num)
 {
 	// Filling up the single packet message
+	SYSTIME_CTX local;
 	I8U filling_offset = 0;
 	I32U pkt_index = cling.ble.streaming_minute_file_index;
 	
@@ -1333,6 +1328,10 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 	pkt[filling_offset++] = (pminute->epoch>>8)&0xff;
 	pkt[filling_offset++] = pminute->epoch&0xff;
 	
+	RTC_get_local_clock(pminute->epoch, &local);
+	
+	N_SPRINTF("[CP] time (idx:%d): %d, %d, %d", cling.ble.streaming_minute_scratch_index, local.day, local.hour, local.minute);
+	
 	// skin temperature (2B)
 	pkt[filling_offset++] = (pminute->skin_temperature>>8)&0xff;
 	pkt[filling_offset++] = pminute->skin_temperature&0xff;
@@ -1364,36 +1363,11 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 	
 	N_SPRINTF("[CP] activity counts: %04x", pminute->activity_count);
 	
-#ifdef _JACOB_TESTING_
-	if (tttt < 120) {
-		pkt[filling_offset++] = 0x16;
-	} else if (tttt < 240) {
-		pkt[filling_offset++] = 0x26;
-	} else if (tttt < 360) {
-		pkt[filling_offset++] = 0x36;
-	} else if (tttt < 480) {
-		pkt[filling_offset++] = 0x46;
-	} else if (tttt < 600) {
-		pkt[filling_offset++] = 0x56;
-	} else if (tttt < 720) {
-		pkt[filling_offset++] = 0x66;
-	} else if (tttt < 840) {
-		pkt[filling_offset++] = 0x76;
-	} else if (tttt < 960) {
-		pkt[filling_offset++] = 0x86;
-	} else {
-		pkt[filling_offset++] = 0x86;
-		tttt = 0;
-	}
-	
-	tttt ++;
-		
-#else
 	// Workouts and UV
 	pkt[filling_offset++] = pminute->uv_and_activity_type;
 	
 	N_SPRINTF("[CP] streaming UV: %02x", pminute->uv_and_activity_type);
-#endif
+
 }
 
 BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
