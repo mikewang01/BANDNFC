@@ -21,7 +21,8 @@ static EN_STATUSCODE uv_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 	if (err_code == NRF_SUCCESS) {
 		N_SPRINTF("[UV] Read TX PASS: ");
 	} else {
-		Y_SPRINTF("[UV] Read TX FAIL");
+		Y_SPRINTF("[UV] Read TX FAIL - %d", err_code);
+		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
 	err_code = nrf_drv_twi_rx(&twi, (uv_I2C_ADDR>>1), pRegVal, bytes, false);
@@ -29,7 +30,8 @@ static EN_STATUSCODE uv_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 		N_SPRINTF("[UV] Read RX PASS: ");
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("[UV] Read RX FAIL: ");
+		Y_SPRINTF("[UV] Read RX FAIL: %d", err_code);
+		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
 #else
@@ -57,7 +59,8 @@ static EN_STATUSCODE uv_write_reg(I8U cmdID, I8U regVal)
 		N_SPRINTF("[UV] Write PASS: 0x%02x  0x%02x", cmdID, regVal);
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("[UV] Write FAIL: 0x%02x  0x%02x", cmdID, regVal);
+		Y_SPRINTF("[UV] Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
+		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}	
 #else

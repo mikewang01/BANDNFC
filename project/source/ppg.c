@@ -18,7 +18,8 @@ static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 	if (err_code == NRF_SUCCESS) {
 		N_SPRINTF("[PPG] Read TX PASS: ");
 	} else {
-		Y_SPRINTF("[PPG] Read TX FAIL");
+		Y_SPRINTF("[PPG] Read TX FAIL - %d", err_code);
+		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
 	err_code = nrf_drv_twi_rx(&twi, (ppg_I2C_ADDR>>1), pRegVal, bytes, false);
@@ -26,7 +27,8 @@ static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 		N_SPRINTF("[PPG] Read RX PASS: ");
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("[PPG] Read RX FAIL: ");
+		Y_SPRINTF("[PPG] Read RX FAIL: %d", err_code);
+		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
 #else
@@ -54,7 +56,8 @@ static BOOLEAN ppg_write_reg(I8U cmdID, I8U regVal)
 		N_SPRINTF("[PPG] Write PASS: 0x%02x  0x%02x", cmdID, regVal);
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("[PPG] Write FAIL: 0x%02x  0x%02x", cmdID, regVal);
+		Y_SPRINTF("[PPG] Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
+		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
 #else

@@ -150,6 +150,7 @@ static EN_STATUSCODE _i2c_btld_read(I8U *pi8uRegValue, I8U number_of_bytes)
         return STATUSCODE_SUCCESS;
     } else {
         Y_SPRINTF("[UICO] BOOTLOADER ADDR READ FAIL - %d", err_code);
+				APP_ERROR_CHECK(err_code);
         return STATUSCODE_FAILURE;
     }
 }
@@ -219,6 +220,7 @@ static EN_STATUSCODE _i2c_main_read(I8U *pi8uRegValue, I8U number_of_bytes)
         return STATUSCODE_SUCCESS;
     } else {
         Y_SPRINTF("[UICO] MAIN ADDR READ FAIL: %d", err_code);
+				APP_ERROR_CHECK(err_code);
         return STATUSCODE_FAILURE;
     }
 }

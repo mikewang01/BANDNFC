@@ -186,6 +186,7 @@ void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance,
 			spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
 			cling.system.b_spi_0_ON = TRUE;		
 			Y_SPRINTF("[SPI] tx rx REINIT due to error code: %d", err_code);
+			APP_ERROR_CHECK(err_code);
 		}
 		BASE_delay_msec(1);	
 	}
