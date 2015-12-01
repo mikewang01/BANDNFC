@@ -771,7 +771,7 @@ static void _logging_per_minute()
 	// Make sure next storing block does not go beyond boundary
 	if (a->tracking_flash_offset >= SYSTEM_TRACKING_SPACE_SIZE) {
 		a->tracking_flash_offset = 0;
-		N_SPRINTF("-- tracking offset (wrapped around) ---: %d", a->tracking_flash_offset);
+		Y_SPRINTF("-- tracking offset (wrapped around) ---: %d", a->tracking_flash_offset);
 	}
 	if (a->flash_block_1st_to_erase >= SYSTEM_TRACKING_SPACE_SIZE) {
 		a->flash_block_1st_to_erase = 0;
@@ -1259,6 +1259,8 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 			if (!b_init_offset) {
 				empty_offset = offset;
 				b_init_offset = TRUE;
+				
+				Y_SPRINTF("[TRACKING] get first empty offset: %d", empty_offset);
 			}
 			offset += 16;
 

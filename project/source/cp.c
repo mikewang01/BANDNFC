@@ -22,6 +22,7 @@ static void _sync_time_proc(I8U *data)
 {
 	DAY_TRACKING_CTX stored_day_total;
 	BOOLEAN b_activity_consistency = TRUE;//
+	I32U minute_flash_offset;
 	
 	// Record time difference
 	cling.time.time_zone = data[0];
@@ -34,7 +35,6 @@ static void _sync_time_proc(I8U *data)
 	cling.time.time_since_1970 <<= 8;
 	cling.time.time_since_1970 |= data[4];
 
-	N_SPRINTF("[CP] time sync !! - %d, %d", cling.time.time_zone, cling.time.time_since_1970);
 
 	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 	
@@ -42,8 +42,10 @@ static void _sync_time_proc(I8U *data)
 	BTLE_reset_streaming();
 	
 	// Make sure the minute file has correct offset
-	cling.activity.tracking_flash_offset = TRACKING_get_daily_total(&stored_day_total);
-	
+	minute_flash_offset = TRACKING_get_daily_total(&stored_day_total);
+		
+	Y_SPRINTF("[CP] time sync !! - %d (minute), %d, %d", minute_flash_offset, cling.time.time_zone, cling.time.time_since_1970);
+
 	// Check if we have consistent daily stored activity
 	if (stored_day_total.calories != cling.activity.day_stored.calories) {
 		b_activity_consistency = FALSE;

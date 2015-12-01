@@ -208,20 +208,28 @@ static BOOLEAN _critical_info_restored()
 	I32U dw_buf[16];
 	I8U *p_byte_addr;
 	I32U offset = 0;
+	I8U i;
 	
 	// If this device is unauthorized, wipe out everything in the critical info section
 	if (!LINK_is_authorized()) {
 
 		// Make sure the minute file has correct offset
-		a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
+		a->tracking_flash_offset = 0;
 		a->day_stored.calories = a->day.calories;
 		a->day_stored.distance = a->day.distance;
 		a->day_stored.running = a->day.running;
 		a->day_stored.walking = a->day.walking;
 
 		// Get sleep by noon from flash
-		a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
-		a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
+		a->sleep_by_noon = 0;
+		a->sleep_stored_by_noon = 0;
+		
+		//
+		offset = SYSTEM_TRACKING_SPACE_START;
+		for (i = 0; i < SYSTEM_TRACKING_PAGE_SIZE; i++) {
+			FLASH_erase_App(offset);
+			offset += 4096;
+		}
 		return FALSE;
 	}
 	
@@ -282,7 +290,7 @@ static BOOLEAN _critical_info_restored()
 	// Make sure the minute file has correct offset
 	a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
 	
-	N_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
+	Y_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
 
 	// Update stored total
 	a->day_stored.walking = a->day.walking;

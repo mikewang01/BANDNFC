@@ -2950,7 +2950,7 @@ void UI_state_machine()
 			if (u->state_init) {
 				u->state_init = FALSE;
 				if (BATT_is_charging() || BATT_is_low_battery()) {
-					Y_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
+					Y_SPRINTF("[UI] LOW BATTERY(or charging): %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 					UI_switch_state(UI_STATE_LOW_POWER, 1000);
 				} else if (!LINK_is_authorized()) {
 					u->prefer_state = UI_STATE_AUTHORIZATION;
@@ -3062,7 +3062,7 @@ void UI_state_machine()
 		case UI_STATE_LOW_POWER:
 		{
 			if (u->state_init) {
-				Y_SPRINTF("[UI] low power shown");
+				Y_SPRINTF("[UI] low power (or charging) shown");
 				u->state_init = FALSE;
 				_display_charging(cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 				u->touch_time_stamp = t_curr;
