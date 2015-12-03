@@ -273,7 +273,7 @@ static void _ppg_sample_proc()
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
 	filt_sample = (I16S)low_pass_filter_val;
 	
-  if (t_diff> 10) {
+  if (t_diff> 6) {
 //if (TRUE) {
 		N_SPRINTF("%d  %d", filt_sample, sample);
 		N_SPRINTF("%d",      sample);
@@ -369,15 +369,15 @@ void ppg_Enable_Sensor()
 	ppg_Send_Command_SET(CHLIST,0x01);         // Enble ps only
 	ppg_PS_Auto();
 
-#if 0
+#if 1
 	// TBD: Need Tuning...
-  ppg_Send_Command_SET(PS_ENCODING, 0x60);       // LSB 16 bits of 17bit ADC      // 0x60
-  ppg_Send_Command_SET(PS_ADC_GAIN, 0x03);
-  ppg_Send_Command_SET(PS1_ADCMUX,  0x03);       // 
-  ppg_Send_Command_SET(PS_ADC_MISC, 0x04);
+  ppg_Send_Command_SET(PS_ENCODING,  0x60);       // LSB 16 bits of 17bit ADC
+  ppg_Send_Command_SET(PS_ADC_GAIN,  0x03);
+  ppg_Send_Command_SET(PS1_ADCMUX,   0x00);
+  ppg_Send_Command_SET(PS_ADC_MISC,  0x04);
 	
-  ppg_Send_Command_SET(ALS_ENCODING, 0x30);
-//ppg_Send_Command_SET(PS1_ADCMUX, 0x00);
+//ppg_Send_Command_SET(ALS_ENCODING, 0x30);
+//ppg_Send_Command_SET(PS1_ADCMUX,   0x00);
 #endif
 }
 

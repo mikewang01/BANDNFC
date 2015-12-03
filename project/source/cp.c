@@ -1770,7 +1770,7 @@ void CP_create_streaming_daily_msg( void )
 	pkt[filling_offset++] = cling.hr.current_rate;
 	
 	// skin touch (1B)
-	pkt[filling_offset++] = TOUCH_get_skin_pad();
+	pkt[filling_offset++] = TOUCH_is_skin_touched();
 	
 	// UV index
 	pkt[filling_offset++] = (cling.uv.max_uv+5)/10;

@@ -30,9 +30,9 @@ const I8U _s4[] = "c840A";
 BOOLEAN _generatingBlob = BOOLEAN_FALSE; // indicates that we are generating a blob (used for timeout check)
 BOOLEAN _checkingBlob = BOOLEAN_FALSE;	// indicates that we are checking a blob (used for timeout check)
 BOOLEAN _waitingBeforeFileCheck = BOOLEAN_FALSE; // flag indicating we are waiting for a short period before checking file.
-I8U token_string[MAX_ENCRYPT_DECRYPT_STRING_SIZE];
-I8U *crypto_buffer;  // 16 BYTES BUFFER FOR crypto.
-I8U *_thekey;
+I8U token_string[MAX_ENCRYPT_DECRYPT_STRING_SIZE]; // (length: 100, MAX_ENCRYPT_DECRYPT_STRING_SIZE)
+I8U *crypto_buffer;  // 16 BYTES BUFFER FOR crypto.(length: 128)
+I8U *_thekey; // 16 bytes
 I8U _pad;
 I32U _startTime, _timeCheck;
 I32U _userID;

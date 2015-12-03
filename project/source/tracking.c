@@ -293,7 +293,6 @@ static void _minute_data_flush_file(I32U flash_offset)
 	I32U dw_buf[4];
 	I8U name_buf[128];
 	I8U *pbuf = (I8U *)dw_buf;
-	I16U epoch_year;
 	I32U epoch_head;
 	BOOLEAN b_valid;
 	I16U len = 0;
@@ -303,11 +302,11 @@ static void _minute_data_flush_file(I32U flash_offset)
 	// Check if the whole 4 KB block has been erased
 	pos = flash_offset;
 	FLASH_Read_App(pos, pbuf, 16);
-	epoch_year = (I16U)(dw_buf[0] >> 16);
 	
-	if (epoch_year == 0xffff)
+	if (pminute->epoch == 0xffffffff) {
+		Y_SPRINTF("[TRACKING] empty sector, no need to erase");
 		return;
-	
+	}
 	// If the space is used, check if there is any valid entry
 	b_valid = FALSE;
 
@@ -351,6 +350,8 @@ static void _minute_data_flush_file(I32U flash_offset)
 
 		FILE_fclose(f.fc);
 	}
+	
+	Y_SPRINTF("[TRACKING] file %s generated, erasing at %d", name_buf, flash_offset);
 
 	// Finally, we should erase this block
 	FLASH_erase_App(flash_offset);
@@ -516,7 +517,7 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 		// 2. Positive if band is touched for more than 30 seconds in past minute
 		//
 		vital->skin_touch_pads = 0;
-		if (TOUCH_get_skin_pad())
+		if (TOUCH_is_skin_touched())
 			vital->skin_touch_pads = 1;
 		else if (touch_time > TOUCH_DEBOUNCING_TIME_PER_MINUTE)
 			vital->skin_touch_pads = 1;
@@ -578,7 +579,7 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute)
 #else
 	vital.skin_temperature = cling.therm.current_temperature;
 	vital.heart_rate = cling.hr.current_rate;
-	vital.skin_touch_pads = TOUCH_get_skin_pad();
+	vital.skin_touch_pads = TOUCH_is_skin_touched();
 	pminute->epoch = cling.time.time_since_1970;
 	pminute->distance = diff.distance;
 	pminute->sleep_state = diff.sleep_state;
@@ -766,6 +767,7 @@ static void _logging_per_minute()
 		a->b_pending_erase = TRUE;
 		a->flash_block_1st_to_erase = a->tracking_flash_offset;
 		a->flash_block_2nd_to_erase = a->tracking_flash_offset + FLASH_ERASE_BLK_SIZE;
+		Y_SPRINTF("[TRACKING] need to erase next block - %d", a->tracking_flash_offset);
 	}
 
 	// Make sure next storing block does not go beyond boundary
@@ -799,9 +801,9 @@ static void _logging_per_minute()
 		a->b_pending_erase = FALSE;
 	
 		SYSTEM_release_mutex(MUTEX_MCU_LOCK_VALUE);
+		Y_SPRINTF("[TRACKING] Erase two blocks: %d, %d", a->flash_block_1st_to_erase, a->flash_block_2nd_to_erase);
 	}
 
-	N_SPRINTF("[ACTIVITY] minute data storing: %d", a->tracking_flash_offset);
 }
 
 
@@ -1254,7 +1256,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
 		FLASH_Read_App(offset + SYSTEM_TRACKING_SPACE_START, pbuf, 16);
 		
-		if (pbuf[0] == 0xff) {
+		if (minute->epoch == 0xffffffff) {
 			
 			if (!b_init_offset) {
 				empty_offset = offset;

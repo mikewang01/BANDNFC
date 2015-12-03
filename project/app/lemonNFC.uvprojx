@@ -769,11 +769,6 @@
           <GroupName>nrf_driver</GroupName>
           <Files>
             <File>
-              <FileName>spi_master.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\drivers_nrf\spi_master\spi_master.c</FilePath>
-            </File>
-            <File>
               <FileName>nrf_drv_twi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\drivers_nrf\twi_master\nrf_drv_twi.c</FilePath>
@@ -792,6 +787,11 @@
               <FileName>nrf_drv_wdt.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\drivers_nrf\wdt\nrf_drv_wdt.c</FilePath>
+            </File>
+            <File>
+              <FileName>nrf_drv_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\drivers_nrf\spi_master\nrf_drv_spi.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1579,11 +1579,6 @@
           <GroupName>nrf_driver</GroupName>
           <Files>
             <File>
-              <FileName>spi_master.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\drivers_nrf\spi_master\spi_master.c</FilePath>
-            </File>
-            <File>
               <FileName>nrf_drv_twi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\drivers_nrf\twi_master\nrf_drv_twi.c</FilePath>
@@ -1602,6 +1597,11 @@
               <FileName>nrf_drv_wdt.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\drivers_nrf\wdt\nrf_drv_wdt.c</FilePath>
+            </File>
+            <File>
+              <FileName>nrf_drv_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\drivers_nrf\spi_master\nrf_drv_spi.c</FilePath>
             </File>
           </Files>
         </Group>

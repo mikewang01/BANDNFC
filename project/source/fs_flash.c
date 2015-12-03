@@ -274,6 +274,7 @@ void FLASH_erase_App(I32U add)
 #if defined (MCU_NATIVE_FLASH_SIZE_64KB)
 	SYSFLASH_drv_sector_erasure(add);
 #else
+	Y_SPRINTF("[FS] App flash erase (4K): %d", add);
 	NFLASH_drv_sector_erasure(add, ERASE_4K);
 #endif
 }

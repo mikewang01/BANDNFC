@@ -333,7 +333,12 @@ void UV_state_machine()
 {
 	UV_CTX *uv = &cling.uv;
 	I32U t_diff;
-
+	
+	// No need to run UV state machine if user is in a sleep state
+	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {
+		uv->state = UV_STAT_IDLE;
+		return;
+	}
 
 	switch (uv->state) {
 

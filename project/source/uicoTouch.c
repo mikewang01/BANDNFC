@@ -241,6 +241,7 @@ static BOOLEAN _i2c_main_write(I8U *pi8uRegValue, I8U number_of_bytes)
         N_SPRINTF("[UICO] MAIN ADDR WRITE DATA PASS.");
     } else {
         Y_SPRINTF("[UICO] MAIN ADDR WRITE DATA FAIL - %d", err_code);
+				APP_ERROR_CHECK(err_code);
     }
     return err_code;
 }

@@ -316,11 +316,6 @@ I8U TOUCH_get_skin_touch_time()
 	return touch_time;
 }
 
-I8U TOUCH_get_skin_pad(void)
-{
-			return cling.touch.b_skin_touch;
-}
-
 BOOLEAN TOUCH_is_skin_touched(void)
 {
 	if (BATT_is_charging())

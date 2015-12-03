@@ -22,41 +22,38 @@
 #ifndef SPI_MASTER_API_H__
 #define SPI_MASTER_API_H__
 
-#define SPI_OPERATING_FREQUENCY (0x02000000uL << (uint32_t)Freq_8Mbps)  /**< Slave clock frequency. */
-#if 0
-// SPI0. 
-#define SPIM1_SCK_PIN            GPIO_SPI_1_SCK                                     /**< SPI clock GPIO pin number. */
-#define SPIM1_MOSI_PIN           GPIO_SPI_1_MOSI                                     /**< SPI Master Out Slave In GPIO pin number. */
-#define SPIM1_MISO_PIN           GPIO_SPI_1_MISO                                     /**< SPI Master In Slave Out GPIO pin number. */
-#endif
+#ifndef _CLING_PC_SIMULATION_
+#include "nrf_drv_spi.h"
+#include "standard_types.h"
+#include "nordic_common.h"
 
-// 
+//#define SPI_MASTER_0_ENABLE
+
 #define SPIM0_SCK_PIN            GPIO_SPI_0_SCK                                     /**< SPI clock GPIO pin number. */
 #define SPIM0_MOSI_PIN           GPIO_SPI_0_MOSI                                     /**< SPI Master Out Slave In GPIO pin number. */
 #define SPIM0_MISO_PIN           GPIO_SPI_0_MISO                                     /**< SPI Master In Slave Out GPIO pin number. */
 
-#define SPI_PSELSS0_OLED        GPIO_SPI_0_CS_OLED                                     /**< SPI Slave Select GPIO pin number. */
-#define SPI_PSELSS0_ACC         GPIO_SPI_0_CS_ACC                                     /**< SPI Slave Select GPIO pin number. */
-#define SPI_PSELSS0_PPG         GPIO_SPI_0_CS_PPG                               /**< SPI Slave Select GPIO pin number. */
-#define SPI_PSELSS0_NFLASH      GPIO_SPI_0_CS_NFLASH
+/** @brief Enum containing instances of the SPI master driver. */
+typedef enum
+{
+     #ifdef SPI_MASTER_0_ENABLE
+    SPI_MASTER_0,   /**< A instance of NRF_SPI0. */
+     #endif
 
-#define TIMEOUT_COUNTER         0x3000uL                                /**< Timeout for SPI transaction in units of loop iterations. */
+     #ifdef SPI_MASTER_1_ENABLE
+    SPI_MASTER_1,   /**< A instance of NRF_SPI1. */
+     #endif
 
-#ifndef _CLING_PC_SIMULATION_
-#include "spi_master.h"
+    SPI_MASTER_HW_ENABLED_COUNT /**< A number of enabled instances of the SPI master. */
+} spi_master_hw_instance_t;
 
-uint32_t spi_master_init(spi_master_hw_instance_t   spi_master_instance,
-                            spi_master_event_handler_t spi_master_event_handler,
-                            uint8_t                 lsb);
-void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance, 
-	uint8_t *tx_cmd_buf, uint16_t tx_cmd_size, 
-  uint8_t *tx_data_buf, uint16_t tx_data_size, 
-  uint8_t *rx_data, uint16_t rx_cmd_size, uint16_t rx_data_size, 
-	uint32_t pin_sel);
-void spi_master_0_event_handler(spi_master_evt_t spi_master_evt);
-void spi_master_1_event_handler(spi_master_evt_t spi_master_evt);
-void spi_master_disable(void);
-BOOLEAN spi_master_op_wait_done(void);
+
+void SPI_master_init(spi_master_hw_instance_t   spi_master_instance,I8U pin_cs, bool lsb);
+
+void SPI_master_tx_rx(spi_master_hw_instance_t   spi_master_instance,
+                          I8U * tx_data_buf, I16U tx_data_size,
+                          I8U * rx_data_buf, I16U rx_data_size,I8U pin_cs);
+
 #endif
 
 #endif // SPI_MASTER_API_H__

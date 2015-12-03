@@ -71,12 +71,12 @@ void _nor_flash_spi_test()
 	// Read ID
 	NOR_readID((I8U *)buf);
 	temp = (I8U *)buf;
-	N_SPRINTF("ID: %02x, %02x", temp[0], temp[1]);
+	Y_SPRINTF("ID: %02x, %02x", temp[0], temp[1]);
 	
-	// Erase the whole chip
-	#if 0
+	// Erase the 256 KB
+	#if 1
 	add = 0;
-	for (i = 0; i < FLASH_SECTOR_COUNT; i ++) {
+	for (i = 0; i < 4; i ++) {
 			N_SPRINTF("[FS] erase: %d, 64K", add);
 		NOR_erase_block_64k(add);
 		add += 65536;
@@ -94,7 +94,7 @@ void _nor_flash_spi_test()
 	
 	cnt = 1000;
 	
-	// Program Flash
+	// Program Flash, 1000x128 = 125 K
 	add = 160;
 	len = 128;
 	for (i = 0; i < cnt; i++) {
@@ -129,7 +129,7 @@ void _nor_flash_spi_test()
 		Watchdog_Feed();
 	}
 	
-		N_SPRINTF("----  test nor flash: %d errors", err_cnt);
+		Y_SPRINTF("----  test nor flash: %d errors", err_cnt);
 
 #if 0
 	// Erase the whole chip
@@ -234,8 +234,6 @@ void _power_manager_process(void)
 		// Configure TWI to be input to reduce power consumption
 		GPIO_twi_disable(1);
 
-		// Disable SPI bus
-		spi_master_disable();
 	}
 #if 1
 	// Main power management process

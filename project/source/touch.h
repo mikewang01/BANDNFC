@@ -70,7 +70,6 @@ void TOUCH_init(void);
 I8U TOUCH_get_gesture_panel(void);
 void TOUCH_gesture_check(void);
 void TOUCH_power_set(TOUCH_POWER_MODE mode);
-I8U TOUCH_get_skin_pad(void);
 void TOUCH_power_mode_state_machine(void);
 BOOLEAN TOUCH_new_gesture(void);
 BOOLEAN TOUCH_is_skin_touched(void);
