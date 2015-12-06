@@ -9,7 +9,6 @@
  ******************************************************************************/
 
 #include "main.h"
-#include "gpio.h"
 
 #ifndef _CLING_PC_SIMULATION_
 static __INLINE void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)

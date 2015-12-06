@@ -1862,19 +1862,18 @@ static void _display_weather(UI_ANIMATION_CTX *u, BOOLEAN b_render)
 
 static void _display_idle_alert()
 {
-	I8U len1;
 	I8U string1[32];
 
 	memset(cling.ui.p_oled_up, 0, 512);
 	
 	if (cling.ui.fonts_type == FONTS_TYPE_SIMPLE_CHINESE){	
-		len1 = sprintf((char *)string1, "该起来动动了");
+		sprintf((char *)string1, "该起来动动了");
 	} 
 	else if (cling.ui.fonts_type == FONTS_TYPE_TRADITIONAL_CHINESE){
-		len1 = sprintf((char *)string1, "該起來動動了");
+		sprintf((char *)string1, "該起來動動了");
 	}
 	else {
-		len1 = sprintf((char *)string1, "time for a move");
+		sprintf((char *)string1, "time for a move");
 	}
 
 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string1, 16, TRUE);
@@ -1886,10 +1885,12 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 {
 	I8U string1[32];
 	I8U string2[32];
-	I8U len2=0, len1=0, workout_idx=0;
+	I8U len2=0, workout_idx=0;
 	char *workout_en[] = {"Walk", "Run", "Row", "Elliptical", "Stairs", "Cycle", "Aerobic", "Piloxing", "Others", "Outdoor", "Indoor"};
-	char *workout_s_cn[] = {"徒步", "跑步", "划船", "椭圆机", "爬楼梯", "单车", "有氧操", "Piloxing", "其它", "户外", "室内"};
-	char *workout_t_cn[] = {"徒步", "跑步", "劃船", "橢圓機", "爬樓梯", "單車", "有氧操", "Piloxing", "Others", "戶外", "室內"};
+	char *workout_s_cn[] = {"Walk", "Run", "Row", "Elliptical", "Stairs", "Cycle", "Aerobic", "Piloxing", "Others", "Outdoor", "Indoor"};
+	char *workout_t_cn[] = {"Walk", "Run", "Row", "Elliptical", "Stairs", "Cycle", "Aerobic", "Piloxing", "Others", "Outdoor", "Indoor"};
+//	char *workout_s_cn[] = {"徒步", "跑步", "划船", "椭圆机", "爬楼梯", "单车", "有氧操", "Piloxing", "其它", "户外", "室内"};
+//	char *workout_t_cn[] = {"徒步", "跑步", "劃船", "橢圓機", "爬樓梯", "單車", "有氧操", "Piloxing", "Others", "戶外", "室內"};
 	char *workout_indicator[] = {
 		"-,,,,,,,,",
 		",-,,,,,,,", 
