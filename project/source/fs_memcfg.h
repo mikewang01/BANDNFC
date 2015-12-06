@@ -29,7 +29,7 @@
 #define SYSTEM_RSVR_SPACE_SIZE					(3072)
 // Bootloader space starts at 252th page, overall 4 KB
 //
-#define BOOTLOADER_SPACE_START					(258040) // 252 * 1024 - the last 4 kb
+#define BOOTLOADER_SPACE_START					(258048) // 252 * 1024 - the last 4 kb
 #define BOOTLOADER_PAGE_SIZE            4
 #define BOOTLOADER_SPACE_SIZE           (4096)
 

@@ -810,7 +810,8 @@ void HAL_init(void)
     GPIO_init();
 #ifndef _CLING_PC_SIMULATION_
 
-		Y_SPRINTF("[HAL] SPI init");
+    // Enable SPI 0
+    spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
     cling.system.b_spi_0_ON = TRUE;
 
     // Enable TWI I2C 1

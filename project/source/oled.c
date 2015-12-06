@@ -13,7 +13,7 @@ static void _set_reg(uint8_t command)
 
 	nrf_gpio_pin_clear(GPIO_OLED_A0);
 
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf, 0, GPIO_SPI_0_CS_OLED);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_OLED);
 #endif
 }
 
@@ -21,7 +21,7 @@ static void _set_data(I16U num, I8U *data)
 {
 #ifndef _CLING_PC_SIMULATION_
 	nrf_gpio_pin_set(GPIO_OLED_A0);
-	SPI_master_tx_rx(SPI_MASTER_0, data, num,g_spi_rx_buf,0, GPIO_SPI_0_CS_OLED);  
+	spi_master_tx_rx(SPI_MASTER_0, data, num, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_OLED);  
 #endif
 }
 

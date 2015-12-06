@@ -183,7 +183,7 @@ static void _notification_msg_init()
 		offset += 256;
 		cling.ancs.message_total ++;
 					
-		Y_SPRINTF("[SYSTEM] message buffer update(%d) - %d, %d", 
+		N_SPRINTF("[SYSTEM] message buffer update(%d) - %d, %d", 
 		cling.ancs.message_total, p_byte_addr[0], p_byte_addr[1]);
 
 	}
@@ -208,7 +208,6 @@ static BOOLEAN _critical_info_restored()
 	I32U dw_buf[16];
 	I8U *p_byte_addr;
 	I32U offset = 0;
-	I8U i;
 	
 	// If this device is unauthorized, wipe out everything in the critical info section
 	if (!LINK_is_authorized()) {
@@ -223,13 +222,6 @@ static BOOLEAN _critical_info_restored()
 		// Get sleep by noon from flash
 		a->sleep_by_noon = 0;
 		a->sleep_stored_by_noon = 0;
-		
-		//
-		offset = SYSTEM_TRACKING_SPACE_START;
-		for (i = 0; i < SYSTEM_TRACKING_PAGE_SIZE; i++) {
-			FLASH_erase_App(offset);
-			offset += 4096;
-		}
 		return FALSE;
 	}
 	
@@ -450,6 +442,8 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	_critical_info_restored();
+	
+		// Initialize DM
 #ifdef _ENABLE_ANCS_
 	if ((!LINK_is_authorized()) || (cling.ancs.bond_state == BOND_STATE_ERROR)){
 		// Delete	bond infomation.
@@ -463,6 +457,7 @@ void SYSTEM_init(void)
 		HAL_device_manager_init(FALSE);	
 	}	
 #endif
+	
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();
@@ -648,9 +643,6 @@ void SYSTEM_format_disk(BOOLEAN b_erase_data)
 
 	// Re-initialize file system and user profile & milestone
 	FILE_init();
-
-	// Clear activity minute variables
-	cling.activity.tracking_flash_offset = 0;
 
 	Y_SPRINTF("[SYSTEM] erase %d blocks", page_erased);
 }

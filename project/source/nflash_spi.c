@@ -73,7 +73,7 @@ void NOR_writeEnable(void)
 	g_spi_tx_buf[0] = SPI_FLASH_INS_WREN;
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 1624");
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1 ,g_spi_rx_buf,0, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 	_wait_for_operation_completed();
 }
@@ -83,7 +83,7 @@ void NOR_writeDisable(void)
     g_spi_tx_buf[0] = SPI_FLASH_INS_WRDI;
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 123");
-  SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf,0, GPIO_SPI_0_CS_NFLASH);
+    spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 }
 /*----------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ I8U NOR_readStatusRegister(void)
     g_spi_tx_buf[0] = SPI_FLASH_INS_RDSR;
     g_spi_tx_buf[1] = SPI_FLASH_INS_DUMMY;
 #ifndef _CLING_PC_SIMULATION_
-    SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, g_spi_rx_buf,  2,GPIO_SPI_0_CS_NFLASH);
+    spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 2, GPIO_SPI_0_CS_NFLASH);
 //		spi_master_op_wait_done();
 #endif   
     return g_spi_rx_buf[1];
@@ -125,12 +125,9 @@ void NOR_readData(I32U addr, I16U len, I8U *dataBuf)
 	g_spi_tx_buf[2] = (I8U)(addr >> 8);
 	g_spi_tx_buf[3] = (I8U)(addr);
 		N_SPRINTF("[NFLASH] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
-	  I8U rx_data[260];
 
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, rx_data,len +4 , GPIO_SPI_0_CS_NFLASH);
-	  memcpy(dataBuf,&rx_data[4],len);
-
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, dataBuf, 4, len, GPIO_SPI_0_CS_NFLASH);
 //	spi_master_op_wait_done();
 #endif
 	if (!b_flash_PD_flag) {
@@ -161,12 +158,8 @@ static void _page_program_core(I32U addr, I16U len, I8U *data)
 		g_spi_tx_buf[1] = (uint8_t)(addr >> 16);
 		g_spi_tx_buf[2] = (uint8_t)(addr >> 8);
 		g_spi_tx_buf[3] = (uint8_t)(addr);
-	  I8U tx_data[260];
-	  memcpy(tx_data,g_spi_tx_buf,4);
-	  memcpy(&tx_data[4],data,len);	
-	
 #ifndef _CLING_PC_SIMULATION_
-		SPI_master_tx_rx(SPI_MASTER_0, tx_data, len + 4, g_spi_rx_buf,0, GPIO_SPI_0_CS_NFLASH);
+		spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, data, len, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 		_wait_for_operation_completed();
 	
@@ -238,7 +231,7 @@ void NOR_erase_block_4k(I32U addr)
 	
 	N_SPRINTF("[NFLASH] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, g_spi_rx_buf,  0, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 	//wait for the operation finished
 	_wait_for_operation_completed();
@@ -273,7 +266,7 @@ void NOR_erase_block_32k(I32U addr)
 	g_spi_tx_buf[3] = (uint8_t)(addr);
 	N_SPRINTF("[NFLASH] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, g_spi_rx_buf,  0, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 	//wait for the operation finished
 	_wait_for_operation_completed();
@@ -306,7 +299,7 @@ void NOR_erase_block_64k(I32U addr)
 	g_spi_tx_buf[3] = (uint8_t)(addr);
 	N_SPRINTF("[NFLASH] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, g_spi_rx_buf,  0, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 	N_SPRINTF("[NFLASH] waiting ...");
 	//wait for the operation finished
@@ -337,7 +330,7 @@ void NOR_ChipErase()
 	g_spi_tx_buf[0] = SPI_FLASH_INS_BE;
 
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1,  g_spi_rx_buf,  0, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 	//wait for the operation finished
 	_wait_for_operation_completed();
@@ -360,7 +353,7 @@ void NOR_powerDown()
     g_spi_tx_buf[0] = SPI_FLASH_INS_DP;
 
 #ifndef _CLING_PC_SIMULATION_
-    SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf,0,GPIO_SPI_0_CS_NFLASH);
+    spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 }
 
@@ -376,7 +369,7 @@ void NOR_releasePowerDown()
     g_spi_tx_buf[0] = SPI_FLASH_INS_RES;
 
 #ifndef _CLING_PC_SIMULATION_
-    SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1,g_spi_rx_buf,  0, GPIO_SPI_0_CS_NFLASH);
+    spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
 #endif
 }
 /*----------------------------------------------------------------------------------
@@ -401,7 +394,7 @@ void NOR_readID(I8U *id)
 	g_spi_tx_buf[4] = (I8U) 0;
 	g_spi_tx_buf[5] = (I8U) 0;
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf,  6, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 6, GPIO_SPI_0_CS_NFLASH);
 //	spi_master_op_wait_done();
 #endif
 	*id = g_spi_rx_buf[4];
@@ -433,7 +426,7 @@ void NOR_readUID(I8U *id)
 	g_spi_tx_buf[3] = (uint8_t)0;
 	g_spi_tx_buf[4] = (uint8_t)0;
 #ifndef _CLING_PC_SIMULATION_
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 5,  id,  10, GPIO_SPI_0_CS_NFLASH);
+	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 5, 0, 0, id, 0, 10, GPIO_SPI_0_CS_NFLASH);
 //	spi_master_op_wait_done();
 #endif
 	if (!b_flash_PD_flag) {

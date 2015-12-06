@@ -647,7 +647,7 @@ static void _write_file_to_fs_rest(I8U *data)
 				N_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
 			} else {
 				cling.ota.percent = (I8U)(((cling.ota.file_len-r->msg_file_len)*100)/cling.ota.file_len);
-				N_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
+				Y_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
 			}
 		}
 	} else {

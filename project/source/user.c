@@ -267,6 +267,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	u->b_screen_press_hold_1 = *pdata++;
 	u->b_screen_press_hold_3 = *pdata++;
 	u->b_screen_tapping = *pdata++;
+	u->b_screen_tapping = FALSE; // TURN off screen tapping by default
 	setting_length -= 4;
 	
 	u->b_navigation_tapping = *pdata++;

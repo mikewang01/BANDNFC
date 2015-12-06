@@ -234,6 +234,8 @@ void _power_manager_process(void)
 		// Configure TWI to be input to reduce power consumption
 		GPIO_twi_disable(1);
 
+		// Disable SPI bus
+		spi_master_disable();
 	}
 #if 1
 	// Main power management process

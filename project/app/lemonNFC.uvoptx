@@ -1337,8 +1337,8 @@
       <Focus>0</Focus>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\components\drivers_nrf\spi_master\nrf_drv_spi.c</PathWithFileName>
-      <FilenameWithoutPath>nrf_drv_spi.c</FilenameWithoutPath>
+      <PathWithFileName>..\components\drivers_nrf\spi_master\spi_master.c</PathWithFileName>
+      <FilenameWithoutPath>spi_master.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

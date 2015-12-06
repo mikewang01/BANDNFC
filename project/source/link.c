@@ -528,8 +528,6 @@ void LINK_state_machine(void)
 			N_SPRINTF("[LINK] Writing link info! ");
 #else
 	
-			FLASH_erase_App(SYSTEM_LINK_SPACE_START);
-
 			FLASH_Write_App(SYSTEM_LINK_SPACE_START, (I8U *)&cling.link.pairing, sizeof(PAIRING_CTX));
 			cling.link.auth_state = LINK_S_REBOOT_DEVICE;
 #endif
@@ -561,7 +559,7 @@ void LINK_init()
 	
 	FLASH_Read_App(SYSTEM_LINK_SPACE_START, (I8U *)a, sizeof(PAIRING_CTX));
 	
-	N_SPRINTF("[LINK] %x, %x, %x", a->authToken, a->crc, a->userID);
+	Y_SPRINTF("[LINK] %x, %x, %x", a->authToken, a->crc, a->userID);
 	
 	// Initialize all communciation context
 	acc->error_code = NO_ERROR;

@@ -74,7 +74,7 @@ void REMINDER_set_next_reminder()
 			hour = *data++;
 			minute = *data++;
 			
-			N_SPRINTF("[REMINDER] current time: %d:%d, reminder: %d:%d", cling.time.local.hour, cling.time.local.minute, hour, minute);
+			Y_SPRINTF("[REMINDER] current time: %d:%d, reminder: %d:%d", cling.time.local.hour, cling.time.local.minute, hour, minute);
 
 			if (hour >= 24) break;
 			if (minute >= 60) break;
@@ -128,6 +128,9 @@ static BOOLEAN _check_reminder()
 void REMINDER_state_machine()
 {
 	I32U t_curr = CLK_get_system_time();
+	
+	if (OTA_if_enabled())
+		return;
 
 	if (cling.reminder.state != REMINDER_STATE_IDLE) {
 		// Start 20 ms timer 
