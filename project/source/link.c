@@ -523,12 +523,14 @@ void LINK_state_machine(void)
 
 		case LINK_S_WRITING_LINK_INFO:
 		{
+			I32U dw_buf[16];
 #ifdef _SKIP_LINK_
 			cling.link.auth_state = LINK_S_IDLE;
 			N_SPRINTF("[LINK] Writing link info! ");
 #else
+			memcpy(dw_buf, (I8U *)&cling.link.pairing, sizeof(PAIRING_CTX));
 	
-			FLASH_Write_App(SYSTEM_LINK_SPACE_START, (I8U *)&cling.link.pairing, sizeof(PAIRING_CTX));
+			FLASH_Write_App(SYSTEM_LINK_SPACE_START, (I8U *)dw_buf, sizeof(PAIRING_CTX));
 			cling.link.auth_state = LINK_S_REBOOT_DEVICE;
 #endif
 			cling.link.link_ts = curr_sys_time;

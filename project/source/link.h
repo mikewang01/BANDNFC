@@ -91,11 +91,11 @@ typedef enum {
  };
 
 typedef struct tagPAIRING_CTX {
+	I16U authToken;
+	I16U crc;
 	// Local message id
 	I32U userID;
 	I32U epoch; /* registration time */
-	I16U authToken;
-	I16U crc;
 } PAIRING_CTX;
 
 typedef struct tagLINK_CTX {
