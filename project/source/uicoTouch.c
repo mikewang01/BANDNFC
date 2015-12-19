@@ -23,7 +23,7 @@
 #include "uicoTouch.h"
 
 //#define UICO_FORCE_BURN_FIRMWARE
-#define UICO_INCLUDE_FIRMWARE_BINARY
+//#define UICO_INCLUDE_FIRMWARE_BINARY
 #ifdef UICO_INCLUDE_FIRMWARE_BINARY
 #include "uicoData.h"
 #endif

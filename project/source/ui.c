@@ -1888,7 +1888,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 	I8U len2=0, workout_idx=0;
 	char *workout_en[] = {"Walk", "Run", "Row", "Elliptical", "Stairs", "Cycle", "Aerobic", "Piloxing", "Others", "Outdoor", "Indoor"};
 	char *workout_s_cn[] = {"徒步", "跑步", "划船", "椭圆机 ", "爬楼梯 ", "单车", "有氧操 ", "Piloxing", "其它", "户外", "室内"};
-	char *workout_t_cn[] = {"徒步", "跑步", "劃船", "橢圓機 ", "爬樓梯 ", "單車", "有氧操 ", "Piloxing", "其它", "戶外", "室內"};
+	char *workout_t_cn[] = {"徒步", "跑步", "划船", "橢圓機 ", "爬樓梯 ", "單車", "有氧操 ", "Piloxing", "其它", "戶外", "室內"};
 	char *workout_indicator[] = {
 		"-,,,,,,,,",
 		",-,,,,,,,", 
@@ -2934,11 +2934,12 @@ void UI_state_machine()
 #ifndef _CLING_PC_SIMULATION_
 			if (u->state_init) {
 				u->state_init = FALSE;
+#ifdef _ENABLE_ANCS_
 				if (cling.notific.cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)
 					u->frame_index = UI_DISPLAY_SMART_INCOMING_CALL;
 				else
 					u->frame_index = UI_DISPLAY_SMART_INCOMING_MESSAGE;
-								
+#endif								
 				// Go display incoming message/call
 				_display_frame_smart(u->frame_index, TRUE);
 			} else {

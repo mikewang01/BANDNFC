@@ -1,6 +1,6 @@
 #include "stdint.h"
 #include "uicodata.h"
-
+#ifdef UICO_INCLUDE_FIRMWARE_BINARY
 /*uico firmware*/
 const unsigned char uicoDat[MAX_UICO_FIRMWARE_SIZE*1024 + UICO_FILE_LENTH_AREA_SIZE]  __attribute__ ((at(0x0002a420))) = {
 	LOWER_EIGHT_BYE(UICO_BINARY_FILE_SIZE), HIGHER_EIGHT_BYE(UICO_BINARY_FILE_SIZE),
@@ -827,5 +827,5 @@ const unsigned char uicoDat[MAX_UICO_FIRMWARE_SIZE*1024 + UICO_FILE_LENTH_AREA_S
 0x30, 0x16, 0x83, 0x0d, 0xe3, 0x63, 0x51, 0xe5, 0xcc, 0xb9, 0x11, 0xe9, 0xf2, 0x58, 0x4a, 0x26,
 0x50, 0x76, 0xeb, 0x29, 0xff, 0x3b, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
 };
-
+#endif
 
