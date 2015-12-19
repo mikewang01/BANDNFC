@@ -135,8 +135,10 @@ void THERMISTOR_state_machine()
 {
 #ifndef _CLING_PC_SIMULATION_
 	THERMISTOR_CTX *t = &cling.therm;
-	
 	I32U t_curr, t_diff;
+	
+	if (OTA_if_enabled())
+		return;
 	
 	t_curr = CLK_get_system_time();
 	

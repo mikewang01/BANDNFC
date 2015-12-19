@@ -16,6 +16,10 @@
 
 static BOOLEAN _is_idle_alert_allowed()
 {	
+	if (OTA_if_enabled()) {
+		return FALSE;
+	}
+	
   if (cling.sleep.state==SLP_STAT_LIGHT || cling.sleep.state==SLP_STAT_SOUND) {
 		return FALSE;
   }

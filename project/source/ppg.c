@@ -477,6 +477,10 @@ void PPG_state_machine()
 	HEARTRATE_CTX *h = &cling.hr;
 	I32U t_curr, t_diff, t_threshold, t_sec;
 	
+	if (OTA_if_enabled()) {
+		return;
+	}
+	
 	t_sec = cling.time.system_clock_in_sec;
 	
 	// PPG measuring main state machine
