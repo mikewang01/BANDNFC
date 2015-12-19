@@ -627,9 +627,9 @@ static BOOLEAN _ancs_supported_is_enable()
 	if (cling.ancs.supported_categories == 0)
 		return FALSE;
 	
-	// If this is a "OTHER" category, we bond with 'SOCIAL' for the present.
+	// If this is a "OTHER" category, we bond with 'NEWS' for the present.
 	if(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_OTHER) 
-		ancs_notif.category_id  = BLE_ANCS_CATEGORY_ID_SOCIAL;
+		ancs_notif.category_id  = BLE_ANCS_CATEGORY_ID_NEWS;
 
 	// Check whether corresponding category is enabled	
 	id_mask = 1 << (ancs_notif.category_id-1);	
@@ -655,6 +655,8 @@ static void _ancs_store_attrs_pro(void)
   if(cling.ancs.message_total >= 16) {
 		
 	  FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+		
+		BASE_delay_msec(50); // Add latency before storing messages (Erasure latency: 50 ms)
  
 	  N_SPRINTF("[ANCS] message is full, go erase the message space");
 

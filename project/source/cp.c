@@ -170,8 +170,7 @@ static void _proc_pending_ctrl_wr()
 		cling.link.link_ts = CLK_get_system_time();
 	} else if (CTL_RFNU & idx) {
 		
-		if ((I8U)(cling.link.pairing.crc & 0x00ff) == cling.system.mcu_reg[REGISTER_MCU_PROTECT]) 
-		{
+        if ((I8U)(cling.link.pairing.crc & 0x00ff) == cling.system.mcu_reg[REGISTER_MCU_PROTECT]) {
 			N_SPRINTF("[CP] factory reset succeed");
 			// When user confirms a factory reset, we switch to reset vector
 			SYSTEM_factory_reset();
@@ -282,7 +281,8 @@ static void _create_dev_info_msg()
 	I8U dev_data[GLOBAL_DEVICE_ID_LEN];
 	I8U key_user_info[32];
 	I8U i;
-	PAIRING_CTX *pPairing;
+    PAIRING_CTX *pPairing;
+		ble_gap_addr_t mac_addr_t;
 
 	// Get free space in current file system
 	FAT_Init();
@@ -418,7 +418,18 @@ static void _create_dev_info_msg()
 	// Amount of minute streaming files
 	t->msg[t->msg_filling_offset++] = cling.ble.streaming_minute_file_amount;
 
-	t->msg_len = t->msg_filling_offset;
+		// Valid mac address
+		sd_ble_gap_address_get(&mac_addr_t);
+
+		t->msg[t->msg_filling_offset++] = 0x69;
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[0];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[1];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[2];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[3];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[4];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[5];
+
+    t->msg_len = t->msg_filling_offset;
 
 	// Get message length (fixed length: 2 bytes)
 	t->pkt.len[0] = 0;
@@ -644,7 +655,7 @@ static void _write_file_to_fs_rest(I8U *data)
 		if (OTA_if_enabled()) {
 			if (cling.ota.file_len == 0) {
 				cling.ota.file_len = r->msg_file_len;
-				N_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
+				Y_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
 			} else {
 				cling.ota.percent = (I8U)(((cling.ota.file_len-r->msg_file_len)*100)/cling.ota.file_len);
 				Y_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
@@ -804,14 +815,12 @@ static void _pending_process()
 #ifndef _CLING_PC_SIMULATION_
 
 	switch (p->task_id) {
-		case CP_MSG_TYPE_REGISTER_WRITE:
-		{
+        case CP_MSG_TYPE_REGISTER_WRITE: {
 			N_SPRINTF("[CP] write reg");
 			_proc_pending_ctrl_wr();
 			break;
 		}
-		case CP_MSG_TYPE_FILE_LOAD_LIST:
-		{
+        case CP_MSG_TYPE_FILE_LOAD_LIST: {
 			Y_SPRINTF("[CP] load file list");
 			// When iOS get MUTEX, it also rely on iOS to release MUTEX, or MCU release it when turning off the radio
 			if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
@@ -819,8 +828,7 @@ static void _pending_process()
 			_create_file_list_msg();
 			break;
 		}
-		case CP_MSG_TYPE_LOAD_DEVICE_INFO:
-		{
+        case CP_MSG_TYPE_LOAD_DEVICE_INFO: {
 			cling.gcp.host_type = p->msg[1];
 			Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
 			
@@ -829,30 +837,26 @@ static void _pending_process()
 			BTLE_reset_streaming();  // Reset streaming as the App is trying to figure whether it is an authorized device
 			break;
 		}
-		case CP_MSG_TYPE_LOAD_DAILY_ACTIVITY:
-		{
+        case CP_MSG_TYPE_LOAD_DAILY_ACTIVITY: {
 			N_SPRINTF("[CP] load daily activity stat");
 			_create_daily_activity_info_msg();
 			BTLE_reset_streaming(); // 
 			break;
 		}
-		case CP_MSG_TYPE_DEBUG_MSG:
-		{
+        case CP_MSG_TYPE_DEBUG_MSG: {
+
 			
 			break;
 		}
-		case CP_MSG_TYPE_WEATHER:
-		{
+        case CP_MSG_TYPE_WEATHER: {
 			WEATHER_set_weather(p->msg+1);
 			break;
 		}
-		case CP_MSG_TYPE_USER_REMINDER:	
-		{
+        case CP_MSG_TYPE_USER_REMINDER: {
 			REMINDER_setup(p->msg+1);
 			break;
 		}
-		case CP_MSG_TYPE_START_OTA:
-		{
+        case CP_MSG_TYPE_START_OTA: {
 			HAL_disconnect_for_fast_connection();
 			
 			// Enable over the air update flag, and exit low power mode
@@ -860,14 +864,12 @@ static void _pending_process()
 			Y_SPRINTF("[CP] << OTA enabled >>");
 			break;
 		}
-		case CP_MSG_TYPE_REBOOT:
-		{
+        case CP_MSG_TYPE_REBOOT: {
 			N_SPRINTF("[CP] reboot");
 			SYSTEM_reboot();
 			break;
 		}
-		case CP_MSG_TYPE_FILE_WRITE:
-		{
+        case CP_MSG_TYPE_FILE_WRITE: {
 			if (p->pending_len > p->processed_len) {
 						
 				N_SPRINTF("[CP] file write: %d, %d", p->pending_len, p->processed_len);
@@ -887,8 +889,7 @@ static void _pending_process()
 			}
 			break;
 		}
-		case CP_MSG_TYPE_FILE_DELETE:
-		{
+        case CP_MSG_TYPE_FILE_DELETE: {
 			if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
 				return;
 
@@ -898,27 +899,23 @@ static void _pending_process()
 			SYSTEM_release_mutex(MUTEX_IOS_LOCK_VALUE);
 			break;
 		}
-		case CP_MSG_TYPE_FILE_READ:
-		{
+        case CP_MSG_TYPE_FILE_READ: {
 			if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
 				return;
 			_read_file_from_fs(p->msg+1);
 			break;
 		}
-		case CP_MSG_TYPE_SIMULATION_CONFIG:
-		{
+        case CP_MSG_TYPE_SIMULATION_CONFIG: {
 			break;
 		}
-		case CP_MSG_TYPE_BLE_DISCONNECT:
-		{
+        case CP_MSG_TYPE_BLE_DISCONNECT: {
 			// Disconnect BLE service
 			N_SPRINTF("[CP] BLE disconnecting ...");
 			if(BTLE_is_connected())
 			  BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
 			break;
 		}
-		case CP_MSG_TYPE_SET_ANCS:
-		{
+        case CP_MSG_TYPE_SET_ANCS: {
 #ifdef _ENABLE_ANCS_
 			if (p->msg[1]) {
 				Y_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
@@ -929,27 +926,23 @@ static void _pending_process()
 #endif
 			break;
 		}
-		case CP_MSG_TYPE_SET_LANGUAGE:
-		{
+        case CP_MSG_TYPE_SET_LANGUAGE: {
 			// Display fonts type.
 			cling.ui.fonts_type = p->msg[1];
 			break;
 		}
-		case CP_MSG_TYPE_SET_USER_PROFILE:
-		{
+        case CP_MSG_TYPE_SET_USER_PROFILE: {
 			USER_setup_profile(p->msg+1);
 			break;
 		}
-		case CP_MSG_TYPE_ANDROID_NOTIFY:
-		{
+        case CP_MSG_TYPE_ANDROID_NOTIFY: {
 #ifdef _ENABLE_ANCS_
 			Y_SPRINTF("[CP] android notif received");
 			NOTIFIC_smart_phone_notify(p->msg+1);
 #endif
 			break;
 		}
-		case CP_MSG_TYPE_DEVICE_SETTING:
-		{
+        case CP_MSG_TYPE_DEVICE_SETTING: {
 			USER_setup_device(p->msg+1, cling.user_data.setting_len-1);
 #ifndef _USE_HW_MOTION_DETECTION_
 			// Configure accelerometer with the latest change
@@ -978,8 +971,7 @@ static void _filling_msg_tx_buf()
 		return;
 #if 0
 	if ((t->msg_type == CP_MSG_TYPE_FILE_LOAD_LIST) ||
-		(t->msg_type == CP_MSG_TYPE_FILE_READ))
-	{
+        (t->msg_type == CP_MSG_TYPE_FILE_READ)) {
 		// If we running out data, fill the buffer before we send out a packet.
 		if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
 			return;
@@ -1519,8 +1511,7 @@ BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
 	if (s->minutes_repeat_num > 1) {
 		_fillup_streaming_packet(s->pkt, pminute_1, CP_MSG_TYPE_STREAMING_MULTI_MINUTES, s->minutes_repeat_num);
 		N_SPRINTF("Streaming multi-entry (%d): %d, %d", s->minutes_repeat_num, cling.ble.minute_file_entry_index, pminute_1->epoch);
-	}
-	else {
+    } else {
 		_fillup_streaming_packet(s->pkt, pminute_1, CP_MSG_TYPE_STREAMING_MINUTE, 0);
 		N_SPRINTF("Streaming single-entry (%d): %d, %d", s->minutes_repeat_num, cling.ble.minute_file_entry_index, pminute_1->epoch);
 	}

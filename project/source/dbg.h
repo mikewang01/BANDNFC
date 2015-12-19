@@ -106,7 +106,7 @@ typedef struct tagDEBUG_CTX {
 	
 #if defined(_ENABLE_UART_)
 
-#define N_SPRINTF(...)
+#define N_SPRINTF(...) 
 #define Y_SPRINTF(...) TIMED_DEBUG_LOG(__VA_ARGS__)
 #define I_SPRINTF(...) PURE_DEBUG_LOG(__VA_ARGS__)
 #define B_SPRINTF(...) SYSLOG_DEBUG_MESSAGE(__VA_ARGS__)

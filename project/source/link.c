@@ -30,7 +30,7 @@ const I8U _s4[] = "c840A";
 BOOLEAN _generatingBlob = BOOLEAN_FALSE; // indicates that we are generating a blob (used for timeout check)
 BOOLEAN _checkingBlob = BOOLEAN_FALSE;	// indicates that we are checking a blob (used for timeout check)
 BOOLEAN _waitingBeforeFileCheck = BOOLEAN_FALSE; // flag indicating we are waiting for a short period before checking file.
-I8U token_string[MAX_ENCRYPT_DECRYPT_STRING_SIZE]; // (length: 100, MAX_ENCRYPT_DECRYPT_STRING_SIZE)
+I8U *token_string; // (length: 100, MAX_ENCRYPT_DECRYPT_STRING_SIZE)
 I8U *crypto_buffer;  // 16 BYTES BUFFER FOR crypto.(length: 128)
 I8U *_thekey; // 16 bytes
 I8U _pad;
@@ -152,6 +152,7 @@ void LINK_state_machine(void)
 				// Borrow pedo grobal buffer as it is a one-time use
 				crypto_buffer = PEDO_get_global_buffer()+512;
 				_thekey = crypto_buffer+128;
+				token_string = _thekey+64;
 				// terminal state for this phase is WRITE_ENCRYPT_FILE or GENERATE_ERROR_FILE
 			} else if (CTL_A2 == (CTL_A2 & cling.system.mcu_reg[REGISTER_MCU_CTL])) {
 				_timeCheck = curr_sys_time;
@@ -161,6 +162,7 @@ void LINK_state_machine(void)
 				// Borrow pedo grobal buffer as it is a one-time use
 				crypto_buffer = PEDO_get_global_buffer()+512;
 				_thekey = crypto_buffer+128;
+				token_string = _thekey+64;
 
 				// terminal state for this phase is AUTHORIZED or GENERATE_ERROR_FILE
 			} else if (CTL_FA == (CTL_FA & cling.system.mcu_reg[REGISTER_MCU_CTL])) {
@@ -174,6 +176,7 @@ void LINK_state_machine(void)
 				// Borrow pedo grobal buffer as it is a one-time use
 				crypto_buffer = PEDO_get_global_buffer()+512;
 				_thekey = crypto_buffer+128;
+				token_string = _thekey+64;
 
 			} else {
 				cling.link.trigger_cmd = 0;
@@ -394,12 +397,6 @@ void LINK_state_machine(void)
 			// copy the third part of the information out of the encrypt block to the text block
 			memcpy(&token_string[ENCRYPT_DECRYPT_BLOCK_SIZE<<1], crypto_buffer, ENCRYPT_DECRYPT_BLOCK_SIZE);
 			acc->auth_state = LINK_S_CHECK_FILE;
-			
-			// Finishing all decryption tasks, re-initializae pedometer ...
-			// Has to initializ pedometer here as we borrow the buffer for encryption & decryption.
-			TRACKING_initialization();
-			// Right after authorization, tune up sensitivity.
-			PEDO_set_step_detection_sensitivity(TRUE);
 		}
 		break;
 		
@@ -497,6 +494,12 @@ void LINK_state_machine(void)
 			cling.system.mcu_reg[REGISTER_MCU_CTL] &= ~CTL_A2;
 			cling.system.mcu_reg[REGISTER_MCU_CTL] &= ~CTL_FA;
 
+			// Finishing all decryption tasks, re-initializae pedometer ...
+			// Has to initializ pedometer here as we borrow the buffer for encryption & decryption.
+			TRACKING_initialization();
+			// Right after authorization, tune up sensitivity.
+			PEDO_set_step_detection_sensitivity(TRUE);
+			
 			// Now unit is authorized, we will re-initialize all activity counts wi
 			TRACKING_total_data_load_file();
 

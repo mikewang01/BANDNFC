@@ -204,7 +204,9 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 		if(cling.gcp.host_type == HOST_TYPE_IOS){
 		  // If pair error,delete bond infomation and reset system.
 		  Y_SPRINTF("[HAL] device manger error event result :%04x",event_result);
-		  cling.ancs.bond_state = BOND_STATE_ERROR;			
+#ifdef _ENABLE_ANCS_
+		  cling.ancs.bond_state = BOND_STATE_ERROR;		
+#endif			
 		}
 	}
 	
@@ -762,9 +764,12 @@ static void _ble_init()
 {
 #ifndef _CLING_PC_SIMULATION_
 
+	// BLE stack init, enable softdevice
     _ble_stack_init();
 
+		// Timer init
     RTC_Init();
+		
 #ifdef _ENABLE_ANCS_
     _ancs_service_discovery_init();
 #endif
@@ -778,10 +783,6 @@ static void _ble_init()
     _services_init();
 
     _conn_params_init();
-
-#if 0
-    radio_notification_init();
-#endif
 #endif
 }
 
@@ -793,21 +794,24 @@ void HAL_init(void)
 	
 #ifdef _ENABLE_UART_
     // UART initialization
-    UART_init();
+
+    // UART initialization/
+     UART_init();
 #else
     UART_disabled();
 #endif
-
+ 
     // BLE initialization
     _ble_init();
 
 #ifdef _ENABLE_ANCS_
     //ANCS pairing req initialization
     _ancs_pair_req_timer_init();
-
 #endif
+
     // GPIO initializaiton
     GPIO_init();
+	
 #ifndef _CLING_PC_SIMULATION_
 
     // Enable SPI 0
@@ -817,6 +821,7 @@ void HAL_init(void)
     // Enable TWI I2C 1
     GPIO_twi_init(1);
 #endif
+
     // UV sensor initialization
 #ifdef _ENABLE_UV_
     UV_Init();
@@ -827,11 +832,11 @@ void HAL_init(void)
     PPG_init();
 #endif
 
-    // Nor Flash initialize
-    NFLASH_init();
+	// Nor Flash initialize
+	NFLASH_init();
 
-    // System flash initialization
-    SYSFLASH_drv_init();
+	// System flash initialization
+	SYSFLASH_drv_init();
 
     // Enable GIO interrupt
     GPIO_interrupt_enable();

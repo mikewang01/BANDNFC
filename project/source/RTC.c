@@ -33,8 +33,6 @@ void RTC_timer_handler( void * p_context )
 	I32U tick_now;
 	I32U tick_diff;
 	I32U tick_in_s;
-	
-	N_SPRINTF("[RTC] 4S timer handler func");
 
 #ifndef _CLING_PC_SIMULATION_	
 	if (cling.time.tick_count) {		
@@ -95,7 +93,6 @@ void RTC_timer_handler( void * p_context )
 			 )
     {
 			cling.user_data.idle_minutes_countdown --;
-			N_SPRINTF("[RTC] idle alert countdown - %d", cling.user_data.idle_minutes_countdown);
 		}
 		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
 	}	

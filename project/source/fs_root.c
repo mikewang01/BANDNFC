@@ -224,7 +224,6 @@ I16U ROOT_OpenReadFile(I16U pos, I16U * first_cluster, I32U *size)
 	return root.p_RootItem->crc;
 }
 
-
 void ROOT_CloseWriteFile(I16U pos, I32U size)
 {
 	_swap_root_page(pos);
