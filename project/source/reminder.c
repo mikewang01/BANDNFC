@@ -30,6 +30,7 @@ void REMINDER_setup(I8U *msg)
 	I8U *pdata = (I8U*)data;
 
 	FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
+	BASE_delay_msec(50); // Latency before refreshing reminder space. (Erasure latency: 50 ms)
 	cling.reminder.total = (msg[0] >> 1);
 	if (cling.reminder.total > 32)
 		cling.reminder.total = 32;

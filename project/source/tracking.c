@@ -219,7 +219,6 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			cling.activity.day.walking ++;
 			cling.activity.day.distance += _get_stride_length(); // 0.75 meters
 			cling.activity.step_detect_ts = CLK_get_system_time();
-			SLEEP_wake_up_upon_motion();
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
 				cling.user_data.idle_step_countdown --;
@@ -231,7 +230,6 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			cling.activity.day.running ++;
 			cling.activity.day.distance += _get_stride_length(); // 1.41 meters
 			cling.activity.step_detect_ts = CLK_get_system_time();
-			SLEEP_wake_up_upon_motion();
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
 				cling.user_data.idle_step_countdown --;
@@ -688,6 +686,10 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 		}
 	}
 	
+	if ((pminute->running + pminute->walking) > 4) {
+		SLEEP_wake_up_upon_motion();
+	}
+	
 	// For compatibility, we set activity count flag
 	pminute->activity_count |= 0x8000;
 	
@@ -866,6 +868,9 @@ static void _logging_midnight_local()
 			FLASH_Write_App(SYSTEM_DAYSTAT_SPACE_START+pos, pbuf, TRACKING_DAY_STAT_SIZE);
 		}
 		
+		// Add delay before write data (Erasure latency: 50 ms)
+		BASE_delay_msec(50);
+		
 		// 5. write today's data
 		FLASH_Write_App(SYSTEM_DAYSTAT_SPACE_START+pos, (I8U *)dw_buf, TRACKING_DAY_STAT_SIZE);
 	}
@@ -902,7 +907,8 @@ void TRACKING_data_logging()
 		N_SPRINTF("slepp by noon: %d", cling.activity.sleep_by_noon);
 		cling.activity.sleep_stored_by_noon = cling.activity.sleep_by_noon;
 		cling.activity.sleep_by_noon = 0;
-		SLEEP_init();
+		// Remove sleep initialization as it interrupt sleep
+//		SLEEP_init();
 	}
 }
 
@@ -927,7 +933,7 @@ void TRACKING_get_sleep_statistics(I8U index, I32U *value)
 	
 	if (index == 0)  {
 		// Just return whatever the value that we stored
-		*value = cling.activity.sleep_stored_by_noon;
+		*value = TRACKING_get_sleep_by_noon(TRUE);
 		return;
 	}
 	

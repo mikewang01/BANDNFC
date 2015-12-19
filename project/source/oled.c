@@ -226,7 +226,6 @@ void OLED_state_machine(void)
 		case OLED_STATE_INIT_REGISTERS:
 		{
 			OLED_init(0xcc);
-			//OLED_init(0x40);
 			o->state = OLED_STATE_INIT_UI;
 			break;
 		}

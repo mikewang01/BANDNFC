@@ -328,6 +328,9 @@ static BOOLEAN _critical_info_restored()
 
 	cling.ui.fonts_type = p_byte_addr[59];
 	cling.gcp.host_type = p_byte_addr[60];
+	
+	// Restore sleep state
+	cling.sleep.state = p_byte_addr[61];
 
 	// Minute file critical timing info
 	cling.system.reset_count = p_byte_addr[62];
@@ -341,6 +344,9 @@ static BOOLEAN _critical_info_restored()
 	
 	// Always erase this segment
 	FLASH_erase_App(SYSTEM_INFORMATION_SPACE_START);
+	
+	// Add latency right before backup critical info (Erasure latency: 50 ms)
+	BASE_delay_msec(50);
 
 	// add 30 seconds to correct bias of time when system rebooting..
 	t->time_since_1970 += 30;
@@ -418,6 +424,9 @@ void SYSTEM_init(void)
 			// Print out the amount of page that gets erased
 			Y_SPRINTF("[MAIN] No FAT, No Auth, erase %d blocks (4 KB) ", page_erased);
 		}
+		
+		// Extra latency before initializing file system (Erasure latency: 50 ms)
+		BASE_delay_msec(50);
 
 		// File system initialization
 		// clear FAT and root directory
@@ -425,6 +434,9 @@ void SYSTEM_init(void)
 		
 	} else if (!LINK_is_authorized()) {
 		page_erased = FLASH_erase_application_data(TRUE);
+		
+		// Extra latency before initializing file system (Erasure latency: 50 ms)
+		BASE_delay_msec(50);
 	  		
 		// Print out the amount of page that gets erased
 		Y_SPRINTF("[MAIN] YES FAT, No AUTH, erase %d blocks (4 KB) ", page_erased);
@@ -513,6 +525,8 @@ BOOLEAN SYSTEM_backup_critical()
 		N_SPRINTF("[FLASH] erase critical space as it gets full");
 
 		FLASH_erase_App(SYSTEM_INFORMATION_SPACE_START);
+		// add latency before backing up critical info (Erasure latency: 50 ms)
+		BASE_delay_msec(50);
 		offset = 0;
 	}
 
@@ -543,8 +557,9 @@ BOOLEAN SYSTEM_backup_critical()
 #ifdef _ENABLE_ANCS_
 	// Store ancs supported set.
 	critical[52] = (I8U)((cling.ancs.supported_categories>>8) & 0xFF);
-	critical[53] = (I8U)((cling.ancs.supported_categories) & 0xFF);
+	critical[53] = (I8U)(cling.ancs.supported_categories & 0xFF);
 #endif
+	
 	// Store skin touch type
 	critical[54] = cling.touch.b_skin_touch;
 
@@ -567,7 +582,7 @@ BOOLEAN SYSTEM_backup_critical()
 
 	// Store the  phone type
 	critical[60] = cling.gcp.host_type;
-	critical[61] = 0;
+	critical[61] = cling.sleep.state;
 	// Store the reset count	
 	critical[62] = (I8U)((cling.system.reset_count>>8) & 0xFF);
 	critical[63] = (I8U)((cling.system.reset_count) & 0xFF);
@@ -640,6 +655,9 @@ void SYSTEM_format_disk(BOOLEAN b_erase_data)
 	// File system initialization
 	// clear FAT and root directory
 	FAT_clear_fat_and_root_dir();
+	
+	// Before formating disk, adding some latency (Erasure latency: 50 ms)
+	BASE_delay_msec(50);
 
 	// Re-initialize file system and user profile & milestone
 	FILE_init();

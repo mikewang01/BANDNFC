@@ -239,12 +239,12 @@ typedef struct tagANTI_CHEATING_CTX {
     ACCELEROMETER_ACC a_acc_s2;          // Raw A integration (finished) for the one before previous step
 
 } ANTI_CHEATING_CTX, *PANTI_CHEATING_CTX;
-
+#if 0
 typedef struct tagUC_CONSTRAINS_TAB {
     I32U a_diff_th;
     I8U step_th;
 } UC_CONSTRAINS_TAB, *PUC_CONSTRAINS_TAB;
-
+#endif
 // Classifier state
 typedef struct tagCLASSIFIER_STAT {
     I8U step_stat[CLASSIFIER_STEP_WIN_SZ];   // step classification Status

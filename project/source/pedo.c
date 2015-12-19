@@ -24,6 +24,7 @@ const LP_FILTER lpf_coeff[3] = {
     {17, {2998, 11991, 17986, 11991, 2998}, 14, {-23134, 18395, -6686, 1036}},
 };
 
+#if 0
 // Unintentional cheating constrains
 const UC_CONSTRAINS_TAB constrains_tab[3] = {
     //{658000, 4}, // about 10% overcounting for incidental movement
@@ -33,6 +34,7 @@ const UC_CONSTRAINS_TAB constrains_tab[3] = {
     {65000, 6},
     {60000, 8},
 };
+#endif
 
 #define CONSTRAINS_STEP_TH 4
 #define CONSTRAINS_DIFF_HI_TH 408000

@@ -180,7 +180,7 @@ static void _sleep_main_state()
 	
 	// Do not wake up from sleep until 5 minutes in a state
 	if ( (slp->b_sudden_wake_from_sleep) && 
-		   ( (slp->m_mins_cnt>=5 && slp->state==SLP_STAT_SOUND) || slp->state==SLP_STAT_LIGHT) )   {
+		   ( (slp->state==SLP_STAT_SOUND) || slp->state==SLP_STAT_LIGHT) )   {
     b_wake_from_sleep = TRUE;
 	}
 	
@@ -494,7 +494,7 @@ void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)
 		cling.touch.b_skin_touch = skin_touch;
 	}
 
-	if (steps > 0)
+	if (steps > 4)
 		SLEEP_wake_up_upon_motion();
 
 	//
