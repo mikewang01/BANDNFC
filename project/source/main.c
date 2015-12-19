@@ -1,7 +1,7 @@
 /***************************************************************************/
 /**
  * File: main.c
- * 
+ *
  * Description: Main Application for Lemon Band
  *
  * Created on Mar 25, 2015
@@ -42,8 +42,7 @@ static void _power_test_powerdown(BOOLEAN b_sd_enabled)
 	GPIO_system_powerdown();
 
 	// Enter main loop.
-	while (LOOP_FOREVER)
-	{
+    while (LOOP_FOREVER) {
 		if (b_sd_enabled) {
 			// Feed watchdog every 4 seconds upon RTC interrupt
 			Watchdog_Feed();
@@ -386,8 +385,7 @@ int main(void)
 	Y_SPRINTF("[MAIN] Entering main loop");
 	
 	// Enter main loop.
-	while (LOOP_FOREVER)
-	{		
+    while (LOOP_FOREVER) {
 		// Feed watchdog every 4 seconds upon RTC interrupt
 		Watchdog_Feed();
 
@@ -493,9 +491,6 @@ int main(void)
 	}
 }
 
-/** 
- * @}
- */
 /** 
  * @}
  */

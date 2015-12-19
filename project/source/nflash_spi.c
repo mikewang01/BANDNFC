@@ -99,7 +99,6 @@ I8U NOR_readStatusRegister(void)
     g_spi_tx_buf[1] = SPI_FLASH_INS_DUMMY;
 #ifndef _CLING_PC_SIMULATION_
     spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 2, GPIO_SPI_0_CS_NFLASH);
-//		spi_master_op_wait_done();
 #endif   
     return g_spi_rx_buf[1];
 }
@@ -130,10 +129,13 @@ void NOR_readData(I32U addr, I16U len, I8U *dataBuf)
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, dataBuf, 4, len, GPIO_SPI_0_CS_NFLASH);
 //	spi_master_op_wait_done();
 #endif
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+		  b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 /*----------------------------------------------------------------------------------
 *  Function:	void NOR_pageProgram(I32U addr, I16U len, I8U *data)
@@ -163,10 +165,12 @@ static void _page_program_core(I32U addr, I16U len, I8U *data)
 #endif
 		_wait_for_operation_completed();
 	
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+	  	b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 
 void NOR_pageProgram(I32U addr, I16U len, I8U *data)
@@ -201,10 +205,12 @@ void NOR_pageProgram(I32U addr, I16U len, I8U *data)
 		_page_program_core(addr, length_2, data+length_1);
 	}
 	
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+		  b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 /*----------------------------------------------------------------------------------
 *  Function:	NOR_erase_block_4k(I32U addr)
@@ -236,10 +242,12 @@ void NOR_erase_block_4k(I32U addr)
 	//wait for the operation finished
 	_wait_for_operation_completed();
 	
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+	  	b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 
 /*----------------------------------------------------------------------------------
@@ -271,10 +279,12 @@ void NOR_erase_block_32k(I32U addr)
 	//wait for the operation finished
 	_wait_for_operation_completed();
 	
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+		  b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 /*----------------------------------------------------------------------------------
 *  Function:	NOR_erase_block_64k(I32U addr)
@@ -306,10 +316,12 @@ void NOR_erase_block_64k(I32U addr)
 	_wait_for_operation_completed();
 	N_SPRINTF("[NFLASH] completed!");
 	
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+		  b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 /*----------------------------------------------------------------------------------
 *  Function:	NOR_ChipErase
@@ -335,11 +347,12 @@ void NOR_ChipErase()
 	//wait for the operation finished
 	_wait_for_operation_completed();
 	
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
-
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+	  	b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 /*----------------------------------------------------------------------------------
 *  Function:	void NOR_powerDown()
@@ -395,15 +408,16 @@ void NOR_readID(I8U *id)
 	g_spi_tx_buf[5] = (I8U) 0;
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 6, GPIO_SPI_0_CS_NFLASH);
-//	spi_master_op_wait_done();
 #endif
 	*id = g_spi_rx_buf[4];
 	*(id+1) = g_spi_rx_buf[5];
 
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+		  b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }
 /*----------------------------------------------------------------------------------
 *  Function:	void NOR_readUID(I8U *id)
@@ -427,11 +441,11 @@ void NOR_readUID(I8U *id)
 	g_spi_tx_buf[4] = (uint8_t)0;
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 5, 0, 0, id, 0, 10, GPIO_SPI_0_CS_NFLASH);
-//	spi_master_op_wait_done();
 #endif
-	if (!b_flash_PD_flag) {
-		b_flash_PD_flag = TRUE;
-		NOR_powerDown();
-	}
-
+	if (!OTA_if_enabled()){
+	  if (!b_flash_PD_flag) {
+		  b_flash_PD_flag = TRUE;
+		  NOR_powerDown();
+	  }
+  }
 }

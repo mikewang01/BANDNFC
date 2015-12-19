@@ -79,6 +79,14 @@ void NOTIFIC_state_machine()
 {
 	I32U t_curr = CLK_get_system_time();
 	
+	if (OTA_if_enabled()) {
+		if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+			cling.notific.state = NOTIFIC_STATE_IDLE;
+			GPIO_vibrator_set(FALSE);
+		}
+		return;
+	} 
+	
 	if (cling.notific.state != NOTIFIC_STATE_IDLE) {
 		RTC_start_operation_clk();
 	}
@@ -175,6 +183,9 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 		 if(cling.ancs.message_total >= 16) {
 				
 			 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+			 
+			 // Latency before writing notification message (Erasure latency: 50 ms)
+			 BASE_delay_msec(50);
 		 
 			 N_SPRINTF("[ANCS] message is full, go erase the message space");
 
