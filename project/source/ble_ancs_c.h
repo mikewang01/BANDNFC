@@ -178,14 +178,6 @@ extern const ble_uuid128_t ble_ancs_ns_base_uuid128;  /**< Notification source U
 extern const ble_uuid128_t ble_ancs_ds_base_uuid128;  /**< Data source UUID. */
 
 
-/**@brief ANCS request types.
- */
-typedef enum
-{
-	READ_REQ = 1,  /**< Type identifying that this tx_message is a read request. */
-	WRITE_REQ      /**< Type identifying that this tx_message is a write request. */
-} ancs_tx_request_t;
-
 
 /**@brief Structure used for holding the characteristic found during the discovery process.
  */
@@ -211,13 +203,21 @@ typedef struct
 } ble_ancs_c_service_t;
 
 
+/**@brief ANCS request types.
+ */
+typedef enum
+{
+	ANCS_READ_REQ = 1,  /**< Type identifying that this tx_message is a read request. */
+	ANCS_WRITE_REQ      /**< Type identifying that this tx_message is a write request. */
+} ancs_tx_request_t;
+
 /**@brief Structure for writing a message to the central, i.e. Control Point or CCCD.
  */
 typedef struct
 {
 	uint8_t                  gattc_value[WRITE_MESSAGE_LENGTH]; /**< The message to write. */
 	ble_gattc_write_params_t gattc_params;                      /**< GATTC parameters for this message. */
-} write_params_t;
+} ancs_write_params_t;
 
 
 /**@brief Structure for holding data to be transmitted to the connected master.
@@ -229,9 +229,10 @@ typedef struct
 	union
 	{
 			uint16_t       read_handle; /**< Read request message. */
-			write_params_t write_req;   /**< Write request message. */
+			ancs_write_params_t write_req;   /**< Write request message. */
 	} req;
-} tx_message_t;
+} ancs_tx_message_t;
+
 
 
 /**@brief Function for handling the application's BLE Stack events.

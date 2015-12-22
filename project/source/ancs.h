@@ -14,7 +14,7 @@
 #ifdef _ENABLE_ANCS_
 #include "standard_types.h"
 
-#define   ANCS_FILTERING_OLD_MSG_DELAY_TIME            6000     /*6s*/ 
+#define   ANCS_FILTERING_OLD_MSG_DELAY_TIME            10000    /*10s*/ 
 #define   ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME    60000    /*60s*/  
 #define   ANCS_SUPPORT_MAX_TITLE_LEN                   64       /*64 byte*/
 #define   ANCS_SUPPORT_MAX_MESSAGE_LEN                 192      /*192 byte*/

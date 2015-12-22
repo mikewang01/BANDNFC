@@ -97,13 +97,13 @@ void REMINDER_set_next_reminder()
 		cling.reminder.hour = hour;
 		cling.reminder.minute = minute;
 		
-		N_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
+		Y_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
 	} else {
 		cling.reminder.b_valid = FALSE;
 		cling.reminder.hour = 0;
 		cling.reminder.minute = 0;
 
-		N_SPRINTF("[REMINDER] No new reminder is found");
+		Y_SPRINTF("[REMINDER] No new reminder is found");
 	}
 	
 	if (cling.reminder.total>0) {
@@ -148,7 +148,8 @@ void REMINDER_state_machine()
 				cling.reminder.vibrate_time = 0;
 				cling.reminder.second_vibrate_time = 0;
 				cling.reminder.ui_alarm_on = TRUE;
-				UI_turn_on_display(UI_STATE_REMINDER, 1000);
+				cling.ui.notif_type = NOTIFICATION_TYPE_REMINDER;
+				UI_turn_on_display(UI_STATE_NOTIFICATIONS, 1000);
 
 			} else {
 				if (cling.notific.state == NOTIFIC_STATE_IDLE) {

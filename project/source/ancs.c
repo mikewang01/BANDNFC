@@ -28,18 +28,18 @@
 
 #ifdef _ENABLE_ANCS_
 
-static tx_message_t   m_tx_buffer[3];            /**< Transmit buffer for messages to be transmitted to the Notification Provider. */
-static I8U            m_tx_insert_index ;        /**< Current index in the transmit buffer where the next message should be inserted. */
-static I8U            m_tx_index;                /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
 
-static ble_ancs_c_service_t    m_service;        /**< Current service data. */
+static ancs_tx_message_t  m_tx_buffer[3];            /**< Transmit buffer for messages to be transmitted to the Notification Provider. */
+static I8U                m_tx_insert_index ;        /**< Current index in the transmit buffer where the next message should be inserted. */
+static I8U                m_tx_index;                /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
+
+static ble_ancs_c_service_t    m_service;            /**< Current service data. */
 static ble_ancs_notif_t        ancs_notif;
 static ble_ancs_notif_attr_t   ancs_notif_attr;
 	
 static I32U      ancs_timer;
 static I32U      ancs_t_curr, ancs_t_diff;		
 	
-
 /**@brief 128-bit service UUID for the Apple Notification Center Service.*/
 const ble_uuid128_t ble_ancs_base_uuid128 =
 {
@@ -439,7 +439,7 @@ static I32U _ble_ancs_init(void)
 
 static I32U cccd_configure(const uint16_t conn_handle, const uint16_t handle_cccd, bool enable)
 {
-	tx_message_t * p_msg;
+	ancs_tx_message_t * p_msg;
 	I16U  cccd_val = enable ? BLE_CCCD_NOTIFY_BIT_MASK : 0;
 
 	if(m_tx_insert_index >= 2)
@@ -455,7 +455,7 @@ static I32U cccd_configure(const uint16_t conn_handle, const uint16_t handle_ccc
 	p_msg->req.write_req.gattc_value[0]        = LSB(cccd_val);
 	p_msg->req.write_req.gattc_value[1]        = MSB(cccd_val);
 	p_msg->conn_handle                         = conn_handle;
-	p_msg->type                                = WRITE_REQ;
+	p_msg->type                                = ANCS_WRITE_REQ;
 
 	_tx_buffer_process();
 	return NRF_SUCCESS;
@@ -492,7 +492,7 @@ static I32U _ble_ancs_get_notif_attrs( const I32U p_uid)
 {
 	I16U title_max_len=0;
 	I16U message_max_len=0;	
-	tx_message_t * p_msg;
+	ancs_tx_message_t * p_msg;
 	I16U    index    = 0;
 
 	if(m_tx_insert_index >= 2)
@@ -529,7 +529,7 @@ static I32U _ble_ancs_get_notif_attrs( const I32U p_uid)
  
 	p_msg->req.write_req.gattc_params.len = index;
 	p_msg->conn_handle                    = cling.ble.conn_handle;
-	p_msg->type                           = WRITE_REQ;
+	p_msg->type                           = ANCS_WRITE_REQ;
 
 	_tx_buffer_process();
 
@@ -726,7 +726,7 @@ void ANCS_state_machine(void)
     case BLE_ANCS_STATE_NOTIF:
 		{	
       if(_ancs_query_notific_is_new()){
-				N_SPRINTF("[ANCS] Start request access to notify the specific content.");	
+				Y_SPRINTF("[ANCS] Start request access to notify the specific content.");	
         _ancs_request_attrs_pro(ancs_notif);						
 			}
       a->state = BLE_ANCS_STATE_IDLE;			
@@ -744,7 +744,7 @@ void ANCS_state_machine(void)
 		
     case BLE_ANCS_STATE_DISCOVER_FAILED:
 		{    
-		  N_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
+			Y_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
 		
 			ancs_t_curr =  CLK_get_system_time();		
 	    ancs_t_diff = (ancs_t_curr - ancs_timer);
