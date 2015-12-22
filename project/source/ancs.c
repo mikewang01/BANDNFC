@@ -599,7 +599,9 @@ void ANCS_service_add(void)
 static void _ancs_start_notific_filtering()
 {
 	ancs_timer =CLK_get_system_time();
-
+	ancs_t_curr = 0;
+	ancs_t_diff = 0;
+	
 	cling.ancs.filtering_flag = FALSE;
 }
 	
