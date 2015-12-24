@@ -54,6 +54,9 @@ static void _tracking_init()
 	
 	// Erase this space first
 	FLASH_erase_App(SYSTEM_DAYSTAT_SPACE_START);
+
+  // Add latency before storing messages (Erasure latency: 50 ms)		
+  BASE_delay_msec(50); 
 	
 	for (i = 0; i < 9; i++) {
 		FLASH_Write_App(SYSTEM_DAYSTAT_SPACE_START+offset, (I8U *)tracking_sim_array[i], TRACKING_DAY_STAT_SIZE);

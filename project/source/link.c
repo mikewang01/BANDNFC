@@ -601,5 +601,3 @@ void LINK_deauthorize()
 	acc->auth_state = LINK_S_IDLE;
 	memset((I8U *)a, 0, sizeof(PAIRING_CTX));
 }
-
-

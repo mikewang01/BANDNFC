@@ -373,18 +373,14 @@ int main(void)
 	//
 	SYSTEM_init();
 
-#ifdef _ENABLE_FONT_TRANSFER_
-	FONT_flash_setup();
-#endif
+    //
+    // Start up system
+    //
+    _system_startup();
 
-	//
-	// Start up system
-	//
-	_system_startup();
-	
-	Y_SPRINTF("[MAIN] Entering main loop");
-	
-	// Enter main loop.
+    //Y_SPRINTF("[MAIN] Entering main loop stack top = 0x%08x sp = 0x%08x", HEAP_TOP, __get_MSP());
+
+    // Enter main loop.
     while (LOOP_FOREVER) {
 		// Feed watchdog every 4 seconds upon RTC interrupt
 		Watchdog_Feed();

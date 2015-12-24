@@ -852,6 +852,9 @@ static void _logging_midnight_local()
 	if (pos >= SYSTEM_DAYSTAT_SPACE_SIZE) {
 		// 1. clean up the scratch pad
 		FLASH_erase_App(SYSTEM_SCRATCH_SPACE_START);
+
+		// Add delay before write data (Erasure latency: 50 ms)
+		BASE_delay_msec(50);	
 		
 		// 2. copy the last 32 entries to the scratch pad
 		for (pos = 0; pos < (SYSTEM_DAYSTAT_SPACE_SIZE >> 1); pos += TRACKING_DAY_STAT_MAX) {
@@ -861,15 +864,15 @@ static void _logging_midnight_local()
 		
 		// 3. clean up the DAYSTAT space
 		FLASH_erase_App(SYSTEM_DAYSTAT_SPACE_START);
+
+		// Add delay before write data (Erasure latency: 50 ms)
+		BASE_delay_msec(50);	
 		
 		// 4. copy back the last 32 entries to DAYSTAT space
 		for (pos = 0; pos < (SYSTEM_DAYSTAT_SPACE_SIZE >> 1); pos += TRACKING_DAY_STAT_MAX) {
 			FLASH_Read_App(SYSTEM_SCRATCH_SPACE_START+pos, pbuf, TRACKING_DAY_STAT_SIZE);
 			FLASH_Write_App(SYSTEM_DAYSTAT_SPACE_START+pos, pbuf, TRACKING_DAY_STAT_SIZE);
 		}
-		
-		// Add delay before write data (Erasure latency: 50 ms)
-		BASE_delay_msec(50);
 		
 		// 5. write today's data
 		FLASH_Write_App(SYSTEM_DAYSTAT_SPACE_START+pos, (I8U *)dw_buf, TRACKING_DAY_STAT_SIZE);

@@ -8,6 +8,7 @@
 
 #ifndef __OLED_HEADER__
 #define __OLED_HEADER__
+#include "standard_types.h"
 
 // delay from power on is 100ms.  Set to 103 because time is slightly less than 1ms.
 

@@ -97,13 +97,13 @@ void REMINDER_set_next_reminder()
 		cling.reminder.hour = hour;
 		cling.reminder.minute = minute;
 		
-		Y_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
+		N_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
 	} else {
 		cling.reminder.b_valid = FALSE;
 		cling.reminder.hour = 0;
 		cling.reminder.minute = 0;
 
-		Y_SPRINTF("[REMINDER] No new reminder is found");
+		N_SPRINTF("[REMINDER] No new reminder is found");
 	}
 	
 	if (cling.reminder.total>0) {

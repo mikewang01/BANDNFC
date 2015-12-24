@@ -81,7 +81,6 @@ void GPIO_vibrator_on_block(I8U latency);
 
 // Interrupt control
 void GPIO_interrupt_enable(void);
-void GPIO_spi1_disconnect(void);
 
 // Charger reset
 void GPIO_charger_reset(void);

@@ -586,8 +586,6 @@ BOOLEAN BTLE_is_streaming_enabled(void)
 	return TRUE;
 }
 
-
-
 static void _disconnect_clean_up()
 {
 	BLE_CTX *r = &cling.ble;
@@ -611,6 +609,9 @@ static void _disconnect_clean_up()
 		// De-authorize
 		LINK_deauthorize();
 
+    // Add latency before storing messages (Erasure latency: 50 ms)		
+		BASE_delay_msec(50); 
+		
 		// System format disk along with all data erasure
 		SYSTEM_format_disk(TRUE);
 
@@ -626,7 +627,6 @@ static void _disconnect_clean_up()
 		return;
 	}
 	
-
 #endif
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FAST_CONNECT) {
 		r->disconnect_evt &= ~BLE_DISCONN_EVT_FAST_CONNECT;

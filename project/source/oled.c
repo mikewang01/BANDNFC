@@ -65,12 +65,12 @@ void OLED_im_show(OLED_DISPLAY_MODE mode, I8U *pram, I8U offset)
 {
 #ifndef _CLING_PC_SIMULATION_
 	
-		_set_reg(0xb0+offset);
-		_set_reg(0x10);  // Starting address
-		_set_reg(0x02);  // 
-		// Set "A0" pin for data buffer refresh
-		nrf_gpio_pin_set(GPIO_OLED_A0);
-		_set_data(512,pram);
+	_set_reg(0xb0+offset);
+	_set_reg(0x10);  // Starting address
+	_set_reg(0x02);   
+	// Set "A0" pin for data buffer refresh
+  //nrf_gpio_pin_set(GPIO_OLED_A0);
+	_set_data(512,pram);
 #endif
 }
 
@@ -91,44 +91,41 @@ void OLED_set_contrast(I8U step)
 /**@brief Function for OLED init.
  *
  */
-
 void OLED_init(I8U contrast)
 {    
 #ifndef _CLING_PC_SIMULATION_
 
-    //BASE_delay_msec(100);
-    //nrf_gpio_pin_set(GPIO_OLED_RST);	
-    _set_reg(0xAE);     	
-    _set_reg(0xd5);    
-    _set_reg(0xC1);     
-    _set_reg(0xA8);
-    _set_reg(0x1F);
-	  _set_reg(0xAD);
-	  _set_reg(0x00);
-		_set_reg(0x20);
-	  _set_reg(0x02);
+	_set_reg(0xAE);     	
+	_set_reg(0xd5);    
+	_set_reg(0xC1);     
+	_set_reg(0xA8);
+	_set_reg(0x1F);
+	
+	_set_reg(0xAD);
+	_set_reg(0x00);
+	_set_reg(0x20);
+	_set_reg(0x02);
+	_set_reg(0xD3);
+	
+	_set_reg(0x00);
+	_set_reg(0x40);     
+	_set_reg(0x8D);
+	_set_reg(0x8D);
+	_set_reg(0x14);
 
-    _set_reg(0xD3);    
-    _set_reg(0x00);
-    _set_reg(0x40);     
-	  _set_reg(0x8D);
-	  _set_reg(0x8D);
-	  _set_reg(0x14);
-
-	   _set_reg(0xA0);
-	   _set_reg(0xC8);
-	   _set_reg(0xDA);
-	   _set_reg(0x12);			
-		   //_set_reg(0x81);
-	     //_set_reg(0x40);				
-		 OLED_set_contrast(contrast); 
-		 _set_reg(0xD9);
-	   _set_reg(0x22);			
-     _set_reg(0xDB);    
-     _set_reg(0x00);   
-     _set_reg(0xA4);     
-     _set_reg(0xA6);    
-   // _set_reg(0xAF);  		
+	_set_reg(0xA0);
+	_set_reg(0xC8);
+	_set_reg(0xDA);
+	_set_reg(0x12);			
+	
+	OLED_set_contrast(contrast); 
+	 
+	_set_reg(0xD9);
+	_set_reg(0x22);			
+  _set_reg(0xDB);    
+  _set_reg(0x00);   
+	_set_reg(0xA4);     
+	_set_reg(0xA6);    		
 #endif
 }
 
@@ -231,32 +228,32 @@ void OLED_state_machine(void)
 		}
 		case OLED_STATE_INIT_UI:
 		{
-				// CLING screen timeout
-				cling.ui.display_active = TRUE;
+			// CLING screen timeout
+			cling.ui.display_active = TRUE;
 				
-				// Update display timeout base.
-				cling.ui.display_to_base = CLK_get_system_time();
+			// Update display timeout base.
+			cling.ui.display_to_base = CLK_get_system_time();
 			
-				N_SPRINTF("[0LED] ui to base: %d", cling.ui.display_to_base);
+			N_SPRINTF("[0LED] ui to base: %d", cling.ui.display_to_base);
 				
-				// Reset blinking state
-				cling.ui.clock_sec_blinking = TRUE;
-				{
-					// If screen is turned, dismiss the secondary reminder vibration 
-					if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
-						cling.ui.notif_type = NOTIFICATION_TYPE_REMINDER;
-						UI_switch_state(UI_STATE_NOTIFICATIONS, 0);
-						cling.reminder.ui_hh = cling.time.local.hour;
-						cling.reminder.ui_mm = cling.time.local.minute;
-						cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
-						Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
-					}
+			// Reset blinking state
+			cling.ui.clock_sec_blinking = TRUE;
+			
+			// If screen is turned, dismiss the secondary reminder vibration 
+			if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
+				cling.ui.notif_type = NOTIFICATION_TYPE_REMINDER;
+				UI_switch_state(UI_STATE_NOTIFICATIONS, 0);
+				cling.reminder.ui_hh = cling.time.local.hour;
+				cling.reminder.ui_mm = cling.time.local.minute;
+				cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
+				Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
+			}
 				
-					if (cling.notific.state != NOTIFIC_STATE_IDLE) {
-						UI_switch_state(UI_STATE_NOTIFICATIONS, 0);
-					}						
-				}
-				o->state = OLED_STATE_ON;
+			if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+				UI_switch_state(UI_STATE_NOTIFICATIONS, 0);
+			}						
+				
+			o->state = OLED_STATE_ON;
 			break;
 		}
 		case OLED_STATE_ON:

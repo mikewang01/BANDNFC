@@ -18,7 +18,7 @@ static void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
 {
 #ifndef _CLING_PC_SIMULATION_
 	// Output pin, we need to disconnect it from input buffer.
-    NRF_GPIO->PIN_CNF[pin_number] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
+  NRF_GPIO->PIN_CNF[pin_number] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
                                         | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
                                         | (NRF_GPIO_PIN_NOPULL << GPIO_PIN_CNF_PULL_Pos)
                                         | (GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos)
@@ -32,18 +32,6 @@ static void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
 }
 
 #ifndef _CLING_PC_SIMULATION_
-static void _gpio_cfg_disconnect_pull_input(uint32_t pin_number, nrf_gpio_pin_pull_t pull_config)
-{
-	// when system is disconnected from input buffer, none of other parameter matters
-    NRF_GPIO->PIN_CNF[pin_number] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
-                                        | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
-                                        | (pull_config << GPIO_PIN_CNF_PULL_Pos)
-                                        | (GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos)
-                                        | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
-}
-#endif
-
-#ifndef _CLING_PC_SIMULATION_
 static __INLINE void _gpio_cfg_disconnect_input(uint32_t pin_number)
 #else
 static void _gpio_cfg_disconnect_input(uint32_t pin_number)
@@ -51,7 +39,7 @@ static void _gpio_cfg_disconnect_input(uint32_t pin_number)
 {
 #ifndef _CLING_PC_SIMULATION_
 	// when system is disconnected from input buffer, none of other parameter matters
-    NRF_GPIO->PIN_CNF[pin_number] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
+  NRF_GPIO->PIN_CNF[pin_number] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
                                         | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
                                         | (NRF_GPIO_PIN_NOPULL << GPIO_PIN_CNF_PULL_Pos)
                                         | (GPIO_PIN_CNF_INPUT_Disconnect << GPIO_PIN_CNF_INPUT_Pos)
@@ -83,52 +71,55 @@ static __INLINE void _gpio_cfg_connect_input(uint32_t pin_number, nrf_gpio_pin_s
 
 void GPIO_system_powerup()
 {
-	_gpio_cfg_output(GPIO_CHARGER_SD      , TRUE);     // Charger Shut down pin, pull UP to power up system
+#ifndef _CLING_PC_SIMULATION_	
+	_gpio_cfg_output(GPIO_CHARGER_SD      , TRUE );   // Charger Shut down pin, pull UP to power up system
 	
 	cling.system.b_powered_up = TRUE;
+#endif	
 }
 
 void GPIO_system_powerdown()
 {
 #ifndef _CLING_PC_SIMULATION_
-	_gpio_cfg_output(GPIO_CHARGER_SD      , FALSE);     // Charger Shut down pin, pull down
+	// System power down.
+	_gpio_cfg_output(GPIO_CHARGER_SD      , FALSE );  // Charger Shut down pin, pull down
+
 	cling.system.b_powered_up = FALSE;
 	
+  // Disconnecting all of the GPIO pin,in addition to CHARGER SD pin.
+	_gpio_cfg_disconnect_input(GPIO_NFC_CLK       );  // ADC analog pin
+  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_REF);  // thermistor REFERENCE input
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_CS_ACC  );  // SPI CS (ACCC)
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_4     );  // Not used
 
-	_gpio_cfg_disconnect_input(GPIO_NFC_CLK      );  // ADC analog pin
-  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_REF   );  // thermistor REFERENCE input
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_CS_ACC    );      // SPI CS (ACCC), drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_4       );     // Not used
+  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_IN );  // thermistor input
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_CS_OLED );  // SPI CS (OLED)
+	_gpio_cfg_disconnect_input(GPIO_OLED_RST      );  // OLED reset
+	_gpio_cfg_disconnect_input(GPIO_UART_TX       );  // UART tx pin
+	_gpio_cfg_disconnect_input(GPIO_VIBRATOR_EN   );  // Vibrator pin
 
-  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_IN   );  // thermistor input
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_CS_OLED   );      // SPI CS (OLED), drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_OLED_RST        );      // OLED reset, drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_UART_TX         );  // UART pin, not used
-	_gpio_cfg_disconnect_input(GPIO_VIBRATOR_EN);          // Vibrator pin, pull down
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_10    );  // Not used
+	_gpio_cfg_disconnect_input(GPIO_TOUCH_INT     );  // Touch input pin
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_12    );  // Not used
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_13    );  // Not used
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_14    );  // Not used
 
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_10   );      // Not used
-	_gpio_cfg_disconnect_input(GPIO_TOUCH_INT       );  // Touch pin, sense low, no pull
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_12       );  // Not used
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_13       );     // Not used
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_14       );     // Not used
+	_gpio_cfg_disconnect_input(GPIO_TEMPERATURE_POWER_ON);  // Temperature power on pin
+	_gpio_cfg_disconnect_input(GPIO_SENSOR_INT_1  );  // ACC sense input pin
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_17    );  // Not used
 
-	_gpio_cfg_disconnect_input(GPIO_TEMPERATURE_POWER_ON );  // Temperature ready pin, not used
-	_gpio_cfg_disconnect_input(GPIO_SENSOR_INT_1    ); // Needed, sense high, no pull
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_17       );  // Touch pin, sense low, no pull
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_CS_NFLASH); // SPI CS (NOR FLASH)
+	_gpio_cfg_disconnect_input(GPIO_NFC_RESET     );  // NFC reset pin
+	_gpio_cfg_disconnect_input(GPIO_TWI1_CLK      );  // I2C bus, CLK
 
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_CS_NFLASH );      // SPI CS (NOR FLASH), drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_NFC_RESET );      // SPI CS (NOR FLASH), drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_TWI1_CLK         );  // I2C
-
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_MISO      );  // SPI bus, not used
-	_gpio_cfg_disconnect_input(GPIO_TWI1_DATA        );  // I2C
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_MOSI      );  // SPI bus, not used
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_SCK       );  // SPI bus, not used
-	_gpio_cfg_disconnect_input(GPIO_NFC_DATA );      // SPI CS (NOR FLASH), drive HIGH
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_MISO    );  // SPI bus, MISO
+	_gpio_cfg_disconnect_input(GPIO_TWI1_DATA     );  // I2C bus, DATA
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_MOSI    );  // SPI bus, MOSI
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_SCK     );  // SPI bus, SCK
+	_gpio_cfg_disconnect_input(GPIO_NFC_DATA      );  // SPI CS (NOR FLASH)
 	
-	_gpio_cfg_disconnect_input(GPIO_UART_RX         );  // UART pin, not used
-	_gpio_cfg_disconnect_input(GPIO_OLED_A0         );     // OLED A0, drive LOW
-	
+	_gpio_cfg_disconnect_input(GPIO_UART_RX       );  // UART pin
+	_gpio_cfg_disconnect_input(GPIO_OLED_A0       );  // OLED A0
 #endif
 }
 
@@ -136,47 +127,47 @@ void GPIO_init()
 {
 	// 0 .. 4
 #ifndef _CLING_PC_SIMULATION_
-	_gpio_cfg_disconnect_input(GPIO_NFC_CLK      );  // ADC analog pin
-  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_REF   );  // thermistor REFERENCE input
-	_gpio_cfg_output(GPIO_SPI_0_CS_ACC    , TRUE);      // SPI CS (ACCC), drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_CHARGER_IN      );  // ADC analog pin
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_4       );     // Not used
+	_gpio_cfg_disconnect_input(GPIO_NFC_CLK       );  // ADC analog pin
+  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_REF);  // Thermistor reference input
+	_gpio_cfg_output(GPIO_SPI_0_CS_ACC     , TRUE );  // SPI CS (ACCC), drive HIGH
+	_gpio_cfg_disconnect_input(GPIO_CHARGER_IN    );  // ADC analog pin
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_4     );  // Not used
 
 	// 5 .. 9
-  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_IN   );  // thermistor input
-	_gpio_cfg_output(GPIO_SPI_0_CS_OLED   , TRUE);      // SPI CS (OLED), drive HIGH
-	_gpio_cfg_output(GPIO_OLED_RST        , TRUE);      // OLED reset, drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_UART_TX         );  // UART pin, not used
-	_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);          // Vibrator pin, pull down
+  _gpio_cfg_disconnect_input(GPIO_THERMISTOR_IN );  // Thermistor input
+	_gpio_cfg_output(GPIO_SPI_0_CS_OLED    , TRUE );  // SPI CS (OLED), drive HIGH
+	_gpio_cfg_output(GPIO_OLED_RST         , TRUE );  // OLED reset, drive HIGH
+	_gpio_cfg_disconnect_input(GPIO_UART_TX       );  // UART tx pin, debug needed
+	_gpio_cfg_output(GPIO_VIBRATOR_EN     , FALSE );  // Vibrator pin, pull down
 
 	// 10 .. 14
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_10   );      // Not used
-	_gpio_cfg_connect_input(GPIO_TOUCH_INT       , NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);  // Touch pin, sense low, no pull
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_12       );  // Not used
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_13       );     // Not used
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_14       );     // Not used
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_10    );  // Not used
+	_gpio_cfg_connect_input(GPIO_TOUCH_INT, NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);  // Touch pin, sense low, no pull
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_12    );  // Not used
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_13    );  // Not used
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_14    );  // Not used
 
 	// 15 .. 19
-	_gpio_cfg_disconnect_input(GPIO_TEMPERATURE_POWER_ON );  // Temperature ready pin, not used
-	_gpio_cfg_connect_input(GPIO_SENSOR_INT_1    , NRF_GPIO_PIN_SENSE_HIGH, NRF_GPIO_PIN_NOPULL); // Needed, sense high, no pull
-	_gpio_cfg_disconnect_input(GPIO_RESERVE_17       );  // Touch pin, sense low, no pull
-	_gpio_cfg_connect_input(GPIO_CHARGER_CHGFLAG , NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_PULLUP); // Charger Flag, no sense, internal pull up
-	_gpio_cfg_output(GPIO_CHARGER_EN      , TRUE);      // Charge enable, drive HIGH
+	_gpio_cfg_disconnect_input(GPIO_TEMPERATURE_POWER_ON);  // Thermistor power on pin, needed
+	_gpio_cfg_connect_input(GPIO_SENSOR_INT_1, NRF_GPIO_PIN_SENSE_HIGH, NRF_GPIO_PIN_NOPULL); // Needed, sense high, no pull
+	_gpio_cfg_disconnect_input(GPIO_RESERVE_17    );  // Not used
+	_gpio_cfg_connect_input(GPIO_CHARGER_CHGFLAG, NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_PULLUP); // Charger Flag, no sense, internal pull up
+	_gpio_cfg_output(GPIO_CHARGER_EN       , TRUE );  // Charge enable, drive HIGH
 
 	// 20 .. 24
-	_gpio_cfg_connect_input(GPIO_HOMEKEY      , NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);
-	_gpio_cfg_output(GPIO_SPI_0_CS_NFLASH , TRUE);      // SPI CS (NOR FLASH), drive HIGH
-	_gpio_cfg_disconnect_input(GPIO_NFC_RESET );      // SPI CS (NOR FLASH), drive HIGH
+	_gpio_cfg_connect_input(GPIO_HOMEKEY, NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);
+	_gpio_cfg_output(GPIO_SPI_0_CS_NFLASH  , TRUE );  // SPI CS (NOR FLASH), drive HIGH
+	_gpio_cfg_disconnect_input(GPIO_NFC_RESET     );  // NFC reset pin
 
 	// 25 .. 29
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_MISO      );  // SPI bus, not used
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_MOSI      );  // SPI bus, not used
-	_gpio_cfg_disconnect_input(GPIO_SPI_0_SCK       );  // SPI bus, not used
-	_gpio_cfg_disconnect_input(GPIO_NFC_DATA );      // SPI CS (NOR FLASH), drive HIGH
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_MISO    );  // SPI bus, MISO
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_MOSI    );  // SPI bus, MOSI
+	_gpio_cfg_disconnect_input(GPIO_SPI_0_SCK     );  // SPI bus, SCK
+	_gpio_cfg_disconnect_input(GPIO_NFC_DATA      );  // SPI bus, DATA
 
 	// 30 .. 31
-	_gpio_cfg_disconnect_input(GPIO_UART_RX         );  // UART pin, not used
-	_gpio_cfg_output(GPIO_OLED_A0         , FALSE);     // OLED A0, drive LOW
+	_gpio_cfg_disconnect_input(GPIO_UART_RX       );  // UART rx pin, not used
+	_gpio_cfg_output(GPIO_OLED_A0         , FALSE );  // OLED A0, drive LOW
 #endif
 }
 
@@ -243,10 +234,9 @@ void GPIO_spi_init_config(I8U spi_no)
 void GPIO_twi_init(I8U twi_master_instance)
 {
 #ifndef _CLING_PC_SIMULATION_
-		I32U error_code; 
-		nrf_drv_twi_config_t twi_config;
+	I32U error_code; 
+	nrf_drv_twi_config_t twi_config;
 		
-
 	if (twi_master_instance==0) {
 #if (TWI0_ENABLED == 1)
 		const nrf_drv_twi_t p_twi0_instance = NRF_DRV_TWI_INSTANCE(0);
@@ -256,7 +246,6 @@ void GPIO_twi_init(I8U twi_master_instance)
 		twi_config.sda = 16;
 		twi_config.interrupt_priority = APP_IRQ_PRIORITY_LOW;
 		Y_SPRINTF("[GPIO] twi 0 initialization: %d, %d", error_code, TWI_COUNT);
-
 #endif
 	} else {
 		const nrf_drv_twi_t p_twi1_instance = NRF_DRV_TWI_INSTANCE(1);
@@ -316,10 +305,7 @@ void GPIO_twi_disable(I8U twi_master_instance)
 		
 		if (cling.system.b_twi_1_ON) {
 			nrf_drv_twi_disable(&twi);
-//			nrf_drv_twi_uninit(&twi);
-//			_gpio_cfg_disconnect_input(GPIO_TWI1_DATA);
-//			_gpio_cfg_disconnect_input(GPIO_TWI1_CLK);
-			
+
 			cling.system.b_twi_1_ON = FALSE;
 			N_SPRINTF("[GPIO] twi 1 disabled");
 			BASE_delay_msec(1);
@@ -411,10 +397,6 @@ void GPIO_vibrator_set(BOOLEAN b_on)
 		_gpio_cfg_output(GPIO_VIBRATOR_EN, TRUE);
 	else
 		_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);
-}
-
-void GPIO_spi1_disconnect()
-{
 }
 
 void GPIO_charger_reset()

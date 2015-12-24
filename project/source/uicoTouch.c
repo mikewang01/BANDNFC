@@ -129,7 +129,7 @@ static uint8_t is_calibration_sucess =  FALSE;/*INFICATE IF MANUAL CALIBRATION H
 static UICOTOUCH_RESPONSE_CTX res[5];
 static I8U prev_code;
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+#if 0
 static EN_STATUSCODE _i2c_btld_read(I8U *pi8uRegValue, I8U number_of_bytes)
 {
     I32U err_code;
@@ -154,6 +154,7 @@ static EN_STATUSCODE _i2c_btld_read(I8U *pi8uRegValue, I8U number_of_bytes)
         return STATUSCODE_FAILURE;
     }
 }
+#endif
 /*****************************************************************************
  * Function      : _i2c_btld_write
  * Description   : used to write specific number of data into touch ic
@@ -168,6 +169,7 @@ static EN_STATUSCODE _i2c_btld_read(I8U *pi8uRegValue, I8U number_of_bytes)
  *   Modification: Created function
 
 *****************************************************************************/
+#if 0
 static BOOLEAN _i2c_btld_write(I8U *pi8uRegValue, I8U number_of_bytes)
 {
     I32U err_code;
@@ -186,6 +188,7 @@ static BOOLEAN _i2c_btld_write(I8U *pi8uRegValue, I8U number_of_bytes)
     }
     return err_code;
 }
+#endif
 /*****************************************************************************
  * Function      : _i2c_main_read
  * Description   : i2c read driver finction
@@ -270,7 +273,7 @@ static void _write_stop_acknowledge()
     buf[1] = 0x01;
     _i2c_main_write(buf, 2);
 }
-
+#if 0
 static void _write_clear_response()
 {
     I8U buf[2];
@@ -279,7 +282,7 @@ static void _write_clear_response()
     buf[0] = 0x20;
     _i2c_main_write(buf, 1);
 }
-
+#endif
 static void _write_start_acknowledge(I8U *buf)
 {
     // Write Start Acknowledge (0x20)
@@ -319,15 +322,13 @@ void UICO_dbg_write_read(I8U *obuf, I8U len, I8U *ibuf)
 
 *****************************************************************************/
 
-void GPIO_interrupt_handle();
+void GPIO_interrupt_handle(void);
 bool uico_touch_is_floating_calibration_sucessfully(void);
 #define MAX_CYCLES_WAITING_FOR_CALIBRATION_RESPONSE  2000
 bool uico_touch_ic_floating_calibration_start()
 {
 
     uint32_t i = 0;
-start_uico:
-    i = 0;
     uint8_t command_buffer[UICO_CALIBRATION_LENTH] = {UICO_ACCESS_REG_COMMAND, UICO_USER_COMMAND, UICO_USER_SPECIFIC_COMMAND_CALIBRATION_WHEN_FLOATIING};
     if(_i2c_main_write(command_buffer, UICO_CALIBRATION_LENTH) == NRF_SUCCESS) {
 #ifdef UICO_DEBUG
@@ -404,6 +405,7 @@ static bool uico_touch_ic_floating_calibration_response_process(uint8_t *buffer,
         }
 
     }
+		return FALSE;
 }
 bool uico_touch_is_floating_calibration_sucessfully()
 {
@@ -580,10 +582,10 @@ static I32S _try_firmware_update()
     I8U  data[128];
     volatile I16S i = 0;
     volatile bool is_touchic_bricked = false;
-    uint16_t uico_binary_lenth = 0;
-    unsigned char *s  = NULL;
+
     /*obtian firmware lenth*/
 #if ((defined UICO_FORCE_BURN_FIRMWARE) || (defined UICO_INCLUDE_FIRMWARE_BINARY))
+		uint16_t uico_binary_lenth = 0;
     uico_binary_lenth = UICO_GET_BINARY_LENTH();
     s = UICO_GET_BINARY_BUFFER();
 #endif
@@ -684,7 +686,7 @@ static I32S _try_firmware_update()
 #endif
     }
 
-
+	return 0;
 } 
 
 
