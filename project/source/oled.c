@@ -53,7 +53,7 @@ void OLED_full_scree_show(I8U *pram)
 		_set_reg(0x10);  // Starting address
 		_set_reg(0x00);  // Bug fix - start from 0
 		// Set "A0" pin for data buffer refresh
-		nrf_gpio_pin_set(GPIO_OLED_A0);
+		//nrf_gpio_pin_set(GPIO_OLED_A0);
 		_set_data(128,data);
 		
 		data += 128;
