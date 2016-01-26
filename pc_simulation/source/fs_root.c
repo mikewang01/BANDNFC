@@ -210,7 +210,7 @@ I16S ROOT_CreateFile(I8U *file_name, I16U name_cluster, I16U first_cluster)
 	return root.last_file_pos;
 }
 
-void ROOT_OpenReadFile(I16U pos, I16U * first_cluster, I32U *size)
+I16U ROOT_OpenReadFile(I16U pos, I16U * first_cluster, I32U *size)
 {
 	// Load the specific root page (1 ~ 1024) for the file
 	_swap_root_page(pos);
@@ -220,7 +220,10 @@ void ROOT_OpenReadFile(I16U pos, I16U * first_cluster, I32U *size)
 
 	// Get the file size
 	*size = root.p_RootItem->size;
+	
+	return root.p_RootItem->crc;
 }
+
 
 void ROOT_CloseWriteFile(I16U pos, I32U size)
 {

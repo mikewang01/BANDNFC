@@ -1,5 +1,9 @@
-#ifndef _THERMISTOR_H_
-#define _THERMISTOR_H_
+#ifndef __THERMISTOR_H__
+#define __THERMISTOR_H__
+
+#include "standards.h"
+
+#define THERMISTOR_POWER_SETTLE_TIME_MS 15
 //  
 //  #define THERM_REF_VOLT         3.1         // voltage
 //  #define THERM_REF_RESITANCE    10000       // 10K ohm
@@ -26,7 +30,6 @@
 //  #define  BOTTOM_ADC    432    // 232
 //  #define  TEMP_OFFSET   360
 
-
 #define  TABLE_SIZE    155
 #define  BOTTOM_ADC    322
 #define  TEMP_OFFSET   325
@@ -35,24 +38,10 @@
 #define TEMPERATURE_AVERAGE_COUNT 8
 
 typedef enum {
-	THERMISTOR_STAT_IDLE,                                      // <----------------------- 0
-	THERMISTOR_STAT_DUTY_ON,                                   // <----------------------- 1
-	THERMISTOR_STAT_TURN_ON_ADC,                               // <----------------------- 2
-	THERMISTOR_STAT_START_MEASURING,                           // <----------------------- 3
-	THERMISTOR_STAT_COLLECT_SAMPLES,                           // <----------------------- 4
-	THERMISTOR_STAT_ADC_SAMPLE_READY,                          // <----------------------- 5
-	THERMISTOR_STAT_DUTY_OFF,                                  // <----------------------- 6
-	
-	// for twice measurements of one time
-	THERMISTOR_STAT_THERM_PIN_TURN_ON_ADC,                     // <----------------------- 7
-	THERMISTOR_STAT_START_THERM_PIN_MEASURING,                 // <----------------------- 8
-	THERMISTOR_STAT_COLLECT_THERM_PIN_SAMPLES,                 // <----------------------- 9 
-
-	THERMISTOR_STAT_POWER_PIN_TURN_ON_ADC,                     // <----------------------- 10
-	THERMISTOR_STAT_START_POWER_PIN_MEASURING,                 // <----------------------- 11
-	THERMISTOR_STAT_COLLECT_POWER_PIN_SAMPLES,                 // <----------------------- 12
-
-	
+	THERMISTOR_STAT_IDLE,                                // <----------------------- 0
+	THERMISTOR_STAT_DUTY_ON,                             // <----------------------- 1
+	THERMISTOR_STAT_MEASURING,                           // <----------------------- 2
+	THERMISTOR_STAT_DUTY_OFF,                            // <----------------------- 3
 } THERMISTOR_STATES;
 
 typedef struct tagTHERMISTOR_CTX {
@@ -62,22 +51,19 @@ typedef struct tagTHERMISTOR_CTX {
 
 	// Thermistor state machine
 	THERMISTOR_STATES state;
-	
+
 	// Thermistor power on timeing
 	I32U power_on_timebase;
-	
+
 	// Temperature reading
 	I16S current_temperature;
-	I16S low_temperature;
-	I16S high_temperature;
-	
-	// Temperature sample
-	I16S  m_temp_sample[TEMPERATURE_AVERAGE_COUNT];
-	I8U   m_sample_cnt;
+
+	// Temperature ADC sample
+	BOOLEAN b_start_adc;
 	
 	// NRF51822 ADC module calibration
-	I8S   m_gain_error;
-	I8S   m_offset_error;
+//I8S   m_gain_error;
+//I8S   m_offset_error;
 } THERMISTOR_CTX;
 
 void THERMISTOR_init(void);
@@ -85,6 +71,8 @@ void THERMISTOR_set_state(THERMISTOR_STATES new_state);
 void THERMISTOR_state_machine(void);
 BOOLEAN THERMISTOR_is_the_state(THERMISTOR_STATES state_to_check);
 BOOLEAN THERMISTOR_switch_to_duty_on_state(void);
+
+BOOLEAN _is_user_viewing_skin_temp(void);
 
 #endif
 

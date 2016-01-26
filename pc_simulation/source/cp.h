@@ -88,6 +88,9 @@ enum {
 	CP_MSG_TYPE_DEVICE_SETTING,
 	CP_MSG_TYPE_STREAMING_DAILY,
 	CP_MSG_TYPE_ANDROID_NOTIFY,
+	CP_MSG_TYPE_SOS_MESSAGE,               
+	CP_MSG_TYPE_SET_LANGUAGE,              // 25
+	CP_MSG_TYPE_SET_USER_PROFILE, 
 };
 
 typedef struct tagCP_PACKET {
@@ -101,6 +104,12 @@ enum {
 	CP_TX_IDLE,
 	CP_TX_PACKET_PENDING_SEND,
 	CP_TX_PACKET_PENDING_ACK,
+};
+
+enum {
+	HOST_TYPE_NONE,
+	HOST_TYPE_IOS,
+	HOST_TYPE_ANDROID
 };
 
 typedef struct tagCP_TX_STREAMING_CTX {
@@ -126,17 +135,16 @@ typedef struct tagCP_TX_CTX {
 	I32U msg_checksum;
 	I8U msg_filling_offset;
 	I8U msg_fetching_offset;
-	BOOLEAN need_pkt_ack;
 	I32U ack_ts;
 	I8U retrans_cnt;
 } CP_TX_CTX;
 
 typedef struct tagCP_RX_CTX {
+	I32U msg_len;
+	I32U msg_file_len;
 	I16U UUID;
 	I8U msg_type;
-	I32U msg_len;
 	I8U msg_file_name_len;
-	I32U msg_file_len;
 	I8U rcving_offset;
 	CLING_FILE f;
 	BOOLEAN file_wr_active;
@@ -174,6 +182,9 @@ typedef struct tagCP_CTX {
 	
 	I8U pkt_buff[22];
 	BOOLEAN b_new_pkt;
+	
+	// Host type
+	I8U host_type;
 
 } CP_CTX;
 
@@ -185,6 +196,7 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size);
 BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size);
 void CP_create_register_rd_msg(void);
 void CP_create_auth_stat_msg(void);
+void CP_create_sos_msg(void);
 
 #endif // __CP_API_HEADER__
 /** @} */

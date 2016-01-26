@@ -363,8 +363,7 @@ FILE_CTX *FILE_fopen(I8U *fname, I8U fIO)
 			return 0;
 
 		// Read out this file.
-		ROOT_OpenReadFile(pbl_file.file_idx, &data_fat, &lSize);
-
+		pbl_file.crc = ROOT_OpenReadFile(pbl_file.file_idx, &data_fat, &lSize);		
 		pbl_file.buf_pos = FAT_SECTOR_SIZE;
 		pbl_file.root_pos = pbl_file.file_idx;		// pos: 1 ~ 1024, one per file
 		pbl_file.cur_cluster = data_fat;
@@ -560,6 +559,8 @@ void FILE_fclose(FILE_CTX *f)
 
 		// Set file tributes
 		ROOT_SetFileType(f->file_idx, ROOT_GetFileType(f->file_idx) | FILE_TYPE_ACTIVITY);
+		
+		N_SPRINTF("[FS] file close, crc: %04x", f->crc);
 
 		// Set CRC
 		ROOT_SetFileCRC(f->file_idx, f->crc);
@@ -586,8 +587,6 @@ void FILE_fclose(FILE_CTX *f)
 		
 		// Since we have a file close, update file last position
 		ROOT_GetLastPos();
-		
-		N_SPRINTF("[FS] file close");
 	} 
 	
 }

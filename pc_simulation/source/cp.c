@@ -15,6 +15,7 @@
 #ifndef _CLING_PC_SIMULATION_
 #include "ble_conn_params.h"
 #endif
+
 //#define _JACOB_TESTING_
 
 static void _sync_time_proc(I8U *data)
@@ -33,7 +34,7 @@ static void _sync_time_proc(I8U *data)
 	cling.time.time_since_1970 <<= 8;
 	cling.time.time_since_1970 |= data[4];
 
-	Y_SPRINTF("[CP] time sync !! - %d, %d", cling.time.time_zone, cling.time.time_since_1970);
+	N_SPRINTF("[CP] time sync !! - %d, %d", cling.time.time_zone, cling.time.time_since_1970);
 
 	RTC_get_local_clock(&cling.time.local);
 	
@@ -49,8 +50,6 @@ static void _sync_time_proc(I8U *data)
 	} else if (stored_day_total.distance != cling.activity.day_stored.distance) {
 		b_activity_consistency = FALSE;
 	} else if (stored_day_total.running != cling.activity.day_stored.running) {
-		b_activity_consistency = FALSE;
-	} else if (stored_day_total.sleep != cling.activity.day_stored.sleep) {
 		b_activity_consistency = FALSE;
 	} else if (stored_day_total.walking != cling.activity.day_stored.walking) {
 		b_activity_consistency = FALSE;
@@ -98,9 +97,6 @@ static void _create_one_pkt_from_msg()
 	t->msg_pos += CP_PAYLOAD_SIZE;
 	t->msg_fetching_offset += CP_PAYLOAD_SIZE;
 
-	// Need an ack for multi-packet message
-	t->need_pkt_ack = TRUE;
-
 	// check whether this is the last packet to send ...
 	if (t->msg_pos >= t->msg_len) {
 		t->pkt.uuid[0] = (UUID_TX_END >> 8) & 0xff;
@@ -134,8 +130,6 @@ static BOOLEAN _tx_process(I32U curr_ts)
 		
 	if (sent) {
 	
-			t->need_pkt_ack = FALSE;
-			
 			t->state = CP_TX_IDLE;
 
 			return TRUE;
@@ -225,9 +219,6 @@ static void _create_file_list_msg()
 	t->state = CP_TX_PACKET_PENDING_SEND;
 	g->state = CP_MCU_STAT_TX_SENDING;
 	
-	// we do need to ack this packet
-	t->need_pkt_ack = TRUE;
-
 	if (!t->msg_file_total) {
 		// Add checksum to the end
 		for (i = 0; i < t->msg_filling_offset; i++)
@@ -339,9 +330,9 @@ static void _create_dev_info_msg()
 	// Type
 	t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_LOAD_DEVICE_INFO;
 	// Touch panel version
-  t->msg[t->msg_filling_offset++] = cling.whoami.touch_ver;
+  t->msg[t->msg_filling_offset++] = cling.whoami.touch_ver[2];
 	// HW INFO
-	t->msg[t->msg_filling_offset++] = cling.system.mcu_reg[REGISTER_MCU_HWINFO];  
+	t->msg[t->msg_filling_offset++] = 1;
 	// BATTERY LEVEL
 	t->msg[t->msg_filling_offset++] = cling.system.mcu_reg[REGISTER_MCU_BATTERY]; 
 	// Software version number
@@ -360,7 +351,7 @@ static void _create_dev_info_msg()
 	t->msg[t->msg_filling_offset++] = file_available&0xff;
 	// key user info 16 bytes
 	
-	Y_SPRINTF("[CP] ++dev info: %d, %d, %d", cling.link.pairing.userID, cling.link.pairing.crc, cling.link.pairing.authToken);
+	N_SPRINTF("[CP] ++dev info: %d, %d, %d", cling.link.pairing.userID, cling.link.pairing.crc, cling.link.pairing.authToken);
 	
 
 	// System checks dev info after authentication is done, but auth info
@@ -399,19 +390,29 @@ static void _create_dev_info_msg()
 		t->msg[t->msg_filling_offset++] = dev_data[i];
 
 	// Add system reset count
-	t->msg[t->msg_filling_offset++] = (cling.system.reset_count>>24)&0xff;
-	t->msg[t->msg_filling_offset++] = (cling.system.reset_count>>16)&0xff;
+	t->msg[t->msg_filling_offset++] = 0;
+	t->msg[t->msg_filling_offset++] = 0;
 	t->msg[t->msg_filling_offset++] = (cling.system.reset_count>>8)&0xff;
 	t->msg[t->msg_filling_offset++] = cling.system.reset_count&0xff;
 	
-	// Add model number (Cling Watch fixed model number: AA0913)
+#ifdef _CLINGBAND_NFC_MODEL_
+	// Add model number (Clingband NFC fixed model number: AU0703)
 	t->msg[t->msg_filling_offset++] = 'A';
-	t->msg[t->msg_filling_offset++] = 'A';
+	t->msg[t->msg_filling_offset++] = 'U';
 	t->msg[t->msg_filling_offset++] = '0';
 	t->msg[t->msg_filling_offset++] = '9';
-	t->msg[t->msg_filling_offset++] = '1';
 	t->msg[t->msg_filling_offset++] = '2';
-	
+	t->msg[t->msg_filling_offset++] = '3';
+#else
+	// Add model number (Clingband UV fixed model number: AU0703)
+	t->msg[t->msg_filling_offset++] = 'A';
+	t->msg[t->msg_filling_offset++] = 'U';
+	t->msg[t->msg_filling_offset++] = '0';
+	t->msg[t->msg_filling_offset++] = '7';
+	t->msg[t->msg_filling_offset++] = '0';
+	t->msg[t->msg_filling_offset++] = '3';
+#endif
+
 	// Amount of minute streaming files
 	t->msg[t->msg_filling_offset++] = cling.ble.streaming_minute_file_amount;
 
@@ -429,9 +430,6 @@ static void _create_dev_info_msg()
 	g->state = CP_MCU_STAT_TX_SENDING;
 
 	memcpy(&t->pkt.data, t->msg, CP_PAYLOAD_SIZE);
-
-	// No need to ack this packet
-	t->need_pkt_ack = TRUE;
 
 	t->msg_pos += CP_PAYLOAD_SIZE;
 	t->msg_fetching_offset += CP_PAYLOAD_SIZE;
@@ -461,6 +459,7 @@ static void _create_daily_activity_info_msg()
 	//    sleep_rem_seconds: 2 B
 	//   average heart rate: 1 B
 	//  average temperature: 2 B
+	//             uv index: 1B
 	//    
 	t->pkt.uuid[0] = (UUID_TX_START >> 8) & 0xff;
 	t->pkt.uuid[1] = (UUID_TX_START & 0xff);
@@ -505,8 +504,12 @@ static void _create_daily_activity_info_msg()
 	// skin temperature
 	t->msg[t->msg_filling_offset++] = (day_streaming.temperature>>8)&0xff;
 	t->msg[t->msg_filling_offset++] = (day_streaming.temperature&0xff);
-
-
+	// UV index
+#ifdef _ENABLE_UV_
+	t->msg[t->msg_filling_offset++] = (cling.uv.max_uv+5)/10;
+#else
+	t->msg[t->msg_filling_offset++] = 0;
+#endif
 	t->msg_len = t->msg_filling_offset;
 
 	// Get message length (fixed length: 2 bytes)
@@ -521,9 +524,6 @@ static void _create_daily_activity_info_msg()
 	g->state = CP_MCU_STAT_TX_SENDING;
 
 	memcpy(&t->pkt.data, t->msg, CP_PAYLOAD_SIZE);
-
-	// No need to ack this packet
-	t->need_pkt_ack = TRUE;
 
 	t->msg_pos += CP_PAYLOAD_SIZE;
 	t->msg_fetching_offset += CP_PAYLOAD_SIZE;
@@ -582,7 +582,6 @@ static void _file_read_prepare_first_pkt(BYTE *f_name)
 	t->msg_type = CP_MSG_TYPE_FILE_READ;
 	t->state = CP_TX_PACKET_PENDING_SEND;
 	g->state = CP_MCU_STAT_TX_SENDING;
-	t->need_pkt_ack = TRUE;
 	
 	if (t->msg_len > 64) {
 		FILE_fread(r->f.fc, t->msg+t->msg_filling_offset, 64);
@@ -643,10 +642,10 @@ static void _write_file_to_fs_rest(I8U *data)
 		if (OTA_if_enabled()) {
 			if (cling.ota.file_len == 0) {
 				cling.ota.file_len = r->msg_file_len;
-				Y_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
+				N_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
 			} else {
 				cling.ota.percent = (I8U)(((cling.ota.file_len-r->msg_file_len)*100)/cling.ota.file_len);
-				Y_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
+				N_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
 			}
 		}
 	} else {
@@ -714,6 +713,7 @@ static void _write_file_to_fs_head(BYTE *data)
 	} else if (!strcmp((char *)"ota_start.txt", (char *)f_buf)) {
 		r->b_ota_start = TRUE;
 		r->b_reload_profile = FALSE;
+		Y_SPRINTF("[CP] OTA start text file received");
 	} else if (!strcmp((char *)"app.bin", (char *)f_buf)) {
 		// App central start to download 'app.bin', which is a clear indicattor of OTA
 		OTA_set_state(TRUE);
@@ -790,9 +790,6 @@ static void _create_ack_pkt()
 	t->msg_type = CP_MSG_TYPE_ACK;
 	t->state = CP_TX_PACKET_PENDING_SEND;
 	g->state = CP_MCU_STAT_TX_COMPLETE;
-
-	// No need for an ack to a response message.
-	t->need_pkt_ack = FALSE;
 }
 
 static void _pending_process()
@@ -813,7 +810,7 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_FILE_LOAD_LIST:
 		{
-			N_SPRINTF("[CP] load file list");
+			Y_SPRINTF("[CP] load file list");
 			// When iOS get MUTEX, it also rely on iOS to release MUTEX, or MCU release it when turning off the radio
 			if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
 				return ;
@@ -822,7 +819,9 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_LOAD_DEVICE_INFO:
 		{
-			Y_SPRINTF("[CP] load dev info");
+			cling.gcp.host_type = p->msg[1];
+			Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
+			
 			HAL_disconnect_for_fast_connection();
 			_create_dev_info_msg();
 			BTLE_reset_streaming();  // Reset streaming as the App is trying to figure whether it is an authorized device
@@ -837,7 +836,7 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_DEBUG_MSG:
 		{
-			cling.dbg.b_log = TRUE;
+			
 			break;
 		}
 		case CP_MSG_TYPE_WEATHER:
@@ -906,27 +905,21 @@ static void _pending_process()
 		}
 		case CP_MSG_TYPE_SIMULATION_CONFIG:
 		{
-			cling.system.simulation_mode = p->msg[1];
-			N_SPRINTF("[CP] Simulation mode: %d", cling.system.simulation_mode);
 			break;
 		}
 		case CP_MSG_TYPE_BLE_DISCONNECT:
 		{
 			// Disconnect BLE service
 			N_SPRINTF("[CP] BLE disconnecting ...");
-			BTLE_disconnect();
+			if(BTLE_is_connected())
+			  BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
 			break;
 		}
 		case CP_MSG_TYPE_SET_ANCS:
 		{
 #ifdef _ENABLE_ANCS_
 			if (p->msg[1]) {
-				N_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
-				if (!cling.ancs.b_enabled) {
-					cling.ancs.b_enabled = TRUE;
-					ANCS_start_ancs_discovery();
-				}
-
+				Y_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
 				cling.ancs.supported_categories = p->msg[2];
 				cling.ancs.supported_categories <<= 8;
 				cling.ancs.supported_categories |= p->msg[3];
@@ -934,9 +927,27 @@ static void _pending_process()
 #endif
 			break;
 		}
+		case CP_MSG_TYPE_SET_LANGUAGE:
+		{
+			
+			if (p->msg[1]) {
+				cling.ui.fonts_cn = TRUE; // display Chinese characters
+			} else {
+				cling.ui.fonts_cn = FALSE;
+			}
+			break;
+		}
+		case CP_MSG_TYPE_SET_USER_PROFILE:
+		{
+			USER_setup_profile(p->msg+1);
+			break;
+		}
 		case CP_MSG_TYPE_ANDROID_NOTIFY:
 		{
-			NOTIFIC_smart_phone_notify(p->msg[1], p->msg[2], p->msg[3]);
+#ifdef _ENABLE_ANCS_
+			Y_SPRINTF("[CP] android notif received");
+			NOTIFIC_smart_phone_notify(p->msg+1);
+#endif
 			break;
 		}
 		case CP_MSG_TYPE_DEVICE_SETTING:
@@ -1141,8 +1152,6 @@ static void _ack_pkt_rcvr()
 
 	if (t->state == CP_TX_PACKET_PENDING_ACK) {
 		t->state = CP_TX_IDLE;
-		t->need_pkt_ack = FALSE;
-		
 	}
 	
 	if (s->packet_need_ack) {
@@ -1190,9 +1199,6 @@ void CP_create_auth_stat_msg()
 	t->state = CP_TX_PACKET_PENDING_SEND;
 	g->state = CP_MCU_STAT_TX_SENDING;
 	
-	// we do need to ack this packet
-	t->need_pkt_ack = TRUE;
-
 	// Add all auth communication info 
 	t->msg[t->msg_filling_offset++] = cling.link.comm_state;
 	t->msg[t->msg_filling_offset++] = cling.link.error_code;
@@ -1205,7 +1211,35 @@ void CP_create_auth_stat_msg()
 	t->msg_pos += CP_PAYLOAD_SIZE;
 	// Sending is completed
 	g->state = CP_MCU_STAT_TX_COMPLETE;
-	
+}
+
+void CP_create_sos_msg()
+{
+	CP_CTX *g = &cling.gcp;
+	CP_TX_CTX *t = &g->tx;
+
+	// Creat a new message
+	t->msg_id ++;
+
+	// Get message length
+	t->msg_len = CP_PAYLOAD_SIZE;
+
+	// Single packet messagef
+	t->pkt.uuid[0] = (UUID_TX_SP >> 8) & 0xff;
+	t->pkt.uuid[1] = UUID_TX_SP & 0xff;
+
+	// Filling up the message buffer
+	t->msg_filling_offset = 0;
+	t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_SOS_MESSAGE;
+
+	// Create packet payload
+	// Pending message delivery
+	t->msg_type = CP_MSG_TYPE_SOS_MESSAGE;
+	t->state = CP_TX_PACKET_PENDING_SEND;
+	g->state = CP_MCU_STAT_TX_COMPLETE;
+
+	memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
+
 }
 
 void CP_create_register_rd_msg()
@@ -1240,10 +1274,10 @@ void CP_create_register_rd_msg()
 
 	memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
 
-	// No need to ack this packet
-	t->need_pkt_ack = FALSE;
 }
-
+#ifdef _JACOB_TESTING_
+static I32U tttt = 0;
+#endif
 static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U mode, I16U same_entry_num)
 {
 	// Filling up the single packet message
@@ -1273,6 +1307,7 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 	//       heart rate: 1 B
 	//       skin touch: 1 B
 	//   Activity count: 2 B
+	//    workouts & uv: 1 B
 	//
 	
 	// Characteristcs - 
@@ -1326,6 +1361,39 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 	// Activity count (2B)
 	pkt[filling_offset++] = (pminute->activity_count>>8)&0xff;
 	pkt[filling_offset++] = pminute->activity_count&0xff;
+	
+	N_SPRINTF("[CP] activity counts: %04x", pminute->activity_count);
+	
+#ifdef _JACOB_TESTING_
+	if (tttt < 120) {
+		pkt[filling_offset++] = 0x16;
+	} else if (tttt < 240) {
+		pkt[filling_offset++] = 0x26;
+	} else if (tttt < 360) {
+		pkt[filling_offset++] = 0x36;
+	} else if (tttt < 480) {
+		pkt[filling_offset++] = 0x46;
+	} else if (tttt < 600) {
+		pkt[filling_offset++] = 0x56;
+	} else if (tttt < 720) {
+		pkt[filling_offset++] = 0x66;
+	} else if (tttt < 840) {
+		pkt[filling_offset++] = 0x76;
+	} else if (tttt < 960) {
+		pkt[filling_offset++] = 0x86;
+	} else {
+		pkt[filling_offset++] = 0x86;
+		tttt = 0;
+	}
+	
+	tttt ++;
+		
+#else
+	// Workouts and UV
+	pkt[filling_offset++] = pminute->uv_and_activity_type;
+	
+	N_SPRINTF("[CP] streaming UV: %02x", pminute->uv_and_activity_type);
+#endif
 }
 
 BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
@@ -1701,7 +1769,7 @@ void CP_create_streaming_daily_msg( void )
 	pkt[filling_offset++] = (cling.time.time_since_1970>>8)&0xff;
 	pkt[filling_offset++] = (cling.time.time_since_1970&0xff);
 	
-	// Steps (2B)
+	// Steps (4B)
 	steps = cling.activity.day.running+cling.activity.day.walking;
 	pkt[filling_offset++] = (steps>>24)&0xff;
 	pkt[filling_offset++] = (steps>>16)&0xff;
@@ -1727,6 +1795,9 @@ void CP_create_streaming_daily_msg( void )
 	
 	// skin touch (1B)
 	pkt[filling_offset++] = TOUCH_get_skin_pad();
+	
+	// UV index
+	pkt[filling_offset++] = (cling.uv.max_uv+5)/10;
 	s->pending = TRUE;
 }
 

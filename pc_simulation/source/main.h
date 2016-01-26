@@ -11,6 +11,16 @@
 /* Generic macros (do not change across platforms) */
 #define LOOP_FOREVER    1         /* makes while() statements more legible */
 
+//#define _CLINGBAND_NFC_MODEL_
+
+#define _CLINGBAND_UV_MODEL_
+
+#ifdef _CLINGBAND_UV_MODEL_
+
+#define _ENABLE_UV_
+
+#endif
+
 // 
 // Global device id address
 //
@@ -57,8 +67,12 @@
 #include "spi_master_api.h"
 #include "batt.h"
 #ifndef _CLING_PC_SIMULATION_
-#include "twi_master.h"
+#include "nrf_drv_twi.h"
+#include "nrf_adc.h"
+#include "uv_calib.h"
+#include "ble_db_discovery.h"
 #endif
+#include "uv.h"
 #include "touch.h"
 #include "butterworth.h"
 #include "ppg.h"
@@ -67,12 +81,17 @@
 #include "sleep.h"
 #include "reminder.h"
 #include "notific.h"
+#ifdef _ENABLE_ANCS_
 #include "ancs.h"
+#include "ble_ancs_c.h"
+#endif
 #include "homekey.h"
 #include "Font.h"
-#include "lt1ph03.h"
-#include "si1132.h"
+#include "ppg.h"
 
+#define TWI_MASTER_UV       1
+#define TWI_MASTER_UICO     1
+#define TWI_MASTER_PPG      1
 
 enum {
 	MUTEX_NOLOCK_VALUE = 0,
@@ -91,11 +110,6 @@ enum {
 };
 
 typedef struct tagCLING_TIME_CTX {
-	//
-	BOOLEAN local_minute_updated;
-	BOOLEAN local_noon_updated;
-	BOOLEAN local_day_updated;
-	
 	// Time difference
 	I32U time_since_1970;
 	// Tick count
@@ -110,15 +124,19 @@ typedef struct tagCLING_TIME_CTX {
 	I32U system_clock_in_sec;	// Sourced from RTC 
 	
 	// System clock interval
-	I32U sysclk_interval;
-	I32U sysclk_config_timestamp;
+	BOOLEAN operation_clk_enabled;
+	I32U operation_clk_start_in_ms;
+	
+	//
+	BOOLEAN local_minute_updated;
+	BOOLEAN local_noon_updated;
+	BOOLEAN local_day_updated;
 	
 } CLING_TIME_CTX;
 
 typedef struct tagLOW_POWER_STATIONARY_CTX {
 	I32U ts;
 	BOOLEAN b_low_power_mode;
-	BOOLEAN b_touch_deep_sleep_mode;
 	BOOLEAN b_accelerometer_fifo_mode;
 	I8U int_count; // Interrupt counter
 } LOW_POWER_STATIONARY_CTX;
@@ -127,29 +145,26 @@ typedef struct tagWHOAMI_CONTEXT {
 	I8U accelerometer;
 	I8U hssp;
 	I8U nor[2];
-	I8U touch_ver;
+	I8U touch_ver[3];
 } WHOAMI_CTX;
 
 typedef struct tagSYSTEM_CTX {
-	// Reset count - overall reset time since the factory reset
-	// The count only works for authorized device.
-	I32U reset_count;
-	
 	// Connection parameter update
 	I32U conn_params_update_ts;
 	
+	// Reset count - overall reset time since the factory reset
+	// The count only works for authorized device.
+	I16U reset_count;
+	
 	// System power status
 	BOOLEAN b_powered_up;
-	
-	// Simulation mode
-	BOOLEAN simulation_mode;
 	
 	/// MCU Registers
 	I8U mcu_reg[SYSTEM_REGISTER_MAX];
 	
 	// MCU peripheral requirements
 	BOOLEAN b_spi_0_ON;  // SPI 0 (dedicated for OLED, accelerometer, flash)
-	BOOLEAN b_spi_1_ON;  // SPI 0 (dedicated for OLED, accelerometer, flash)
+	BOOLEAN b_twi_1_ON;  // SPI 0 (dedicated for OLED, accelerometer, flash)
 } SYSTEM_CTX;
 
 typedef struct tagCLING_MAIN_CTX {
@@ -177,9 +192,11 @@ typedef struct tagCLING_MAIN_CTX {
 
 	// User related data
 	USER_DATA user_data;
-
+	
+#if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
 	// Debug context
 	DEBUG_CTX dbg;
+#endif
 
 	// Generic communication protocol
 	CP_CTX gcp;
@@ -223,7 +240,10 @@ typedef struct tagCLING_MAIN_CTX {
 	// Homekey state
 	HOMEKEY_CLICK_STAT key;
 	
-	//font data
+	// uv index
+	UV_CTX uv;
+	
+	// font context
 	FONT_CTX font;
 	
 } CLING_MAIN_CTX;

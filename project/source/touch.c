@@ -105,15 +105,15 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 	if (op_detail == 0) {
 		t->gesture = TOUCH_FINGER_LEFT;
 		Y_SPRINTF("[TOUCH] ------------ FINGER: left --------");
-		B_SPRINTF("Finger: left");
+		N_SPRINTF("Finger: left");
 	} else if (op_detail == 1) {
 		t->gesture = TOUCH_FINGER_MIDDLE;
 		Y_SPRINTF("[TOUCH] ------------ FINGER: middle --------");
-		B_SPRINTF("Finger: middle");
+		N_SPRINTF("Finger: middle");
 	} else if (op_detail == 2) {
 		t->gesture = TOUCH_FINGER_RIGHT;
 		Y_SPRINTF("[TOUCH] ------------ FINGER: right --------");
-		B_SPRINTF("Finger: right");
+		N_SPRINTF("Finger: right");
 	}
 					
 	// Make sure OLED display panel is faced up.
@@ -159,11 +159,11 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 	if (op_detail == 0) {
 		t->gesture = TOUCH_SWIPE_LEFT;
 		Y_SPRINTF("[TOUCH] ------------ SWIPE: left --------");
-		B_SPRINTF("SWIPE: left");
+		N_SPRINTF("SWIPE: left");
 	} else if (op_detail == 1) {
 		t->gesture = TOUCH_SWIPE_RIGHT;
 		Y_SPRINTF("[TOUCH] ------------ SWIPE: right --------");
-		B_SPRINTF("SWIPE: Right");
+		N_SPRINTF("SWIPE: Right");
 	} else {
 		return;
 	}
@@ -203,11 +203,11 @@ static void _skin_touch_processing(TOUCH_CTX *t, BOOLEAN b_skin_detected)
 		if (b_skin_detected) {
 			t->b_skin_touch = TRUE;
 			Y_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
-			B_SPRINTF("SKIN: ON");
+			N_SPRINTF("SKIN: ON");
 		} else {
 			t->b_skin_touch = FALSE;
 			Y_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
-			B_SPRINTF("SKIN: OFF");
+			N_SPRINTF("SKIN: OFF");
 		}		
 }
 

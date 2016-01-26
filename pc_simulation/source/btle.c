@@ -11,29 +11,11 @@
 
 #include "main.h"
 #include "Aes.h"
-#include "ble_ancs_c.h"
 
 #define BLE_PAYLOAD_LEN 20
 #ifndef _CLING_PC_SIMULATION_
 extern int8_t ancs_master_handle;
 
-/* Security requirements for this application. */
-ble_gap_sec_params_t m_ble_sec_params = {
-    /* Timeout for Pairing Request or Security Request (in seconds). */
-//    .timeout = SEC_PARAM_TIMEOUT,
-    /* Perform bonding. */
-    .bond = SEC_PARAM_BOND,
-    /* Man In The Middle protection not required. */
-    .mitm = SEC_PARAM_MITM,
-    /* No I/O capabilities. */
-    .io_caps = BLE_GAP_IO_CAPS_NONE,
-    /* Out Of Band data not available. */
-    .oob = SEC_PARAM_OOB,
-    /* Minimum encryption key size. */
-    .min_key_size = SEC_PARAM_MIN_KEY_SIZE,
-    /* Maximum encryption key size. */
-    .max_key_size = SEC_PARAM_MAX_KEY_SIZE
-};
 #endif
 
 ///////////////////////////////
@@ -202,11 +184,13 @@ I32U BTLE_services_init()
 #endif
 }
 
-void BTLE_disconnect()
+void BTLE_disconnect(I8U reason)
 {
 #ifndef _CLING_PC_SIMULATION_
 	BLE_CTX *r = &cling.ble;
 	uint32_t err_code;
+	
+	Y_SPRINTF("[BTLE] disconnect BLE for reason: %d", reason);
 	
 	err_code = sd_ble_gap_disconnect(r->conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION ); //BLE_HCI_STATUS_CODE_SUCCESS);
 	APP_ERROR_CHECK(err_code);
@@ -234,6 +218,8 @@ static void _on_connect(ble_evt_t * p_ble_evt)
 	r->b_conn_params_updated = FALSE;
 	cling.system.conn_params_update_ts = CLK_get_system_time();
 	sd_ble_tx_buffer_count_get(&r->tx_buf_available);
+	
+	Y_SPRINTF("[BTLE] Connected! ");
 }
 #endif
 /**@brief Function for handling the Disconnect event.
@@ -246,11 +232,8 @@ static void _on_disconnect()
 
   r->conn_handle = BLE_CONN_HANDLE_INVALID;
 	r->btle_State = BTLE_STATE_DISCONNECTED;
-#if 0	
-	// Since we are not in a connection and have not started advertising, store bonds.
-	ble_bondmngr_bonded_centrals_store();
-	#endif
-	Y_SPRINTF("[BTLE] disconnected! ");
+	
+  Y_SPRINTF("[BTLE] disconnected! ");
 	
 	// Clear all BTLE states
 	_radio_state_cleanup();
@@ -344,10 +327,16 @@ void BTLE_execute_adv(BOOLEAN b_fast)
 {
 	BLE_CTX *r = &cling.ble;
 	
-	if (BATT_is_low_battery()) {
-		r->btle_State = BTLE_STATE_IDLE;
-		return;
+	if (!BATT_is_charging()) {
+		if (BATT_is_low_battery() && LINK_is_authorized()) {
+				Y_SPRINTF("[BTLE] BLE low power");
+				r->btle_State = BTLE_STATE_IDLE;
+				return;
+		}
 	}
+	
+	if (!cling.system.b_powered_up)
+		return;
 	
 	// if UI is ON or battery is in charging state, we should start advertising again
 	if (b_fast)
@@ -377,6 +366,7 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GAP_EVT_DISCONNECTED:
+
             _on_disconnect();
             break;
             
@@ -385,14 +375,11 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
             break;
 
 				case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
-         //   sd_ble_gap_sec_params_reply(r->conn_handle, 
-            //                                       BLE_GAP_SEC_STATUS_SUCCESS, 
-          //                                         &m_ble_sec_params);
+
             break;
 
         case BLE_GAP_EVT_AUTH_STATUS:
 						Y_SPRINTF("[BLE] AUTH GAP EVT - write CCCD");
-//            ANCS_apple_notification_setup();
             break;
 
 				case BLE_GAP_EVT_TIMEOUT:
@@ -400,11 +387,12 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
             { 
                 if (r->btle_State == BTLE_STATE_ADVERTISING) {
-									if (r->adv_mode == BLE_ADV_SLEEP)
+									if (r->adv_mode == BLE_ADV_SLEEP) {
 										r->btle_State = BTLE_STATE_IDLE;
-									else
+									} else {
 										BTLE_execute_adv(FALSE);
-									Y_SPRINTF("[BTLE] Advertising timeout ");
+										Y_SPRINTF("[BTLE] Advertising timeout ");
+									}
                 } 
             }
 						break;
@@ -413,8 +401,9 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
         case BLE_GATTS_EVT_TIMEOUT:
             // Disconnect on GATT Server and Client timeout events.
 				
-						N_SPRINTF("[BTLE] GATTS - BLE disconnect");
-						BTLE_disconnect();
+						Y_SPRINTF("[BTLE] GATTS - BLE disconnect");
+				    if(BTLE_is_connected())
+						  BTLE_disconnect(BTLE_DISCONN_REASON_GATT_TIMEOUT);
             break;
 
         default:
@@ -523,14 +512,15 @@ void BTLE_aes_encrypt(I8U *key, I8U *in, I8U *out)
 void BTLE_aes_decrypt(I8U *key, I8U *in, I8U *out)
 {
 	AES_CTX ctx;
-	
+
 	// Generate sbox code table
 	AES_generateSBox();
-	
+
 	// Set keys
 	AES_set_key(&ctx, key, NULL, AES_MODE_128);
 
 	AES_convert_key(&ctx);
+
 	AES_cbc_decrypt(&ctx, in, out, AES_BLOCKSIZE*4);
 }
 
@@ -596,25 +586,7 @@ BOOLEAN BTLE_is_streaming_enabled(void)
 	return TRUE;
 }
 
-void BTLE_delete_bond()
-{		
-#ifdef _ENABLE_ANCS_
-	// wipe out bonds
-	I32U err_code;
-	err_code = ble_ancs_c_service_delete();
 
-	if (err_code != NRF_SUCCESS) {
-			N_SPRINTF("Error in deleting service info! %08x", err_code);
-	}
-	
-//	err_code = ble_bondmngr_bonded_centrals_delete();
-	
-	if (err_code != NRF_SUCCESS) {
-			N_SPRINTF("Error in deleting central info! %08x", err_code);
-	} 
-#endif
-
-}
 
 static void _disconnect_clean_up()
 {
@@ -645,10 +617,6 @@ static void _disconnect_clean_up()
 		// Wipe out all user data
 		memset(&cling.user_data, 0, sizeof(USER_DATA));
 		
-		// Delete bond mgr from flash
-#ifdef _ENABLE_ANCS_
-		BTLE_delete_bond();
-#endif
 		// clear factory reset flag
 		r->disconnect_evt &= ~BLE_DISCONN_EVT_FACTORY_RESET;
 		
@@ -658,17 +626,7 @@ static void _disconnect_clean_up()
 		return;
 	}
 	
-	// Bond manager error
-  if (r->disconnect_evt & BLE_DISCONN_EVT_BONDMGR_ERROR) {
-        
-		Y_SPRINTF("[BLE] disconn vent: Bond manager error");
-		 // wipe out bonds
-#ifdef _ENABLE_ANCS_
-		BTLE_delete_bond();
-#endif
-		r->disconnect_evt &= ~BLE_DISCONN_EVT_BONDMGR_ERROR;
-        
-  }
+
 #endif
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FAST_CONNECT) {
 		r->disconnect_evt &= ~BLE_DISCONN_EVT_FAST_CONNECT;
@@ -712,17 +670,6 @@ BOOLEAN BTLE_streaming_authorized()
 			if (HAL_set_slow_conn_params()) {
 				N_SPRINTF("No packets: Slow Connection interval");
 			}
-			
-			// If user enters sleep, turn off BLE
-			if ((cling.sleep.state == SLP_STAT_LIGHT) ||
-				 (cling.sleep.state == SLP_STAT_SOUND) ||
-				 (cling.sleep.state == SLP_STAT_REM))
-			{
-				
-					N_SPRINTF("[BTLE] NO PACKETS - BLE disconnect");
-					// Disconnect BLE service
-					BTLE_disconnect();
-			}
 		} else {
 				// Update amount of data needs to be streamed
 				if (!r->streaming_minute_scratch_amount) {
@@ -730,7 +677,8 @@ BOOLEAN BTLE_streaming_authorized()
 				}
 		}
 	}
-		// Make sure streaming is allowed
+		
+	// Make sure streaming is allowed
 	if (!(cling.system.mcu_reg[REGISTER_MCU_CTL] & CTL_IM)) {
 		return FALSE;
 	}
@@ -779,15 +727,11 @@ BOOLEAN BTLE_streaming_authorized()
 	}
 	
 	// then come the second data 
-	if (t_curr > r->streaming_ts + 1000) {
+	if (t_curr > (r->streaming_ts + 1000)) {
 
 		// Streaming seconds means we are done with syncing, so switch to slow connection mode
 		HAL_set_slow_conn_params();
-#if 0
-		// Turn on PPG and temperature sensor for the streaming mode
-		PPG_switch_to_duty_on_state();
-		THERMISTOR_switch_to_duty_on_state();
-#endif
+
 		// For background activity streaming, we default media to be BLE.
 		CP_create_streaming_daily_msg();
 		r->streaming_ts = t_curr;	// Recording streaming time stamp
@@ -892,74 +836,4 @@ BOOLEAN BTLE_get_radio_software_version(I8U *radio_sw_ver)
 #endif
 	return TRUE;
 }
-
-
-#ifndef _CLING_PC_SIMULATION_
-uint32_t BTLE_device_manager_event_handler(dm_handle_t const * p_handle,
-                                           dm_event_t const  * p_event,
-                                           ret_code_t        event_result)
-{
-//    uint32_t err_code;
-
-    switch(p_event->event_id)
-    {
-        case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
-						APP_ERROR_CHECK(event_result);
-            break;
-        case DM_EVT_DEVICE_CONTEXT_STORED: // Fall through.
-						APP_ERROR_CHECK(event_result);
-            break;
-        case DM_EVT_DEVICE_CONTEXT_DELETED: // Fall through.
-						APP_ERROR_CHECK(event_result);
-            break;
-        case DM_EVT_LINK_SECURED:
-						break;
-        case DM_EVT_SECURITY_SETUP:
-            //err_code = dm_security_setup_req(&m_dm_device_handle);
-            //APP_ERROR_CHECK(err_code);
-						break;
-				case DM_EVT_DISCONNECTION:
-					break;
-        case DM_EVT_CONNECTION:
-					break;
-        case DM_EVT_SECURITY_SETUP_COMPLETE:
-            break;
-        default:
-            break;
-    }
-		
-    return NRF_SUCCESS;
-}
-/*
-	ble_bondmngr_evt_t *evt)
-{
-	switch (evt->evt_type) {
-		case BLE_BONDMNGR_EVT_ENCRYPTED :
-#ifdef _ENABLE_ANCS_
-			Y_SPRINTF("[BLE] +++ bond mgr encrpted");
-			ancs_master_handle = evt->central_handle;
-#endif
-			// We're both authenticated and encrypted. This indicates that
-			// the connection process is complete. 
-			//
-			// Write CCCD flag to enable ANCS as iOS might have cleared it
-			// 
-#if 0
-		cling.ancs.cccd_enable_count_down = 3;
-#endif			
-			break;
-		
-		case BLE_BONDMNGR_EVT_AUTH_STATUS_UPDATED:
-      N_SPRINTF("[BLE] Info: +++ Auth Status updated");
-			break;
-		
-		case BLE_BONDMNGR_EVT_BOND_FLASH_FULL:
-			break;
-		
-		default:
-			break;
-	}
-}
-*/
-#endif
 

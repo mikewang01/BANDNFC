@@ -59,21 +59,6 @@ enum {
 	FILE_READ_STATE_ERROR
 };
 
-typedef struct tagFILE_WRITE_CONTEXT {
-	BOOLEAN b_data_available;
-	I8U state;
-	I8U len;
-	I8U buf[FAT_SECTOR_SIZE];
-} FILE_WRITE_CONTEXT;
-
-typedef struct tagFILE_STATE_MACHINE_CONTEXT {
-	I8U mode;
-	I8U name[FAT_SECTOR_SIZE];
-	FILE_TYPE type;
-	FILE_CTX *fc;
-	FILE_WRITE_CONTEXT write;
-} FILE_STATE_MACHINE_CONTEXT;
-
 typedef struct tagTIMESET {
 	I16U  year;
 	I16U  month;

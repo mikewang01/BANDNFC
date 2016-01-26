@@ -84,9 +84,9 @@ const ble_uuid128_t ble_ancs_ds_base_uuid128 =
 /**@brief Function for handling events from the database discovery module.*/
 static void db_discover_evt_handler(ble_db_discovery_evt_t * p_evt)
 {
-	ANCS_CONTEXT *a = &cling.ancs;
-	ble_db_discovery_char_t * p_chars;
-	p_chars = p_evt->params.discovered_db.charateristics;
+  ANCS_CONTEXT *a = &cling.ancs;
+  ble_gatt_db_char_t * p_chars;
+  p_chars = p_evt->params.discovered_db.charateristics;
 
   N_SPRINTF("[ANCS]: Database Discovery handler called with event 0x%x\r\n", p_evt->evt_type);
 
@@ -313,6 +313,30 @@ static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 	I32U err_code;
 	ANCS_CONTEXT *a = &cling.ancs;	
 	
+  if(a->start_record_time){	
+		//Record the current time for Filtering old notifiction.
+		ancs_timer =CLK_get_system_time();
+	  ancs_t_curr = 0;
+	  ancs_t_diff = 0;
+	
+	  a->filtering_flag = FALSE;
+    a->start_record_time	= FALSE;	
+    return;		
+	}
+	
+	if(!a->filtering_flag){
+		// After 10 seconds, we start enable notification.
+		ancs_t_curr =  CLK_get_system_time();		
+	  ancs_t_diff = (ancs_t_curr - ancs_timer);
+	
+	  if (ancs_t_diff >= ANCS_FILTERING_OLD_MSG_DELAY_TIME)
+		  cling.ancs.filtering_flag = TRUE;  
+
+    // Wait 10 seconds.
+    if(!a->filtering_flag) 
+			return;		
+  }
+	
 	if (notif_len != BLE_ANCS_NOTIFICATION_DATA_LENGTH)
 	  // Invalid notific length
 	  return;
@@ -514,6 +538,13 @@ static I32U _ancs_request_attrs_pro(const ble_ancs_notif_t notif)
 {
 	I32U err_code;
 	
+	// When incoming call removed,stop notifying.
+	if((ancs_notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_REMOVED)&&(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)){
+	
+	  NOTIFIC_stop_notifying();
+		return NRF_SUCCESS;
+	}
+	
 	// We only need receive new added notifications,ignore modified and removed notifications.
   if(ancs_notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_ADDED){
 		
@@ -561,29 +592,6 @@ void ANCS_service_add(void)
 
 	err_code = _ble_ancs_init();
 	APP_ERROR_CHECK(err_code);
-}
-
-static void _ancs_start_notific_filtering()
-{
-	ancs_timer =CLK_get_system_time();
-	ancs_t_curr = 0;
-	ancs_t_diff = 0;
-	
-	cling.ancs.filtering_flag = FALSE;
-}
-
-static BOOLEAN _ancs_query_notific_is_new()
-{
-	ancs_t_curr =  CLK_get_system_time();		
-	ancs_t_diff = (ancs_t_curr - ancs_timer);
-	
-	if (ancs_t_diff >= ANCS_FILTERING_OLD_MSG_DELAY_TIME)
-		cling.ancs.filtering_flag = TRUE;
-	
-	if(cling.ancs.filtering_flag == TRUE)
-		return TRUE;
-	else
-		return FALSE;
 }
 
 static BOOLEAN _ancs_supported_is_enable()
@@ -671,13 +679,6 @@ void ANCS_state_machine(void)
 	if(cling.gcp.host_type != HOST_TYPE_IOS)
 		return;
 	
-	// If pair error,delete bond infomation and reset system.
-	if(cling.ancs.bond_state == BOND_STATE_ERROR){
-		
-		Y_SPRINTF("[ANCS] bond error - delete bond infomation and reset system");
-	  SYSTEM_restart_from_reset_vector();		
-	}
-	
   switch (a->state)
   {
 		case BLE_ANCS_STATE_IDLE:
@@ -685,33 +686,33 @@ void ANCS_state_machine(void)
 		
 		case BLE_ANCS_STATE_DISCOVER_COMPLETE:
 		{	    
-			N_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");			
+				Y_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");			
 			// Enable ancs notifiction.
 			_apple_notification_setup();
 			
 			// Attrs parse state init.
 			a->parse_state = PARSE_STAT_COMMAND_ID;
 
-			// Record the current time for Filtering old notifiction.
-			_ancs_start_notific_filtering();
-
+			 // Record the current time for Filtering old notifiction.
+      a->start_record_time = TRUE;
+			
 			a->state = BLE_ANCS_STATE_IDLE;		
 		  break;	
 		}
 				
     case BLE_ANCS_STATE_NOTIF:
-		{	
-      if(_ancs_query_notific_is_new()){
-				Y_SPRINTF("[ANCS] Start request access to notify the specific content.");	
-        _ancs_request_attrs_pro(ancs_notif);						
-			}
+		{	 
+			Y_SPRINTF("[ANCS] Start sent request to access notify.");	
+			// Start sent request to access notify.
+       _ancs_request_attrs_pro(ancs_notif);						
+			
       a->state = BLE_ANCS_STATE_IDLE;			
       break;			
 		}
   	
 		case BLE_ANCS_STATE_NOTIF_ATTRIBUTE:
 		{
-			N_SPRINTF("[ANCS] Start store the specific content of notify.");	
+			Y_SPRINTF("[ANCS] Start store the specific content of notify.");	
 			// Store notifiction data to nflash.
 		  _ancs_store_attrs_pro();	
 			a->state = BLE_ANCS_STATE_IDLE;

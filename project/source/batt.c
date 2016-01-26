@@ -173,32 +173,33 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 	// If device is un-authorized and DC-power is removed
 	if (BATT_is_charging()) {
 		cling.batt.shut_down_time = 0;
+	
+		return FALSE;
 	} else {
 		
 		if (cling.batt.shut_down_time < BATTERY_SYSTEM_UNAUTH_POWER_DOWN) {
 			
 			return FALSE;
 		}
-			
+
 		// Disconnect BLE if device is connected.
 		if (BTLE_is_connected()) {
-			N_SPRINTF("[RTC] disconnect, unauthorized device");
+			Y_SPRINTF("[RTC] disconnect, unauthorized device");
 			// Disconnect BLE service
 			BTLE_disconnect(BTLE_DISCONN_REASON_SYSTEM_SHUTDOWN);
 		}
-		
+
 		// No DC-in then, put device into a super-low power state
 		//
-		N_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
+		Y_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
 		
 		GPIO_system_powerdown();
+		
 		RTC_system_shutdown_timer();
 		
 		return TRUE;
 		
 	}
-	
-	return FALSE;
 #endif
 }
 

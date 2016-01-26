@@ -17,10 +17,10 @@
 #define REMINDER_ON_TIME_IN_MS 200
 #define REMINDER_OFF_TIME_IN_MS 400
 
-#define REMINDER_SECOND_REMINDER_LATENCY 30000
+#define REMINDER_SECOND_REMINDER_LATENCY 2000
 
-#define REMINDER_VIBRATION_REPEAT_TIME 3
-#define SECOND_REMINDER_TIME 2
+#define REMINDER_VIBRATION_REPEAT_TIME 2
+#define SECOND_REMINDER_TIME 8
 
 //static BOOLEAN reminder_testing_flag = TRUE;
 
@@ -74,7 +74,7 @@ void REMINDER_set_next_reminder()
 			hour = *data++;
 			minute = *data++;
 			
-			Y_SPRINTF("[REMINDER] current time: %d:%d, reminder: %d:%d", cling.time.local.hour, cling.time.local.minute, hour, minute);
+			N_SPRINTF("[REMINDER] current time: %d:%d, reminder: %d:%d", cling.time.local.hour, cling.time.local.minute, hour, minute);
 
 			if (hour >= 24) break;
 			if (minute >= 60) break;
@@ -90,34 +90,26 @@ void REMINDER_set_next_reminder()
 			}
 		}
 	}
-	#if 0
-	
-	if (reminder_testing_flag) {
-		reminder_testing_flag = FALSE;
-		// for testing
-		b_found = TRUE;
-		hour = cling.time.local.hour;
-		minute = cling.time.local.minute;
-	}
-	#endif
-	
+
 	if (b_found) {
 		cling.reminder.b_valid = TRUE;
 		cling.reminder.hour = hour;
 		cling.reminder.minute = minute;
 		
-		Y_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
+		N_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
 	} else {
 		cling.reminder.b_valid = FALSE;
 		cling.reminder.hour = 0;
 		cling.reminder.minute = 0;
 
-		Y_SPRINTF("[REMINDER] No new reminder is found");
+		N_SPRINTF("[REMINDER] No new reminder is found");
 	}
 	
 	if (cling.reminder.total>0) {
 		REMINDER_get_time_at_index(0);
   }
+
+	N_SPRINTF("[REMINDER] Set next reminder - done");
 }
 
 static BOOLEAN _check_reminder()
@@ -139,18 +131,25 @@ void REMINDER_state_machine()
 
 	if (cling.reminder.state != REMINDER_STATE_IDLE) {
 		// Start 20 ms timer 
-		SYSCLK_timer_start();
+		RTC_start_operation_clk();
 	}
 	
 	switch (cling.reminder.state) {
 		case REMINDER_STATE_IDLE:
 		{
 			if (_check_reminder()) {
-				N_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+				Y_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 				cling.reminder.state = REMINDER_STATE_ON;
 				// Reset vibration times
 				cling.reminder.vibrate_time = 0;
 				cling.reminder.second_vibrate_time = 0;
+				cling.reminder.ui_alarm_on = TRUE;
+				UI_turn_on_display(UI_STATE_REMINDER, 1000);
+
+			} else {
+				if (cling.notific.state == NOTIFIC_STATE_IDLE) {
+					GPIO_vibrator_set(FALSE);
+				}
 			}
 			break;
 		}
@@ -158,7 +157,7 @@ void REMINDER_state_machine()
 		{
 			N_SPRINTF("[REMINDER] vibrator is ON, %d", t_curr);
 			cling.reminder.ts = t_curr;
-			GPIO_vibrator_set(TRUE);
+			GPIO_vibrator_on_block(REMINDER_ON_TIME_IN_MS);
 			cling.reminder.state = REMINDER_STATE_OFF;
 			break;
 		}
@@ -179,9 +178,10 @@ void REMINDER_state_machine()
 				if (cling.reminder.vibrate_time >= REMINDER_VIBRATION_REPEAT_TIME) {
 					cling.reminder.state = REMINDER_STATE_SECOND_REMINDER;
 					cling.reminder.second_vibrate_time ++;
+					N_SPRINTF("[REMINDER] go second reminder, %d, %d", cling.reminder.second_vibrate_time, cling.reminder.vibrate_time);
 				} else {
 					cling.reminder.state = REMINDER_STATE_ON;
-					Y_SPRINTF("[REMINDER] vibrator repeat, %d, %d", cling.reminder.vibrate_time, t_curr);
+					N_SPRINTF("[REMINDER] vibrator repeat, %d, %d", cling.reminder.vibrate_time, t_curr);
 				}
 			}
 			break;
@@ -191,6 +191,7 @@ void REMINDER_state_machine()
 			if (t_curr > (cling.reminder.ts + REMINDER_SECOND_REMINDER_LATENCY)) {
 				if (cling.reminder.second_vibrate_time >= SECOND_REMINDER_TIME) {
 					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+					Y_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
 				} else {
 					N_SPRINTF("[REMINDER] second reminder on");
 					cling.reminder.state = REMINDER_STATE_ON;					
@@ -200,18 +201,20 @@ void REMINDER_state_machine()
 			}
 			break;
 		}
-		case REMINDER_STATE_UPDATE_SPACE:
-		{
-			break;
-		}
 		case REMINDER_STATE_CHECK_NEXT_REMINDER:
 		{
 			REMINDER_set_next_reminder();
 			cling.reminder.state = REMINDER_STATE_IDLE;
+			N_SPRINTF("[REMINDER] STATE: CHECK NEXT");
 			break;
 		}
 		default:
+		{
+			REMINDER_set_next_reminder();
+			cling.reminder.state = REMINDER_STATE_IDLE;
+			N_SPRINTF("[REMINDER] STATE: DEFAULT: %d", cling.reminder.state);
 			break;
+		}
 	}
 }
 
@@ -225,11 +228,11 @@ I8U REMINDER_get_time_at_index(I8U index)
 
 	data = (I8U *)i32_buf;
 	new_idx = index;
-	Y_SPRINTF("[REMINDER] maximum entry: %d, %d", cling.reminder.total, new_idx);
+	N_SPRINTF("[REMINDER] maximum entry: %d, %d", cling.reminder.total, new_idx);
 	
 	if (cling.reminder.total) {
 		if (new_idx >= cling.reminder.total) {
-			Y_SPRINTF("[REMINDER] reset entry: %d, %d", cling.reminder.total, new_idx);
+			N_SPRINTF("[REMINDER] reset entry: %d, %d", cling.reminder.total, new_idx);
 			new_idx = 0;
 		}
 		hh = data[new_idx<<1];
@@ -243,6 +246,8 @@ I8U REMINDER_get_time_at_index(I8U index)
 
 		cling.reminder.ui_hh = hh;
 		cling.reminder.ui_mm = mm;
+		
+		N_SPRINTF("[REMINDER] ui display: %d:%d", hh, mm);
 		
 		// In case that some rediculous number comes up, go reset
 	} else {

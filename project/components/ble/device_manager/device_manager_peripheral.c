@@ -10,10 +10,11 @@
  */
 
 #include "device_manager.h"
-#include "app_trace.h"
 #include "pstorage.h"
 #include "ble_hci.h"
 #include "app_error.h"
+#include "hal.h"
+#include "ancs.h"
 
 #if defined ( __CC_ARM )
     #ifndef __ALIGN
@@ -141,7 +142,7 @@ typedef enum
  * @note That if ENABLE_DEBUG_LOG_SUPPORT is disabled, having DM_DISABLE_LOGS has no effect.
  * @{
  */
-#define nDM_DISABLE_LOGS        /**< Enable this macro to disable any logs from this module. */
+#define DM_DISABLE_LOGS        /**< Enable this macro to disable any logs from this module. */
 
 #ifndef DM_DISABLE_LOGS
 #define DM_LOG  app_trace_log  /**< Used for logging details. */
@@ -173,7 +174,7 @@ typedef enum
  * @{
  */
 #define DM_GATT_ATTR_SIZE            6                                                   /**< Size of each GATT attribute to be stored persistently. */
-#define DM_GATT_SERVER_ATTR_MAX_SIZE ((DM_GATT_ATTR_SIZE * DM_GATT_CCCD_COUNT) + 2) /**< Maximum size of GATT attributes to be stored.*/
+#define DM_GATT_SERVER_ATTR_MAX_SIZE ((DM_GATT_ATTR_SIZE * DM_GATT_CCCD_COUNT) + 2)      /**< Maximum size of GATT attributes to be stored.*/
 #define DM_SERVICE_CONTEXT_COUNT     (DM_PROTOCOL_CNTXT_ALL + 1)                         /**< Maximum number of service contexts. */
 #define DM_EVT_DEVICE_CONTEXT_BASE   0x20                                                /**< Base for device context base. */
 #define DM_EVT_SERVICE_CONTEXT_BASE  0x30                                                /**< Base for service context base. */
@@ -2693,10 +2694,13 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
                 }
                 else
                 {
+					          #ifdef _ENABLE_ANCS_
+					          HAL_delete_bond_info();
+					          #endif
+									
                     DM_LOG("[DM]: Security parameter request failed, reason 0x%08X.\r\n", err_code);
                     event_result = err_code;
                     notify_app   = true;
-									
                 }
             }
             else
@@ -2746,7 +2750,7 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
             m_connection_table[index].state &= (~STATE_PAIRING);
             event.event_id                   = DM_EVT_SECURITY_SETUP_COMPLETE;
             notify_app                       = true;
-					
+
             if (p_ble_evt->evt.gap_evt.params.auth_status.auth_status != BLE_GAP_SEC_STATUS_SUCCESS)
             {
                 // Free the allocation as bonding failed.

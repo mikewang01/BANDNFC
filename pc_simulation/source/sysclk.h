@@ -20,17 +20,12 @@
 #define SYSCLK_INTERVAL_1000MS				APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
 #define SYSCLK_INTERVAL_2000MS				APP_TIMER_TICKS(2000, APP_TIMER_PRESCALER)
 #define SYSCLK_INTERVAL_4000MS				APP_TIMER_TICKS(4000, APP_TIMER_PRESCALER)
+#define SYSCLK_INTERVAL_6000MS				APP_TIMER_TICKS(6000, APP_TIMER_PRESCALER)
+#define SYSCLK_INTERVAL_10000MS				APP_TIMER_TICKS(10000, APP_TIMER_PRESCALER)
 
-#define SYSCLK_EXPIRATION          2000  // 20 ms system clock expires in 5 seconds
-
-void SYSCLK_Init(void);
-EN_STATUSCODE SYSCLK_create_timer(void);
+#define OPERATION_CLK_EXPIRATION          2000  // 20 ms system clock expires in 5 seconds
 
 I32U SYSCLK_GetFineTime(void);
-void SYSCLK_timer_handler(void * p_context);
-void SYSCLK_timer_config(I32U interval);
-void SYSCLK_timer_start(void);
-void SYSCLK_timer_stop(void);
 #ifdef _CLING_PC_SIMULATION_
 void SYSCLK_update_tick(void);
 #endif

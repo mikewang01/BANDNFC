@@ -281,13 +281,14 @@ ret_code_t nrf_drv_spi_transfer(nrf_drv_spi_t const * const p_instance,
                                 uint8_t const * p_tx_buffer,
                                 uint8_t         tx_buffer_length,
                                 uint8_t       * p_rx_buffer,
-                                uint8_t         rx_buffer_length)
+                                uint8_t         rx_buffer_length,
+								uint8_t         spi_pin_sel)
 {
     spi_control_block_t * p_cb  = &m_cb[p_instance->drv_inst_idx];
     ASSERT(p_cb->state != NRF_DRV_STATE_UNINITIALIZED);
     ASSERT(p_tx_buffer != NULL || tx_buffer_length == 0);
     ASSERT(p_rx_buffer != NULL || rx_buffer_length == 0);
-
+    p_cb->ss_pin = spi_pin_sel;
     if (p_cb->transfer_in_progress)
     {
         return NRF_ERROR_BUSY;
@@ -302,6 +303,10 @@ ret_code_t nrf_drv_spi_transfer(nrf_drv_spi_t const * const p_instance,
     // Activate Slave Select signal, if it is to be used.
     if (p_cb->ss_pin != NRF_DRV_SPI_PIN_NOT_USED)
     {
+				//A Slave select must be set as high before setting it as output,
+				//because during connect it to the pin it causes glitches.
+				nrf_gpio_pin_set(p_cb->ss_pin);
+				nrf_gpio_cfg_output(p_cb->ss_pin);
         nrf_gpio_pin_clear(p_cb->ss_pin);
     }
 

@@ -20,9 +20,6 @@ void NOR_init(void)
 #ifndef _CLING_PC_SIMULATION_
 	I8U buf[10];
 	
-	spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE); 
-	cling.system.b_spi_0_ON = TRUE;
-	
 	// Power up the chip
 	NOR_powerDown();
 	b_flash_PD_flag = TRUE;
@@ -102,7 +99,7 @@ I8U NOR_readStatusRegister(void)
     g_spi_tx_buf[1] = SPI_FLASH_INS_DUMMY;
 #ifndef _CLING_PC_SIMULATION_
     spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 2, GPIO_SPI_0_CS_NFLASH);
-		spi_master_op_wait_done();
+//		spi_master_op_wait_done();
 #endif   
     return g_spi_rx_buf[1];
 }
@@ -131,7 +128,7 @@ void NOR_readData(I32U addr, I16U len, I8U *dataBuf)
 
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, dataBuf, 4, len, GPIO_SPI_0_CS_NFLASH);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 	if (!b_flash_PD_flag) {
 		b_flash_PD_flag = TRUE;
@@ -231,6 +228,7 @@ void NOR_erase_block_4k(I32U addr)
 	g_spi_tx_buf[1] = (uint8_t)(addr >> 16);
 	g_spi_tx_buf[2] = (uint8_t)(addr >> 8);
 	g_spi_tx_buf[3] = (uint8_t)(addr);
+	
 	N_SPRINTF("[NFLASH] %x %x %x %x", g_spi_tx_buf[0], g_spi_tx_buf[1], g_spi_tx_buf[2], g_spi_tx_buf[3]);
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 4, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_NFLASH);
@@ -397,7 +395,7 @@ void NOR_readID(I8U *id)
 	g_spi_tx_buf[5] = (I8U) 0;
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, 0, 0, g_spi_rx_buf, 0, 6, GPIO_SPI_0_CS_NFLASH);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 	*id = g_spi_rx_buf[4];
 	*(id+1) = g_spi_rx_buf[5];
@@ -429,7 +427,7 @@ void NOR_readUID(I8U *id)
 	g_spi_tx_buf[4] = (uint8_t)0;
 #ifndef _CLING_PC_SIMULATION_
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 5, 0, 0, id, 0, 10, GPIO_SPI_0_CS_NFLASH);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 	if (!b_flash_PD_flag) {
 		b_flash_PD_flag = TRUE;

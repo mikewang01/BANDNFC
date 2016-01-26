@@ -1,76 +1,97 @@
-/* Copyright (c) 2012 Nordic Semiconductor. All Rights Reserved.
+/***************************************************************************//**
+ * File ancs.h
+ * 
+ * Description: ancs service context.
  *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
  *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
- */
-
-/** @file
- *
- * @defgroup ble_sdk_srv_ancs_c Apple Notification Service Client
- * @{
- * @ingroup ble_sdk_srv
- * @brief Apple Notification module - Disclaimer: This module (Apple Notification Center Service) can and will be changed at any time by either Apple or Nordic Semiconductor ASA.
- *
- * @details This module implements the Apple Notification Center Service (ANCS) Client.
- *
- * @note The application must propagate BLE stack events to the Apple Notification Client module
- *       by calling ANCS_on_ble_evt(void) from the from the @ref ble_stack_handler callback.
- */
+ ******************************************************************************/
 #ifndef _ANCS_H__
 #define _ANCS_H__
 
 //#define _ENABLE_ANCS_
 
-/**@brief Category IDs for iOS notifications. */
+#ifndef _CLING_PC_SIMULATION_
+#ifdef _ENABLE_ANCS_
+#include "standard_types.h"
+
+#define   ANCS_FILTERING_OLD_MSG_DELAY_TIME            6000     /*6s*/ 
+#define   ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME    60000    /*60s*/  
+#define   ANCS_SUPPORT_MAX_TITLE_LEN                   64       /*64 byte*/
+#define   ANCS_SUPPORT_MAX_MESSAGE_LEN                 192      /*192 byte*/
+
 typedef enum
 {
-    ANCS_CATEGORY_ID_OTHER,
-    ANCS_CATEGORY_ID_INCOMING_CALL,
-    ANCS_CATEGORY_ID_MISSED_CALL,
-    ANCS_CATEGORY_ID_VOICE_MAIL,
-    ANCS_CATEGORY_ID_SOCIAL,
-    ANCS_CATEGORY_ID_SCHEDULE,
-    ANCS_CATEGORY_ID_EMAIL,
-    ANCS_CATEGORY_ID_NEWS,
-    ANCS_CATEGORY_ID_HEALTH_AND_FITNESS,
-    ANCS_CATEGORY_ID_BUSINESS_AND_FINANCE,
-    ANCS_CATEGORY_ID_LOCATION,
-    ANCS_CATEGORY_ID_ENTERTAINMENT,
-		ANCS_CATEGORY_ID_MAX,
-} ble_ancs_category_id_values_t;
+	PARSE_STAT_COMMAND_ID,
+	PARSE_STAT_NOTIFICATION_UID_1,
+	PARSE_STAT_NOTIFICATION_UID_2,
+	PARSE_STAT_NOTIFICATION_UID_3,
+	PARSE_STAT_NOTIFICATION_UID_4,
+	PARSE_STAT_ATTRIBUTE_TITLE_ID,
+	PARSE_STAT_ATTRIBUTE_TITLE_LEN1,
+	PARSE_STAT_ATTRIBUTE_TITLE_LEN2,
+	PARSE_STAT_ATTRIBUTE_TITLE_READY,
+	PARSE_STAT_ATTRIBUTE_MESSAGE_ID,
+	PARSE_STAT_ATTRIBUTE_MESSAGE_LEN1,
+	PARSE_STAT_ATTRIBUTE_MESSAGE_LEN2,
+	PARSE_STAT_ATTRIBUTE_MESSAGE_READY
+} ANCS_PARSE_STATES;
+
+
+enum
+{
+  BLE_ANCS_STATE_IDLE,   	
+  BLE_ANCS_STATE_DISCOVER_COMPLETE,   
+  BLE_ANCS_STATE_DISCOVER_FAILED,            
+  BLE_ANCS_STATE_NOTIF,                      
+  BLE_ANCS_STATE_NOTIF_ATTRIBUTE        
+};
+
+
+typedef struct tagANCS_PACKET {
+	
+	I8U  title_len;
+	I8U  message_len;
+	I8U  buf[254];
+} ANCS_PACKET;
+
+
+enum {
+	BOND_STATE_UNCLEAR=0,
+	BOND_STATE_SUCCESSED,
+	BOND_STATE_ERROR
+};
+
 
 typedef struct tagANCS_CONTEXT {
+	// Global state
+	I8U  state;	
 
-	I16U supported_categories;
-	BOOLEAN b_enabled;
-#if 0
-	I8U cccd_enable_count_down;
-	#endif
-	I8U cat_count[ANCS_CATEGORY_ID_MAX];
+	// Parse attrs state
+  ANCS_PARSE_STATES	 parse_state;
 	
+  // Stored notific	data
+  ANCS_PACKET  pkt;	
+	
+	// The number of the notification
+	I8U  message_total;		
+	
+	// Notify reminder switch by user set.
+	I16U supported_categories;
+	
+	// Filtering old notify flag.
+  I8U filtering_flag;
+	
+	// Bond infomation delete state.
+	I8U bond_state;
 } ANCS_CONTEXT;
 
-/**@brief Function for handling the Application's BLE Stack events.
- *
- * @details Handles all events from the BLE stack of interest to the ANCS Client.
- *
- * @param[in]   p_ancs     ANCS Client structure.
- * @param[in]   p_ble_evt  Event received from the BLE stack.
- */
-#ifndef _CLING_PC_SIMULATION_
-void ANCS_on_ble_evt(const ble_evt_t * p_ble_evt);
-void ANCS_uuid_set(ble_uuid_t *uuid);
+
+void  ANCS_service_add(void);
+void  ANCS_nflash_store_one_message(I8U *data);
+void  ANCS_state_machine(void);
 #endif
-void ANCS_service_add(void);
-void ANCS_start_ancs_discovery(void);
-BOOLEAN ANCS_notifications_to_read(void);
-I8U ANCS_get_next_new_notification(I8U index);
-void ANCS_apple_notification_setup(void);
+
+#endif
 
 #endif // _ANCS_H__
 

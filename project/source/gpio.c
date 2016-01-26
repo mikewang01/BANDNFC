@@ -9,7 +9,7 @@
  ******************************************************************************/
 
 #include "main.h"
-
+			
 #ifndef _CLING_PC_SIMULATION_
 static __INLINE void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
 #else
@@ -180,57 +180,6 @@ void GPIO_interrupt_enable()
 #endif
 }
 
-void GPIO_spi_disabled(I8U spi_no)
-{
-#ifndef _CLING_PC_SIMULATION_
-	// Configure input, and disconnect it from input buffer
-	if ( spi_no == SPI_MASTER_0 )
-	{
-		NRF_SPI0->ENABLE = SPI_ENABLE_ENABLE_Disabled << SPI_ENABLE_ENABLE_Pos;
-		
-		_gpio_cfg_disconnect_input(GPIO_SPI_0_SCK        );  // spi
-		_gpio_cfg_disconnect_input(GPIO_SPI_0_MOSI        );  // spi
-		_gpio_cfg_disconnect_input(GPIO_SPI_0_MISO        );  // spi
-	}
-	else
-	{
-		#if 0
-		NRF_SPI1->ENABLE = SPI_ENABLE_ENABLE_Disabled << SPI_ENABLE_ENABLE_Pos;
-		
-		_gpio_cfg_disconnect_input(GPIO_SPI_1_SCK        );  // spi
-		_gpio_cfg_disconnect_input(GPIO_SPI_1_MOSI        );  // spi
-		_gpio_cfg_disconnect_input(GPIO_SPI_1_MISO        );  // spi
-		#endif
-	}
-#endif
-}
-
-void GPIO_spi_init_config(I8U spi_no)
-{
-#ifndef _CLING_PC_SIMULATION_
-	if (spi_no == SPI_MASTER_0) {
-		// Configure spi bus
-		_gpio_cfg_output(GPIO_SPI_0_SCK         , FALSE);     // spi
-		_gpio_cfg_output(GPIO_SPI_0_MOSI        , FALSE);  // spi
-		_gpio_cfg_connect_input(GPIO_SPI_0_MISO , NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_NOPULL); // spi
-#if 0    
-		_gpio_cfg_output(GPIO_SPI_0_CS_FONT   , TRUE); 
-#endif
-		_gpio_cfg_output(GPIO_SPI_0_CS_OLED, TRUE);
-		_gpio_cfg_output(GPIO_SPI_0_CS_ACC, TRUE);
-		_gpio_cfg_output(GPIO_SPI_0_CS_NFLASH, TRUE);
-	} else {
-		#if 0
-		_gpio_cfg_output(GPIO_SPI_1_SCK         , FALSE);     // spi
-		_gpio_cfg_output(GPIO_SPI_1_MOSI        , FALSE);  // spi
-		_gpio_cfg_connect_input(GPIO_SPI_1_MISO , NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_NOPULL); // spi
-		
-		_gpio_cfg_output(GPIO_SPI_1_CS_PPG, TRUE);
-		#endif
-	}
-#endif
-}
-
 void GPIO_twi_init(I8U twi_master_instance)
 {
 #ifndef _CLING_PC_SIMULATION_
@@ -254,7 +203,7 @@ void GPIO_twi_init(I8U twi_master_instance)
 		twi_config.scl = 24;
 		twi_config.sda = 26;
 		twi_config.interrupt_priority = APP_IRQ_PRIORITY_LOW;
-		error_code = nrf_drv_twi_init(&p_twi1_instance, &twi_config, NULL);//, twi_event_handler);
+		error_code = nrf_drv_twi_init(&p_twi1_instance, &twi_config, NULL, NULL);
 		APP_ERROR_CHECK(error_code);
 		nrf_drv_twi_enable(&p_twi1_instance);
 		cling.system.b_twi_1_ON = TRUE;
@@ -346,14 +295,18 @@ void GPIO_vbat_adc_disable()
 
 void GPIO_therm_power_on()
 {
+#ifndef _CLING_PC_SIMULATION_	
 	// power on
 	_gpio_cfg_output(GPIO_TEMPERATURE_POWER_ON      , TRUE);      // thermistor power on, drive HIGH
+#endif
 }
 
 void GPIO_therm_power_off()
 {
+#ifndef _CLING_PC_SIMULATION_	
 	// Disonnect Thermistor power on
   _gpio_cfg_disconnect_input(GPIO_TEMPERATURE_POWER_ON);
+#endif
 }
 
 void GPIO_therm_adc_config(void)
@@ -393,17 +346,19 @@ void GPIO_vibrator_on_block(I8U latency)
 
 void GPIO_vibrator_set(BOOLEAN b_on)
 {
+#ifndef _CLING_PC_SIMULATION_	
 	if (b_on)
 		_gpio_cfg_output(GPIO_VIBRATOR_EN, TRUE);
 	else
 		_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);
+#endif	
 }
 
 void GPIO_charger_reset()
 {
 #ifndef _CLING_PC_SIMULATION_
 
-	_gpio_cfg_output(GPIO_CHARGER_EN      , FALSE);      // Charge enable, drive LOW
+	_gpio_cfg_output(GPIO_CHARGER_EN     , FALSE);      // Charge enable, drive LOW
 	BASE_delay_msec(100);
 	_gpio_cfg_output(GPIO_CHARGER_EN      , TRUE);      // Charge enable, drive HIGH
 
@@ -412,6 +367,7 @@ void GPIO_charger_reset()
 
 void GPIO_interrupt_handle()
 {
+#ifndef _CLING_PC_SIMULATION_	
 	// detect a possible state change
 	HOMEKEY_check_on_hook_change();
 	
@@ -423,4 +379,5 @@ void GPIO_interrupt_handle()
 	// Touch panel gesture check
 	TOUCH_gesture_check();
 #endif
+#endif	
 }

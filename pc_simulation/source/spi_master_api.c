@@ -28,16 +28,13 @@ void spi_master_disable()
 		cling.system.b_spi_0_ON = FALSE;
 	}
 	
-	if (cling.system.b_spi_1_ON) {
-		spi_master_close(SPI_MASTER_1);
-		cling.system.b_spi_1_ON = FALSE;
-	}
-
+#if 0
 	// disable SPI pins
 	GPIO_spi_disabled(SPI_MASTER_0);
+#ifdef SPI_MASTER_1_ENABLE
 	GPIO_spi_disabled(SPI_MASTER_1);
-	
-	
+#endif	
+#endif
 	N_SPRINTF("[SPI] deinit ...");
 }
 
@@ -126,12 +123,13 @@ uint32_t spi_master_init(spi_master_hw_instance_t   spi_master_instance,
 		return err_code;
 }
 
-void spi_master_op_wait_done()
+
+BOOLEAN spi_master_op_wait_done()
 {
 	I16U i;
 	
 	if (m_transfer_completed)
-		return;
+		return TRUE;
 
 	// Wait for up to 500 ms
 	for (i = 0; i < 5000; i++) {
@@ -142,7 +140,15 @@ void spi_master_op_wait_done()
 	}
 
 	Y_SPRINTF("[SPI] wait cycle: %d", i);
+	
+	if (m_transfer_completed)
+		return TRUE;
+	else
+		return FALSE;
 }
+
+#define SPI_RETRYING_NUM 500
+#define SPI_BLOCKING_NUM 50
 
 void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance, 
 	uint8_t *tx_cmd_buf, uint16_t tx_cmd_size, 
@@ -150,8 +156,7 @@ void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance,
   uint8_t *rx_data, uint16_t rx_cmd_size, uint16_t rx_data_size, 
 	uint32_t pin_sel)
 {
-	
-	spi_master_op_wait_done();
+	I32U  err_code, i, t_diff, t_curr;
 
 	if ((SPI_MASTER_0 == spi_master_hw_instance) && (!cling.system.b_spi_0_ON)) {
 		
@@ -163,14 +168,55 @@ void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance,
 		BASE_delay_msec(1);
 	}
 	
+
 	m_transfer_completed = FALSE;
+
 	// Start transfer.
-	uint32_t err_code =
-			spi_master_send_recv(spi_master_hw_instance, 
-													 tx_cmd_buf, tx_cmd_size,
-													 tx_data_buf, tx_data_size,		
-													 rx_data, rx_cmd_size, rx_data_size, pin_sel);
+	for(i=0; i<SPI_RETRYING_NUM; i++)
+	{
+		err_code=spi_master_send_recv(spi_master_hw_instance,  tx_cmd_buf, tx_cmd_size,
+													 tx_data_buf, tx_data_size,rx_data, rx_cmd_size, rx_data_size, pin_sel);	
+     
+		if(err_code == NRF_SUCCESS) {
+			N_SPRINTF("[SPI] tx rx error code: OK");
+			break;
+		}
+		if(i == (SPI_RETRYING_NUM - 1)){
+		Y_SPRINTF("[SPI] tx rx error code: %d", err_code);
+			// Enable SPI master
+		spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
+		cling.system.b_spi_0_ON = TRUE;		
+		}
+		BASE_delay_msec(1);	
+	}
+	
+  if(err_code == NRF_ERROR_BUSY) 
+		return;
 	APP_ERROR_CHECK(err_code);
+	
+	// Check if there is a race condition
+	if (m_transfer_completed)
+		return;
+	
+	Y_SPRINTF("[SPI] tx rx somehow is not completed, start timer");
+
+	// Block service - wait until we receive a finish event
+	t_curr = CLK_get_system_time();
+	while (!m_transfer_completed) {
+		
+		err_code = sd_app_evt_wait();
+		APP_ERROR_CHECK(err_code);
+	
+		if (m_transfer_completed)
+			break;
+		
+		t_diff = CLK_get_system_time() - t_curr;
+		
+		if (t_diff > 1000) {
+			Y_SPRINTF("[SPI] tx rx time out: %d, %d", t_curr, t_diff);
+			break;
+		}
+	}
 }
 
 #if 0

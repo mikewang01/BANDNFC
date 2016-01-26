@@ -16,6 +16,7 @@ static void _set_reg(I8U reg_idx, I8U config)
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 13");
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 0, GPIO_SPI_0_CS_ACC);
+//	spi_master_op_wait_done();
 #endif
 }
 
@@ -26,7 +27,7 @@ static void _get_reg(I8U reg_idx)
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 12");
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, 0, 0, g_spi_rx_buf, 0, 2, GPIO_SPI_0_CS_ACC);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 }
 
@@ -36,7 +37,7 @@ static void _get_data(I8U reg_idx)
 #ifndef _CLING_PC_SIMULATION_
 		N_SPRINTF("[spi] 11");
 	spi_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 7, 0, 0, g_spi_rx_buf, 0, 7, GPIO_SPI_0_CS_ACC);
-	spi_master_op_wait_done();
+//	spi_master_op_wait_done();
 #endif
 }
 
@@ -47,48 +48,10 @@ I8U LIS3DH_who_am_i()
 	return g_spi_rx_buf[1];
 }
 
-EN_STATUSCODE LIS3DH_normal_50HZ()
-{
-	/* INT1_THS */
-	_set_reg(INT_THS1, 0x00);
-
-	/* INT1_DURATION */
-	_set_reg(INT_DUR1, 0x00);
-	
-	/* CTRL_REG1 */
-	// Low power mode, X/Y/Z all enabled, 50 Hz
-	_set_reg(CTRL_REG1, 0x47);
-
-	/* CTRL_REG2 */
-	// default
-	_set_reg(CTRL_REG2, 0x00);
-
-	/* CTRL_REG3 */
-	// Disable data ready pin, enable FIFO watermak interrupt
-	_set_reg(CTRL_REG3, 0x10);
-	
-	/* CTRL_REG4 */
-	// LSB @ lower address, Full scale selection at +/- 8G, High resolution enabled
-	_set_reg(CTRL_REG4, 0x28);
-
-	/* CTRL_REG5 */
-	// Enable FIFO, Latch interrupt request
-	_set_reg(CTRL_REG5, 0x08);
-
-	/* FIFO_CTRL_REG */
-	// default, not enabled
-	_set_reg(FIFO_CTRL_REG, 0x00);
-	
-	/* CTRL_REG6 */
-	// 0: Interrupt active HIGH, 1: Interrupt active LOW
-	_set_reg(CTRL_REG6, 0x00);
-	
-	return STATUSCODE_SUCCESS;
-}
-
 EN_STATUSCODE LIS3DH_normal_FIFO()
 {
-	if (cling.user_data.b_screen_tapping) {
+	if (cling.user_data.b_screen_tapping) 
+	{
 		// Tap detection
 		// Tap configuration: enable interrupt doble tap-tap on X/Y/Z axis
 		_set_reg(TAP_CFG, 0x3F);
@@ -127,10 +90,13 @@ EN_STATUSCODE LIS3DH_normal_FIFO()
 	_set_reg(CTRL_REG2, 0x00);
 	
 	if (cling.user_data.b_screen_tapping) {
+		N_SPRINTF("[LIS3DH] tapping interrupt: 0x84");
+
 		/* CTRL_REG3 */
 		// Disable data ready pin, enable FIFO watermak interrupt
 		_set_reg(CTRL_REG3, 0x84);
 	} else {
+		N_SPRINTF("[LIS3DH] tapping interrupt: 0x04");
 		_set_reg(CTRL_REG3, 0x04);
 	}
 
@@ -156,11 +122,7 @@ EN_STATUSCODE LIS3DH_normal_FIFO()
 
 EN_STATUSCODE LIS3DH_init()
 {	
-#ifndef _CLING_PC_SIMULATION_
-	spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
-#endif
-	cling.system.b_spi_0_ON = TRUE;
-	
+
 	return LIS3DH_normal_FIFO();
 }
 
@@ -170,7 +132,7 @@ EN_STATUSCODE LIS3DH_inertial_wake_up_init()
 	/* CTRL_REG1 */
 	// Low power mode, X/Y/Z all enabled, 50 Hz
 	_set_reg(CTRL_REG1, 0x47);
-	nrf_delay_ms(1);
+	BASE_delay_msec(1);
 	
 	/* CTRL_REG2 */
 	// High pass filter enabled on data and interrupt
@@ -240,13 +202,13 @@ I8U LIS3DH_is_FIFO_ready()
 	
 	fss = g_spi_rx_buf[1] & 0x1f;
 
-#ifdef __DEBUG_BASE__
 	// Check ZYXDA bit is valid (a new set of data) 
 	//
+#if 0
 	if (g_spi_rx_buf[1] & 0x80) {
-		N_SPRINTF("[LIS3DH] FIFO WATER MARK samples: %d", fss);
+		Y_SPRINTF("[LIS3DH] FIFO WATER MARK samples: %d", fss);
 	} else {
-		N_SPRINTF("[LIS3DH] FIFO normal samples: %d", fss);
+		Y_SPRINTF("[LIS3DH] FIFO normal samples: %d", fss);
 	}
 #endif
 #ifdef _SLEEP_SIMULATION_

@@ -95,8 +95,6 @@ void NOTIFIC_state_machine()
 	switch (cling.notific.state) {
 		case NOTIFIC_STATE_IDLE:
 		{
-			// clear notification category id.
-			cling.notific.cat_id = 0;
 			break;
 		}
 		case NOTIFIC_STATE_SETUP_VIBRATION:

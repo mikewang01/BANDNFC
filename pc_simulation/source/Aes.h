@@ -67,7 +67,6 @@ void AES_encrypt(const AES_CTX *ctx, uint32_t *data);
 void AES_decrypt(const AES_CTX *ctx, uint32_t *data);
 void AES_hncpy32(uint32_t * dst, uint32_t * src);
 uint8_t AES_xtime(uint32_t x);
-void AES_display(uint8_t * data,size_t len);
 void AES_generateSBox(void);
 
 

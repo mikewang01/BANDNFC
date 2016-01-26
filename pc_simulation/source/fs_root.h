@@ -50,7 +50,7 @@ I16S ROOT_CreateFile(I8U *file_name, I16U name_cluster, I16U first_cluster);
 //
 // Read file indexed in root directory
 //
-void ROOT_OpenReadFile(I16U pos, I16U * first_cluster, I32U * size);
+I16U ROOT_OpenReadFile(I16U pos, I16U * first_cluster, I32U * size);
 //
 // Close file for write
 //

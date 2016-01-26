@@ -293,10 +293,9 @@ static BOOLEAN _critical_info_restored()
 	// Get sleep seconds by noon
 	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
 	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
-#ifdef _ENABLE_ANCS_
-  // Restore ancs pair bond state.
-	cling.ancs.bond_state = p_byte_addr[50];
-#endif
+    
+	// 50 reserve 
+	
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
 #ifdef _ENABLE_ANCS_
@@ -357,6 +356,7 @@ static BOOLEAN _critical_info_restored()
 	return TRUE;
 }
 
+#ifdef _ENABLE_UART_
 static void _print_out_dev_name()
 {
 	char dev_name[21];
@@ -367,7 +367,6 @@ static void _print_out_dev_name()
 
 static void _print_out_dev_version()
 {
-#ifdef _ENABLE_UART_
 	I16U major;
 	I16U minor;
 	
@@ -376,9 +375,9 @@ static void _print_out_dev_version()
 	minor <<= 8;
 	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
 	Y_SPRINTF("#### ver: %d.%d ", major, minor);
-#endif
-}
 
+}
+#endif
 static void _startup_logging()
 {
 #ifdef _ENABLE_UART_
@@ -461,15 +460,14 @@ void SYSTEM_init(void)
 	
 		// Initialize DM
 #ifdef _ENABLE_ANCS_
-	if ((!LINK_is_authorized()) || (cling.ancs.bond_state == BOND_STATE_ERROR)){
+	if (!LINK_is_authorized()){
 		// Delete	bond infomation.
 		Y_SPRINTF("[MAIN] device manger init delete bond infomation");
 	  HAL_device_manager_init(TRUE);
-    cling.ancs.bond_state = BOND_STATE_UNCLEAR;		
-	}
-	else{
+
+	}else{
 		// Reserve	bond infomation.
-		Y_SPRINTF("[MAIN] device manger init reserve bond infomation :%d",cling.ancs.bond_state);
+		Y_SPRINTF("[MAIN] device manger init reserve bond infomation");
 		HAL_device_manager_init(FALSE);	
 	}	
 #endif
@@ -552,10 +550,9 @@ BOOLEAN SYSTEM_backup_critical()
 	
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
-#ifdef _ENABLE_ANCS_
-  // Store ancs pair bond state.
-	critical[50] = cling.ancs.bond_state;
-#endif
+
+	// 50 reserve 
+	
 	// Store total reminders
 	critical[51] = cling.reminder.total;
 #ifdef _ENABLE_ANCS_
@@ -621,6 +618,7 @@ void SYSTEM_factory_reset()
 	Y_SPRINTF("[SYSTEM] factory reset - BLE disconnect");
 	
 	// Disconnect BLE service
+	if (BTLE_is_connected()) 
 	BTLE_disconnect(BTLE_DISCONN_REASON_FACTORY_RESET);
 	
 	// Enable factory reset

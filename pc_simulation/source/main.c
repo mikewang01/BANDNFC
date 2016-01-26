@@ -14,7 +14,7 @@
 #include <string.h>
 
 #include "main.h"
-#include "system.h"
+#include "uicoTouch.h"
 
 //#define _POWER_TEST_
 //#define _NOR_FLASH_SPI_TEST_
@@ -23,7 +23,7 @@ CLING_MAIN_CTX cling;
 
 #ifdef _POWER_TEST_
 
-static void _power_test_sub()
+static void _power_test_powerdown(BOOLEAN b_sd_enabled)
 {	
 	GPIO_init();
 	
@@ -37,11 +37,21 @@ static void _power_test_sub()
 	NRF_AAR->ENABLE = 0;//0x1;   
 	NRF_CCM->ENABLE = 0;//0x1;   
 	NRF_QDEC->ENABLE = 0;//0x1;   
-	NRF_LPCOMP->ENABLE = 0;//0x1;   
+	NRF_LPCOMP->ENABLE = 0;//0x1; 
+
+	GPIO_system_powerdown();
+
 	// Enter main loop.
 	while (LOOP_FOREVER)
 	{
-		__wfe();
+		if (b_sd_enabled) {
+			// Feed watchdog every 4 seconds upon RTC interrupt
+			Watchdog_Feed();
+			sd_app_evt_wait();
+			GPIO_system_powerdown();
+		} else {
+		  __wfe();
+		}
 	}
 }
 #endif
@@ -206,15 +216,8 @@ void _power_manager_process(void)
 {
 	I32U err_code;
 	
-	// Configure TWI to be input to reduce power consumption
-	GPIO_twi_disabled(TWI_MASTER_0);
-	GPIO_twi_disabled(TWI_MASTER_1);
-
-	// Disable SPI bus
-	spi_master_disable();
-	
-	// Turn off system clock also
-	RTC_stop();
+	// Turn off operation clock also
+	RTC_stop_operation_clk();
 
 	// If there is a pending packet, go straight out
 	if (cling.gcp.b_new_pkt)
@@ -227,6 +230,13 @@ void _power_manager_process(void)
 	
 	N_SPRINTF("[MAIN] EVT WAIT");
 	
+	if (LINK_is_authorized()) {
+		// Configure TWI to be input to reduce power consumption
+		GPIO_twi_disable(1);
+
+		// Disable SPI bus
+		spi_master_disable();
+	}
 #if 1
 	// Main power management process
 	err_code = sd_app_evt_wait();
@@ -250,10 +260,9 @@ static void _cling_global_init()
 	// Version initialization
 	cling.system.mcu_reg[REGISTER_MCU_HW_REV] = 0; // Board version is yet to be supported, initialized to 0.
 	
-	// HW INFO
-	cling.system.mcu_reg[REGISTER_MCU_HWINFO] = 1;
 	// BATTERY LEVEL
 	cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 50; 
+	
 	// Software version number
 	cling.system.mcu_reg[REGISTER_MCU_REVH] = BUILD_MAJOR_RELEASE_NUMBER;  // SW VER (HI)
 	cling.system.mcu_reg[REGISTER_MCU_REVH] <<= 4;
@@ -272,21 +281,7 @@ static void _cling_global_init()
 
 	// Cling reminder state machine
 	cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-#if 0
-	// For testing, give a bunch of notifications
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_OTHER] = 0;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_INCOMING_CALL] = 15;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_MISSED_CALL] = 8;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_VOICE_MAIL] = 0;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_SOCIAL] = 3;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_SCHEDULE] = 12;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_EMAIL] = 7;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_NEWS] = 23;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_HEALTH_AND_FITNESS] = 13;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_BUSINESS_AND_FINANCE] = 9;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_LOCATION] = 25;
-	cling.ancs.cat_count[ANCS_CATEGORY_ID_ENTERTAINMENT] = 7;
-#endif
+
 	// Disable chip peripherals before starting up the system
 	NRF_UART0->ENABLE= 0;//0x1;   
 	NRF_SPI0->ENABLE = 0;//0x1;   
@@ -295,20 +290,14 @@ static void _cling_global_init()
 	NRF_TWI1->ENABLE = 0;//0x1;   
 	NRF_SPIS1->ENABLE = 0;//0x1;   
 	NRF_ADC->ENABLE = 0;//0x1;  
-	NRF_AAR->ENABLE = 0;//0x1;   
-	NRF_CCM->ENABLE = 0;//0x1;   
+	//NRF_AAR->ENABLE = 0;//0x1;   
+	//NRF_CCM->ENABLE = 0;//0x1;   
 	NRF_QDEC->ENABLE = 0;//0x1;   
 	NRF_LPCOMP->ENABLE = 0;//0x1;   
 }
 
 static void _system_startup()
 {
-	// Start RTC timer
-	RTC_Start();
-			
-	// Touch panel sensitivity - HIGH.
-	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
-
 	//
 	// Algorithms (core pedometer)
 	//
@@ -331,6 +320,30 @@ static void _system_startup()
 	
 	// UI init
 	UI_init();
+	
+	// Configure power mode: 
+	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
+
+}
+
+static void _system_module_poweroff()
+{
+			NRF_SPI0->ENABLE = 0;//0x1;   
+			NRF_TWI0->ENABLE = 0;//0x1;   
+			NRF_SPI1->ENABLE = 0;//0x1;   
+			NRF_TWI1->ENABLE = 0;//0x1;   
+			NRF_SPIS1->ENABLE = 0;//0x1;   
+			NRF_ADC->ENABLE = 0;//0x1;  
+	
+			NRF_QDEC->ENABLE = 0;//0x1;   
+			NRF_LPCOMP->ENABLE = 0;//0x1; 
+			NRF_UART0->ENABLE = 0;
+	// Have to investiage why these two module cannot be turned off
+#if 0
+			NRF_CCM->ENABLE = 0;//0x1;   
+
+			NRF_AAR->ENABLE = 0;//0x1;
+#endif
 }
 
 /**@brief Function for application main entry.
@@ -339,11 +352,10 @@ int main(void)
 {
 	// Initialize Wristband firmware gloal structure
 	_cling_global_init();
-		
-#ifdef _POWER_TEST_
-	_power_test_sub();
-#endif
 	
+#ifdef _POWER_TEST_
+	_power_test_powerdown(FALSE);
+#endif
 	// Hardware abstruct layer initialize.
 	//
 	// Including: UART, Keypad, Display, NOR flash, Physical IO, SPI, I2C, Sesnors
@@ -351,17 +363,16 @@ int main(void)
 	HAL_init();
 	
 #ifdef _NOR_FLASH_SPI_TEST_
+	// Nor Flash testing ...
 	_nor_flash_spi_test();
 #endif
+	
+	// -------------------------
 	// System modules initializaiton.
 	//
 	// -- Watch dog, Power management, file system, communication protocol
 	//
 	SYSTEM_init();
-
-#ifdef USING_VIRTUAL_ACTIVITY_SIM
-	SIM_init();
-#endif
 
 #ifdef _ENABLE_FONT_TRANSFER_
 	FONT_flash_setup();
@@ -374,26 +385,47 @@ int main(void)
 	
 	Y_SPRINTF("[MAIN] Entering main loop");
 	
-	//SYSTEM_factory_reset();
-
 	// Enter main loop.
 	while (LOOP_FOREVER)
-	{
+	{		
 		// Feed watchdog every 4 seconds upon RTC interrupt
 		Watchdog_Feed();
-		
+
 		// Home key event detection
 		HOMEKEY_click_check();
-		
-		// Main power management process
-		_power_manager_process();
-		
-		//if (!cling.system.b_powered_up)
-		//	continue;
+
+		if (cling.system.b_powered_up) {
+
+			// Main power management process
+			_power_manager_process();
+			
+			// For unauthorized device, we should shut it down if battery is lower than a threshold
+			if (BATT_device_unauthorized_shut_down())
+				continue;
+					
+		} else {
+			// Turn off all system modules
+			_system_module_poweroff();
+			
+			// Main power management process
+			_power_manager_process();
+			
+			// If device is plugged into power, go restart the system.
+			if (BATT_is_charging()) {
+				SYSTEM_restart_from_reset_vector();
+			}
+			
+			// detect a possible state change
+			HOMEKEY_check_on_hook_change();
+			
+			N_SPRINTF("[MAIN] shut down event");
+			
+			continue;
+		}
 
 		// Battery charging state machine
 		BATT_monitor_state_machine();
-
+		
 		// OLED state machine
 		OLED_state_machine();
 
@@ -404,35 +436,32 @@ int main(void)
 		// this is low level BTLE transportation layer, check any incoming BTLE packet
 		BTLE_state_machine_update();
 
-		// Authorization state machine
-		LINK_state_machine();
-
-		// User data save and store
-		TRACKING_data_logging();
-
 		//
 		// Running Generic communiation protocol at normal rate
 		// --- update, packet processing, and send out pending packets
-		CP_state_machine_update();
+		//
+    CP_state_machine_update();
 
-#ifdef _ENABLE_TOUCH_
-		// Touch panel gesture check
-		TOUCH_gesture_check();
-		TOUCH_power_mode_state_machine();
+		// Authorization state machine
+		LINK_state_machine();
+
+#ifdef _ENABLE_ANCS_	
+    // ANCS state machine
+    ANCS_state_machine();
 #endif
+
+		// User data save and store
+		TRACKING_data_logging();
+		
+		// Interrupt response, including touch panel and homekey events
+		GPIO_interrupt_handle();
+
 		// Accelerometer data reading and algorithms
 		SENSOR_accel_processing();
 
-#if 0
-		// Thermistor measure
-  	THERMISTOR_state_machine();
-
-		// Heart rate measurement state machine
-		PPG_state_machine();
-#endif
 		// Idle alert state machine
 		USER_state_machine();
-		
+
 		// If device enters low battery state, skip reminder & notification
 		if (!BATT_is_low_battery()) {
 			// Reminder state mahcine
@@ -442,14 +471,31 @@ int main(void)
 			NOTIFIC_state_machine();
 		}
 		
-		#if 0
+#if 0
 		HOMEKEY_sim();
-		#endif
+#endif
 		
-		LT1PH03_Measure();
+#ifdef _ENABLE_PPG_
+		// Heart rate measurement state machine
+  	PPG_state_machine();
+#endif
+
+#ifdef _ENABLE_UV_
+		// UV index measure
+  	UV_state_machine();
+#endif
+
+    THERMISTOR_state_machine();
+#if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
+		// Debug processing
+		DBG_event_processing();
+#endif
 	}
 }
 
+/** 
+ * @}
+ */
 /** 
  * @}
  */

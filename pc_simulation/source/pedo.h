@@ -66,8 +66,8 @@ enum {
 
 
 #define CLASSIFICATION_TIME_SPAN 8 /* A 8 seconds span for classification . */
-//#define CLASSIFIER_STEP_WIN_SZ 32  /* a window of 32 steps for classification */
-#define CLASSIFIER_STEP_WIN_SZ 16  /* a window of 32 steps for classification */
+#define CLASSIFIER_STEP_WIN_SZ 32  /* a window of 32 steps for classification */
+//#define CLASSIFIER_STEP_WIN_SZ 16  /* a window of 32 steps for classification */
 #define CHEATING_POINTS_NORM        (I8U)64
 #define CHEATING_POINTS_NORM_SHIFT	6
 
@@ -230,13 +230,6 @@ typedef struct tagANTI_CHEATING_CTX {
     ACCELEROMETER_ACC ap_acc;               // Accumulated A'
     ACCELEROMETER_3D ap_up;                // Up swing A' accumulation
     ACCELEROMETER_3D ap_dw;                // Down swing A' accumulation
-    ACCELEROMETER_3D VF;                   // Forward integration
-    ACCELEROMETER_3D VB;                   // Backward integration
-    ACCELEROMETER_3D VL;                   // Left integration
-    ACCELEROMETER_3D VR;                   // Right integration
-    I32S Kc_flt;                           // Low pass filtered Kc
-    I32U Kc_cnt_w;                         // Kc count for walking
-    I32U Kc_cnt_r;                         // Kc count for running
     ACCELEROMETER_3D ap_prev;              // Right integration
 
     // Non intentional cheating detection feature
@@ -267,9 +260,6 @@ typedef struct tagCLASSIFIER_STAT {
 
     // Walking/running classification
     I32S apu_p2p;           // P2P examination for Walking/Running classification
-    I32U apu_p2p_ts_1;        // P2P peak cross the minimum magnitude threshold
-    I32U apu_p2p_ts_2;        // P2P peak cross the minimum magnitude threshold
-    I32U apu_p2p_ts_3;        // P2P peak cross the minimum magnitude threshold
     I32S apu_min;           // Set of parameters to examine the APU peak consistency
     I32S apu_max;
     I32S w_r_votes[CLASSIFIER_STEP_WIN_SZ];
@@ -284,9 +274,6 @@ typedef struct tagCLASSIFIER_STAT {
     
     I16S car_steps_compensation;      /* CAR step compensation. */
     I16S unknown_steps_compensation; /* unknown step compensation as a indicator to reset Meta-layer state . */
-
-    I32U b_car_per_step;              /* The occurance of CAR in past 32 steps. */
-    I32U b_run_per_step;              /* The occurance of RUNNING in past 32 steps. */
 
     // Anti-cheating scheme
     ANTI_CHEATING_CTX anti_cheating;
@@ -329,7 +316,6 @@ typedef struct tagACCELEROMETER_INPUT_STAT {
     I32U acc;
     I8U peak_vibrate_single;
     I32U peak_vibrate_window;
-    I32U peak_vibrate_smooth;
     I8U peak_strike_single;
     I8U peak_strike_window;         // the maximum of each axis
     I8U acc_symmetric_window;
@@ -369,7 +355,6 @@ typedef struct tagPEDO_STAT {
 	MAGNITUDE_STAT mag; // magnitude of A
 
 	I32S A_prime_up;            // A prime up
-	I32S A_prime_up_no_dc;      // A prime up with DC removed
 	ACCELEROMETER_3D A_prime;   // A prime, A with gravity removed
 
 	STATIONARY_STAT stationary; // stationary state

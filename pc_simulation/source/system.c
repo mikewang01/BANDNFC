@@ -100,7 +100,11 @@ I8U SYSTEM_get_ble_device_name(I8U *device_name)
 	I8U len;
 	SYSTEM_get_dev_id(dev_id);
 	
-	len = sprintf((char *)device_name, "CLING ");
+#ifdef _CLINGBAND_NFC_MODEL_
+	len = sprintf((char *)device_name, "NBAND ");
+#else
+	len = sprintf((char *)device_name, "CBAND ");
+#endif
 	
 	device_name[len++] = dev_id[16];
 	device_name[len++] = dev_id[17];
@@ -126,7 +130,11 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 	twentyCharDevID[0] = 'H'; // Hi
 	twentyCharDevID[1] = 'I'; // Hi
 	twentyCharDevID[2] = 'C'; // Cling
-	twentyCharDevID[3] = 'W'; // Watch
+#ifdef _CLINGBAND_NFC_MODEL_
+	twentyCharDevID[3] = 'N'; // NFC Band
+#else
+	twentyCharDevID[3] = 'B'; // UV Band
+#endif
 	
 	for (i = 0; i < 8; i++) {
 		v8 = (dev_data[i]>>4)&0x0f;
@@ -138,6 +146,59 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 		twentyCharDevID[(((i)<<1)+1)+4] = v8;
 	}
 }
+#ifdef _ENABLE_ANCS_
+
+static void _notification_msg_init()
+{
+	I32U dw_buf[16];
+	I8U *p_byte_addr;
+	I32U offset = 0;
+	
+	// If this device is unauthorized, wipe out everything in the critical info section
+	if (!LINK_is_authorized()) {
+		cling.ancs.message_total = 0;
+		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+		Y_SPRINTF("[SYSTEM] message: 0 (unauthorized)");
+		return ;
+	}
+
+	p_byte_addr = (I8U *)dw_buf;
+	cling.ancs.message_total = 0;
+	while (offset < FLASH_ERASE_BLK_SIZE) {
+		// Read out the first 4 bytes -
+		FLASH_Read_App(SYSTEM_NOTIFICATION_SPACE_START+offset, p_byte_addr, 4);
+			
+		// Every message, we store 256 bytes, which includes message title and length info.
+		if (p_byte_addr[0] == 0xFF) {
+			break;
+		}
+		
+		if (p_byte_addr[0] >= 128) {
+			Y_SPRINTF("[SYSTEM] message (%d) wrong info - erased: %08x!", offset, dw_buf[0]);
+			// something wrong
+			cling.ancs.message_total = 0;
+			FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+			break;
+		}
+		offset += 256;
+		cling.ancs.message_total ++;
+					
+		Y_SPRINTF("[SYSTEM] message buffer update(%d) - %d, %d", 
+		cling.ancs.message_total, p_byte_addr[0], p_byte_addr[1]);
+
+	}
+	
+	// If nothing gets restored from system
+	if (cling.ancs.message_total == 16) {
+		Y_SPRINTF("[SYSTEM] message buffer full - erased!");
+		cling.ancs.message_total = 0;
+		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
+	}
+	
+	Y_SPRINTF("[SYSTEM] message OVERALL: %d", cling.ancs.message_total);
+
+}
+#endif
 
 static BOOLEAN _critical_info_restored()
 {
@@ -156,12 +217,11 @@ static BOOLEAN _critical_info_restored()
 		a->day_stored.calories = a->day.calories;
 		a->day_stored.distance = a->day.distance;
 		a->day_stored.running = a->day.running;
-		a->day_stored.sleep = a->day.sleep;
 		a->day_stored.walking = a->day.walking;
 
 		// Get sleep by noon from flash
-		a->sleep_by_noon = TRACKING_get_sleep_by_noon();
-		a->sleep_36_hr = a->day.sleep;
+		a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+		a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 		return FALSE;
 	}
 	
@@ -181,6 +241,8 @@ static BOOLEAN _critical_info_restored()
 	
 	// If nothing gets restored from system
 	if (offset == 0) {
+		cling.batt.b_no_batt_restored = TRUE;
+		Y_SPRINTF("[SYSTEM] Notthing gets restored");
 		return FALSE;
 	}
 	
@@ -197,7 +259,7 @@ static BOOLEAN _critical_info_restored()
 	// length: p_byte_addr[4]
 	//
 	if ((p_byte_addr[4] >= 22) && (p_byte_addr[4] <= 39)) {
-		N_SPRINTF("[SYSTEM] critical restored device info: %d", p_byte_addr[4]);
+		Y_SPRINTF("[SYSTEM] critical restored device info: %d", p_byte_addr[4]);
 		USER_setup_device(p_byte_addr+5, p_byte_addr[4]);
 	}
 	
@@ -223,49 +285,55 @@ static BOOLEAN _critical_info_restored()
 	N_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
 
 	// Update stored total
-	a->day_stored.sleep = a->day.sleep;
 	a->day_stored.walking = a->day.walking;
 	a->day_stored.running = a->day.running;
 	a->day_stored.distance = a->day.distance;
 	a->day_stored.calories = a->day.calories;
 	
 	// Get sleep seconds by noon
-	a->sleep_by_noon = TRACKING_get_sleep_by_noon();
-	a->sleep_36_hr = a->day.sleep;
-
-	// Restoring system running mode
-	cling.system.simulation_mode = p_byte_addr[50];
-	
+	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
+#ifdef _ENABLE_ANCS_
+  // Restore ancs pair bond state.
+	cling.ancs.bond_state = p_byte_addr[50];
+#endif
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
 #ifdef _ENABLE_ANCS_
-	// Notification category
+	// Restore ancs supported set.
 	cling.ancs.supported_categories = p_byte_addr[52];
-	cling.ancs.supported_categories <<= 8;
-	cling.ancs.supported_categories |= p_byte_addr[53];
-#endif	
-
+  cling.ancs.supported_categories = (cling.ancs.supported_categories << 8) | p_byte_addr[53];	
+	
+	Y_SPRINTF("[SYSTEM] restored ANCS categories: %04x", cling.ancs.supported_categories);
+#endif
 	// Restore Skin touch
-	cling.touch.skin_touch_type = p_byte_addr[54];
-#ifdef _ENABLE_ANCS_	
-	// Restore ANCS setting
-	cling.ancs.b_enabled = p_byte_addr[55];
-#endif	
+	cling.touch.b_skin_touch = p_byte_addr[54];
+
+	// 55: clock orientation.
+	cling.ui.clock_orientation = p_byte_addr[55];
+	
 	// Restore battery level
 	if (p_byte_addr[56] == 0)
-		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 50;
+		cling.batt.b_no_batt_restored = TRUE;
+	else if (p_byte_addr[56] > 100)
+		cling.batt.b_no_batt_restored = TRUE;
 	else 
 		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = p_byte_addr[56];
 		
 	Y_SPRINTF("[SYSTEM] restore battery at: %d", p_byte_addr[56]);
 
+	cling.batt.non_charging_accumulated_active_sec = p_byte_addr[57];
+	cling.batt.non_charging_accumulated_steps = p_byte_addr[58];
+	Y_SPRINTF("[SYSTEM] restore charging param: %d, %d", p_byte_addr[57], p_byte_addr[58]);
+
+	cling.ui.fonts_cn = p_byte_addr[59];
+	cling.gcp.host_type = p_byte_addr[60];
+
 	// Minute file critical timing info
-	cling.system.reset_count = p_byte_addr[60];
-	cling.system.reset_count = (cling.system.reset_count << 8) | p_byte_addr[61];
-	cling.system.reset_count = (cling.system.reset_count << 8) | p_byte_addr[62];
+	cling.system.reset_count = p_byte_addr[62];
 	cling.system.reset_count = (cling.system.reset_count << 8) | p_byte_addr[63];
 
-	if (cling.system.reset_count == 0xffffffff) {
+	if (cling.system.reset_count & 0x8000) {
 		cling.system.reset_count = 0;
 	} else {
 		cling.system.reset_count ++;
@@ -282,7 +350,6 @@ static BOOLEAN _critical_info_restored()
 	
 	return TRUE;
 }
-#ifdef __DEBUG_BASE__
 
 static void _print_out_dev_name()
 {
@@ -316,22 +383,22 @@ static void _startup_logging()
 	Y_SPRINTF("acc: 0x%02x, ", cling.whoami.accelerometer);
 	Y_SPRINTF("issp: 0x%02x, ", cling.whoami.hssp);
 	Y_SPRINTF("nor flash:0x%02x%02x, ", cling.whoami.nor[0], cling.whoami.nor[1]);
-	Y_SPRINTF("Touch dev: %d", cling.whoami.touch_ver);
+	Y_SPRINTF("Touch dev: %d.%d.%d", cling.whoami.touch_ver[0], cling.whoami.touch_ver[1], cling.whoami.touch_ver[2]);
 	Y_SPRINTF("-----------------------");
 	Y_SPRINTF("[MAIN] SYSTEM init ...");
 }
-#endif
 
 void SYSTEM_init(void)
 {
 	I16U page_erased = 0;
 //				page_erased = FLASH_erase_all(TRUE);
 
-#ifdef __DEBUG_BASE__
+	// Start RTC timer
+	RTC_Start();
+			
 	// Logging when syistem boots up
 	_startup_logging();
-#endif
-
+	
 	// Check whether this is a authenticated device
 	LINK_init();
 
@@ -341,7 +408,7 @@ void SYSTEM_init(void)
 		// Erase Nor Flash if device is not authorized or File system undetected
 		if (LINK_is_authorized()) {
 			page_erased = FLASH_erase_all(FALSE);
-			
+
 			// Print out the amount of page that gets erased
 			Y_SPRINTF("[MAIN] No FAT, With Auth, erase %d blocks (4 KB) ", page_erased);
 		} else {
@@ -358,13 +425,13 @@ void SYSTEM_init(void)
 		
 	} else if (!LINK_is_authorized()) {
 		page_erased = FLASH_erase_application_data(TRUE);
-		
+	  		
 		// Print out the amount of page that gets erased
 		Y_SPRINTF("[MAIN] YES FAT, No AUTH, erase %d blocks (4 KB) ", page_erased);
 	} else {
 		Y_SPRINTF("[MAIN] YES FAT, YES AUTH, erase %d blocks (4 KB) ", page_erased);
 	}
-
+	
 	// Init the file system
 	FILE_init();
 
@@ -375,13 +442,31 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	_critical_info_restored();
+#ifdef _ENABLE_ANCS_
+	if ((!LINK_is_authorized()) || (cling.ancs.bond_state == BOND_STATE_ERROR)){
+		// Delete	bond infomation.
+		Y_SPRINTF("[MAIN] device manger init delete bond infomation");
+	  HAL_device_manager_init(TRUE);
+    cling.ancs.bond_state = BOND_STATE_UNCLEAR;		
+	}
+	else{
+		// Reserve	bond infomation.
+		Y_SPRINTF("[MAIN] device manger init reserve bond infomation :%d",cling.ancs.bond_state);
+		HAL_device_manager_init(FALSE);	
+	}	
+#endif
+#ifdef _ENABLE_ANCS_
+	// Initialize smart notification messages
+	_notification_msg_init();
+#endif
 	
 	// Over-the-air update check
 	OTA_main();
+#ifndef _CLING_PC_SIMULATION_	
 
 	// Watchdog init, and disabled for debugging purpose
 	Watchdog_Init();
-
+#endif
 	// Start first battery measurement
 	BATT_start_first_measure();
 }
@@ -446,25 +531,23 @@ BOOLEAN SYSTEM_backup_critical()
 	
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
-	
-	// Store simualtion mode
-	critical[50] = cling.system.simulation_mode;
-	
+#ifdef _ENABLE_ANCS_
+  // Store ancs pair bond state.
+	critical[50] = cling.ancs.bond_state;
+#endif
 	// Store total reminders
 	critical[51] = cling.reminder.total;
-	
 #ifdef _ENABLE_ANCS_
-	// Store notification categories
-	critical[52] = (I8U)((cling.ancs.supported_categories>>8)&0xFF);
-	critical[53] = (I8U)(cling.ancs.supported_categories & 0xFF);
+	// Store ancs supported set.
+	critical[52] = (I8U)((cling.ancs.supported_categories>>8) & 0xFF);
+	critical[53] = (I8U)((cling.ancs.supported_categories) & 0xFF);
 #endif
-	
 	// Store skin touch type
-	critical[54] = cling.touch.skin_touch_type;
-#ifdef _ENABLE_ANCS_
-	// Store ANCS enable bit
-	critical[55] = cling.ancs.b_enabled;
-#endif
+	critical[54] = cling.touch.b_skin_touch;
+
+	// 55: Clock orientation
+	critical[55] = cling.ui.clock_orientation;
+	
 	// Store battery level
 	critical[56] = cling.system.mcu_reg[REGISTER_MCU_BATTERY];
 	if (critical[56] == 0) {
@@ -473,9 +556,16 @@ BOOLEAN SYSTEM_backup_critical()
 	
 	N_SPRINTF("[SYSTEM] backup battery at: %d", critical[56]);
 	
-	// Store the reset count
-	critical[60] = (I8U)((cling.system.reset_count>>24) & 0xFF);
-	critical[61] = (I8U)((cling.system.reset_count>>16) & 0xFF);
+	critical[57] = cling.batt.non_charging_accumulated_active_sec;
+	critical[58] = cling.batt.non_charging_accumulated_steps;
+	critical[59] = cling.ui.fonts_cn;
+	N_SPRINTF("[SYSTEM] Backup charging param: %d, %d", cling.batt.non_charging_accumulated_active_sec, 
+		cling.batt.non_charging_accumulated_steps);
+
+	// Store the  phone type
+	critical[60] = cling.gcp.host_type;
+	critical[61] = 0;
+	// Store the reset count	
 	critical[62] = (I8U)((cling.system.reset_count>>8) & 0xFF);
 	critical[63] = (I8U)((cling.system.reset_count) & 0xFF);
 
@@ -483,7 +573,7 @@ BOOLEAN SYSTEM_backup_critical()
 	FLASH_Write_App(SYSTEM_INFORMATION_SPACE_START+offset, critical, 64);
 	
 	//
-	N_SPRINTF("[SYSTEM] system backedup (%d)", CLK_get_system_time());
+	N_SPRINTF("[SYSTEM] system backedup (%d)", cling.user_data.day.steps);
 	
 	return TRUE;
 }
@@ -509,7 +599,7 @@ void SYSTEM_factory_reset()
 	Y_SPRINTF("[SYSTEM] factory reset - BLE disconnect");
 	
 	// Disconnect BLE service
-	BTLE_disconnect();
+	BTLE_disconnect(BTLE_DISCONN_REASON_FACTORY_RESET);
 	
 	// Enable factory reset
 	r->disconnect_evt |= BLE_DISCONN_EVT_FACTORY_RESET;
@@ -524,7 +614,7 @@ void SYSTEM_reboot()
 	
 	if (BTLE_is_connected()) {
 		// Disconnect BLE service
-		BTLE_disconnect();
+		BTLE_disconnect(BTLE_DISCONN_REASON_REBOOT);
 		
 		// Enable factory reset
 		r->disconnect_evt |= BLE_DISCONN_EVT_REBOOT;

@@ -28,14 +28,11 @@ Classification: U//FOUO
 //static void AES_decrypt(const AES_CTX *ctx, uint32_t *data);
 //static void AES_hncpy32(uint32_t * dst, uint32_t * src);
 //static uint8_t AES_xtime(uint32_t x);
-//static void AES_display(uint8_t * data,size_t len);
 //static void AES_generateSBox(void);
-
 
 
 uint8_t *aes_sbox;		/** AES S-box  */
 uint8_t *aes_isbox;	/** AES iS-box */
-
 
 /** AES round constants */
 const uint8_t Rcon[]= 
@@ -291,18 +288,18 @@ void AES_decrypt(const AES_CTX *ctx, uint32_t *data)
 
 void AES_generateSBox(void)
 {
-	uint32_t *t;
-	uint32_t x, i;
+//	uint32_t *t;
+	uint32_t x, i, y;
+	I8U t[256];
 	
 	aes_sbox = PEDO_get_global_buffer();
 	aes_isbox = aes_sbox+256;
-	t = (uint32_t *)(aes_isbox+256);
+
 	for (i = 0, x = 1; i < 256; i ++)
 	{
-		t[i] = x;
+		t[i] = (I8U)x;
 		x ^= (x << 1) ^ ((x >> 7) * 0x11B);
 	}
-	
 
 	aes_sbox[0]	= 0x63;
 	for (i = 0; i < 255; i ++)
@@ -310,25 +307,15 @@ void AES_generateSBox(void)
 		x = t[255 - i];
 		x |= x << 8;
 		x ^= (x >> 4) ^ (x >> 5) ^ (x >> 6) ^ (x >> 7);
-		aes_sbox[t[i]] = (x ^ 0x63) & 0xFF;
+		y = (x ^ 0x63) & 0xFF;
+		aes_sbox[t[i]] = (I8U)y;
 	}
+
 	for (i = 0; i < 256;i++)
 	{
 		aes_isbox[aes_sbox[i]]=i;
 	}
 }
-
-#if 0
-void AES_display(uint8_t * data, size_t len)
-{
-	int i;
-	for (i = 0; i < len; i++)
-	{
-		printf("%02x",(uint8_t)data[i]);
-	}
-	
-}
-#endif
 
 
 

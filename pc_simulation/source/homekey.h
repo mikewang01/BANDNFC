@@ -15,6 +15,8 @@
 #define CLICK_HOLD_TIME_LONG 1500
 #define CLICK_HOLD_TIME_SHORT 1000 // 30 -- remove debouncing for now
 
+#define CLICK_HOLD_TIME_SOS  4000
+
 #define HOMEKEY_CLICK_DEBOUNCE		10 // 100 milli-second for debouncing
 #define DELAY_SINGLE_CLICK_DECLARATION 200
 
@@ -24,11 +26,10 @@ typedef struct tagHOMEKEY_CLICK_STAT {
     I8U         temp_st;     			// temporarily hook status
     I8U         stable_st;        // stable hook event 
     I32U        ticks[2]; 		    // 0: ON 1: OFF, 2:SWITCHING
-	I32U		click_on_ts;
     I8U         half_click;   			// on hook for a short time; but not long enough to call it on hook yet
 	I8U			single_click_num;
 	I8U			click_hold_num;
-	I32U        click_proc_ts;
+	I8U     click_sos_num;
 } HOMEKEY_CLICK_STAT;
 
 // BUTTON STATUS
@@ -48,5 +49,7 @@ typedef enum {
 void HOMEKEY_click_init(void);
 void HOMEKEY_click_check(void);
 void HOMEKEY_sim(void);
+void HOMEKEY_sim_kickoff(void);
+void HOMEKEY_check_on_hook_change(void);
 
 #endif

@@ -29,10 +29,10 @@ void HOMEKEY_click_init()
 #endif
 }
 
-static BOOLEAN _check_on_hook_change(HOMEKEY_CLICK_STAT *k)
+void HOMEKEY_check_on_hook_change()
 {
 #ifndef _CLING_PC_SIMULATION_
-
+	HOMEKEY_CLICK_STAT *k = &cling.key;
 	I32U t_curr;
 	I8U b_pin;
 	I8U stat = ON_CLICK;
@@ -51,23 +51,15 @@ static BOOLEAN _check_on_hook_change(HOMEKEY_CLICK_STAT *k)
 		// update the click time stamp
 		k->temp_st = stat;
 		k->ticks[stat] = t_curr;
-		Y_SPRINTF("[HOMEKEY] --- BUTTON Event ---");
+		Y_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
 		if (k->temp_st == ON_CLICK) {
-			k->click_on_ts = t_curr;
 		
 			// Make sure OLED display panel is faced up.
 			if (LINK_is_authorized()) {
 					
 				Y_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
-				// Set to highest sensitivity
-				cling.touch.state = TOUCH_STATE_MODE_SET;
-				cling.touch.power_new_mode = TOUCH_POWER_HIGH_20MS;
-
-				// Start 20 ms timer for screen rendering
-				SYSCLK_timer_start();
-					
 				// Turn on OLED panel
 				OLED_set_panel_on();
 				
@@ -85,14 +77,16 @@ static BOOLEAN _check_on_hook_change(HOMEKEY_CLICK_STAT *k)
 					UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 					Y_SPRINTF("[KEY] set UI: button clicked (sensing)");
 				}
+			} else {
+				RTC_start_operation_clk();
 			}
 		} 
-		return TRUE;
+		return;
 	} else {
-		return FALSE;
+		return;
 	}
 #else
-	return FALSE;
+	return;
 #endif
 }
 
@@ -102,18 +96,40 @@ static BOOLEAN _check_on_hook_change(HOMEKEY_CLICK_STAT *k)
 void HOMEKEY_click_check()
 {
 	HOMEKEY_CLICK_STAT *k = &cling.key;
-	I32U t_curr = CLK_get_system_time();
+	I32U t_curr=0;
 	I32U offset = 0;
 	I32U t_click_and_hold = CLICK_HOLD_TIME_LONG;
+	I32U t_sos = CLICK_HOLD_TIME_SOS;
 
-	// detect a possible state change
-	_check_on_hook_change(k);
-	
 	// only update hook state machine when there is possible state switch 
 	if (k->stable_st == k->temp_st) {
 		
 		// If it is press and hold, go return
 		if (k->temp_st == ON_CLICK) {
+			
+			// Ignore SOS request if device is not authorized.
+			if (!LINK_is_authorized())
+				return;
+			
+			// Go ahead to check if SOS is pressed
+			
+			offset = CLK_get_system_time() - k->ticks[ON_CLICK];
+			
+			if (offset >= t_sos) {
+				
+				k->ticks[ON_CLICK] += 2000;
+			
+				// Increase the counter for "press + hold"
+				k->click_sos_num ++;
+				
+				cling.touch.b_valid_gesture = TRUE;
+				cling.touch.gesture = TOUCH_BUTTON_PRESS_SOS;
+				Y_SPRINTF("[HOMEKEY] +++ button (SOS), %d, %d, %d", t_curr, offset, t_sos);
+				
+				// Send SOS message to the App
+				CP_create_sos_msg();
+			}
+			
 			return;
 		}
 	} 
@@ -122,8 +138,8 @@ void HOMEKEY_click_check()
 	if (k->temp_st == ON_CLICK) {
 
   		// Check how long we have been in "ON-CLICK" status
-		offset = t_curr - k->ticks[ON_CLICK];
-
+		offset = CLK_get_system_time() - k->ticks[ON_CLICK];
+		
 		// Debouncing
 		if (offset < HOMEKEY_CLICK_DEBOUNCE) 
 			return;
@@ -136,11 +152,17 @@ void HOMEKEY_click_check()
 
 			// Increase the counter for "press + hold"
 			k->click_hold_num ++;
-			
+
 			cling.touch.b_valid_gesture = TRUE;
 			cling.touch.gesture = TOUCH_BUTTON_PRESS_HOLD;
-			Y_SPRINTF("[HOMEKEY] +++ button press and hold");
-				
+			Y_SPRINTF("[HOMEKEY] +++ button press and hold: %d, %d, %d, %d", offset, t_curr, k->ticks[ON_CLICK], CLK_get_system_time());
+			
+			// if unauthorized, we should turn off screen, or turn it on
+			if (!cling.system.b_powered_up) {
+				SYSTEM_restart_from_reset_vector();
+			} else {
+				cling.batt.shut_down_time = BATTERY_SYSTEM_UNAUTH_POWER_DOWN;
+			}
 		} else {
 			// indicate a possible double click, no state update just yet!
 			k->half_click = 1;
@@ -163,7 +185,6 @@ void HOMEKEY_click_check()
 			cling.touch.b_valid_gesture = TRUE;
 			cling.touch.gesture = TOUCH_BUTTON_SINGLE;
 			Y_SPRINTF("[HOMEKEY] +++ button single click");
-				
 		}
 		else {
 			// declare a new state --> OFF HOOK
@@ -172,40 +193,59 @@ void HOMEKEY_click_check()
 		}
 	}
 }
-
+#if 0
 I32U time_key=0, sim_idx = 0, sim_started = 0;
-I8U sim_key_tab[30] = {	
-	//TOUCH_BUTTON_PRESS_HOLD,
+const I8U sim_key_tab[30] = {	
+	TOUCH_BUTTON_PRESS_HOLD,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_SWIPE_LEFT, // stop -> hr
 	TOUCH_SWIPE_LEFT,
 	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
 	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
-	//TOUCH_FINGER_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
-	//TOUCH_FINGER_LEFT,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_BUTTON_SINGLE,
-	TOUCH_FINGER_LEFT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_FINGER_RIGHT,
+	TOUCH_SWIPE_RIGHT,
+	TOUCH_SWIPE_RIGHT,
+	TOUCH_SWIPE_RIGHT,
+	TOUCH_SWIPE_RIGHT,
+	TOUCH_SWIPE_RIGHT,
+};
+
+const I8U sim_time_gap[30] = {	
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,      // Should get to stop watch stop page
+	3,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	3,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
+	2,
 };
 
 void HOMEKEY_sim_kickoff()
@@ -215,18 +255,49 @@ void HOMEKEY_sim_kickoff()
 	cling.time.system_clock_in_sec = 0;
 }
 
+static void _sim_physical_touch()
+{
+		// Turn on OLED panel
+		OLED_set_panel_on();
+		
+		cling.ui.true_display = TRUE;
+		
+		// Update touch event time
+		cling.ui.touch_time_stamp = CLK_get_system_time();
+		
+		if (UI_is_idle()) {
+			// UI initial state, a glance of current clock
+			UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
+			Y_SPRINTF("[KEY] set UI: sim click (glance)");
+		} else {
+			// 
+			UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
+			Y_SPRINTF("[KEY] set UI: sim clicked (sensing)");
+		}
+}
+
 void HOMEKEY_sim()
 {
+	I32U t_gap;
+	#if 1
 	if (!sim_started)
 		return;
+	#endif
+	t_gap = time_key + sim_time_gap[sim_idx];
 	
-	if (cling.time.system_clock_in_sec > (time_key+2)) {
-		time_key = cling.time.system_clock_in_sec;
-		cling.touch.b_valid_gesture = TRUE;
-		cling.touch.gesture = sim_key_tab[sim_idx++];
-		if (sim_idx >= 28)
-			sim_idx = 0;
+	if (cling.time.system_clock_in_sec > t_gap) {
 		
 		Y_SPRINTF("[HOMEKEY] index: %d, key: %d", sim_idx, cling.touch.gesture);
+		_sim_physical_touch();
+		
+		time_key = cling.time.system_clock_in_sec;
+		
+		cling.touch.b_valid_gesture = TRUE;
+		cling.touch.gesture = sim_key_tab[sim_idx++];
+		
+		if (sim_idx >= 18)
+			sim_idx  = 0;
+		
 	}
 }
+#endif

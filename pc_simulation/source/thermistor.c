@@ -1,198 +1,215 @@
 
 #include "main.h"
 
-#ifndef _CLING_PC_SIMULATION_
-static void _config_therm_volt_meas()
-{
-	/* Enable interrupt on ADC sample ready event*/		
-	NRF_ADC->INTENSET = ADC_INTENSET_END_Disabled;
-	sd_nvic_EnableIRQ(ADC_IRQn);
-	
-	GPIO_therm_adc_enable();
-	
-	/* Enable ADC*/
-	NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
+#define SKIN_TEMPERATURE_MEASURING_PERIOD_FOREGROUND  2
+#define SKIN_TEMPERATURE_MEASURING_PERIOD_BACKGROUND  900
 
-	sd_nvic_ClearPendingIRQ(ADC_IRQn);
-	sd_nvic_SetPriority(ADC_IRQn, APP_IRQ_PRIORITY_LOW);
-	sd_nvic_EnableIRQ(ADC_IRQn);
-
-	NRF_ADC->INTENSET = ADC_INTENSET_END_Enabled;
-
-	NRF_ADC->EVENTS_END  = 0;
-	NRF_ADC->TASKS_START = 1;
-}
-
-static void _config_power_volt_meas()
-{
-	/* Enable interrupt on ADC sample ready event*/		
-	NRF_ADC->INTENSET = ADC_INTENSET_END_Disabled;
-	sd_nvic_EnableIRQ(ADC_IRQn);	
-	
-	//GPIO_power_pin_adc_enable();
-	
-	/* Enable ADC*/
-	NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
-
-	sd_nvic_ClearPendingIRQ(ADC_IRQn);
-	sd_nvic_SetPriority(ADC_IRQn, APP_IRQ_PRIORITY_LOW);
-	sd_nvic_EnableIRQ(ADC_IRQn);
-
-	NRF_ADC->INTENSET = ADC_INTENSET_END_Enabled;
-
-	NRF_ADC->EVENTS_END  = 0;
-	NRF_ADC->TASKS_START = 1;
-}
-#endif
 static void _calc_temperature()
 {
 	THERMISTOR_CTX *t = &cling.therm;
 	I32S volt_diff;
-	I32S resistance;
+	I32S resistance, resistance_t;
 	I16S i, temperature;
+	
+//#define _HUNDRED_THOUSAND_OHM_
 
-	// resistance-temperature talbe of FTN18WF104
-	// temperature from 20.0 to 47.95, step 0.05
-	const I32S FTN18WF104_tab[560] = {
-    127080, 126771, 126463, 126156, 125850, 125544, 125239, 124935, 124632, 124330, 124028, 123727, 123427, 123128, 122830, 122532, 
-    122235, 121939, 121644, 121350, 121056, 120763, 120471, 120180, 119890, 119600, 119311, 119023, 118736, 118450, 118164, 117879, 
-    117595, 117312, 117029, 116747, 116466, 116186, 115906, 115627, 115368, 115091, 114814, 114538, 114263, 113989, 113715, 113442, 
-    113170, 112899, 112628, 112358, 112089, 111820, 111552, 111285, 111019, 110753, 110488, 110224, 109960, 109697, 109435, 109174, 
-    108913, 108653, 108394, 108135, 107877, 107620, 107363, 107107, 106852, 106597, 106343, 106090, 105837, 105585, 105334, 105083, 
-    104852, 104603, 104354, 104106, 103859, 103612, 103366, 103121, 102876, 102632, 102389, 102146, 101904, 101663, 101422, 101182, 
-    100942, 100703, 100465, 100227,  99990,  99754,  99518,  99283,  99048,  98814,  98581,  98348,  98116,  97885,  97654,  97424, 
-     97194,  96965,  96737,  96509,  96282,  96055,  95829,  95604,  95398,  95174,  94950,  94727,  94504,  94282,  94061,  93840, 
-     93620,  93400,  93181,  92963,  92745,  92528,  92311,  92095,  91879,  91664,  91450,  91236,  91023,  90810,  90598,  90386, 
-     90175,  89964,  89754,  89545,  89336,  89128,  88920,  88713,  88506,  88300,  88094,  87889,  87684,  87480,  87276,  87073, 
-     86889,  86687,  86485,  86284,  86084,  85884,  85685,  85486,  85288,  85090,  84893,  84696,  84500,  84304,  84109,  83914, 
-     83720,  83526,  83333,  83140,  82948,  82756,  82565,  82374,  82184,  81994,  81805,  81616,  81428,  81240,  81053,  80866, 
-     80680,  80494,  80309,  80124,  79939,  79755,  79571,  79388,  79222,  79040,  78858,  78677,  78496,  78316,  78136,  77957, 
-     77778,  77599,  77421,  77243,  77066,  76889,  76713,  76537,  76362,  76187,  76013,  75839,  75665,  75492,  75319,  75147, 
-     74975,  74804,  74633,  74463,  74293,  74123,  73954,  73785,  73617,  73449,  73282,  73115,  72948,  72782,  72616,  72451, 
-     72306,  72141,  71977,  71813,  71650,  71487,  71325,  71163,  71001,  70840,  70679,  70519,  70359,  70199,  70040,  69881, 
-     69723,  69565,  69407,  69250,  69093,  68937,  68781,  68625,  68470,  68315,  68161,  68007,  67853,  67700,  67547,  67395, 
-     67243,  67091,  66940,  66789,  66639,  66489,  66339,  66190,  66061,  65912,  65764,  65616,  65468,  65321,  65174,  65028, 
-     64882,  64736,  64591,  64446,  64301,  64157,  64013,  63869,  63726,  63583,  63441,  63299,  63157,  63016,  62875,  62734, 
-     62594,  62454,  62314,  62175,  62036,  61897,  61759,  61621,  61483,  61346,  61209,  61073,  60937,  60801,  60666,  60531, 
-     60415,  60280,  60146,  60012,  59878,  59745,  59612,  59479,  59347,  59215,  59083,  58952,  58821,  58690,  58560,  58430, 
-     58300,  58171,  58042,  57913,  57785,  57657,  57529,  57402,  57275,  57148,  57022,  56896,  56770,  56645,  56520,  56395, 
-     56270,  56146,  56022,  55898,  55775,  55652,  55529,  55407,  55306,  55184,  55062,  54941,  54820,  54699,  54579,  54459, 
-     54339,  54219,  54100,  53981,  53862,  53744,  53626,  53508,  53391,  53274,  53157,  53040,  52924,  52808,  52692,  52577, 
-     52462,  52347,  52232,  52118,  52004,  51890,  51777,  51664,  51551,  51438,  51326,  51214,  51102,  50991,  50880,  50769, 
-     50677,  50567,  50457,  50347,  50237,  50128,  50019,  49910,  49801,  49693,  49585,  49477,  49369,  49262,  49155,  49048, 
-     48942,  48836,  48730,  48624,  48519,  48414,  48309,  48204,  48100,  47996,  47892,  47788,  47685,  47582,  47479,  47376, 
-     47274,  47172,  47070,  46968,  46867,  46766,  46665,  46564,  46482,  46382,  46282,  46182,  46083,  45984,  45885,  45786, 
-     45687,  45589,  45491,  45393,  45295,  45198,  45101,  45004,  44907,  44811,  44715,  44619,  44523,  44428,  44333,  44238, 
-     44143,  44048,  43954,  43860,  43766,  43672,  43579,  43486,  43393,  43300,  43207,  43115,  43023,  42931,  42839,  42748, 
-     42675,  42584,  42493,  42402,  42312,  42222,  42132,  42042,  41952,  41863,  41774,  41685,  41596,  41507,  41419,  41331, 
-     41243,  41155,  41068,  40981,  40894,  40807,  40720,  40634,  40548,  40462,  40376,  40290,  40204,  40119,  40034,  39949, 
-     39864,  39779,  39695,  39611,  39527,  39443,  39359,  39276,  39213,  39130,  39047,  38964,  38882,  38800,  38718,  38636, 
-     38554,  38473,  38392,  38311,  38230,  38149,  38069,  37989,  37909,  37829,  37749,  37670,  37591,  37512,  37433,  37354, 
-     37275,  37197,  37119,  37041,  36963,  36885,  36808,  36731,  36654,  36577,  36500,  36423,  36347,  36271,  36195,  36119};
+#ifdef _HUNDRED_THOUSAND_OHM_
+
+#define    FIRST_REST    127080                // resistance at 20.0 Celsius Degreee
+#define    FIRST_TEMP    200                   // represent 20.0 Celsius Degreee
+#define    TAB_LENGTH    299
+#define    NOMINAL_RESISTANCE      100000
+#define    TEMPERATURE_STEP        5
+
+	const I8U resistance_inc[TAB_LENGTH] = {
+    122, 123, 122, 121, 120, 120, 120, 118, 118, 118, 116, 116, 116, 115, 114, 114, 
+    113, 112, 112, 111, 110, 110, 110, 109, 108, 108, 107, 106, 106, 106, 104, 105, 
+    103, 104, 102, 102, 102, 101, 100, 100,  99,  99,  99,  97,  98,  96,  97,  95, 
+     96,  94,  95,  93,  94,  92,  93,  92,  91,  91,  90,  90,  89,  89,  89,  88, 
+     87,  87,  87,  86,  86,  85,  85,  84,  84,  84,  83,  83,  82,  82,  81,  81, 
+     80,  81,  79,  79,  79,  79,  78,  78,  77,  77,  76,  76,  76,  75,  75,  74, 
+     75,  73,  74,  73,  72,  72,  72,  72,  71,  71,  70,  70,  70,  69,  69,  69, 
+     68,  68,  67,  68,  66,  67,  66,  66,  66,  65,  65,  64,  64,  64,  64,  63, 
+     63,  63,  62,  62,  61,  62,  61,  61,  60,  60,  60,  59,  60,  58,  59,  58, 
+     58,  58,  58,  57,  57,  56,  57,  56,  55,  56,  55,  55,  54,  55,  54,  54, 
+     53,  54,  53,  52,  53,  52,  52,  52,  51,  51,  51,  51,  51,  50,  50,  49, 
+     50,  49,  49,  49,  48,  49,  48,  47,  48,  47,  47,  47,  47,  46,  46,  46, 
+     46,  45,  46,  45,  44,  45,  44,  45,  44,  43,  44,  43,  43,  43,  43,  42, 
+     42,  43,  41,  42,  42,  41,  41,  41,  40,  41,  40,  40,  40,  40,  39,  39, 
+     40,  38,  39,  39,  38,  38,  38,  38,  38,  37,  37,  37,  37,  37,  37,  36, 
+     36,  36,  36,  36,  35,  36,  35,  35,  35,  34,  35,  34,  35,  34,  33,  34, 
+     34,  33,  33,  33,  33,  33,  33,  32,  32,  33,  32,  31,  32,  32,  31,  31, 
+     31,  31,  31,  31,  30,  31,  30,  30,  30,  30,  29,  30,  29,  30,  29,  29, 
+     29,  28,  29,  28,  29,  28,  28,  28,  28,  27,  28};
+	
+#else
+
+#define    FIRST_REST    17926                 // resistance at 10.0 Celsius Degreee
+#define    FIRST_TEMP    100                   // represent 10.0 Celsius Degreee
+#define    TAB_LENGTH    399
+#define    NOMINAL_RESISTANCE      10000
+#define    TEMPERATURE_STEP        1
+
+	const I8U resistance_inc[TAB_LENGTH] = {
+    54, 74, 74, 74, 74, 73, 73, 72, 72, 72, 52, 71, 71, 71, 70, 69, 
+    70, 69, 69, 68, 49, 68, 67, 68, 66, 67, 66, 66, 66, 65, 49, 64, 
+    65, 64, 64, 63, 63, 63, 63, 62, 47, 61, 62, 61, 61, 60, 61, 60, 
+    60, 59, 45, 59, 59, 58, 58, 58, 58, 57, 57, 57, 45, 56, 56, 56, 
+    55, 56, 55, 54, 55, 54, 42, 54, 53, 54, 53, 52, 53, 52, 52, 52, 
+    41, 52, 51, 51, 50, 51, 50, 50, 50, 49, 39, 49, 49, 49, 48, 48, 
+    48, 48, 48, 47, 38, 47, 47, 47, 46, 46, 46, 45, 46, 45, 37, 45, 
+    44, 45, 44, 44, 44, 43, 44, 43, 36, 43, 43, 42, 42, 42, 42, 42, 
+    42, 41, 35, 41, 41, 41, 40, 41, 40, 40, 39, 40, 35, 39, 39, 39, 
+    39, 39, 38, 38, 38, 38, 34, 38, 37, 37, 37, 37, 37, 36, 37, 36, 
+    32, 36, 36, 36, 35, 35, 36, 34, 35, 35, 33, 34, 35, 34, 34, 33, 
+    34, 33, 34, 33, 32, 33, 33, 32, 33, 32, 32, 32, 32, 32, 30, 32, 
+    31, 31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30, 29, 30, 
+    29, 29, 28, 29, 29, 28, 29, 28, 29, 28, 28, 28, 28, 27, 28, 28, 
+    27, 27, 27, 27, 27, 27, 27, 27, 26, 26, 27, 26, 26, 26, 25, 26, 
+    26, 25, 25, 26, 25, 25, 25, 25, 24, 25, 25, 24, 25, 24, 24, 24, 
+    24, 24, 23, 24, 25, 23, 23, 24, 23, 23, 23, 23, 22, 23, 23, 23, 
+    22, 22, 22, 23, 22, 21, 22, 22, 23, 22, 21, 22, 21, 21, 21, 21, 
+    21, 21, 22, 21, 20, 21, 20, 20, 21, 20, 20, 20, 22, 20, 20, 20, 
+    19, 20, 19, 19, 20, 19, 22, 19, 19, 19, 19, 19, 18, 19, 19, 18, 
+    21, 18, 18, 19, 18, 18, 18, 17, 18, 18, 20, 18, 17, 18, 17, 18, 
+    17, 17, 17, 17, 20, 16, 17, 17, 17, 16, 17, 16, 17, 16, 19, 17, 
+    16, 16, 16, 16, 16, 16, 15, 16, 19, 16, 15, 16, 15, 15, 16, 15, 
+    15, 15, 18, 15, 15, 15, 15, 15, 14, 15, 14, 15, 18, 14, 14, 14, 
+    15, 14, 14, 14, 14, 14, 17, 14, 14, 14, 13, 14, 14, 13, 14};
+
+#endif    // _HUNDRED_THOUSAND_OHM_
 
 		// calculate resistance of ntc.
-	volt_diff  = ( t->power_volts_reading - t->therm_volts_reading) * 100000;
-		 
-#if 1
+	volt_diff  = ( t->power_volts_reading - t->therm_volts_reading ) * NOMINAL_RESISTANCE;
+	resistance = 0;
+
   for (resistance=0; (volt_diff>0) ; resistance++) {
 		volt_diff -= t->therm_volts_reading;
 	}
-#endif
+	N_SPRINTF( "resistance: %d ", resistance);
 
-#if 1
 	// calculate temperature.
-	i = 0;
-	for (i=0; ; i++) {
-		if (resistance>=FTN18WF104_tab[i]) { 
+	resistance_t = FIRST_REST;
+	for (i=0; i <(TAB_LENGTH); i++) {
+		if (resistance>=resistance_t) { 
 			break;
 		}
+		
+		resistance_t -= (resistance_inc[i] * TEMPERATURE_STEP);
 	}
 
-	temperature = 2000 + i * 5;
-  Y_SPRINTF( "therm: %d  power: %d  resis: %d  temp: %d", t->therm_volts_reading, t->power_volts_reading, resistance, temperature );
-#endif
+	temperature = FIRST_TEMP + i;
+  N_SPRINTF( "therm: %d  power: %d  temp: %d", t->therm_volts_reading, t->power_volts_reading, temperature);
+	
+	t->current_temperature = temperature;
 }
 
-I32S therm_timer = 0;
 void THERMISTOR_init(void)
 {
 	THERMISTOR_CTX *t = &cling.therm;
-	I8U i;
-	
-	for (i=0; i<8; i++) 
-	  t->m_temp_sample[i] = 0;
-	
-	t->m_sample_cnt = 0;
 	
 	// init thermistor measue time base
-	t->measure_timebase = CLK_get_system_time();
+	t->measure_timebase = cling.time.system_clock_in_sec;
 	
 	t->state = THERMISTOR_STAT_IDLE;
 	t->therm_volts_reading = 0;
 	t->power_volts_reading = 0;
-	therm_timer = CLK_get_system_time();
+
+	t->current_temperature = 310;
+}
+
+BOOLEAN _is_user_viewing_skin_temp()
+{
+	if (UI_is_idle()) {
+		return FALSE;
+	}
+	
+	if (cling.ui.frame_index != UI_DISPLAY_VITAL_SKIN_TEMP) {
+		return FALSE;
+	}
+	
+	return TRUE;
 }
 
 void THERMISTOR_state_machine()
 {
 #ifndef _CLING_PC_SIMULATION_
 	THERMISTOR_CTX *t = &cling.therm;
-	I32S t_curr, t_diff;
+	
+	I32U t_curr, t_diff;
 	
 	t_curr = CLK_get_system_time();
-	t_diff = t_curr - therm_timer;
 	
-	if ( t_diff > 100 ) {
-		
-		therm_timer = t_curr;
-	
-		N_SPRINTF("therm state: %d  %d", cling.therm.state, ((NRF_ADC->CONFIG & 0x0000FF00)>>8) );
-		N_SPRINTF( "therm: %d    power: %d", t->therm_volts_reading, t->power_volts_reading );
-	
-		switch (t->state) {
+	N_SPRINTF("[THERM] state: %d", t->state);
 
-			case THERMISTOR_STAT_IDLE:
-  			t->state = THERMISTOR_STAT_THERM_PIN_TURN_ON_ADC;
-				break;
-		
-			case THERMISTOR_STAT_THERM_PIN_TURN_ON_ADC:
-				_config_therm_volt_meas();
-			  t->state = THERMISTOR_STAT_START_THERM_PIN_MEASURING;
-				break;
-		
-			case THERMISTOR_STAT_START_THERM_PIN_MEASURING:
-				break;
-		
- 			case THERMISTOR_STAT_COLLECT_THERM_PIN_SAMPLES:
-			  t->state = THERMISTOR_STAT_POWER_PIN_TURN_ON_ADC;
-	//	  GPIO_therm_adc_disable();
-				break;
+	switch (t->state) {
 
- 			case THERMISTOR_STAT_POWER_PIN_TURN_ON_ADC:
-				_config_power_volt_meas();
-			  t->state = THERMISTOR_STAT_START_POWER_PIN_MEASURING;
-				break;
-
- 			case THERMISTOR_STAT_START_POWER_PIN_MEASURING:
-				break;
-		
- 			case THERMISTOR_STAT_COLLECT_POWER_PIN_SAMPLES:
-				_calc_temperature();
-			  t->state = THERMISTOR_STAT_IDLE;
-	//	  GPIO_power_pin_adc_disable();
-				break;
-		
-		  case THERMISTOR_STAT_DUTY_ON:
-		  case THERMISTOR_STAT_TURN_ON_ADC:
-		  case THERMISTOR_STAT_START_MEASURING:
-		  case THERMISTOR_STAT_COLLECT_SAMPLES:
-		  case THERMISTOR_STAT_ADC_SAMPLE_READY:
-		  case THERMISTOR_STAT_DUTY_OFF:
-				break;		
-
-			default:
-				break;
+		case THERMISTOR_STAT_IDLE:
+		{
+			// Jump to duty off to check if measuring time is up.
+			t->state = THERMISTOR_STAT_DUTY_OFF;
+			N_SPRINTF("[THERM] idle");
+			break;
 		}
+	  case THERMISTOR_STAT_DUTY_ON:
+		{
+			// Start 50ms operation clock
+		  RTC_start_operation_clk();
+			GPIO_therm_power_on();
+			t->measure_timebase = cling.time.system_clock_in_sec;
+			t->state = THERMISTOR_STAT_MEASURING;
+			t->power_on_timebase = t_curr;
+			// Configure ADC
+			GPIO_therm_adc_config();
+			N_SPRINTF("[THERM] duty on");
+			break;
+		}
+		case THERMISTOR_STAT_MEASURING:
+		{
+			// add 15 milli-second delay to have power to settle down.
+			//
+			// The actual measuring takes about 7 ms to finish
+			if (t_curr > (t->power_on_timebase + THERMISTOR_POWER_SETTLE_TIME_MS)) {
+				N_SPRINTF("[THERM] therm measuring at %d ", CLK_get_system_time());
+				cling.therm.therm_volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_6);
+				N_SPRINTF("[THERM] power measuring ");
+				cling.therm.power_volts_reading = nrf_adc_convert_single(NRF_ADC_CONFIG_INPUT_2);
+				//t->state = THERMISTOR_STAT_START_THERM_PIN_MEASURING;
+				t->state = THERMISTOR_STAT_DUTY_OFF;
+				GPIO_therm_power_off();
+				t->b_start_adc = TRUE;
+				N_SPRINTF("[THERM] adc measured at(%d): %d,%d", CLK_get_system_time(), cling.therm.therm_volts_reading, cling.therm.power_volts_reading);
+  			_calc_temperature();
+			}
+			N_SPRINTF("[THERM] therm pin turn on adc");
+			
+			break;
+		}
+	  case THERMISTOR_STAT_DUTY_OFF:
+		{
+			// If skin touch is positive, go ahead to measure PPG
+			if (!TOUCH_is_skin_touched()) 
+				break;
+		
+	  	t_diff = cling.time.system_clock_in_sec - t->measure_timebase;
+			
+	  	if (_is_user_viewing_skin_temp()) {
+					N_SPRINTF("[THERM] duty off view -> %d, %d", t_diff, cling.user_data.skin_temp_day_interval);
+	  		if (t_diff > SKIN_TEMPERATURE_MEASURING_PERIOD_FOREGROUND) {
+	  			t->state = THERMISTOR_STAT_DUTY_ON;
+					N_SPRINTF("[THERM] duty off -> ON, view screen");
+	  		}
+	  	} else {
+				N_SPRINTF("[THERM] duty off normal-> %d, %d", t_diff, cling.user_data.skin_temp_day_interval);
+    		if ( t_diff >  SKIN_TEMPERATURE_MEASURING_PERIOD_BACKGROUND ) {
+					t->state = THERMISTOR_STAT_DUTY_ON;
+					N_SPRINTF("[THERM] duty off -> ON, normal: %d", t_diff);
+	  		}
+	  	}
+	  	break;
+		}
+		default:
+			break;
 	}
 #endif
 }
@@ -217,3 +234,5 @@ BOOLEAN THERMISTOR_switch_to_duty_on_state()
 {
 	return TRUE;
 }
+
+

@@ -74,7 +74,20 @@ typedef enum {
 #define N_FATS		1		// Number of FAT copies (1 or 2) 
 
 typedef struct tagFAT_CTX {
+	I32U fatbase; // FAT start sector
+	I32U dirbase; // ROOT DIR start sector
+	I32U database; // data start sector
+	I32U fat_size;
+	I32U free_clust;
+	I16U last_clust;
 	I16U used_clusters;
+	I16U sector_size;	// Sector size, bytes per sector
+	I16U cluster_size;	// Cluster size
+	I16U sector_per_cluster;
+	I16U n_rootdir;
+	I16U n_sectors;
+	I16U n_rsv;
+	I16U n_clst;
 	I8U map_sector_idx; // Point to sector indexed FAT map region
 	I8U next_pos_in_map_sector;
 	I8U map_index;
@@ -83,20 +96,7 @@ typedef struct tagFAT_CTX {
 	// --------------------
 	FS_TYPE_ENUM fs_type;
 	I8U status;
-	I16U sector_size;	// Sector size, bytes per sector
-	I16U cluster_size;	// Cluster size
-	I32U fat_size;
-	I32U fatbase; // FAT start sector
-	I32U dirbase; // ROOT DIR start sector
-	I32U database; // data start sector
-	I16U sector_per_cluster;
 	I8U n_fats;
-	I16U n_rootdir;
-	I16U n_sectors;
-	I16U n_rsv;
-	I16U n_clst;
-	I32U free_clust;
-	I16U last_clust;
 
 } FAT_CTX;
 

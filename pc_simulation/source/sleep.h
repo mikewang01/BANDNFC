@@ -40,6 +40,9 @@
 #define WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM                    90
 #define WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_HIGH                      80
 
+// successive stationary minutes threshold
+#define SUCCESSIVE_STATIONARY_MINS                                   10
+
 #define SLP_MINS_LEN1                                                 2
 #define SLP_MINS_LEN2                                                 4
 #define SLP_MINS_LEN3                                                 8
@@ -88,12 +91,17 @@ typedef struct tagSLEEP_CTX {
 	SLEEP_SENSITIVE_MODE m_sensitive_mode;
 	I8U  step_status;
 	BOOLEAN b_step_flag;
+
+  I8U  m_successive_stationary_mins;
+	I32U activity_status_per_min;
 } SLEEP_CTX;
 
 void SLEEP_init(void);
 void SLEEP_algorithms_proc(ACC_AXIS *xyz);
 void SLEEP_minute_proc(void);
 void SLEEP_wake_up_upon_motion(void);
+BOOLEAN SLEEP_is_sleep_state(SLEEP_STATUSCODE s);
+
 #ifdef USING_VIRTUAL_ACTIVITY_SIM
 
 void SLEEP_activity_minute_sim(int activity_per_min, int steps, int bWearing);

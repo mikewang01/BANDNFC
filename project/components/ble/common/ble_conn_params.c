@@ -27,7 +27,7 @@ static ble_gap_conn_params_t  m_on_conn_params;  /**< Connection parameters pref
 static uint8_t                m_update_count;           /**< Number of Connection Parameter Update messages that has currently been sent. */
 static uint16_t               m_conn_handle;            /**< Current connection handle. */
 static ble_gap_conn_params_t  m_current_conn_params;    /**< Connection parameters received in the most recent Connect event. */
-static app_timer_id_t         m_conn_params_timer_id;   /**< Connection parameters timer. */
+APP_TIMER_DEF(m_conn_params_timer_id);                  /**< Connection parameters timer. */
 
 static uint16_t  andorid_update_times  = 0;
 static uint16_t  ios_update_times  = 0;

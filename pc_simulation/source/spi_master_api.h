@@ -23,11 +23,12 @@
 #define SPI_MASTER_API_H__
 
 #define SPI_OPERATING_FREQUENCY (0x02000000uL << (uint32_t)Freq_8Mbps)  /**< Slave clock frequency. */
-
+#if 0
 // SPI0. 
 #define SPIM1_SCK_PIN            GPIO_SPI_1_SCK                                     /**< SPI clock GPIO pin number. */
 #define SPIM1_MOSI_PIN           GPIO_SPI_1_MOSI                                     /**< SPI Master Out Slave In GPIO pin number. */
 #define SPIM1_MISO_PIN           GPIO_SPI_1_MISO                                     /**< SPI Master In Slave Out GPIO pin number. */
+#endif
 
 // 
 #define SPIM0_SCK_PIN            GPIO_SPI_0_SCK                                     /**< SPI clock GPIO pin number. */
@@ -55,7 +56,7 @@ void spi_master_tx_rx(const spi_master_hw_instance_t spi_master_hw_instance,
 void spi_master_0_event_handler(spi_master_evt_t spi_master_evt);
 void spi_master_1_event_handler(spi_master_evt_t spi_master_evt);
 void spi_master_disable(void);
-void spi_master_op_wait_done(void);
+BOOLEAN spi_master_op_wait_done(void);
 #endif
 
 #endif // SPI_MASTER_API_H__

@@ -1,6 +1,8 @@
 
-#ifndef _BUTTERWORTH_H_
-#define _BUTTERWORTH_H_
+#ifndef __BUTTERWORTH_H__
+#define __BUTTERWORTH_H__
+
+#include "standards.h"
 
 #define BUTTORD      5                   // butterworth low pass filter order
 #define MAX_INT      2147483647          // 0x7FFFFFFF

@@ -1,7 +1,7 @@
 
 #include "main.h"
 
-static BOOLEAN _is_sleep_state(SLEEP_STATUSCODE s)
+BOOLEAN SLEEP_is_sleep_state(SLEEP_STATUSCODE s)
 {
 	SLEEP_CTX *slp = &cling.sleep;	
 	return (s==slp->state);
@@ -12,9 +12,7 @@ static void _update_activity_status_register(I8U stat)
 	SLEEP_CTX *slp = &cling.sleep;
 	
 	slp->m_activity_status <<= 1;
-	if (stat==1) {
-		slp->m_activity_status |= 0x1;
-	}
+	slp->m_activity_status |= stat;
 }
 
 static I32U _calc_sample_corr(ACC_AXIS s1, ACC_AXIS s2)
@@ -42,7 +40,7 @@ static void _calc_activity_per_minute(ACC_AXIS d)
 	
 	I32U threshold;
 	
-	if (_is_sleep_state(SLP_STAT_AWAKE)) {
+	if (SLEEP_is_sleep_state(SLP_STAT_AWAKE)) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = AWAKE_CORR_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = AWAKE_CORR_THRESHOLD_MEDIUM;  break;
@@ -50,7 +48,7 @@ static void _calc_activity_per_minute(ACC_AXIS d)
 			default :                     threshold = AWAKE_CORR_THRESHOLD_MEDIUM;  break;
 		}
 	}
-	else if (_is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND)) {
+	else if (SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND)) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = SLEEP_CORR_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = SLEEP_CORR_THRESHOLD_MEDIUM;  break;
@@ -66,7 +64,7 @@ static void _calc_activity_per_minute(ACC_AXIS d)
 		t_curr1 = CLK_get_system_time();
 		t_diff1 = t_curr1 - slp->slp_measue_timer;
 		
-		if ( _is_sleep_state(SLP_STAT_AWAKE) ) {
+		if ( SLEEP_is_sleep_state(SLP_STAT_AWAKE) ) {
 			epoch_period = SLP_CORR_WINDOW_SHORT;
 		} else {
 			epoch_period = SLP_CORR_WINDOW_LONG;
@@ -136,6 +134,8 @@ static void _sleep_main_state()
 	I32S threshold_entering_light;
 	I32S threshold_entering_sound;
 	
+	// put the device into awake mode when its in successive stationary minutes more than 
+	
 	switch (slp->m_sensitive_mode) {
 		case SLEEP_SENSITIVE_LOW    : 
 			threshold_entering_light = AWAKE_TO_LIGHT_THRESHOLD_LOW;
@@ -157,23 +157,25 @@ static void _sleep_main_state()
 		  threshold_entering_sound = LIGHT_TO_SOUND_THRESHOLD_MEDIUM;
 		  break;		
 	}
-	
-	if (
 
-       ( slp->b_entered_sleep_stage==TRUE && 
-	       slp->m_mins_cnt>=3 &&  
-				(slp->m_activity_status&0x7)==0x0) ||         // when wakeup in midnight in sudden activity (not walk/run), 
-                                                      // fall asleep again in 3 stationary minutes.
+	// If user is currently in awake state
+	if (slp->state==SLP_STAT_AWAKE) {
 
+		if (	
+				 ((slp->b_entered_sleep_stage==TRUE) && 
+					(slp->m_mins_cnt>=3) &&  
+					(slp->m_activity_status&0x7)==0x0) ||         // when wakeup in midnight in sudden activity (not walk/run), 
+																												// fall asleep again in 3 stationary minutes.
 
-       ( slp->b_entered_sleep_stage==FALSE && 
-	       slp->m_mins_cnt>=threshold_entering_light &&  
-				(slp->m_activity_status&0x3f)==0x0 &&        // when in solid entering sleep stage, must have 6 stationary minutes.
-				 slp->m_stationary_mins>=13)                 // in the past 16 minutes, must have 13 statioanry minutes above.
-
-     ) {
-			 if (slp->state==SLP_STAT_AWAKE)
-    b_enter_light_sleep = TRUE;
+				 ((slp->b_entered_sleep_stage==FALSE) && 
+					(slp->m_mins_cnt>=threshold_entering_light) &&  
+					((slp->m_activity_status&0x3f)==0x0) &&        // when in solid entering sleep stage, must have 6 stationary minutes.
+					(slp->m_stationary_mins>=13) &&               // in the past 16 minutes, must have 13 statioanry minutes above.
+					(slp->m_successive_stationary_mins<=SUCCESSIVE_STATIONARY_MINS))      // if device has been put on desk, omit sleep in this case.
+			 ) 
+		{
+			b_enter_light_sleep = TRUE;
+		}
 	}
 	
 	// Do not wake up from sleep until 5 minutes in a state
@@ -240,6 +242,36 @@ static void _sleep_main_state()
 	}
 }
 
+static void _wristband_not_wearing_detection(SLEEP_CTX *slp)
+{
+	I32U activityState, activeMinutes;
+	int i;
+
+	if (slp->m_successive_stationary_mins < SUCCESSIVE_STATIONARY_MINS) {
+		return;
+	}
+	
+	// Check the latest 24 minutes
+	activityState = slp->activity_status_per_min & 0x0ffffff;
+	activeMinutes = 0;
+	
+	// Counting the amount of movement minutes
+	for (i = 0; i < 32; i++) {
+		if (activityState & 0x01) {
+			activeMinutes ++;
+		}
+		activityState >>= 1;
+	}
+	
+	// If user has very active 8 minutes in past 24 minutes, and the latest 10 minutes is completely stationary
+	// we think this is when user puts down the wristband
+	if (activeMinutes >= 8) {
+		// Reset non charging steps & activity seconds
+		cling.batt.non_charging_accumulated_steps = 0;
+		cling.batt.non_charging_accumulated_active_sec = 0;
+	}
+}
+
 void SLEEP_minute_proc()
 {
 	SLEEP_CTX *slp = &cling.sleep;
@@ -250,11 +282,15 @@ void SLEEP_minute_proc()
 	I8U  i, step_cnt;
 
 	t_diff -= cling.lps.ts;	
-	if ( _is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
-    if (cling.lps.b_low_power_mode && (t_diff > 1800000) && (slp->m_successive_no_skin_touch_mins>30) ) {
-			// Get out of sleep mode if device stays in low power stationary mode for over 30 minutes (1 hour)
+	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
+					
+		// Get out of sleep mode if device has been off the wrist for more than 20 minutes (1 hour)
+    if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
+
+		// As user is currently in sleep state, reset idle alert
+		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
 	}
 	
 	// monitoring sleep stage switching.
@@ -280,7 +316,7 @@ void SLEEP_minute_proc()
 	slp->pre_state = slp->state;
 	
 	// monitoring whether device has been correctly worn
-	if (PPG_is_skin_touched()) {
+	if (TOUCH_is_skin_touched()) {
 		slp->m_successive_no_skin_touch_mins = 0;
 		slp->b_valid_worn_in_entering_sleep_state = TRUE;
 	} else {
@@ -315,14 +351,14 @@ void SLEEP_minute_proc()
 	}
 
 	if (
-		   (slp->m_successive_no_skin_touch_mins>5  &&  _is_sleep_state(SLP_STAT_AWAKE)) || 
-       (slp->m_successive_no_skin_touch_mins>30 && (_is_sleep_state(SLP_STAT_LIGHT)  || _is_sleep_state(SLP_STAT_SOUND)))
+		   (slp->m_successive_no_skin_touch_mins>5  &&  SLEEP_is_sleep_state(SLP_STAT_AWAKE)) || 
+       (slp->m_successive_no_skin_touch_mins>90 && (SLEEP_is_sleep_state(SLP_STAT_LIGHT)  || SLEEP_is_sleep_state(SLP_STAT_SOUND)))
 		)
   {
 		slp->b_valid_worn_in_entering_sleep_state = FALSE;
 	}	
 	
-	if ( _is_sleep_state(SLP_STAT_AWAKE) ) {
+	if ( SLEEP_is_sleep_state(SLP_STAT_AWAKE) ) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
@@ -330,7 +366,7 @@ void SLEEP_minute_proc()
 			default                     : threshold = AWAKE_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
 		}
 	}
-	else if ( _is_sleep_state(SLP_STAT_LIGHT) || _is_sleep_state(SLP_STAT_SOUND) ) {
+	else if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {
 		switch (slp->m_sensitive_mode) {
 			case SLEEP_SENSITIVE_LOW    : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_LOW;     break;
 			case SLEEP_SENSITIVE_MEDIUM : threshold = SLEEP_ACTIVITY_PER_MIN_THRESHOLD_MEDIUM;  break;
@@ -350,7 +386,7 @@ void SLEEP_minute_proc()
   	slp->m_mins_cnt++;
   
   if ( (slp->m_activity_per_min>=wakeup_threshold) && 
-		   (_is_sleep_state(SLP_STAT_SOUND) || _is_sleep_state(SLP_STAT_LIGHT)) )
+		   (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT)) )
 	{
     slp->b_sudden_wake_from_sleep = TRUE;
 	}
@@ -360,9 +396,35 @@ void SLEEP_minute_proc()
   else
   	_update_activity_status_register(0);
 	
-	N_SPRINTF("%d  %d", slp->state, slp->m_activity_per_min);
-  
+	N_SPRINTF("[SLEEP] activity per min:  %d", slp->m_activity_per_min);
+	
+	// Update no charging parameters
+	if (slp->m_activity_per_min >= AWAKE_ACTIVITY_PER_MIN_THRESHOLD_LOW) {
+		BATT_exit_charging_state(60);
+	}
+	
+	// count successive  stationary minutes
+	slp->activity_status_per_min <<= 1;
+	if (slp->m_activity_per_min == 0) {
+		slp->m_successive_stationary_mins++;
+	} else {
+		slp->m_successive_stationary_mins = 0;
+
+		// Recording the minutes that user has dramatic movement
+		if (slp->m_activity_per_min >= WAKE_UP_ACTIVITY_PER_MIN_THRESHOLD_HIGH)
+			slp->activity_status_per_min |= 1;
+	}
+	
   slp->m_activity_per_min = 0;
+	
+	//
+	// Detect if wristband is put on desk -
+	//
+	// If yes, then, exit from sleep first
+	//
+	// Also, start monitoring steps and active seconds untile user starts to using the band again.
+	//
+	_wristband_not_wearing_detection(slp);
 	
 	// count stationary minutes.
 	_update_stationary_mins();
@@ -397,6 +459,8 @@ void SLEEP_init()
 	slp->b_valid_worn_in_entering_sleep_state = TRUE;	
 	slp->step_status = 0x00;
 	slp->b_step_flag = FALSE;
+	
+	slp->m_successive_stationary_mins = 0;
 }
 
 void SLEEP_algorithms_proc(ACC_AXIS *xyz)
@@ -414,7 +478,7 @@ void SLEEP_algorithms_proc(ACC_AXIS *xyz)
 	_sleep_main_state();
 }
 
-#ifdef USING_VIRTUAL_ACTIVITY_SIM
+#ifdef _SLEEP_SIMULATION_
 
 
 void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)
@@ -424,12 +488,10 @@ void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)
 	slp->m_activity_per_min = activity_per_min;
 
 	if (skin_touch > 0) {
-		cling.hr.wearing_state = PPG_BODY_WEAR;
-		cling.touch.skin_touch_type = skin_touch;
+		cling.touch.b_skin_touch = skin_touch;
 	}
 	else {
-		cling.hr.wearing_state = PPG_BODY_NOT_WEAR;
-		cling.touch.skin_touch_type = skin_touch;
+		cling.touch.b_skin_touch = skin_touch;
 	}
 
 	if (steps > 0)

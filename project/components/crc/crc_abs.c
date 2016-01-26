@@ -50,7 +50,8 @@ uint16_t file_check_crc(FILE_T *file, uint32_t size)
     if(size % MAX_SIZE_READ_ONE_TIME) {
         i++;
     }
-    CRC_PRINTF("[file_crc]file crc = %x %d %x %x %x", crc_16, i, p_buffer[0], p_buffer[1], p_buffer[2]);
+    CRC_PRINTF("[file_crc] crc loop: %d", i);
+		
     for(; i > 0; i--) {
         /*no data read from file*/
 #if 0

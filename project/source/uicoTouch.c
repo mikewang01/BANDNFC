@@ -297,7 +297,7 @@ void UICO_dbg_write_read(I8U *obuf, I8U len, I8U *ibuf)
     _i2c_main_write(ibuf, len);
 
     BASE_delay_msec(50);
-    _write_clear_response();
+   // _write_clear_response();
 
     BASE_delay_msec(1);
 

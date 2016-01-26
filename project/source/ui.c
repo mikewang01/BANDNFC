@@ -1038,7 +1038,7 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 		b_progress_bar = TRUE;
 		sprintf((char *)string, "%d %%", cling.ota.percent);
 		bar_len = cling.ota.percent;
-		FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, TRUE);
+		FONT_load_ota_percent(cling.ui.p_oled_up+128,cling.ota.percent);
 		len = 0;
 	} else if (mode == UI_MIDDLE_MODE_UV_IDX) {
 #ifdef _ENABLE_UV_

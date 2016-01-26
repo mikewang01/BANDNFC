@@ -12,10 +12,6 @@
 #include "standards.h"
 
 #include <string.h>
-#ifndef _CLING_PC_SIMULATION_
-//#include "simple_uart.h"
-#endif
-#define HWFC           false
 
 void UART_init(void);
 void UART_print(char *str);

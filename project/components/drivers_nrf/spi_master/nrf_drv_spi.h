@@ -30,23 +30,16 @@
 #include "nrf_spim.h"
 #include "sdk_errors.h"
 
-#define SPI_COUNT   1
-
-#define SPI0_ENABLED 1
-
-#if (SPI0_ENABLED == 1)
-#define SPI0_USE_EASY_DMA 0
-
-#define SPI0_CONFIG_SCK_PIN         2
-#define SPI0_CONFIG_MOSI_PIN        3
-#define SPI0_CONFIG_MISO_PIN        4
-#define SPI0_CONFIG_IRQ_PRIORITY    APP_IRQ_PRIORITY_LOW
-
-#define SPI0_INSTANCE_INDEX 0
+#if defined(NRF52)
+    #define NRF_DRV_SPI_PERIPHERAL(id)           \
+        (CONCAT_3(SPI, id, _USE_EASY_DMA) == 1 ? \
+            (void *)CONCAT_2(NRF_SPIM, id)       \
+          : (void *)CONCAT_2(NRF_SPI, id))
+    #define SPI2_IRQ            SPIM2_SPIS2_SPI2_IRQn
+    #define SPI2_IRQ_HANDLER    SPIM2_SPIS2_SPI2_IRQHandler
+#else
+    #define NRF_DRV_SPI_PERIPHERAL(id)  (void *)CONCAT_2(NRF_SPI, id)
 #endif
-
-#define NRF_DRV_SPI_PERIPHERAL(id)  (void *)CONCAT_2(NRF_SPI, id)
-
 #define SPI0_IRQ            SPI0_TWI0_IRQn
 #define SPI0_IRQ_HANDLER    SPI0_TWI0_IRQHandler
 #define SPI1_IRQ            SPI1_TWI1_IRQn
@@ -234,7 +227,8 @@ ret_code_t nrf_drv_spi_transfer(nrf_drv_spi_t const * const p_instance,
                                 uint8_t const * p_tx_buffer,
                                 uint8_t         tx_buffer_length,
                                 uint8_t       * p_rx_buffer,
-                                uint8_t         rx_buffer_length);
+                                uint8_t         rx_buffer_length,
+								uint8_t         spi_pin_sel);
 
 #endif // NRF_DRV_SPI_H__
 

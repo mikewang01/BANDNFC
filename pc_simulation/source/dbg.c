@@ -8,61 +8,7 @@
  *
  ******************************************************************************/
 #include "main.h"
-
-static I32U t_base = 0;
-static I32U ts;
-
-void DBG_led_sim()
-{
-}
-
-void DBG_delay(int ms)
-{
-			ts = CLK_get_system_time();
-			t_base = ts;
-	
-			while (ts < (t_base+ms)) 
-			{
-				ts = CLK_get_system_time();
-				
-				BASE_delay_msec(1);
-			}
-}
-
-void DBG_gpio_test_pin(I8U idx)
-{
-}
-
-void DBG_gpio_set(I8U idx)
-{
-	nrf_gpio_pin_set(idx);
-}
-
-void DBG_gpio_clear(I8U idx)
-{
-	nrf_gpio_pin_clear(idx);
-}
-
-void DBG_gpio_toggling(I8U idx)
-{
-	        NRF_GPIO->PIN_CNF[idx] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
-                                        | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
-                                        | (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos)
-                                        | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
-                                        | (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos);
-
-	#if 0
-	nrf_gpio_pin_set(idx);
-	#else
-	// For testing
-	while (true) {
-		BASE_delay_msec(20); //DBG_delay(100);
-		nrf_gpio_pin_set(idx);
-		BASE_delay_msec(20); //DBG_delay(100);
-		nrf_gpio_pin_set(idx);
-	}
-	#endif
-}
+#include "uicoTouch.h"
 
 void DEBUG_create_dbg_msg(I8U *msg, I8U len)
 {
@@ -70,6 +16,7 @@ void DEBUG_create_dbg_msg(I8U *msg, I8U len)
 	CP_TX_CTX *t = &g->tx;
 
 	// Check whether we still have packets to deliver
+	// our BLE message has to wait
 	if (g->state == CP_MCU_STAT_TX_SENDING)
 		return;
 
@@ -105,10 +52,6 @@ void DEBUG_create_dbg_msg(I8U *msg, I8U len)
 	memcpy(t->msg+1, msg, len);
 	t->msg_filling_offset += len;
 
-	// Finally, add the 1st check-sum 4 Bytes for data integrity 
-	SYSTEM_checksum(t->msg, t->msg_filling_offset, t->msg+t->msg_filling_offset);
-	t->msg_filling_offset+= 4;
-
 	// Create packet payload
 	// Pending message delivery
 	t->msg_type = CP_MSG_TYPE_DEBUG_MSG;
@@ -117,16 +60,44 @@ void DEBUG_create_dbg_msg(I8U *msg, I8U len)
 
 	memcpy(&t->pkt.data, t->msg, CP_PAYLOAD_SIZE);
 
-	// No need to ack this packet
-	t->need_pkt_ack = TRUE;
-
 	t->msg_pos += CP_PAYLOAD_SIZE;
 	t->msg_fetching_offset += CP_PAYLOAD_SIZE;
 }
 
-void DBG_ui_demo()
+enum {
+	ENABLE_OTA_DEBUG,
+	TOUCH_OTA_READ,
+	TOUCH_OTA_WRITE,
+};
+
+#if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
+
+
+void DBG_event_processing()
 {
+	I8U i, len;
+	I8U buf[128];
+	char displayBuf[128];
+	
+	if (!cling.dbg.b_pending)
+		return;
+	
+	cling.dbg.b_pending = FALSE;
+	
+	if (cling.dbg.b_read) {
+		cling.dbg.b_read = FALSE;
+	}
+	
+	if (cling.dbg.b_write) {
+		cling.dbg.b_write = FALSE;
+		
+		UICO_dbg_write_read(buf, cling.dbg.len, cling.dbg.buf);
+		
+		len = 0;
+		for(i = 0; i < cling.dbg.len; i++)
+			len+=sprintf(displayBuf+len, "%02x,",buf[i]);
+		B_SPRINTF("[DBG] %s", displayBuf);
+	}
 }
 
-
-
+#endif

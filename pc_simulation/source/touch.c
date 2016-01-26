@@ -6,16 +6,13 @@
  ******************************************************************************/
 
 #include "main.h"
+#ifndef _CLING_PC_SIMULATION_
 
+#include "uicoTouch.h"
+#endif
 BOOLEAN TOUCH_new_gesture()
 {
-	TOUCH_CTX *t = &cling.touch;
-	
-	if (t->b_valid_gesture) {
-		return TRUE;
-	}
-	
-	return FALSE;
+	return cling.touch.b_valid_gesture;
 }
 
 I8U TOUCH_get_gesture_panel()
@@ -35,87 +32,18 @@ I8U TOUCH_get_gesture_panel()
 	return TOUCH_NONE;
 }
 
-EN_STATUSCODE TOUCH_i2c_read_reg(I8U i8uRegNumber, I8U number_of_bytes, I8U * pi8uRegValue)
-{
-  BOOLEAN transfer_succeeded = FALSE;
-
-  if (NULL == pi8uRegValue)
-  {
-    return STATUSCODE_NULL_POINTER;
-  }
-#ifndef _CLING_PC_SIMULATION_
-
-  transfer_succeeded = twi_master_transfer(0x08, &i8uRegNumber, 1, TWI_DONT_ISSUE_STOP, TWI_MASTER_1);
-  transfer_succeeded &= twi_master_transfer(0x09 |TWI_READ_BIT, pi8uRegValue, number_of_bytes, TWI_ISSUE_STOP, TWI_MASTER_1);
-#endif
-	if (transfer_succeeded) {
-		return STATUSCODE_SUCCESS;
-	} else {
-		return STATUSCODE_FAILURE;
-	}
-}
-
-BOOLEAN TOUCH_i2c_write_reg( I8U i8uRegNumber, I8U i8uRegValue)
-{
-  BOOLEAN transfer_succeeded=FALSE;
-  unsigned char acData[2];
-
-  acData[0] = i8uRegNumber;
-  acData[1] = i8uRegValue;
-
-#ifndef _CLING_PC_SIMULATION_
-  transfer_succeeded = twi_master_transfer(0x08, acData, 2, TWI_ISSUE_STOP, TWI_MASTER_1);
-#endif
-  return transfer_succeeded;
-}
-
-TOUCH_POWER_MODE TOUCH_power_get()
-{
-#ifndef _CLING_PC_SIMULATION_
-#ifdef _ENABLE_TOUCH_
-	I8U mode;
-	// Generate a pulse prior to I2C communication
-	nrf_gpio_pin_clear(GPIO_TOUCH_CONTROL);
-	BASE_delay_msec(4);
-	nrf_gpio_pin_set(GPIO_TOUCH_CONTROL);
-	
-	twi_master_init(TWI_MASTER_1);
-	
-	// Write I2C register
-	TOUCH_i2c_read_reg(TOUCH_I2C_REG_CONTROL, 1, &mode);
-
-	Y_SPRINTF("\n[TOUCH] power mode get ++ %d ++\n", mode);
-
-	GPIO_twi_disabled(TWI_MASTER_0);
-	GPIO_twi_disabled(TWI_MASTER_1);
-
-	return (TOUCH_POWER_MODE)mode;
-#endif
-#else
-	return TOUCH_POWER_HIGH_20MS;
-#endif
-}
-
 void TOUCH_power_set(TOUCH_POWER_MODE mode)
 {
 #ifndef _CLING_PC_SIMULATION_
 #ifdef _ENABLE_TOUCH_
 	// Generate a pulse prior to I2C communication
-	nrf_gpio_pin_clear(GPIO_TOUCH_CONTROL);
-	BASE_delay_msec(4);
-	nrf_gpio_pin_set(GPIO_TOUCH_CONTROL);
-	
-	twi_master_init(TWI_MASTER_1);
-	
-	// Write I2C register
-	TOUCH_i2c_write_reg(TOUCH_I2C_REG_CONTROL, mode);
-	
-	cling.touch.power_mode = mode;
 
+	if (mode == TOUCH_POWER_DEEP_SLEEP) {
+		UICO_set_power_mode(UICO_POWER_DEEP_SLEEP);
+	} else {
+		UICO_set_power_mode(UICO_POWER_FAST_SCAN);	
+	}
 	Y_SPRINTF("\n[TOUCH] power mode setting --- %d ---\n", mode);
-
-	GPIO_twi_disabled(TWI_MASTER_0);
-	GPIO_twi_disabled(TWI_MASTER_1);
 #endif
 #endif
 }
@@ -154,39 +82,6 @@ void _tap_process(TOUCH_CTX *t, I32U t_curr)
 		}
 }
 
-void TOUCH_power_mode_state_machine(void)
-{
-	TOUCH_CTX *t = &cling.touch;
-	TOUCH_POWER_MODE mode;
-	
-	switch (t->state) {
-		case TOUCH_STATE_IDLE:
-			break;
-		case TOUCH_STATE_MODE_SET:
-		{
-			if (t->power_mode == t->power_new_mode) {
-				t->state = TOUCH_STATE_IDLE;
-			} else {
-				TOUCH_power_set(t->power_new_mode);
-				t->state = TOUCH_STATE_MODE_CONFIRMING;
-			}
-			break;
-		}
-		case TOUCH_STATE_MODE_CONFIRMING:
-		{
-			mode = TOUCH_power_get();
-			if (mode != cling.touch.power_mode) {
-				t->state = TOUCH_STATE_MODE_SET;
-			} else {
-				t->state = TOUCH_STATE_IDLE;
-			}
-			break;
-		}
-		default:
-			break;
-	}
-}
-
 static BOOLEAN _touch_screen_activation()
 {
 	if (cling.user_data.b_screen_press_hold_1)
@@ -209,12 +104,16 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 	// finger down
 	if (op_detail == 0) {
 		t->gesture = TOUCH_FINGER_LEFT;
+		Y_SPRINTF("[TOUCH] ------------ FINGER: left --------");
+		B_SPRINTF("Finger: left");
 	} else if (op_detail == 1) {
-		t->gesture = TOUCH_FINGER_UP;
+		t->gesture = TOUCH_FINGER_MIDDLE;
+		Y_SPRINTF("[TOUCH] ------------ FINGER: middle --------");
+		B_SPRINTF("Finger: middle");
 	} else if (op_detail == 2) {
-		t->gesture = TOUCH_FINGER_UP;
-	} else if (op_detail == 3) {
 		t->gesture = TOUCH_FINGER_RIGHT;
+		Y_SPRINTF("[TOUCH] ------------ FINGER: right --------");
+		B_SPRINTF("Finger: right");
 	}
 					
 	// Make sure OLED display panel is faced up.
@@ -223,13 +122,6 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 			
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
-		// Set to highest sensitivity
-		cling.touch.state = TOUCH_STATE_MODE_SET;
-		cling.touch.power_new_mode = TOUCH_POWER_HIGH_20MS;
-
-		// Start 20 ms timer for screen rendering
-		SYSCLK_timer_start();
-			
 		// Turn on OLED panel
 		if (!OLED_set_panel_on()) {
 			t->b_valid_gesture = TRUE;
@@ -266,29 +158,27 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 	// Swipe
 	if (op_detail == 0) {
 		t->gesture = TOUCH_SWIPE_LEFT;
+		Y_SPRINTF("[TOUCH] ------------ SWIPE: left --------");
+		B_SPRINTF("SWIPE: left");
 	} else if (op_detail == 1) {
 		t->gesture = TOUCH_SWIPE_RIGHT;
-	} else if (op_detail == 2) {
-		t->gesture = TOUCH_SWIPE_UP;
-	} else if (op_detail == 3) {
-		t->gesture = TOUCH_SWIPE_DOWN;
+		Y_SPRINTF("[TOUCH] ------------ SWIPE: right --------");
+		B_SPRINTF("SWIPE: Right");
+	} else {
+		return;
 	}
 	
 //		if (LINK_is_authorized() && (cling.activity.z_mean < 0)) {
 	if (LINK_is_authorized()) {
 
-		// Set to highest sensitivity
-		cling.touch.state = TOUCH_STATE_MODE_SET;
-		cling.touch.power_new_mode = TOUCH_POWER_HIGH_20MS;
-		
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
-		
-		// Start 20 ms timer for screen rendering
-		SYSCLK_timer_start();
 		
 		// Turn on OLED panel
 		if (!OLED_set_panel_on()) {
 			t->b_valid_gesture = TRUE;
+		
+			N_SPRINTF("[TOUCH] ------------ VALID gesture --------");
+		
 		}
 		
 		cling.ui.true_display = TRUE;
@@ -307,45 +197,26 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 	}
 }
 
-static void _skin_touch_processing(TOUCH_CTX *t, I8U op_detail)
+static void _skin_touch_processing(TOUCH_CTX *t, BOOLEAN b_skin_detected)
 {
-		t->b_valid_gesture = FALSE;
-
 		// skin touch
-		if (op_detail == 0) {
-			t->gesture = TOUCH_SKIN_PAD_0;
-		} else if (op_detail == 1) {
-			t->gesture = TOUCH_SKIN_PAD_1;
-		} else if (op_detail == 2) {
-			t->gesture = TOUCH_SKIN_PAD_2;
-		} else if (op_detail == 3) {
-			t->gesture = TOUCH_SKIN_PAD_3;
-		} else if (op_detail == 4) {
-			t->gesture = TOUCH_SKIN_PAD_4;
+		if (b_skin_detected) {
+			t->b_skin_touch = TRUE;
+			Y_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
+			B_SPRINTF("SKIN: ON");
 		} else {
-			t->gesture = TOUCH_SKIN_PAD_0;
-		}
-		
-		// 
-		// Do something with skin touch
-		//
-		t->skin_touch_type = t->gesture;
-		
-		Y_SPRINTF("[TOUCH] skin touch: %d", op_detail);
+			t->b_skin_touch = FALSE;
+			Y_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
+			B_SPRINTF("SKIN: OFF");
+		}		
 }
 
 void TOUCH_gesture_check(void)
 {
 #ifndef _CLING_PC_SIMULATION_
   I8U int_pin;
-#ifdef __DEBUG_BASE__
-	I8U status_value;
-#endif
 	I8U reg_value;
 	I8U op_code, op_detail;
-#ifdef __DEBUG_BASE__
-//	I8U op_seq;
-#endif
 	TOUCH_CTX *t = &cling.touch;
 	I32U t_curr = CLK_get_system_time();
 
@@ -361,129 +232,99 @@ void TOUCH_gesture_check(void)
 	// Check to see if the touch Interrupt pin is pulled down
 	int_pin = nrf_gpio_pin_read(GPIO_TOUCH_INT);           
 
-	if(int_pin)
+	if (int_pin)
 		return;
-
-	// Enable TWI to read out I2C touch panel register
-	// I2C initialization
-	twi_master_init(TWI_MASTER_1);
 	
-	// A valid gesture
-	t->gesture = TOUCH_NONE;
-
-	TOUCH_i2c_read_reg(TOUCH_I2C_REG_GESTURE, 1, &reg_value);
-#ifdef __DEBUG_BASE__
-	TOUCH_i2c_read_reg(TOUCH_I2C_REG_STATUS, 1, &status_value);
-#endif
-	TOUCH_i2c_write_reg(TOUCH_I2C_REG_STATUS, 0);
-	
-	// Configure TWI to be input to reduce power consumption
-	GPIO_twi_disabled(TWI_MASTER_0);
-	GPIO_twi_disabled(TWI_MASTER_1);
-	N_SPRINTF("[TOUCH] Interrupt status (%d): -- %d --", CLK_get_system_time(), status_value);
+	// get gesture
+	//
+	Y_SPRINTF("[TOUCH] Interrupt status (%d): %d", CLK_get_system_time(), int_pin);
 	
 	//
 	// Gesture byte definition -
 	//
-	// Bit 5-7: unused
+	// Bit   7: unused
 	//
-	// Bit 3-4: operation code
+	// Bit   6: new gesture
 	//
-	//          00: no op
-	//          01: swipe
-	//          10: finger
-	//          11: skin touch
+	// Bit 3-5: operation code
+	//
+	//          000: no op
+	//          001: swipe
+	//          010: finger
+	//          101: skin touch + swipe
+	//          110: skin touch + finger
 	//
 	// Bit 0-2: detail
 	//
-	op_code = reg_value & 0x18;
+	reg_value =	UICO_main();
+	
+	// Invalid gesture, go return directly
+	if (reg_value == 0xff) {
+		return;
+	}
+	
+	op_code = (reg_value>>3) & 0x07;
 	op_detail = reg_value & 0x07;
 	
-#ifdef __DEBUG_BASE__
-//	op_seq = reg_value & 0xe0;
-	N_SPRINTF("[TOUCH] reg value: %02x, seq: %d, op: %d, detail: %d", reg_value, op_seq>>5, op_code>>3, op_detail);
-#endif
+	N_SPRINTF("[TOUCH] reg value: %02x, op: %d, detail: %d", reg_value, op_code, op_detail);
 
-	if (op_code == 0x08) {
+	// skin touch processing
+	if (op_code & 0x04) {
+		_skin_touch_processing(t, TRUE);
+	} else {
+		_skin_touch_processing(t, FALSE);
+	}
+
+	// Make sure if we get a different gesture
+	if (!(reg_value & 0x40)) {
+		return;
+	}
+	
+	if (op_code & 0x01) {
 		
 		// Swipe processing
 		_swipe_processing(t, op_detail);
 
-	} else if (op_code == 0x10) {
+	} 
+
+	if (op_code & 0x02) {
 
 		// finger down processing
 		_finger_down_processing(t, op_detail, t_curr);
 		
-	} else if (op_code == 0x18) {
-
-		// skin touch processing
-		_skin_touch_processing(t, op_detail);
-		
-	} else {
-		// None
-		t->b_valid_gesture = FALSE;
-
-	}
+	} 
 	
-	// Wait until 10 ms interrupt period is passed.
-	BASE_delay_msec(12);
 #endif
 }
 
 void TOUCH_init(void)
 {		
-#ifndef _CLING_PC_SIMULATION_
-	I8U mode = TOUCH_POWER_MIDIAN_200MS;
-	// TWI initialization
-	twi_master_init(TWI_MASTER_1);
-
-	// Generate a pulse prior to I2C communication
-	nrf_gpio_pin_clear(GPIO_TOUCH_CONTROL);
-	BASE_delay_msec(4);
-	nrf_gpio_pin_set(GPIO_TOUCH_CONTROL);
-
-	TOUCH_i2c_read_reg(TOUCH_I2C_REG_VERSION, 1, &cling.whoami.touch_ver);
-
-	N_SPRINTF("[TOUCH] init:%d",cling.whoami.touch_ver);
-	
-	// Write I2C register to set a median power level
-	TOUCH_i2c_write_reg(TOUCH_I2C_REG_CONTROL, mode);
-	cling.touch.power_mode = TOUCH_POWER_MIDIAN_200MS;
-
-	// Read out version one more time
-	TOUCH_i2c_read_reg(TOUCH_I2C_REG_VERSION, 1, &cling.whoami.touch_ver);
-
+#ifndef _CLING_PC_SIMULATION_	
 	// Initialize skin touch states
-	cling.touch.skin_touch_type = TOUCH_SKIN_PAD_0;
-	
-	GPIO_twi_disabled(TWI_MASTER_0);
-	GPIO_twi_disabled(TWI_MASTER_1);
+	UICO_init();
+	//uico_touch_ic_floating_calibration_start();
+	Y_SPRINTF("[TOUCH] skin touched: %d", cling.touch.b_skin_touch);
+
 #endif
+}
+
+I8U TOUCH_get_skin_touch_time()
+{
+	I8U touch_time = cling.touch.skin_touch_time_per_minute;
+	
+	cling.touch.skin_touch_time_per_minute = 0;
+	return touch_time;
 }
 
 I8U TOUCH_get_skin_pad(void)
 {
-	if (PPG_is_skin_touched()) {
-		return 4;
-	} else {
-		return (cling.touch.skin_touch_type - TOUCH_SKIN_PAD_0);
-	}
+			return cling.touch.b_skin_touch;
 }
 
 BOOLEAN TOUCH_is_skin_touched(void)
 {
-	return TRUE;
-	
 	if (BATT_is_charging())
 		return FALSE;
-
-	if (cling.touch.skin_touch_type < TOUCH_SKIN_PAD_1)
-		return FALSE;
-	if (cling.touch.skin_touch_type > TOUCH_SKIN_PAD_4)
-		return FALSE;
-
-  if (cling.touch.skin_touch_type >= TOUCH_SKIN_PAD_1)
-		return TRUE;
 	
-	return FALSE;
+	return cling.touch.b_skin_touch;
 }

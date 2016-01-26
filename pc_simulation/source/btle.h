@@ -59,6 +59,19 @@ typedef enum {
 	BTLE_SEND_REG_THREAD
 }BTLE_SEND_DATA_ENUM_LIST;
 
+enum {
+	BTLE_DISCONN_REASON_NONE,
+	BTLE_DISCONN_REASON_REBOOT,
+	BTLE_DISCONN_REASON_FACTORY_RESET,
+	BTLE_DISCONN_REASON_FAST_CONN,
+	BTLE_DISCONN_REASON_CP_DISCONN,
+	BTLE_DISCONN_REASON_GATT_TIMEOUT,
+	BTLE_DISCONN_REASON_USER_SLEEP,
+	BTLE_DISCONN_REASON_SYSTEM_SHUTDOWN,
+	BTLE_DISCONN_REASON_ANCS_DISC_FAIL,	
+	BTLE_DISCONN_REASON_ANCS_DELETE_BOND	
+};
+
 #define BLE_DISCONN_EVT_FACTORY_RESET   0x0001
 #define BLE_DISCONN_EVT_FAST_CONNECT		0x0002
 #define BLE_DISCONN_EVT_POWER_OFF       0x0004
@@ -107,7 +120,7 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt);
 void BTLE_aes_encrypt(I8U *key, I8U *in, I8U *out);
 void BTLE_aes_decrypt(I8U *key, I8U *in, I8U *out);
 BOOLEAN BTLE_tx_buffer_available(void);
-void BTLE_disconnect(void);
+void BTLE_disconnect(I8U reason);
 BOOLEAN BTLE_Send_Packet(I8U *data, I8U len);
 void BTLE_state_machine_update(void);
 BOOLEAN BTLE_get_radio_software_version(I8U *radio_sw_ver);
@@ -116,15 +129,9 @@ BOOLEAN BTLE_is_advertising(void);
 BOOLEAN BTLE_is_idle(void);
 void BTLE_execute_adv(BOOLEAN b_fast);
 BOOLEAN BTLE_is_streaming_enabled(void);
-#ifndef _CLING_PC_SIMULATION_
-uint32_t BTLE_device_manager_event_handler(dm_handle_t const * p_handle,
-                                           dm_event_t const  * p_event,
-                                           ret_code_t        event_result);
-#endif
 void BTLE_reset_streaming(void);
 void BTLE_update_streaming_minute_entries(void);
 BOOLEAN BTLE_streaming_authorized(void);
-void BTLE_delete_bond(void);
 
 #endif // __BTLE_HEADER__
 /** @} */

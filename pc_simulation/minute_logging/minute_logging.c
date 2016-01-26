@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "main.h"
 #include "fs_root.h"
+#include "RTC.h"
 
 CLING_MAIN_CTX cling;
 
@@ -323,22 +324,23 @@ static void _logging_long_term_sim()
 	I32U tracking_flash_offset;
 	SYSTIME_CTX local;
 	int i = 0;
-	int sleep_counting_down = 0;
-	int sleep_light_count_in_2sec = 4400;
-	int sleep_sound_count_in_2sec = 6400;
-	int sleep_rem_count_in_2sec = 5400;
+	int sleep_counting_down = 25200;
+	int sleep_light_count_in_2sec = 7400;
+	int sleep_sound_count_in_2sec = 9400;
+	int sleep_rem_count_in_2sec = 0;
 	int counts_per_2_second = 4;
 	int steps, distance, calories = 0, sleep = 0, calories_diff;
+	int b_test_point;
 
 	RTC_get_local_clock(&local);
 
 	Y_SPRINTF("current time: %d, %d, %d, %d, %d, %d", local.year, local.month, local.day, local.hour, local.minute, local.second);
 
-	for (i = 1; i < (1440 * 30 * 20); i++) {
-	//for (i = 1; i < 1440 * 30 * 30; i++) { // 20 days, 2 seconds per loop
+	//for (i = 1; i < (1440 * 6 * 20); i++) {
+	for (i = 1; i < 1440 * 30 * 30; i++) { // 20 days, 2 seconds per loop
 
+		cling.touch.b_skin_touch = 1;
 		RTC_timer_handler(0);
-		cling.touch.skin_touch_type = 1;
 		cling.hr.current_rate = 78;
 		cling.therm.current_temperature = 320;
 		cling.sleep.state = SLP_STAT_AWAKE;
@@ -414,7 +416,7 @@ static void _logging_long_term_sim()
 			TRACKING_get_daily_streaming_stat(&streaming);
 			TRACKING_get_daily_streaming_sleep(&streaming);
 			if (counts_per_2_second == 5) {
-				Y_SPRINTF("-- streaming:  %d, %d, %d, %d, %d, %d, %d, %d, %d, %d",
+				Y_SPRINTF("-- streaming:  s:%d, ca:%d, ci:%d, d:%d, hr:%d, t:%d, sl:%d, sr:%d, ss:%d",
 					streaming.steps,
 					streaming.calories_active,
 					streaming.calories_idle,
@@ -423,8 +425,7 @@ static void _logging_long_term_sim()
 					streaming.temperature,
 					streaming.sleep_light,
 					streaming.sleep_rem,
-					streaming.sleep_sound,
-					streaming.wake_up_time);
+					streaming.sleep_sound);
 			}
 
 			N_SPRINTF("-- tracking offset (time sync) ---: %d", tracking_flash_offset);
@@ -443,14 +444,43 @@ static void _logging_long_term_sim()
 				counts_per_2_second, sleep_light_count_in_2sec, sleep_sound_count_in_2sec, sleep_rem_count_in_2sec);
 		}
 
+		b_test_point = 0;
 		if (cling.time.local_noon_updated) {
 			sleep_counting_down = 36000; // sleep starts in 10 hours
-			sleep_light_count_in_2sec = 4400; // 8800 seconds -> 2 hour 27 minutes
-			sleep_sound_count_in_2sec = 6400; // 12800 seconds -> 3 hour 33 minutes
-			sleep_rem_count_in_2sec = 5400; // 10800 seconds -> 3 hours
+			sleep_light_count_in_2sec = 7500; // 7500x2 seconds -> 15000 seconds = 4 hour 10 minutes
+			sleep_sound_count_in_2sec = 8790; // 8790x2 seconds -> 17580 seconds = 4 hour 53 minutes
+			sleep_rem_count_in_2sec = 0; // 0 seconds -> 0 hours
+
+			b_test_point = 1;
+#if 0
+			int s0, s1, s2, s3, s4, s5, s6;
+
+			TRACKING_get_activity(0, TRACKING_SLEEP, &s0);
+			TRACKING_get_activity(1, TRACKING_SLEEP, &s1);
+			TRACKING_get_activity(2, TRACKING_SLEEP, &s2);
+			TRACKING_get_activity(3, TRACKING_SLEEP, &s3);
+			TRACKING_get_activity(4, TRACKING_SLEEP, &s4);
+			TRACKING_get_activity(5, TRACKING_SLEEP, &s5);
+			TRACKING_get_activity(6, TRACKING_SLEEP, &s6);
+			Y_SPRINTF(" -- sleep before noon: %d, %d, %d, %d, %d, %d, %d", s0, s1, s2, s3, s4, s5, s6);
+#endif
 		}
 
 		TRACKING_data_logging();
+
+
+		if (b_test_point) {
+			int s0, s1, s2, s3, s4, s5, s6;
+			b_test_point = 0;
+			TRACKING_get_activity(0, TRACKING_SLEEP, &s0);
+			TRACKING_get_activity(1, TRACKING_SLEEP, &s1);
+			TRACKING_get_activity(2, TRACKING_SLEEP, &s2);
+			TRACKING_get_activity(3, TRACKING_SLEEP, &s3);
+			TRACKING_get_activity(4, TRACKING_SLEEP, &s4);
+			TRACKING_get_activity(5, TRACKING_SLEEP, &s5);
+			TRACKING_get_activity(6, TRACKING_SLEEP, &s6);
+			N_SPRINTF(" -- sleep after noon: %d, %d, %d, %d, %d, %d, %d", s0, s1, s2, s3, s4, s5, s6);
+		}
 	}
 
 	// Flush the last minute data to flash
@@ -476,7 +506,7 @@ static void _sleep_sim()
 	// - Heart Rate: 78
 	// - Skin Temperature: 320
 	//
-	cling.touch.skin_touch_type = TOUCH_SKIN_PAD_1;
+	cling.touch.b_skin_touch = 1;
 	cling.hr.current_rate = 78;
 	cling.therm.current_temperature = 320;
 
@@ -523,7 +553,7 @@ static void _sleep_activity_sim()
 	// - Heart Rate: 78
 	// - Skin Temperature: 320
 	//
-	cling.touch.skin_touch_type = TOUCH_SKIN_PAD_1;
+	cling.touch.b_skin_touch = 1;
 	cling.hr.current_rate = 78;
 	cling.therm.current_temperature = 320;
 
@@ -540,11 +570,11 @@ static void _sleep_activity_sim()
 
 		for (j = 0; j < 1440; j++) {
 
-			if ((cling.time.local.day == 22) && (cling.time.local.hour == 14) && (cling.time.local.minute == 25)) {
+			if ((cling.time.local.day == 22) && (cling.time.local.hour == 20) && (cling.time.local.minute == 35)) {
 				cling.time.local.day = 22;
 			}
 
-			if ((activitydata[overall_cnt + j] == 25) && (wSteps[overall_cnt + j] == 6)) {
+			if ((activitydata[overall_cnt + j] == 30) && (wSteps[overall_cnt + j] == 6)) {
 				i = 0;
 			}
 
@@ -612,6 +642,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	//
 	_cling_global_init();
 
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
+	SIM_init();
+#endif
+
 	HAL_init();
 
 	SYSTEM_init();
@@ -622,10 +656,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	//
 	//
 	TRACKING_initialization();
-
-#ifdef USING_VIRTUAL_ACTIVITY_SIM
-	SIM_init();
-#endif
 
 	// long term (30 days) logging simulation
 #ifdef _LONG_TERM_TRACKING_

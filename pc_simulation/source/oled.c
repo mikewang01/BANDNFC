@@ -95,9 +95,7 @@ void OLED_set_contrast(I8U step)
 void OLED_init(I8U contrast)
 {    
 #ifndef _CLING_PC_SIMULATION_
-		spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
-		cling.system.b_spi_0_ON = TRUE;
-	
+
     //BASE_delay_msec(100);
     //nrf_gpio_pin_set(GPIO_OLED_RST);	
     _set_reg(0xAE);     	
@@ -134,57 +132,6 @@ void OLED_init(I8U contrast)
 #endif
 }
 
-#if 0
-void OLED_init(I8U contrast)
-{    
-#ifndef _CLING_PC_SIMULATION_
-		spi_master_init(SPI_MASTER_0, spi_master_0_event_handler, FALSE);
-		cling.system.b_spi_0_ON = TRUE;
-	
-    //BASE_delay_msec(100);
-    //nrf_gpio_pin_set(GPIO_OLED_RST);	
-
-    _set_reg(0xAE);     //Set Display Off 
-	
-    _set_reg(0xd5);     //display divide ratio/osc. freq. mode	
-    _set_reg(0x80);     //
-
-    _set_reg(0xA8);     //multiplex ration mode:63 
-    _set_reg(0x3F);
-
-    _set_reg(0xD3);     //Set Display Offset   
-    _set_reg(0x00);
-
-    _set_reg(0x40);     //Set Display Start Line 
-
-    _set_reg(0xAD);     //DC-DC Control Mode Set 
-    _set_reg(0x8b);     //DC-DC ON/OFF Mode Set 	  8A:disable.8B:Built-in DC-DC is used,
-	
-		// Pump to 9 Volts
-    _set_reg(0x33);     //Set Pump voltage value 	  30:6.4V;01:7.4V;10:8V;11:9V
-	
-    _set_reg(0xA1);     //Segment Remap, column address 127 is mapped to seg0 
-	
-    _set_reg(0xC8);     //Sst COM Output Scan Direction	(from 64 to 0)
-	
-    _set_reg(0xDA);     //common pads hardware: alternative	
-    _set_reg(0x12);
-	
-    OLED_set_contrast(contrast);     //contrast control 
-	
-    _set_reg(0xD9);	    //set pre-charge period	  
-    _set_reg(0x22);
-	
-    _set_reg(0xDB);     //VCOM deselect level mode 
-    _set_reg(0x40);	    //
-	
-    _set_reg(0xA4);     //Set Entire Display On/Off	
-	
-    _set_reg(0xA6);     //Set Normal Display 
-#endif
-}
-#endif
-
 void OLED_set_panel_off()
 {
 	CLING_OLED_CTX *o = &cling.oled;
@@ -197,6 +144,9 @@ BOOLEAN OLED_set_panel_on()
 {
 #ifndef _CLING_PC_SIMULATION_
 	CLING_OLED_CTX *o = &cling.oled;
+
+	// Start 20 ms timer for screen rendering
+	RTC_start_operation_clk();
 	
 	// We are about to turn on OLED, if BLE is in idle mode, we should start advertising
 	if (BTLE_is_idle()) {
@@ -234,7 +184,7 @@ static I8U oledstate;
 void OLED_state_machine(void) 
 {
 #ifndef _CLING_PC_SIMULATION_
-	I32U t_curr = CLK_get_system_time();
+	I32U t_curr;
 	CLING_OLED_CTX *o = &cling.oled;
 	#if 0
 	if (oledstate != o->state) {
@@ -243,9 +193,11 @@ void OLED_state_machine(void)
 	}
 	#endif
 
+	t_curr = CLK_get_system_time();
+	
 	if (o->state != OLED_STATE_IDLE) {
 		// Start system timer
-		SYSCLK_timer_start();
+		RTC_start_operation_clk();
 	}
 
 	switch (o->state) {
@@ -273,8 +225,8 @@ void OLED_state_machine(void)
 		}
 		case OLED_STATE_INIT_REGISTERS:
 		{
-			//OLED_init(0xcc);
-			OLED_init(0x40);
+			OLED_init(0xcc);
+			//OLED_init(0x40);
 			o->state = OLED_STATE_INIT_UI;
 			break;
 		}
@@ -291,20 +243,22 @@ void OLED_state_machine(void)
 				// Reset blinking state
 				cling.ui.clock_sec_blinking = TRUE;
 				{
-	#ifdef _ENABLE_ANCS_
 					// If screen is turned, dismiss the secondary reminder vibration 
-					if (cling.reminder.state == REMINDER_STATE_SECOND_REMINDER) {
-						N_SPRINTF("[OLED] state reminder: %d,", cling.reminder.state);
+					if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
 						UI_switch_state(UI_STATE_REMINDER, 0);
-						cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 						cling.reminder.ui_hh = cling.time.local.hour;
 						cling.reminder.ui_mm = cling.time.local.minute;
-					} else if (ANCS_notifications_to_read()) {
-						N_SPRINTF("[OLED] NEW ANCS notif to read");
-
-						UI_switch_state(UI_STATE_NOTIFIC, 0);
+						cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
+						Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
 					}
-	#endif
+				
+					if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+#ifdef _ENABLE_ANCS_		
+						if (cling.notific.cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL) {
+							UI_switch_state(UI_STATE_NOTIFIC, 0);
+						}
+#endif	
+	}						
 				}
 				o->state = OLED_STATE_ON;
 			break;

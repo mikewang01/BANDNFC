@@ -52,32 +52,31 @@
 #define ICON_TOP_RETURN                      asset_pos[256+145]
 #define ICON_TOP_CALLS_LEN                   asset_len[256+160]
 #define ICON_TOP_CALLS                       asset_pos[256+160]
+#define ICON_TOP_OK_LEN                      asset_len[256+161]
+#define ICON_TOP_OK                          asset_pos[256+161]
 
-#define ICON_TOP_WORKOUT_START_TEXT_LEN      asset_len[143]
-#define ICON_TOP_WORKOUT_START_TEXT          asset_pos[143]
+#define ICON_BOTTOM_IND_NO_CHARGING_LEN     asset_len[128]
+#define ICON_BOTTOM_IND_NO_CHARGING         asset_pos[128]
+#define ICON_BOTTOM_IND_CHARGING_LEN        asset_len[129]
+#define ICON_BOTTOM_IND_CHARGING            asset_pos[129]
+#define ICON_TOP_SMALL_BLE_LEN              asset_len[130]
+#define ICON_TOP_SMALL_BLE                  asset_pos[130]
+#define ICON_TOP_WORKOUT_START_TEXT_LEN     asset_len[143]
+#define ICON_TOP_WORKOUT_START_TEXT         asset_pos[143]
 #define ICON_TOP_WORKOUT_STOP_TEXT_LEN      asset_len[144]
 #define ICON_TOP_WORKOUT_STOP_TEXT          asset_pos[144]
-#define ICON_TOP_WORKOUT_START_ICON_LEN      asset_len[141]
-#define ICON_TOP_WORKOUT_START_ICON          asset_pos[141]
-#define ICON_TOP_WORKOUT_STOP_ICON_LEN      asset_len[142]
-#define ICON_TOP_WORKOUT_STOP_ICON          asset_pos[142]
-#define ICON_TOP_BLE_LEN                     asset_len[144]
-#define ICON_TOP_BLE                         asset_pos[144]
-#define ICON_TOP_SMALL_BLE_LEN               asset_len[130]
-#define ICON_TOP_SMALL_BLE                   asset_pos[130]
-#define ICON_BOTTOM_IND_CHARGING_LEN             asset_len[129]
-#define ICON_BOTTOM_IND_CHARGING                 asset_pos[129]
-#define ICON_BOTTOM_IND_NO_CHARGING_LEN          asset_len[128]
-#define ICON_BOTTOM_IND_NO_CHARGING              asset_pos[128]
+#define ICON_TOP_MORE_LEN                   asset_len[147]
+#define ICON_TOP_MORE                       asset_pos[147]
 
-#define ICON_MIDDLE_CHARGING_BATT_LEN             asset_len[256+146]
-#define ICON_MIDDLE_CHARGING_BATT                 asset_pos[256+146]
+#define ICON_TOP_WORKOUT_START_ICON_LEN     asset_len[256+147]
+#define ICON_TOP_WORKOUT_START_ICON         asset_pos[256+147]
+#define ICON_TOP_WORKOUT_STOP_ICON_LEN      asset_len[256+146]
+#define ICON_TOP_WORKOUT_STOP_ICON          asset_pos[256+146]
 
-#define ICON_MIDDLE_CHARGING_ICON_LEN             asset_len[256+146]
-#define ICON_MIDDLE_CHARGING_ICON                 asset_pos[256+146]
 #define ICON_MIDDLE_CHARGING_BATT_IDX             157
 #define ICON_MIDDLE_CHARGING_ICON_IDX             159
 
+#define ICON_MIDDLE_SLEEP_K                           153
 #define ICON_MIDDLE_SLEEP_H                           146
 #define ICON_MIDDLE_SLEEP_M                           147
 #define ICON_MIDDLE_LOW_TEMP_IDX                      149
@@ -87,18 +86,8 @@
 #define ICON_MIDDLE_INCOMING_CALL_E1                  139
 #define ICON_MIDDLE_INCOMING_CALL_E2                  140
 #define ICON_MIDDLE_INCOMING_CALL_E3                  141
-#define ICON_MIDDLE_NOTIF_MISSED_CALL                 142
-#define ICON_MIDDLE_NOTIF_VOICE_MAIL                  146
-#define ICON_MIDDLE_NOTIF_SOCIAL                      148
-#define ICON_MIDDLE_NOTIF_SCHEDULE                    152
-#define ICON_MIDDLE_NOTIF_EMAIL                       143
-#define ICON_MIDDLE_NOTIF_NEWS                        149
-#define ICON_MIDDLE_NOTIF_HEALTH_AND_FITNESS          144
-#define ICON_MIDDLE_NOTIF_BUSINESS_AND_FINANCE        145
-#define ICON_MIDDLE_NOTIF_LOCATION                    151
-#define ICON_MIDDLE_NOTIF_ENTERTAIN                   147
-#define ICON_MIDDLE_NOTIF_OTHER                       149
-#define ICON_MIDDLE_NO_SKIN_TOUCH                     151		
+#define ICON_MIDDLE_NOTIF_MORE                        143
+#define ICON_MIDDLE_NO_SKIN_TOUCH                     152		
 
 #define ICON_BOTTOM_HEART_RATE_LEN           asset_len[512+128]
 #define ICON_BOTTOM_HEART_RATE               asset_pos[512+128]
@@ -206,9 +195,9 @@
 #define ICON32_MESSAGE_LEN                   asset_len[512+139]
 #define ICON32_MESSAGE                       asset_pos[512+139]
 #define ICON32_MESSAGE_IDX                   139
-#define ICON32_PHONEFIND_LEN                 asset_len[512+141]
-#define ICON32_PHONEFIND                     asset_pos[512+141]
-#define ICON32_PHONEFIND_IDX                 141
+#define ICON32_ALARM_LEN                 asset_len[512+141]
+#define ICON32_ALARM                 asset_pos[512+141]
+#define ICON32_ALARM_IDX                 141
 #define ICON32_SETTING_LEN                 asset_len[512+150]
 #define ICON32_SETTING                     asset_pos[512+150]
 #define ICON32_SETTING_IDX                 150

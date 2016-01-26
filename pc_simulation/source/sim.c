@@ -77,21 +77,28 @@ void SIM_init()
 	// We should add system restoration for critical info
 	CLING_TIME_CTX *t = &cling.time;
 	TRACKING_CTX *a = &cling.activity;
-	
+
+	// Restoring the time zone info
+	// Shanghai: UTC +8 hours (units in 15 minutes) -> 8*(60/15) = 32 minutes
+	t->time_zone = 32;
+	t->time_since_1970 = 1400666400;  // 2014, 5, 21, 18:00
+	cling.time.local.year = 2015;
+	cling.time.local.month = 10;
+	cling.time.local.day = 29;
+	cling.time.local.hour = 18;
+	cling.time.local.minute = 0;
+	cling.time.local.second = 0;
+	t->time_since_1970 += 365 * 24 * 60 * 60;  // year
+	t->time_since_1970 += (31 + 30 + 31 + 31 + 30 + 8) * 24 * 60 * 60; // days
+	t->time_since_1970 -= 18 * 60 * 60;
+	RTC_get_local_clock(&cling.time.local);
+
 	Y_SPRINTF("[SIM] virtual device gets initialized");
-#ifndef _CLING_PC_SIMULATION_
-	cling.system.simulation_mode = 1;
-#endif
+	
 	_weather_init();
 	
 	_tracking_init();
 	
-	// Restoring the time zone info
-	// Shanghai: UTC +8 hours (units in 15 minutes) -> 8*(60/15) = 32 minutes
-	t->time_zone = 32;
-	t->time_since_1970 = 1400666400;
-	RTC_get_local_clock(&cling.time.local);
-
 	// Make sure the minute file has correct offset
 	a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
 
@@ -100,8 +107,8 @@ void SIM_init()
 	cling.time.local_minute = cling.time.local.minute;
 
 	// Update stored total
-	a->sleep_by_noon = a->day.sleep;
-	a->day_stored.sleep = a->day.sleep;
+	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
 	a->day_stored.walking = a->day.walking;
 	a->day_stored.running = a->day.running;
 	a->day_stored.distance = a->day.distance;
@@ -123,6 +130,8 @@ void SIM_init()
 }
 
 #endif
+
+#ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
 static MINUTE_TRACKING_CTX _activity_sim_with_type(SIM_ACTIVITY_TYPE type)
 {
 	MINUTE_TRACKING_CTX a;
@@ -250,6 +259,7 @@ I16S SIM_get_current_activity(I8U type)
 
 	return 0;
 }
+#endif
 
 void SIM_setup_idle_alert()
 {
@@ -340,7 +350,8 @@ void SIM_get_accelerometer(I16S *x, I16S *y, I16S *z)
 
 		if (curr_minute < acc_sim_table[i * 4]) {
 			std = acc_sim_table[(i - 1) * 4 + 1];
-			cling.touch.skin_touch_type = TOUCH_SKIN_PAD_0 + acc_sim_table[(i - 1) * 4 + 2];
+			//cling.touch.b_skin_touch_type = acc_sim_table[(i - 1) * 4 + 2];
+			cling.touch.b_skin_touch = 1;
 			cling.therm.current_temperature = acc_sim_table[(i - 1) * 4 + 3]*10;
 			break;
 		}

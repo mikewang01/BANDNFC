@@ -65,6 +65,12 @@
 	#define SYSTEM_REMINDER_PAGE_SIZE       1
 	#define SYSTEM_REMINDER_SPACE_SIZE		  (4096)
 
+	// Message space
+	//
+	#define SYSTEM_NOTIFICATION_SPACE_START	    (SYSTEM_REMINDER_SPACE_START+SYSTEM_NOTIFICATION_SPACE_SIZE)		// System reminder space
+	#define SYSTEM_NOTIFICATION_PAGE_SIZE       1
+	#define SYSTEM_NOTIFICATION_SPACE_SIZE		  (4096)
+
 	#define FLASH_SIZE                      (376832) /* 368 KB */
 
 	// Non-FAT cling application space starting address cluster fat manages, 

@@ -71,10 +71,6 @@ void GPIO_twi_init(I8U twi_master_instance);
 void GPIO_twi_enable(I8U twi_master_instance);
 void GPIO_twi_disable(I8U twi_master_instance);
 
-// SPI pin configuration
-void GPIO_spi_disabled(I8U spi_no);
-void GPIO_spi_init_config(I8U spi_no);
-
 // Vibrator control
 void GPIO_vibrator_set(BOOLEAN b_on);
 void GPIO_vibrator_on_block(I8U latency);

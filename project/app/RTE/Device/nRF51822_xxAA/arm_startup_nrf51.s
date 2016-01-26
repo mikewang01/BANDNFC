@@ -34,17 +34,18 @@
                 IF :DEF: __STACK_SIZE
 Stack_Size      EQU     __STACK_SIZE
                 ELSE
-Stack_Size      EQU     2048
+Stack_Size      EQU     1536
                 ENDIF
 
                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
+__stack_top
 Stack_Mem       SPACE   Stack_Size
 __initial_sp
 
                 IF :DEF: __HEAP_SIZE
 Heap_Size       EQU     __HEAP_SIZE
                 ELSE
-Heap_Size       EQU     2048
+Heap_Size       EQU     128
                 ENDIF
 
                 AREA    HEAP, NOINIT, READWRITE, ALIGN=3
@@ -125,11 +126,12 @@ NRF_POWER_RAMON_ADDRESS              EQU   0x40000524  ; NRF_POWER->RAMON addres
 NRF_POWER_RAMONB_ADDRESS             EQU   0x40000554  ; NRF_POWER->RAMONB address
 NRF_POWER_RAMONx_RAMxON_ONMODE_Msk   EQU   0x3         ; All RAM blocks on in onmode bit mask
 
+__STACK_TOP		DCD    __stack_top  
 Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]
+				EXPORT  __STACK_TOP
                 IMPORT  SystemInit
-                IMPORT  __main
-                
+                IMPORT  __main             
                 MOVS    R1, #NRF_POWER_RAMONx_RAMxON_ONMODE_Msk
                 
                 LDR     R0, =NRF_POWER_RAMON_ADDRESS
@@ -170,7 +172,7 @@ PendSV_Handler  PROC
 SysTick_Handler PROC
                 EXPORT  SysTick_Handler           [WEAK]
                 B       .
-                ENDP
+                 ENDP
 
 Default_Handler PROC
 
@@ -233,6 +235,7 @@ SWI5_IRQHandler
                 IF      :DEF:__MICROLIB
                 
                 EXPORT  __initial_sp
+				EXPORT  __stack_top
                 EXPORT  __heap_base
                 EXPORT  __heap_limit
 

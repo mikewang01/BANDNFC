@@ -11,7 +11,7 @@
 
 #define _ENABLE_TOUCH_
 
-#define TOUCH_DEEP_SLEEP_TIME_INTERVAL 3000 // 60 Seconds, we enter deep sleep
+#define TOUCH_DEBOUNCING_TIME_PER_MINUTE 40 // 40 seconds for minute activity logging
 
 enum {
 	TOUCH_I2C_REG_CONTROL = 0,
@@ -29,22 +29,15 @@ typedef enum {
 
 enum {
 	TOUCH_NONE = 0,
-	TOUCH_SWIPE_DOWN,
-	TOUCH_SWIPE_UP,
 	TOUCH_SWIPE_LEFT,
 	TOUCH_SWIPE_RIGHT,
-	TOUCH_FINGER_DOWN,
-	TOUCH_FINGER_UP,
+	TOUCH_FINGER_MIDDLE,
 	TOUCH_FINGER_LEFT,
 	TOUCH_FINGER_RIGHT,
-	TOUCH_SKIN_PAD_0,
-	TOUCH_SKIN_PAD_1,
-	TOUCH_SKIN_PAD_2,
-	TOUCH_SKIN_PAD_3,
-	TOUCH_SKIN_PAD_4,
-	TOUCH_DOUBLE_TAP,
 	TOUCH_BUTTON_SINGLE,
+	TOUCH_DOUBLE_TAP,
 	TOUCH_BUTTON_PRESS_HOLD,
+	TOUCH_BUTTON_PRESS_SOS,
 	TOUCH_MAX
 };
 
@@ -66,24 +59,22 @@ typedef struct tagTOUCH_CTX {
 	
 	// State machine
 	TOUCH_STATE state;
-	
-	// Power mode
-	TOUCH_POWER_MODE power_mode;
-	TOUCH_POWER_MODE power_new_mode;
-	
+		
 	// Skin touch update
-	I8U skin_touch_type;
+	BOOLEAN b_skin_touch;
+	I8U skin_touch_time_per_minute;
+	
 } TOUCH_CTX;
 
 void TOUCH_init(void);
 I8U TOUCH_get_gesture_panel(void);
 void TOUCH_gesture_check(void);
 void TOUCH_power_set(TOUCH_POWER_MODE mode);
-TOUCH_POWER_MODE TOUCH_power_get(void);
 I8U TOUCH_get_skin_pad(void);
 void TOUCH_power_mode_state_machine(void);
 BOOLEAN TOUCH_new_gesture(void);
 BOOLEAN TOUCH_is_skin_touched(void);
+I8U TOUCH_get_skin_touch_time(void);
 
 #endif // __TOUCH_H__
 /** @} */

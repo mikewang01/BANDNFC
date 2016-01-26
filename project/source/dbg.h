@@ -118,7 +118,7 @@ typedef struct tagDEBUG_CTX {
 #define I_SPRINTF(...)
 #define B_SPRINTF(...) SYSLOG_DEBUG_MESSAGE(__VA_ARGS__)
 
-#else
+#else 
 
 #define N_SPRINTF(...)
 #define Y_SPRINTF(...)

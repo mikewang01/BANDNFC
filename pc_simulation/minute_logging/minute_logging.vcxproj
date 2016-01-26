@@ -186,6 +186,7 @@
     <ClCompile Include="..\source\uart.c" />
     <ClCompile Include="..\source\ui.c" />
     <ClCompile Include="..\source\user.c" />
+    <ClCompile Include="..\source\uv.c" />
     <ClCompile Include="..\source\Watchdog.c" />
     <ClCompile Include="..\source\weather.c" />
     <ClCompile Include="minute_logging.c" />

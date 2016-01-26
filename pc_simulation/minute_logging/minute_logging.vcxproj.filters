@@ -341,5 +341,8 @@
     <ClCompile Include="..\source\font.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\source\uv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

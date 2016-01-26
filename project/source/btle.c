@@ -353,62 +353,60 @@ void BTLE_execute_adv(BOOLEAN b_fast)
             
 void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
 {
-		BLE_CTX *r = &cling.ble;
-	
-    switch (p_ble_evt->header.evt_id)
-    {
-				case BLE_EVT_TX_COMPLETE:
-					r->tx_buf_available += (I8U) p_ble_evt->evt.common_evt.params.tx_complete.count;
-					break;
+	BLE_CTX *r = &cling.ble;
 
-        case BLE_GAP_EVT_CONNECTED:
-            _on_connect(p_ble_evt);
-            break;
-            
-        case BLE_GAP_EVT_DISCONNECTED:
+	switch (p_ble_evt->header.evt_id)
+	{
+		case BLE_EVT_TX_COMPLETE:
+			r->tx_buf_available += (I8U) p_ble_evt->evt.common_evt.params.tx_complete.count;
+			break;
 
-            _on_disconnect();
-            break;
-            
-        case BLE_GATTS_EVT_WRITE:
-            _on_write(p_ble_evt);
-            break;
+		case BLE_GAP_EVT_CONNECTED:
+			_on_connect(p_ble_evt);
+			break;
+					
+		case BLE_GAP_EVT_DISCONNECTED:	
+			_on_disconnect();
+			break;
+					
+		case BLE_GATTS_EVT_WRITE:
+			_on_write(p_ble_evt);
+			break;
 
-				case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
+		case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
+			break;
 
-            break;
+		case BLE_GAP_EVT_AUTH_STATUS:
+			Y_SPRINTF("[BLE] AUTH GAP EVT - write CCCD");
+			break;
 
-        case BLE_GAP_EVT_AUTH_STATUS:
-						Y_SPRINTF("[BLE] AUTH GAP EVT - write CCCD");
-            break;
+		case BLE_GAP_EVT_TIMEOUT:
 
-				case BLE_GAP_EVT_TIMEOUT:
+			if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
+			{ 
+				if (r->btle_State == BTLE_STATE_ADVERTISING) {
+					if (r->adv_mode == BLE_ADV_SLEEP) {
+						r->btle_State = BTLE_STATE_IDLE;
+					} else {
+						BTLE_execute_adv(FALSE);
+						Y_SPRINTF("[BTLE] Advertising timeout ");
+					}
+				} 
+			}
+			break;
+							
+		case BLE_GATTC_EVT_TIMEOUT:
+		case BLE_GATTS_EVT_TIMEOUT:
+			// Disconnect on GATT Server and Client timeout events.
+			
+			Y_SPRINTF("[BTLE] GATTS - BLE disconnect");
+			if(BTLE_is_connected())
+				BTLE_disconnect(BTLE_DISCONN_REASON_GATT_TIMEOUT);
+			break;
 
-            if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
-            { 
-                if (r->btle_State == BTLE_STATE_ADVERTISING) {
-									if (r->adv_mode == BLE_ADV_SLEEP) {
-										r->btle_State = BTLE_STATE_IDLE;
-									} else {
-										BTLE_execute_adv(FALSE);
-										Y_SPRINTF("[BTLE] Advertising timeout ");
-									}
-                } 
-            }
-						break;
-				        
-				case BLE_GATTC_EVT_TIMEOUT:
-        case BLE_GATTS_EVT_TIMEOUT:
-            // Disconnect on GATT Server and Client timeout events.
-				
-						Y_SPRINTF("[BTLE] GATTS - BLE disconnect");
-				    if(BTLE_is_connected())
-						  BTLE_disconnect(BTLE_DISCONN_REASON_GATT_TIMEOUT);
-            break;
-
-        default:
-            break;
-    }
+		default:
+			break;
+	}
 }
 #endif
 BOOLEAN BTLE_tx_buffer_available()

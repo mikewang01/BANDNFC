@@ -35,7 +35,6 @@ void SYSFLASH_drv_event_handler(uint32_t sys_evt)
 	}
 	
 	g_system_state = SYSFLASH_STATE_NOP;
-	
 }
 
 static void _flash_op_wait()

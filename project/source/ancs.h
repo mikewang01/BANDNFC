@@ -102,8 +102,9 @@ typedef struct tagANCS_CONTEXT {
   // Filtering old notify flag.
   I8U filtering_flag;
 	
-  // Bond infomation delete state.
-  I8U bond_state;
+  // Record time flag to filtering old notifications.
+  BOOLEAN start_record_time;	
+	
 } ANCS_CONTEXT;
 
 

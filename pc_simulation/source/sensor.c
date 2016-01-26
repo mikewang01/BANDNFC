@@ -14,6 +14,10 @@
 
 void _low_power_process_hw(I8U int_source)
 {
+	I32U t_diff_ms = CLK_get_system_time();
+	
+	t_diff_ms -= cling.lps.ts;
+	
 	// 
 	// INT1 is spurious, so if set, read the INT cause and report in the FIFO
 	//
@@ -21,6 +25,13 @@ void _low_power_process_hw(I8U int_source)
 	if (int_source & 0x6a) {
 		N_SPRINTF("[SENSOR] Acc interrupt: %02x", int_source);
 		TRACKING_exit_low_power_mode(FALSE);
+	}
+	
+	// if system stays in low power mode for more than 2 hour, wake up 
+	if ((SLEEP_is_sleep_state(SLP_STAT_SOUND)) || (SLEEP_is_sleep_state(SLP_STAT_LIGHT))) {
+		if (t_diff_ms >= 1800000) {
+			TRACKING_exit_low_power_mode(TRUE);
+		}
 	}
 }
 
@@ -148,10 +159,9 @@ static void _low_power_process_sw()
 	
 	if (!sample_count)
 		return;
-
-	if (cling.system.simulation_mode) 
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
 		return;
-
+#endif
 	// Reset the accumulator
 	b_motion = FALSE;
 	v = 0;
@@ -244,10 +254,13 @@ static void _high_power_process_FIFO()
 	// Check if we have new data available.
 	sample_count = LIS3DH_is_FIFO_ready();
 	
+	
 	if (!sample_count)
 		return;
-#ifndef _CLING_PC_SIMULATION_
-	if (cling.system.simulation_mode) 
+	
+			N_SPRINTF("[SENSOR] sample count: %d", sample_count);
+
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
 		return;
 #endif
 	jitter_counts = 0;
@@ -264,7 +277,7 @@ static void _high_power_process_FIFO()
 		iSample = 0;
 	}
 	accCnt = 0;
-	
+
 	for (i = 0; i < sample_count; i++) {
 		
 		LIS3DH_retrieve_data(&xyz);
@@ -372,29 +385,23 @@ void SENSOR_accel_processing()
 {
 	I8U int_pin;
 	I8U int_source;
-	I32U t_curr = CLK_get_system_time();
-	
 	ACC_AXIS xyz;
+	I32U t_curr;
+	
 	memset(&xyz, 0, sizeof(ACC_AXIS));
+	t_curr = CLK_get_system_time();
 	
 	if (cling.lps.b_low_power_mode) {
 #ifdef _USE_HW_MOTION_DETECTION_
 		SLEEP_algorithms_proc(&xyz); 
 #endif
 		
-		if (UI_is_idle()) {
-			if ((!cling.lps.b_touch_deep_sleep_mode) && (t_curr > (cling.lps.ts + TOUCH_DEEP_SLEEP_TIME_INTERVAL))) {
-				cling.touch.state = TOUCH_STATE_MODE_SET;
-				cling.touch.power_new_mode = TOUCH_POWER_DEEP_SLEEP;
-				cling.lps.b_touch_deep_sleep_mode = TRUE;
-			}
-		}
-		
 		N_SPRINTF("[SENSOR] Touch & Sensor: %d, %d, %d", cling.lps.b_touch_deep_sleep_mode, t_curr, cling.lps.ts);
 		
 	}
 #ifndef _CLING_PC_SIMULATION_
 	
+	// One known bug: Accelerometer interrupts process 2x times than expected.
 	int_pin = nrf_gpio_pin_read(GPIO_SENSOR_INT_1);	
 	if (int_pin == 0) {
 		N_SPRINTF("[LIS3DH] Not an accelerometer interrupt, %d", CLK_get_system_time());

@@ -55,7 +55,6 @@ extern FILE *fLog;
 	{ char buf[128]; \
 		I8U len = sprintf(buf, "%d ", \
 			CLK_get_system_time());\
-		cling.dbg.b_log = FALSE;\
 		len += sprintf(buf+len, __VA_ARGS__);\
 		len += sprintf(buf+len, "\r\n"); \
 		UART_print(buf);\
@@ -70,7 +69,6 @@ extern FILE *fLog;
 	cling.time.local.hour, \
 	cling.time.local.minute, \
 	cling.time.local.second); \
-	cling.dbg.b_log = FALSE; \
 	len += sprintf(buf + len, __VA_ARGS__); \
 	len += sprintf(buf + len, "\r\n"); \
 	printf(buf); \
@@ -85,7 +83,6 @@ extern FILE *fLog;
 	cling.time.local.hour, \
 	cling.time.local.minute, \
 	cling.time.local.second); \
-	cling.dbg.b_log = FALSE; \
 	len += sprintf(buf + len, __VA_ARGS__); \
 	len += sprintf(buf + len, "\r\n"); \
 	fprintf(fLog, "%s", buf); \
@@ -101,7 +98,6 @@ extern FILE *fLog;
 	cling.time.local.minute, \
 	cling.time.local.second); \
 	len += sprintf(buf+len, __VA_ARGS__); \
-	cling.dbg.b_log = FALSE; \
 	len += sprintf(buf + len, "\r"); \
 	fprintf(fLog, "%s", buf); \
 }
@@ -132,6 +128,7 @@ extern FILE *fLog;
 #define N_SPRINTF(...)
 #define Y_SPRINTF(...) PURE_PC_FILE_LOG(__VA_ARGS__)
 #define I_SPRINTF(...)
+#define B_SPRINTF(...)
 #endif
 
 void DBG_led_blinky(I32U interval);

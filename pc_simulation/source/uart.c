@@ -56,25 +56,20 @@ void simple_uart_config(  uint8_t rts_pin_number,
 #endif
 void UART_init(void)
 {
-#ifdef	__DEBUG_BASE__
 		// UART initialization
+#ifndef _CLING_PC_SIMULATION_
 
     simple_uart_config(GPIO_UART_RTS_FAKE, GPIO_UART_TX, GPIO_UART_CTS_FAKE, GPIO_UART_RX, false);
-#if 0
-    NRF_UART0->INTENSET = UART_INTENSET_RXDRDY_Enabled << UART_INTENSET_RXDRDY_Pos;
-    
-    sd_nvic_SetPriority(UART0_IRQn, APP_IRQ_PRIORITY_LOW);
-    sd_nvic_EnableIRQ(UART0_IRQn);
-#else
-		NRF_UART0->INTENSET = UART_INTENSET_RXDRDY_Disabled << UART_INTENSET_RXDRDY_Pos;
-#endif
-#else
-		UART_disabled();
+
+	NRF_UART0->INTENSET = UART_INTENSET_RXDRDY_Disabled << UART_INTENSET_RXDRDY_Pos;
 #endif
 }
 
 void UART_print(char *str)
 {
+	if (!cling.system.b_powered_up)
+		return;
+	
 #ifndef _CLING_PC_SIMULATION_
 	simple_uart_putstring((const uint8_t *)str);
 #endif

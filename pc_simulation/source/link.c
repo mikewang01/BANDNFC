@@ -31,8 +31,8 @@ BOOLEAN _generatingBlob = BOOLEAN_FALSE; // indicates that we are generating a b
 BOOLEAN _checkingBlob = BOOLEAN_FALSE;	// indicates that we are checking a blob (used for timeout check)
 BOOLEAN _waitingBeforeFileCheck = BOOLEAN_FALSE; // flag indicating we are waiting for a short period before checking file.
 I8U token_string[MAX_ENCRYPT_DECRYPT_STRING_SIZE];
-I8U crypto_buffer[ENCRYPT_DECRYPT_BLOCK_SIZE+2];  // the extra two are "safety" especially for sprintf used later.
-I32U _thekey[4];
+I8U *crypto_buffer;  // 16 BYTES BUFFER FOR crypto.
+I8U *_thekey;
 I8U _pad;
 I32U _startTime, _timeCheck;
 I32U _userID;
@@ -133,51 +133,6 @@ void _fill_up_random_characters(I8U *charBuffer, I8U number_of_characters)
 //#define WORDS_IN_FLASH2 65500 /* these are 2B values */
 
 
-void LINK_GenerateFlashCRC(void) {
-#if 1
-	cling.link.pairing.crc = 0x1234;
-#else
-	// HW CRC generation is not supported at the moment
-	//I16U *flashPtr = FLASH1_BASE_ADDRESS;
-	//I16U *flash2Ptr = FLASH2_BASE_ADDRESS;
-	I8U flashData;
-	I16U i;
-	I16U bytesInFlash2 = ((I16U)(_bytesInFlash2[0]<<8)) + (I16U)_bytesInFlash2[1];
-	//I16U flashDataChunk[WORDS_IN_CHUNK_BUFFER]; // chunk buffer
-	//I16U chunkCounter, j, i;
-	I8U *flash1Pointer = FLASH1_BASE_ADDRESS;
-	I8U *flash2Pointer = FLASH2_BASE_ADDRESS;
-#ifdef DEBUG_MEMORY_MAP
-	//while (!SYSTEM_get_mutex(MUTEX_MCU_LOCK_VALUE));
-	CLING_FILE f;
-	if(TRUE == FILE_if_exists("memmap.bin")) FILE_delete("memmap.bin");
-	f.fc = FILE_fopen("memmap.bin", FILE_IO_WRITE);
-#endif
-	flash1Pointer = FLASH1_BASE_ADDRESS;
-//	CRCINIRES = 0xFFFF;
-	for (i=0; i<BYTES_IN_FLASH1; i++) {
-		flashData = *(flash1Pointer+i);
-#ifdef DEBUG_MEMORY_MAP
-		FILE_fwrite(f.fc, &flashData,1);
-#endif
-	//	CRCDIRB_L = flashData;
-	}
-
-	for (i=0; i<bytesInFlash2/*BYTES_IN_FLASH2*/; i++) {
-		flashData = *(flash2Pointer+i);
-#ifdef DEBUG_MEMORY_MAP
-		FILE_fwrite(f.fc, &flashData,1);
-#endif
-	//	CRCDIRB_L = flashData;
-	}
-	
-#ifdef DEBUG_MEMORY_MAP
-	FILE_fclose(f.fc);
-#endif
-	cling.link.pairing.crc = CRCINIRES;
-#endif
-}
-
 void LINK_state_machine(void) 
 {
 	LINK_CTX *acc = &cling.link;
@@ -194,12 +149,19 @@ void LINK_state_machine(void)
 				acc->auth_state = LINK_S_START_AUTHENTICATION;
 				acc->trigger_cmd = CTL_A1;
 				N_SPRINTF("[LINK] A1 ...");
+				// Borrow pedo grobal buffer as it is a one-time use
+				crypto_buffer = PEDO_get_global_buffer()+512;
+				_thekey = crypto_buffer+128;
 				// terminal state for this phase is WRITE_ENCRYPT_FILE or GENERATE_ERROR_FILE
 			} else if (CTL_A2 == (CTL_A2 & cling.system.mcu_reg[REGISTER_MCU_CTL])) {
 				_timeCheck = curr_sys_time;
 				acc->auth_state = LINK_S_WAIT_FOR_CHECK_FLAG;
 				cling.link.trigger_cmd = CTL_A2;
 				N_SPRINTF("[LINK] A2 ...");
+				// Borrow pedo grobal buffer as it is a one-time use
+				crypto_buffer = PEDO_get_global_buffer()+512;
+				_thekey = crypto_buffer+128;
+
 				// terminal state for this phase is AUTHORIZED or GENERATE_ERROR_FILE
 			} else if (CTL_FA == (CTL_FA & cling.system.mcu_reg[REGISTER_MCU_CTL])) {
 				_timeCheck = curr_sys_time;
@@ -209,6 +171,10 @@ void LINK_state_machine(void)
 				cling.link.trigger_cmd = CTL_FA;
 				// terminal state for this phase is AUTHORIZED or GENERATE_ERROR_FILE
 				N_SPRINTF("[LINK] force auth ...");
+				// Borrow pedo grobal buffer as it is a one-time use
+				crypto_buffer = PEDO_get_global_buffer()+512;
+				_thekey = crypto_buffer+128;
+
 			} else {
 				cling.link.trigger_cmd = 0;
 			}
@@ -365,12 +331,12 @@ void LINK_state_machine(void)
 					
 					// convert the first part of the buffer to binary and put in the buffer
 					_AsciiToHex(&token_string[0], crypto_buffer, ENCRYPT_STRING_SIZE);
-					
+
 					_mapk();
-					
+
 					// then call the decryption routine
 					BTLE_aes_decrypt((I8U *)_thekey, crypto_buffer, crypto_buffer);
-					
+
 					acc->auth_state = LINK_S_DECRYPT_BLOB1;
 					
 				} else {
@@ -391,21 +357,24 @@ void LINK_state_machine(void)
 		}
 		break;
 
-		case LINK_S_DECRYPT_BLOB1:{
-				// Copy out the first 16 hex digits
-				memcpy(&token_string[0], crypto_buffer, ENCRYPT_DECRYPT_BLOCK_SIZE);
-					
-				// decrypt the next blob
-				// convert the second part of the buffer to binary and put in the buffer
-				_AsciiToHex(&token_string[ENCRYPT_STRING_SIZE+1], crypto_buffer, ENCRYPT_STRING_SIZE);
-				_mapk();
-				// then call the decryption routine
-				BTLE_aes_decrypt((I8U *)_thekey, crypto_buffer, crypto_buffer);
-				acc->auth_state = LINK_S_DECRYPT_BLOB2;
-		}
-		break;
+		case LINK_S_DECRYPT_BLOB1:
+		{
+			N_SPRINTF("[LINK] DECRYPT BLOB1");
+			// Copy out the first 16 hex digits
+			memcpy(&token_string[0], crypto_buffer, ENCRYPT_DECRYPT_BLOCK_SIZE);
 
-		case LINK_S_DECRYPT_BLOB2:{
+			// decrypt the next blob
+			// convert the second part of the buffer to binary and put in the buffer
+			_AsciiToHex(&token_string[ENCRYPT_STRING_SIZE+1], crypto_buffer, ENCRYPT_STRING_SIZE);
+			_mapk();
+			// then call the decryption routine
+			BTLE_aes_decrypt((I8U *)_thekey, crypto_buffer, crypto_buffer);
+			acc->auth_state = LINK_S_DECRYPT_BLOB2;
+			break;
+		}
+		case LINK_S_DECRYPT_BLOB2:
+		{
+			N_SPRINTF("[LINK] DECRYPT BLOB2");
 
 			// copy the second part of the information out of the encrypt block to the text block
 			// compress the pieces together;  the ID is two pieces
@@ -418,11 +387,10 @@ void LINK_state_machine(void)
 			// then call the decryption routine
 			BTLE_aes_decrypt((I8U *)_thekey, crypto_buffer, crypto_buffer);
 			acc->auth_state = LINK_S_DECRYPT_BLOB3;
+			break;
 		}
-		break;
-
 		case LINK_S_DECRYPT_BLOB3:{
-			N_SPRINTF("[LINK] 3rd blob decoded");
+			N_SPRINTF("[LINK] DECRYPT BLOB3");
 			// copy the third part of the information out of the encrypt block to the text block
 			memcpy(&token_string[ENCRYPT_DECRYPT_BLOCK_SIZE<<1], crypto_buffer, ENCRYPT_DECRYPT_BLOCK_SIZE);
 			acc->auth_state = LINK_S_CHECK_FILE;
@@ -488,7 +456,8 @@ void LINK_state_machine(void)
 		}
 		break;
 
-		case LINK_S_GENERATE_ERROR_FILE:{
+		case LINK_S_GENERATE_ERROR_FILE:
+		{
 			_generatingBlob = BOOLEAN_FALSE;
 			_checkingBlob = BOOLEAN_FALSE;
 			if (SYSTEM_get_mutex(MUTEX_MCU_LOCK_VALUE) || (_mutexSpinCounter > MUTEX_SPIN_COUNTER_MAX)) {
@@ -500,7 +469,7 @@ void LINK_state_machine(void)
 				_generatingBlob = BOOLEAN_FALSE;
 				_checkingBlob = BOOLEAN_FALSE;
 				_mutexSpinCounter = 0;
-				N_SPRINTF("[LINK] error file");
+				N_SPRINTF("[LINK] error file:%d", acc->error_code);
 				acc->comm_state = LINK_COMM_ERROR;
 				acc->userID = (I32U) 0xFFFFFFFF; // cling.link.userID;
 				CP_create_auth_stat_msg();
@@ -510,7 +479,8 @@ void LINK_state_machine(void)
 		break;
 		
 
-		case LINK_S_WRITE_LINK_INFO:{
+		case LINK_S_WRITE_LINK_INFO:
+		{
 			N_SPRINTF("[LINK] write auth info");
 			cling.link.b_authorizing = TRUE;
 			cling.link.link_ts = curr_sys_time;
@@ -520,19 +490,21 @@ void LINK_state_machine(void)
 			// Flag the authentication
 			cling.link.pairing.userID = _userID;
 			cling.link.pairing.authToken = LINK_TOKEN;
-			LINK_GenerateFlashCRC();
+			cling.link.pairing.crc = 0x1234;
 			acc->auth_state = LINK_S_AUTHORIZED;
+			
 			// Simulate a single button click to change UI
 			cling.system.mcu_reg[REGISTER_MCU_CTL] &= ~CTL_A2;
 			cling.system.mcu_reg[REGISTER_MCU_CTL] &= ~CTL_FA;
 
-			// Now that PLAY is authorized, we will re-initialize all activity counts wi
+			// Now unit is authorized, we will re-initialize all activity counts wi
 			TRACKING_total_data_load_file();
 
 		}
 		break;
 
-		case LINK_S_AUTHORIZED:{
+		case LINK_S_AUTHORIZED:
+		{
 			acc->auth_state = LINK_S_WRITING_LINK_INFO;
 			if (cling.link.trigger_cmd == CTL_A2) {
 				acc->comm_state = LINK_COMM_A2_DONE;
@@ -550,6 +522,7 @@ void LINK_state_machine(void)
 		break;
 
 		case LINK_S_WRITING_LINK_INFO:
+		{
 #ifdef _SKIP_LINK_
 			cling.link.auth_state = LINK_S_IDLE;
 			N_SPRINTF("[LINK] Writing link info! ");
@@ -561,8 +534,8 @@ void LINK_state_machine(void)
 			cling.link.auth_state = LINK_S_REBOOT_DEVICE;
 #endif
 			cling.link.link_ts = curr_sys_time;
-
-			break;
+		}
+		break;
 	
 		case LINK_S_REBOOT_DEVICE:
 			if (curr_sys_time > (cling.link.link_ts + 5000)) {
@@ -578,6 +551,7 @@ void LINK_state_machine(void)
 		}
 		break;
 	}
+	
 }
 
 void LINK_init()

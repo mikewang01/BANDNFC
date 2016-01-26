@@ -14,11 +14,11 @@
 #include <string.h>
 #include "nrf_error.h"
 #include "ble.h"
-#include "app_trace.h"
 #include "nordic_common.h"
-#include "main.h"
+
 #define SRV_DISC_START_HANDLE  0x0001                    /**< The start handle value used during service discovery. */
 #define DB_DISCOVERY_MAX_USERS BLE_DB_DISCOVERY_MAX_SRV  /**< The maximum number of users/registrations allowed by this module. */
+#define DB_LOG(...)                                      /**< A debug logger macro that can be used in this file to do logging information over UART. */
 
 /**@brief Array of structures containing information about the registered application modules. */
 static struct
@@ -41,7 +41,6 @@ static struct
 
 static uint32_t m_pending_usr_evt_index;    /**< The index to the pending user event array, pointing to the last added pending user event. */
 static uint32_t m_num_of_handlers_reg;      /**< The number of handlers registered with the DB Discovery module. */
-static uint32_t m_num_of_discoveries_made;  /**< The total number of service discoveries (successful or unsuccessful) made since initialization. */
 static bool     m_initialized = false;      /**< This variable Indicates if the module is initialized or not. */
 
 /**@brief     Function for fetching the event handler provided by a registered application module.
@@ -125,7 +124,7 @@ static void discovery_error_evt_trigger(ble_db_discovery_t * const p_db_discover
                                         uint32_t                   err_code)
 {
     ble_db_discovery_evt_handler_t p_evt_handler;
-    ble_db_discovery_srv_t       * p_srv_being_discovered;
+    ble_gatt_db_srv_t            * p_srv_being_discovered;
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
 
@@ -175,7 +174,7 @@ static void discovery_complete_evt_trigger(ble_db_discovery_t * const p_db_disco
                                            bool                       is_srv_found)
 {
     ble_db_discovery_evt_handler_t p_evt_handler;
-    ble_db_discovery_srv_t       * p_srv_being_discovered;
+    ble_gatt_db_srv_t            * p_srv_being_discovered;
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
 
@@ -230,10 +229,10 @@ static void discovery_complete_evt_trigger(ble_db_discovery_t * const p_db_disco
  */
 static void on_srv_disc_completion(ble_db_discovery_t * p_db_discovery)
 {
-    m_num_of_discoveries_made++;
+    p_db_discovery->discoveries_count++;
 
     // Check if more services need to be discovered.
-    if (m_num_of_discoveries_made < m_num_of_handlers_reg)
+    if (p_db_discovery->discoveries_count < m_num_of_handlers_reg)
     {
         // Reset the current characteristic index since a new service discovery is about to start.
         p_db_discovery->curr_char_ind = 0;
@@ -241,7 +240,7 @@ static void on_srv_disc_completion(ble_db_discovery_t * p_db_discovery)
         // Initiate discovery of the next service.
         p_db_discovery->curr_srv_ind++;
 
-        ble_db_discovery_srv_t * p_srv_being_discovered;
+        ble_gatt_db_srv_t * p_srv_being_discovered;
 
         p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
 
@@ -252,7 +251,7 @@ static void on_srv_disc_completion(ble_db_discovery_t * p_db_discovery)
         // discovery is about to start.
         p_srv_being_discovered->char_count = 0;
 
-        N_SPRINTF("[DB]: Starting discovery of service with UUID 0x%x for Connection handle %d\r\n",
+        DB_LOG("[DB]: Starting discovery of service with UUID 0x%x for Connection handle %d\r\n",
                p_srv_being_discovered->srv_uuid.uuid, p_db_discovery->conn_handle);
 
         uint32_t err_code;
@@ -336,8 +335,8 @@ static bool is_char_discovery_reqd(ble_db_discovery_t * const p_db_discovery,
  * @retval     False If a descriptor discovery is NOT required.
  */
 static bool is_desc_discovery_reqd(ble_db_discovery_t       * p_db_discovery,
-                                   ble_db_discovery_char_t  * p_curr_char,
-                                   ble_db_discovery_char_t  * p_next_char,
+                                   ble_gatt_db_char_t       * p_curr_char,
+                                   ble_gatt_db_char_t       * p_next_char,
                                    ble_gattc_handle_range_t * p_handle_range)
 {
     if (p_next_char == NULL)
@@ -389,7 +388,7 @@ static bool is_desc_discovery_reqd(ble_db_discovery_t       * p_db_discovery,
  */
 static uint32_t characteristics_discover(ble_db_discovery_t * const p_db_discovery)
 {
-    ble_db_discovery_srv_t * p_srv_being_discovered;
+    ble_gatt_db_srv_t      * p_srv_being_discovered;
     ble_gattc_handle_range_t handle_range;
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
@@ -441,8 +440,8 @@ static uint32_t descriptors_discover(ble_db_discovery_t * const p_db_discovery,
                                      bool *                     p_raise_discov_complete)
 {
     ble_gattc_handle_range_t   handle_range;
-    ble_db_discovery_char_t  * p_curr_char_being_discovered;
-    ble_db_discovery_srv_t   * p_srv_being_discovered;
+    ble_gatt_db_char_t       * p_curr_char_being_discovered;
+    ble_gatt_db_srv_t        * p_srv_being_discovered;
     bool                       is_discovery_reqd = false;    
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
@@ -461,7 +460,7 @@ static uint32_t descriptors_discover(ble_db_discovery_t * const p_db_discovery,
     else
     {
         uint8_t                   i;
-        ble_db_discovery_char_t * p_next_char;
+        ble_gatt_db_char_t * p_next_char;
 
         for (i = p_db_discovery->curr_char_ind;
              i < p_srv_being_discovered->char_count;
@@ -527,7 +526,7 @@ static void on_primary_srv_discovery_rsp(ble_db_discovery_t * const    p_db_disc
     {
         uint32_t err_code;
         const ble_gattc_evt_prim_srvc_disc_rsp_t * p_prim_srvc_disc_rsp_evt;
-        ble_db_discovery_srv_t                   * p_srv_being_discovered;
+        ble_gatt_db_srv_t                        * p_srv_being_discovered;
 
         p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
 
@@ -566,7 +565,7 @@ static void on_characteristic_discovery_rsp(ble_db_discovery_t * const    p_db_d
                              const ble_gattc_evt_t * const                p_ble_gattc_evt)
 {
     uint32_t                 err_code;
-    ble_db_discovery_srv_t * p_srv_being_discovered;
+    ble_gatt_db_srv_t      * p_srv_being_discovered;
     bool                     perform_desc_discov = false;    
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
@@ -586,7 +585,7 @@ static void on_characteristic_discovery_rsp(ble_db_discovery_t * const    p_db_d
         uint8_t num_chars_curr_disc = p_char_disc_rsp_evt->count;
 
         // Check if the total number of discovered characteristics are supported by this module.
-        if ((num_chars_prev_disc + num_chars_curr_disc) <= BLE_DB_DISCOVERY_MAX_CHAR_PER_SRV)
+        if ((num_chars_prev_disc + num_chars_curr_disc) <= BLE_GATT_DB_MAX_CHARS)
         {
             // Update the characteristics count.
             p_srv_being_discovered->char_count += num_chars_curr_disc;
@@ -595,7 +594,7 @@ static void on_characteristic_discovery_rsp(ble_db_discovery_t * const    p_db_d
         {
             // The number of characteristics discovered at the peer is more than the supported
             // maximum. This module will store only the characteristics found up to this point.
-            p_srv_being_discovered->char_count = BLE_DB_DISCOVERY_MAX_CHAR_PER_SRV;
+            p_srv_being_discovered->char_count = BLE_GATT_DB_MAX_CHARS;
         }
 
         uint32_t i;
@@ -617,7 +616,7 @@ static void on_characteristic_discovery_rsp(ble_db_discovery_t * const    p_db_d
         // characteristic per service has been reached, descriptor discovery will be performed.
         if (
             !is_char_discovery_reqd(p_db_discovery, p_last_known_char) ||
-            (p_srv_being_discovered->char_count == BLE_DB_DISCOVERY_MAX_CHAR_PER_SRV)
+            (p_srv_being_discovered->char_count == BLE_GATT_DB_MAX_CHARS)
            )
         {
             perform_desc_discov = true;
@@ -667,7 +666,7 @@ static void on_characteristic_discovery_rsp(ble_db_discovery_t * const    p_db_d
         {
             // No more characteristics and descriptors need to be discovered. Discovery is complete.
             // Send a discovery complete event to the user application.
-            Y_SPRINTF("[DB]: Discovery of service with UUID 0x%x completed with success for Connection"
+            DB_LOG("[DB]: Discovery of service with UUID 0x%x completed with success for Connection"
                    " handle %d\r\n", p_srv_being_discovered->srv_uuid.uuid,
                    p_db_discovery->conn_handle);
 
@@ -688,13 +687,13 @@ static void on_descriptor_discovery_rsp(ble_db_discovery_t * const    p_db_disco
                                         const ble_gattc_evt_t * const p_ble_gattc_evt)
 {
     const ble_gattc_evt_desc_disc_rsp_t * p_desc_disc_rsp_evt;
-    ble_db_discovery_srv_t              * p_srv_being_discovered;
+    ble_gatt_db_srv_t                   * p_srv_being_discovered;
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
 
     p_desc_disc_rsp_evt = &(p_ble_gattc_evt->params.desc_disc_rsp);
 
-    ble_db_discovery_char_t * p_char_being_discovered =
+    ble_gatt_db_char_t * p_char_being_discovered =
         &(p_srv_being_discovered->charateristics[p_db_discovery->curr_char_ind]);
 
     if (p_ble_gattc_evt->gatt_status == BLE_GATT_STATUS_SUCCESS)
@@ -751,7 +750,7 @@ static void on_descriptor_discovery_rsp(ble_db_discovery_t * const    p_db_disco
 
     if (raise_discov_complete)
     {
-        Y_SPRINTF("[DB]: Discovery of service with UUID 0x%x completed with success for Connection"
+        DB_LOG("[DB]: Discovery of service with UUID 0x%x completed with success for Connection"
                "handle %d\r\n", p_srv_being_discovered->srv_uuid.uuid,
                p_db_discovery->conn_handle);
 
@@ -766,7 +765,6 @@ uint32_t ble_db_discovery_init(void)
 {
     m_num_of_handlers_reg      = 0;
     m_initialized              = true;
-    m_num_of_discoveries_made  = 0;
     m_pending_usr_evt_index    = 0;
 
     return NRF_SUCCESS;
@@ -777,7 +775,6 @@ uint32_t ble_db_discovery_close()
 {
     m_num_of_handlers_reg      = 0;
     m_initialized              = false;
-    m_num_of_discoveries_made  = 0;
     m_pending_usr_evt_index    = 0;
 
     return NRF_SUCCESS;
@@ -831,19 +828,19 @@ uint32_t ble_db_discovery_start(ble_db_discovery_t * const p_db_discovery,
         return NRF_ERROR_BUSY;
     }
 
-    ble_db_discovery_srv_t * p_srv_being_discovered;
+    ble_gatt_db_srv_t * p_srv_being_discovered;
 
-    m_num_of_discoveries_made = 0;
     m_pending_usr_evt_index   = 0;
 
-    p_db_discovery->curr_srv_ind = 0;
     p_db_discovery->conn_handle  = conn_handle;
+    p_db_discovery->discoveries_count = 0;
+    p_db_discovery->curr_srv_ind = 0;
 
     p_srv_being_discovered = &(p_db_discovery->services[p_db_discovery->curr_srv_ind]);
 
     p_srv_being_discovered->srv_uuid = m_registered_handlers[p_db_discovery->curr_srv_ind].srv_uuid;
-    
-    Y_SPRINTF("[DB]: Starting discovery of service with UUID 0x%x for Connection handle %d\r\n",
+
+    DB_LOG("[DB]: Starting discovery of service with UUID 0x%x for Connection handle %d\r\n",
            p_srv_being_discovered->srv_uuid.uuid, p_db_discovery->conn_handle);
     
     uint32_t err_code;
@@ -864,7 +861,6 @@ uint32_t ble_db_discovery_start(ble_db_discovery_t * const p_db_discovery,
 void ble_db_discovery_on_ble_evt(ble_db_discovery_t * const p_db_discovery,
                                  const ble_evt_t * const    p_ble_evt)
 {
-	
     if ((p_db_discovery == NULL) || (p_ble_evt == NULL))
     {
         // Null pointer provided. Return.

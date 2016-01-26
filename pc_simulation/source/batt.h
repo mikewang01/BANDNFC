@@ -11,10 +11,16 @@
 
 #define BATTERY_MEASURE_INTERVAL 600   // 600 seconds (10 MINUTES)
 
-#define BATTERY_LOW_PERCENTAGE 19
+#define BATTERY_LOW_PERCENTAGE 5
 
 #define SLEEP_ACTIVE_SECONDS_THRESHOLD 120 // 120 seconds
-#define SLEEP_STEP_ACCUMULATED_THRESHOLD 20 // 20 STEPS
+#define SLEEP_STEP_ACCUMULATED_THRESHOLD 30 // 30 STEPS
+
+#define BATTERY_SYSTEM_UNAUTH_POWER_DOWN 300
+
+#define BATTERY_MAXIMUM_CHARGING_TIME 7200 // 7200 Seconds -> 2 hours
+#define BATTERY_75_PERC_FULL_CHARGE 5400 // 5400 Seconds -> 1.5 hour
+
 enum {
 	CHARGER_REMOVED,
 	CHARGER_FULL,
@@ -32,13 +38,14 @@ typedef struct tagBATT_CTX {
 	I16U charging_overall_time;
 	I16U volts_reading;
 	I16U level_update_timebase;		// Battery percentage update timer -- 15 seconds
+	I16U shut_down_time;
 	I8U charging_state;
 	I8U adc_state;
 	I8U state_switching_duration;
 	I8U toggling_number;
-	I8U shut_down_time;
 	I8U battery_measured_perc;
 	BOOLEAN b_initial_measuring;
+	BOOLEAN b_no_batt_restored;
 	
 	// charging detection
 	I8U non_charging_accumulated_active_sec;
@@ -53,8 +60,9 @@ void BATT_monitor_state_machine(void);
 void BATT_start_first_measure(void);
 BOOLEAN BATT_is_low_battery(void);
 void BATT_charging_update_steps(I8U steps);
-void BATT_charging_update_sec(I8U sec);
-void BATT_update_charging_sec(I8U tick_in_s);
+void BATT_exit_charging_state(I8U sec);
+void BATT_update_charging_time(I8U tick_in_s);
 BOOLEAN BATT_charging_det_for_sleep(void);
+BOOLEAN BATT_device_unauthorized_shut_down(void);
 
 #endif // __BATT_HEADER__

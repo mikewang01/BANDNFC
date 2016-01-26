@@ -33,7 +33,7 @@ void TRACKING_enter_low_power_mode()
 	}
 	Y_SPRINTF("[ACTIVITY] ENTER -- low power mode (stop timer) -- ");
 	
-	B_SPRINTF("[ACTIVITY] - ENTER low power - ");
+	N_SPRINTF("[ACTIVITY] - ENTER low power - ");
 }
 
 void TRACKING_exit_low_power_mode(BOOLEAN b_force)
@@ -62,7 +62,7 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 	cling.lps.b_low_power_mode = FALSE;
 	
 	Y_SPRINTF("[ACTIVITY] EXIT -- low power mode (force: %d)-- ", b_force);
-	B_SPRINTF("[ACTIVITY] - EXIT low power - ");
+	N_SPRINTF("[ACTIVITY] - EXIT low power - ");
 
 	// Set Touch IC power mode accordingly
 	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
@@ -397,9 +397,10 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 {
 	TRACKING_CTX *a = &cling.activity;
 	I8U calories_diff;
-	I16U denom_stats;
 
 #ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
+	I16U denom_stats;
+	
 		diff->walking = (I8U)SIM_get_current_activity(TRACKING_WALK);
 		diff->running = (I8U)SIM_get_current_activity(TRACKING_RUN);
 		diff->distance = (I8U)SIM_get_current_activity(TRACKING_DISTANCE);
@@ -894,7 +895,7 @@ void TRACKING_data_logging()
 		_logging_per_minute();
 
 		cling.time.local_minute_updated = FALSE;
-		B_SPRINTF("[TRACKING] time: %d", cling.time.time_since_1970);
+		N_SPRINTF("[TRACKING] time: %d", cling.time.time_since_1970);
 	}
 	
 	// Check whether activity total should be flushed into flash
@@ -1090,8 +1091,7 @@ void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
 		if (pbuf[0] == 0xff) {
 			
 			offset += 16;
-
-			continue;
+      continue;
 		}
 		offset += 16;
 
@@ -1156,8 +1156,7 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 				b_init_offset = TRUE;
 			}
 			offset += 16;
-
-			continue;
+		  continue;
 		}
 		offset += 16;
 
@@ -1228,8 +1227,7 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day)
 		if (pbuf[0] == 0xff) {
 			
 			offset += 16;
-
-			continue;
+      continue;
 		}
 		offset += 16;
 
@@ -1275,8 +1273,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 				Y_SPRINTF("[TRACKING] get first empty offset: %d", empty_offset);
 			}
 			offset += 16;
-
-			continue;
+      continue;
 		}
 		offset += 16;
 
@@ -1293,7 +1290,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	day_total->distance <<= 4;
 	day_total->calories <<= 4;
 	
-	N_SPRINTF("Totals: %d, %d, %d, %d, %d", day_total->sleep, day_total->walking, day_total->running, day_total->calories>>4, day_total->distance>>4);
+	N_SPRINTF("Totals: %d, %d, %d, %d",  day_total->walking, day_total->running, day_total->calories>>4, day_total->distance>>4);
 
 	return empty_offset;
 }

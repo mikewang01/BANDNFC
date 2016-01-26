@@ -9,12 +9,115 @@
 #include "standards.h"
 #include "main.h"
 
-static volatile BOOLEAN bWriteRTC = BOOLEAN_FALSE;
+
+#define APP_TIMER_MAX_TIMERS                 4                                          /**< Maximum number of simultaneously created timers. */
+#define APP_TIMER_OP_QUEUE_SIZE              4                                          /**< Size of timer operation queues. */
+
 #ifndef _CLING_PC_SIMULATION_
 static app_timer_id_t								m_rtc_timer_id; /**< 1 sec based timer. >**/
+static app_timer_id_t								m_operation_timer_id; /**< 1 sec based timer. >**/
 #endif
 
 const I8U DAYS_IN_EACH_MONTH[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+
+void OPERATION_timer_handler( void * p_context )
+{
+	N_SPRINTF("[RTC] OPERATION 50ms timer handler func");
+	
+	// Timer update
+	cling.hr.sample_ready = TRUE;	
+}
+
+void RTC_timer_handler( void * p_context )
+{
+	I32U tick_now;
+	I32U tick_diff;
+	I32U tick_in_s;
+	
+	N_SPRINTF("[RTC] 4S timer handler func");
+
+#ifndef _CLING_PC_SIMULATION_	
+	if (cling.time.tick_count) {		
+		app_timer_cnt_get(&tick_now);
+		app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
+		tick_in_s = (tick_diff>>15);
+		tick_diff = (tick_in_s << 15);
+		cling.time.tick_count += tick_diff;
+		cling.time.tick_count &= MAX_RTC_CNT;
+	} else {	
+		app_timer_cnt_get(&cling.time.tick_count);
+		tick_in_s = (cling.time.tick_count>>15);
+	}
+#else
+	tick_in_s = 2; // 1 second timer
+#endif
+	
+	// update battery measuring timer
+	cling.batt.level_update_timebase += tick_in_s;
+	BATT_update_charging_time(tick_in_s);
+
+	// update radio duty cycling
+	cling.time.system_clock_in_sec += tick_in_s;
+	cling.time.time_since_1970 += tick_in_s;
+	if (cling.batt.state_switching_duration < 128)
+		cling.batt.state_switching_duration += tick_in_s;
+	if (cling.batt.shut_down_time < BATTERY_SYSTEM_UNAUTH_POWER_DOWN) {
+		cling.batt.shut_down_time += tick_in_s;
+	}
+	
+	// Accumulate skin touch time
+	if (TOUCH_is_skin_touched()) {
+		if (cling.touch.skin_touch_time_per_minute < 60) {
+			cling.touch.skin_touch_time_per_minute += tick_in_s;
+			N_SPRINTF("[RTC] skint touch time per min: %d", cling.touch.skin_touch_time_per_minute);
+		}
+	}	
+#ifdef USING_VIRTUAL_ACTIVITY_SIM
+	 if (OTA_if_enabled()) {
+		 cling.ota.percent ++;
+		 if (cling.ota.percent >= 100) {
+			 cling.ota.percent = 100;
+		 }
+	 }
+#endif
+
+	// Indicates a second-based RTC interrupt
+	RTC_get_local_clock(&cling.time.local);
+
+	// Check if we have minute passed by, or 
+	if (cling.time.local.minute != cling.time.local_minute) {
+		cling.time.local_minute_updated = TRUE;
+		cling.time.local_minute = cling.time.local.minute;
+		if (
+			   (cling.user_data.idle_time_in_minutes>0) && 
+				 (cling.time.local.hour>=cling.user_data.idle_time_start) && 
+				 (cling.time.local.hour< cling.user_data.idle_time_end)
+			 )
+    {
+			cling.user_data.idle_minutes_countdown --;
+			Y_SPRINTF("[RTC] idle alert countdown - %d", cling.user_data.idle_minutes_countdown);
+		}
+		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
+	}	
+	
+	if (cling.time.local.day != cling.time.local_day) {
+		cling.time.local_day_updated = TRUE;
+		cling.time.local_day = cling.time.local.day;
+		
+		// Reset reminder
+		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+
+		Y_SPRINTF("[RTC] local day updated");
+	}
+
+	// Testing, assuming user sleeps around 22:00 at night
+	if (cling.time.local_hour != cling.time.local.hour) {
+		if (cling.time.local.hour == 12) {
+			cling.time.local_noon_updated = TRUE;
+		}
+		cling.time.local_hour = cling.time.local.hour;
+	}
+}
 
 // RTC is set to Calendar mode
 EN_STATUSCODE RTC_Init(void)
@@ -22,9 +125,18 @@ EN_STATUSCODE RTC_Init(void)
 #ifndef _CLING_PC_SIMULATION_
 	uint32_t err_code;
 	
+	// Initialize timer module.
+	APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
+
 	err_code = app_timer_create(&m_rtc_timer_id,
 															APP_TIMER_MODE_REPEATED,
 															RTC_timer_handler);
+
+	APP_ERROR_CHECK(err_code);
+	
+	err_code = app_timer_create(&m_operation_timer_id,
+															APP_TIMER_MODE_REPEATED,
+															OPERATION_timer_handler);
 
 	APP_ERROR_CHECK(err_code);
 #endif
@@ -34,58 +146,58 @@ EN_STATUSCODE RTC_Init(void)
 EN_STATUSCODE RTC_Start(void)
 {
 #ifndef _CLING_PC_SIMULATION_
-	RTC_config(SYSCLK_INTERVAL_20MS);
 	
-	// Update tick count on the first interrupt
-	// so that we can sync up to system tick.
-	cling.time.tick_count = 0;
+	app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_2000MS, NULL);
+	
+	RTC_start_operation_clk();
+	
+	N_SPRINTF("[RTS] reset tick count, start 20 ms sysclock");
 #endif
   return STATUSCODE_SUCCESS;
-}
-
-void RTC_config(I32U interval)
-{
-#ifndef _CLING_PC_SIMULATION_
-	uint32_t err_code;
-	
-	N_SPRINTF("[SYSCLK] start config...: %d", interval);
-
-	if (cling.time.sysclk_interval == interval) {
-		// Re-fresh timer
-		cling.time.sysclk_config_timestamp = CLK_get_system_time();
-		return;
-	}
-	
-	cling.time.sysclk_interval = interval;
-	cling.time.sysclk_config_timestamp = CLK_get_system_time();
-
-	// Stop the timer
-	app_timer_stop(m_rtc_timer_id);
-
-	// Start application with new timers
-	err_code = app_timer_start(m_rtc_timer_id, interval, NULL);
-	APP_ERROR_CHECK(err_code);
-
-	N_SPRINTF("[SYSCLK] config timer: %d", interval);
-#endif
 }
 
 // 
 // We might not need RTC stop as RTC runs all the time
 //
-void RTC_stop(void)
+void RTC_stop_operation_clk(void)
 {
 #ifndef _CLING_PC_SIMULATION_
 	I32U t_curr = CLK_get_system_time();
 	
-	if (cling.time.sysclk_interval == SYSCLK_INTERVAL_2000MS)
-		return;
+	N_SPRINTF("[RTC] status: %d, %d, %d", cling.time.sysclk_interval, cling.time.sysclk_config_timestamp, t_curr);
 	
-	if (t_curr > (cling.time.sysclk_config_timestamp + SYSCLK_EXPIRATION)) {
-		Y_SPRINTF("[SYSCLK] RTC stop, %d @ %d ", t_curr, cling.time.sysclk_config_timestamp);
+	if (t_curr > (cling.time.operation_clk_start_in_ms + OPERATION_CLK_EXPIRATION)) {
 
-		RTC_config(SYSCLK_INTERVAL_2000MS);		
+		if (cling.time.operation_clk_enabled) {
+			Y_SPRINTF("[SYSCLK] OPERATION clk stop, %d @ %d ", t_curr, cling.time.operation_clk_start_in_ms);
+			cling.time.operation_clk_enabled = FALSE;
+			app_timer_stop(m_operation_timer_id);
+		}
 	}
+#endif
+}
+
+void RTC_start_operation_clk()
+{
+	I32U err_code;
+#ifndef _CLING_PC_SIMULATION_
+
+	cling.time.operation_clk_start_in_ms = CLK_get_system_time();
+	
+	if (!cling.time.operation_clk_enabled) {
+		Y_SPRINTF("[SYSCLK] OPERATION clk start, %d ", cling.time.operation_clk_start_in_ms);
+		cling.time.operation_clk_enabled = TRUE;
+		err_code = app_timer_start(m_operation_timer_id, SYSCLK_INTERVAL_20MS, NULL);
+		APP_ERROR_CHECK(err_code);
+	}
+#endif
+}
+
+void RTC_system_shutdown_timer()
+{
+#ifndef _CLING_PC_SIMULATION_
+	app_timer_stop(m_rtc_timer_id);
+	app_timer_start(m_rtc_timer_id, SYSCLK_INTERVAL_6000MS, NULL);
 #endif
 }
 
@@ -119,98 +231,6 @@ void RTC_get_local_clock(SYSTIME_CTX *local)
 	
 	RTC_get_regular_time(epoch, local);
 
-}
-
-void RTC_timer_handler( void * p_context )
-{
-	I32U tick_now;
-	I32U tick_diff;
-	I32U tick_in_s;
-
-#ifndef _CLING_PC_SIMULATION_	
-	if (cling.time.tick_count) {		
-		app_timer_cnt_get(&tick_now);
-		app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
-		tick_in_s = (tick_diff>>15);
-		tick_diff = (tick_in_s << 15);
-		cling.time.tick_count += tick_diff;
-		cling.time.tick_count &= MAX_RTC_CNT;
-	} else {	
-		app_timer_cnt_get(&cling.time.tick_count);
-		tick_in_s = (cling.time.tick_count>>15);
-	}
-#else
-	tick_in_s = 2; // 1 second timer
-#endif
-	
-	// Timer update
-	cling.hr.sample_ready = TRUE;
-	
-	// update battery measuring timer
-	cling.batt.level_update_timebase += tick_in_s;
-	BATT_update_charging_sec(tick_in_s);
-	BATT_charging_update_sec(tick_in_s);
-	
-	// Disconnect BLE if battery is low
-	if (BATT_is_low_battery()) {
-		if (BTLE_is_connected()) {
-			BTLE_disconnect();
-		}
-	}
-	
-	N_SPRINTF("[RTC] %d, %d", cling.time.system_clock_in_sec , tick_in_s);
-	
-	// update radio duty cycling
-	cling.time.system_clock_in_sec += tick_in_s;
-	cling.time.time_since_1970 += tick_in_s;
-	if (cling.batt.state_switching_duration < 128)
-		cling.batt.state_switching_duration += tick_in_s;
-	if (cling.batt.shut_down_time < 180)
-		cling.batt.shut_down_time += tick_in_s;
-	
-#ifdef USING_VIRTUAL_ACTIVITY_SIM
-	 if (OTA_if_enabled()) {
-		 cling.ota.percent ++;
-		 if (cling.ota.percent >= 100) {
-			 cling.ota.percent = 100;
-		 }
-	 }
-#endif
-
-	// Indicates a second-based RTC interrupt
-	RTC_get_local_clock(&cling.time.local);
-
-	// Check if we have minute passed by, or 
-	if (cling.time.local.minute != cling.time.local_minute) {
-		cling.time.local_minute_updated = TRUE;
-		cling.time.local_minute = cling.time.local.minute;
-		
-		if (
-			   cling.user_data.idle_time_in_minutes>0 && 
-				 cling.time.local.hour>=cling.user_data.idle_time_start && 
-				 cling.time.local.hour< cling.user_data.idle_time_end
-			 )
-    {
-			cling.user_data.idle_minutes_countdown --;
-		}
-		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
-	}	
-	
-	if (cling.time.local.day != cling.time.local_day) {
-		cling.time.local_day_updated = TRUE;
-		cling.time.local_day = cling.time.local.day;
-		
-		// Reset reminder
-		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-	}
-
-	// Testing, assuming user sleeps around 22:00 at night
-	if (cling.time.local_hour != cling.time.local.hour) {
-		if (cling.time.local.hour == 12) {
-			cling.time.local_noon_updated = TRUE;
-		}
-		cling.time.local_hour = cling.time.local.hour;
-	}
 }
 
 I8U const month_leap_in_days[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};

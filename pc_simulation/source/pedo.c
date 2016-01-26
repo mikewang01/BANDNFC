@@ -558,13 +558,10 @@ static void _update_w_r_activity(CLASSIFIER_STAT *c)
     // Update walking and running vote
     c->w_r_votes[0] = c->apu_p2p-(I32S)CLASSIFIER_WRC_1_TH;
     if (c->apu_p2p > CLASSIFIER_WRC_1_TH) {
-        c->apu_p2p_ts_1 = gPDM.global_time;
     } 
     if (c->apu_p2p > CLASSIFIER_WRC_2_TH) {
-        c->apu_p2p_ts_2 = gPDM.global_time;
     } 
     if (c->apu_p2p > CLASSIFIER_WRC_3_TH) {
-        c->apu_p2p_ts_3 = gPDM.global_time;
     }
 }
 
@@ -670,42 +667,9 @@ static void _update_classifier_stat(ACCELEROMETER_3D in, I32S apu, BOOLEAN b_ste
     }
 }
 
-static I32S _cheating_kc_calc()
-{
-    ANTI_CHEATING_CTX *ac = &gPDM.classifier.anti_cheating;
-    I32S vfb_mag, vlr_mag, vl_mag, vr_mag;
-    ACCELEROMETER_3D FB_Diff;                   // Right integration
-    
-    // As the integration length varies on VF, VB, VR, VL, should we introduce
-    // a normalization, averaged on all the samples? not for now, suggested by CSW
-    //
-    FB_Diff.x = ac->VF.x-ac->VB.x;
-    FB_Diff.y = ac->VF.y-ac->VB.y;
-    FB_Diff.z = ac->VF.z-ac->VB.z;
-
-    // Scale it down by a factor of 64, so no overflow expected during magnitude 
-    // calculation.
-    vfb_mag = _comp_magnitude(FB_Diff, 6);
-    vl_mag = _comp_magnitude(ac->VL, 6);
-    vr_mag = _comp_magnitude(ac->VR, 6);
-    vlr_mag = (vl_mag+vr_mag)>>7; // Kc scaled by 128.
-    
-    // Kc is set to a large value if the denominator is zero or overflowed.
-    if ((vfb_mag > 0) && (vlr_mag > 0)) 
-        return (vfb_mag/vlr_mag);
-    else if ((vlr_mag < 0) || (vfb_mag < 0))
-        return 128;
-    else
-        return 128;
-}
-
 static void _update_kc(ACCELEROMETER_3D *ap_integ, 
-                       ACCELEROMETER_3D *v1, 
-                       ACCELEROMETER_3D *v2,
                        ANTI_CHEATING_CTX *ac)
 {
-    I32S Kc;
-
     if (!ac->ap_acc.samples) {
         ap_integ->x = 0;
         ap_integ->y = 0;
@@ -719,17 +683,6 @@ static void _update_kc(ACCELEROMETER_3D *ap_integ,
     ac->ap_acc.y = ac->ap_prev.y;
     ac->ap_acc.z = ac->ap_prev.z;
     ac->ap_acc.samples = 1;
-            
-    // Calculate VL, VR
-    *v1 = *v2;
-    v2->x = (ac->ap_up.x+ac->ap_dw.x)>>1;
-    v2->y = (ac->ap_up.y+ac->ap_dw.y)>>1;
-    v2->z = (ac->ap_up.z+ac->ap_dw.z)>>1;
-
-    // Calculate Kc
-    Kc = _cheating_kc_calc();
-
-    ac->Kc_flt = Kc; //ac->Kc_flt + ((Kc-ac->Kc_flt)>>1);
 }
 
 static void _acc_a_prime(ANTI_CHEATING_CTX *ac)
@@ -770,7 +723,7 @@ static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
             {
                 // A prime down update
                 // Update Kc for anti-cheating
-                _update_kc(&ac->ap_dw, &ac->VL, &ac->VR, ac);
+                _update_kc(&ac->ap_dw, ac);
                 ac->ap_mag_dir = GENERAL_DIR_UP;
                 
             } else {
@@ -786,7 +739,7 @@ static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
                 (peak >= ac->ap_mag_prev[3]))
             {
                 // Update Kc for anti-cheating
-                _update_kc(&ac->ap_up, &ac->VF, &ac->VB, ac);
+                _update_kc(&ac->ap_up, ac);
                 ac->ap_mag_dir = GENERAL_DIR_DOWN;
                 
             } else {
@@ -800,23 +753,7 @@ static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
     ac->ap_mag_prev[1] = ac->ap_mag_prev[2];
     ac->ap_mag_prev[2] = ac->ap_mag_prev[3];
     ac->ap_mag_prev[3] = ap_mag;
-    /*
-    // A prime up "peak-to-peak" differential
-    apu_p2p_diff = BASE_abs(c->w_r_votes[0] - c->w_r_votes[1]);
-    if (apu_p2p_diff > KC_APU_P2P_TH)  {
-        ac->Kc_cnt_r = 0;
-        ac->Kc_cnt_w = 0;
-    }
-    */
-    if (ac->Kc_flt > KC_CHEATING_W_TH)
-        ac->Kc_cnt_w = 0;
-    else
-        ac->Kc_cnt_w ++;
 
-    if (ac->Kc_flt > KC_CHEATING_R_TH)
-        ac->Kc_cnt_r = 0;
-    else
-        ac->Kc_cnt_r ++;
 }
 
 static void _classifier_stat_update(ACCELEROMETER_3D in, BOOLEAN b_step)
@@ -878,7 +815,6 @@ static BOOLEAN _step_count()
 	
 	// Remove DC component
 	A_prime_up -= gPDM.dc.v;
-  gPDM.A_prime_up_no_dc = A_prime_up;
 	
 	// counting steps
 	sc->prev = sc->curr;
@@ -1078,12 +1014,13 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
     //    Votes are from a span of CLASSIFICATION_TIME_SPAN
     motion = _WALKING_RUNNING_classify(c, win_siz);
 
-		
-    // 5/ Car (moving vechicle) Classication
-    motion = _CAR_classify(c, motion);
+		if (!cling.activity.b_workout_active) {
+			// 3/ Car (moving vechicle) Classication
+			motion = _CAR_classify(c, motion);
 
-    // 6/ Validate the step against the noise
-    motion = _noise_validate(c, motion, step_idx);
+			// 4/ Validate the step against the noise
+			motion = _noise_validate(c, motion, step_idx);
+		}
 		
     // 7/ Update classification status
     _update_classification_status(c, motion, step_idx);
@@ -1301,10 +1238,12 @@ static BOOLEAN _motion_classification()
 
 	// Pre-classifcation, filtering out random steps
 	if (!c->start_normal_activity) {
-
-			if (_is_noise_non_step(c)) {
-					 return FALSE;
-			} 
+			// Make sure we are not in working out mode
+			if (!cling.activity.b_workout_active) {
+				if (_is_noise_non_step(c)) {
+						 return FALSE;
+				} 
+			}
 
 			// Start normal classification
 			c->start_normal_activity = TRUE;
@@ -1450,7 +1389,6 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
         r->pair_ratio_hi <<= 1;
         r->peak_strike_window <<= 1;
         r->peak_vibrate_window <<= 1;
-        r->peak_vibrate_smooth <<= 1;
         if (!p2p.x || !p2p.y || !p2p.z) {
             ratio = 0;
             r->peak_strike_single = 0;
@@ -1508,10 +1446,6 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
         // The maximum magnitude of one axis (peak) is within 1 G range, while it gets a lot of vibration
         if ((r->peak_vibrate_single >= 10) && (r->max_mag >= 300) && (r->max_mag <= 1500))
             r->peak_vibrate_window |= 1;
-
-        // Detect whether device is possiblly in a cheating mode
-        if (r->peak_vibrate_single <= 3)
-            r->peak_vibrate_smooth |= 1;
 
         // Check whether the device is likely in a CAR mode
         cnt = BASE_calculate_occurance(r->peak_vibrate_window, 32);
@@ -1714,7 +1648,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
         _reset_pedo_stationary();
 		
 				steps_overall ++;
-				N_SPRINTF("STEPS overall -- %d --", steps_overall);
+				N_SPRINTF("STEPS overall -- %d/%d --", steps_motion, steps_overall);
 		
     } else{
         _classifier_stat_update(in, FALSE);

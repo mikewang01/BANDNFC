@@ -162,7 +162,7 @@ typedef struct tagSYSTEM_CTX {
 	
 	// MCU peripheral requirements
 	BOOLEAN b_spi_0_ON;  // SPI 0 (dedicated for OLED, accelerometer, flash)
-	BOOLEAN b_twi_1_ON;  // SPI 0 (dedicated for OLED, accelerometer, flash)
+	BOOLEAN b_twi_1_ON;  // TWI 1 (dedicated for UV, PPG, TOUCH)
 } SYSTEM_CTX;
 
 typedef struct tagCLING_MAIN_CTX {

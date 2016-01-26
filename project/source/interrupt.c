@@ -24,10 +24,11 @@ void ADC_IRQHandler(void)
   nrf_adc_stop();
 }
 
-
+#if defined(_ENABLE_UART_)
 void UART0_IRQHandler(void)
 {
 }
+#endif
 
 void GPIOTE_IRQHandler(void)
 {

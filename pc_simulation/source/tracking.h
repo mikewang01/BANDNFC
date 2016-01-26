@@ -42,9 +42,29 @@ enum {
 	TRACKING_ACTIVITY
 };
 
+enum {
+	WORKOUT_PLACE_NONE,
+	WORKOUT_PLACE_INDOOR,
+	WORKOUT_PLACE_OUTDOOR
+};
+
+enum {
+	WORKOUT_NONE,
+	WORKOUT_WALK,
+	WORKOUT_RUN,
+	WORKOUT_CYCLING,
+	WORKOUT_ELLIPTICAL,
+	WORKOUT_STAIRS,
+	WORKOUT_AEROBIC,
+	WORKOUT_ROWING,
+	WORKOUT_PILOXING,
+	WORKOUT_OTHER
+};
+
 typedef struct tagMINUTE_TRACKING_CTX {
 	I32U epoch;
 	I16S skin_temperature;
+	I16U activity_count;
 	I8U walking;
 	I8U running;
 	I8U calories;
@@ -52,7 +72,7 @@ typedef struct tagMINUTE_TRACKING_CTX {
 	I8U sleep_state;
 	I8U heart_rate;
 	I8U skin_touch_pads;
-	I16U activity_count;
+	I8U uv_and_activity_type;
 } MINUTE_TRACKING_CTX;
 
 typedef struct tagMINUTE_DELTA_TRACKING_CTX {
@@ -65,7 +85,6 @@ typedef struct tagMINUTE_DELTA_TRACKING_CTX {
 } MINUTE_DELTA_TRACKING_CTX;
 
 typedef struct tagDAY_TRACKING_CTX {
-	I32U sleep;
 	I32U walking;
 	I32U running;
 	I32U distance;
@@ -108,7 +127,7 @@ typedef struct tagTRACKING_CTX {
 
 	// Sleep by noon
 	I32U sleep_by_noon;
-	I32U sleep_36_hr;
+	I32U sleep_stored_by_noon;
 	
 	// motion time stamp
 	I32U motion_ts;
@@ -131,6 +150,15 @@ typedef struct tagTRACKING_CTX {
 	// Wrist Flip Detection
 	DEVICE_ORIENTATION_TYPE orientation[5];
 	I8U face_up_index;
+	
+	// workout
+	I32U workout_time_stamp_start;
+	I32U workout_Calories_start;
+	I32U workout_Calories_acc;
+	I32U workout_time_stamp_stop;
+	I8U workout_type;
+	I8U workout_place;
+	BOOLEAN b_workout_active;
 } TRACKING_CTX;
 
 BOOLEAN TRACKING_is_not_active(void);
@@ -141,9 +169,9 @@ void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute);
 
 void TRACKING_exit_low_power_mode(BOOLEAN b_force);
 void TRACKING_total_data_load_file(void);
-BOOLEAN TRACKING_get_activity(I8U index, I8U mode, I32U *value);
+void TRACKING_get_activity(I8U index, I8U mode, I32U *value);
 I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total);
-I32U TRACKING_get_sleep_by_noon(void);
+I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day);
 void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_enter_low_power_mode(void);
