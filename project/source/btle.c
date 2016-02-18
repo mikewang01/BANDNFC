@@ -230,6 +230,8 @@ static void _on_disconnect()
 {
 	BLE_CTX *r = &cling.ble;
 
+	/*in case switch to slow conenction once on new connection*/
+	r->streaming_second_count = 0;
   r->conn_handle = BLE_CONN_HANDLE_INVALID;
 	r->btle_State = BTLE_STATE_DISCONNECTED;
 	
