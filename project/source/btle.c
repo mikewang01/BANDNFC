@@ -229,9 +229,6 @@ static void _on_connect(ble_evt_t * p_ble_evt)
 static void _on_disconnect()
 {
 	BLE_CTX *r = &cling.ble;
-
-	/*in case switch to slow conenction once on new connection*/
-	r->streaming_second_count = 0;
   r->conn_handle = BLE_CONN_HANDLE_INVALID;
 	r->btle_State = BTLE_STATE_DISCONNECTED;
 	
@@ -269,6 +266,7 @@ void BTLE_reset_streaming()
 	r->streaming_minute_file_index = 0;
 	r->streaming_minute_scratch_amount = 0;
 	r->streaming_minute_scratch_index = 0;
+	r->streaming_second_count = 0;
 
 	cling.system.mcu_reg[REGISTER_MCU_CTL] &= ~CTL_IM;	
 	

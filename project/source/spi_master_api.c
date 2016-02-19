@@ -153,8 +153,5 @@ void SPI_master_tx_rx(spi_master_hw_instance_t   spi_master_instance,
 	  }
 	}
   
-	if(err_code == NRF_ERROR_BUSY)
-		return;
-	
   APP_ERROR_CHECK(err_code);
 }

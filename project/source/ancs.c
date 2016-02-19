@@ -622,7 +622,7 @@ void ANCS_nflash_store_one_message(I8U *data)
 
   N_SPRINTF("[ANCS] nflash store message: %d, %d, %d", cling.ancs.pkt.title_len, cling.ancs.pkt.message_len, cling.ancs.message_total);
 
-  addr += (cling.ancs.message_total-1)*256;
+  addr += ((cling.ancs.message_total-1) << 8);
 	
   FLASH_Write_App(addr, data, 128);
 	

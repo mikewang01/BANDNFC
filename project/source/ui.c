@@ -2350,6 +2350,16 @@ static void _render_logo()
 	_render_screen();
 }
 
+static void _render_display_restart()
+{
+	// In the NFC version,we do not display hicling logo.
+  memset(cling.ui.p_oled_up, 0, 512);
+  
+  FONT_load_characters(cling.ui.p_oled_up+128,"Restart...",16,TRUE);
+	
+	_render_screen();
+}
+
 static void _display_charging(I16U perc)
 {
 	I16U i, j;
@@ -2871,7 +2881,7 @@ void UI_state_machine()
 		case UI_STATE_CLING_START:
 			if (u->state_init) {
 				u->state_init = FALSE;
-				_render_logo();
+				_render_display_restart();
 			} else if (t_curr > u->display_to_base + u->frame_interval) {
 				UI_switch_state(UI_STATE_HOME, 1000);
 			}

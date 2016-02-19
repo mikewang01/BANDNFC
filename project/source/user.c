@@ -302,7 +302,8 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->idle_time_start = *pdata++; // Idle alert - start time
 		u->idle_time_end = *pdata++; // Idle alert - end time
 		
-		u->idle_state = IDLE_ALERT_STATE_IDLE;
+		// Do not reset idle alert state machine during data sync
+		// u->idle_state = IDLE_ALERT_STATE_IDLE;
 
 		setting_length -= 3;
 		Y_SPRINTF("\n\n idle alert: %d, %d, %d", u->idle_time_in_minutes, u->idle_time_start, u->idle_time_end);
