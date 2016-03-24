@@ -47,5 +47,6 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name);
 I8U NOTIFIC_get_app_message_detail(I8U index, char *string);
 I8U NOTIFIC_get_callerID(char *string);
 BOOLEAN NOTIFIC_is_user_viewing_message(void);
+void NOTIFIC_start_HR_alert(void);
 
 #endif  // __NOTIFIC_HEADER__

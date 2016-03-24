@@ -743,7 +743,17 @@ static void _logging_per_minute()
 
 	// Update the activity minute granularity
 	TRACKING_get_whole_minute_delta(&minute, &diff);
-		
+
+	// alert user if heart rate is approaching the limit
+	if (cling.hr.minute_rate > 165) {
+		if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
+			cling.hr.alert_ts = cling.time.system_clock_in_sec;
+			cling.hr.heart_rate_ready = TRUE;
+			Y_SPRINTF("[TRACKING] HR alerting ...");
+			NOTIFIC_start_HR_alert();
+		}
+	}
+	
 	N_SPRINTF("[LOGGING1] %08x %08x %08x %08x", tracking_minute[0], tracking_minute[1], tracking_minute[2], tracking_minute[3]);
 
 	// sleep minute process

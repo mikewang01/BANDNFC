@@ -2827,6 +2827,9 @@ static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)
 			} else if (type == NOTIFICATION_TYPE_REMINDER) {
 				u->frame_index = UI_DISPLAY_SMART_REMINDER;
 				_display_frame_smart(u->frame_index, TRUE);
+			} else if (type == NOTIFICATION_TYPE_HR) {
+				u->frame_index = UI_DISPLAY_VITAL_HEART_RATE;
+				_display_frame_vital(u->frame_index, TRUE);
 			}
 			Y_SPRINTF("[UI] Notification (%d): %d", cling.notific.cat_id, (t_curr-u->touch_time_stamp));
 		} else {
@@ -2940,6 +2943,7 @@ void UI_state_machine()
 			}
 			break;
 		case UI_STATE_AUTHORIZATION:
+		{
 			if (u->state_init) {
 				u->state_init = FALSE;
 				_display_unauthorized_home();
@@ -2967,6 +2971,7 @@ void UI_state_machine()
 				}
 			}
 			break;
+		}
 		case UI_STATE_NOTIFICATIONS:
 		{
 			_display_notifications(u, t_curr, u->notif_type);

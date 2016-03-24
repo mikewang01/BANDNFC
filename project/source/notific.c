@@ -33,8 +33,9 @@ void NOTIFIC_stop_notifying()
 }
 
 #define NOTIFIC_MULTI_REMINDER_INCOMING_CALL 3
-#define NOTIFIC_MULTI_REMINDER_OTHERS         1
-#define NOTIFIC_MULTI_REMINDER_IDLE_ALERT     3
+#define NOTIFIC_MULTI_REMINDER_OTHERS        1
+#define NOTIFIC_MULTI_REMINDER_IDLE_ALERT    3
+#define NOTIFIC_MULTI_REMINDER_HR            2
 
 void NOTIFIC_start_notifying(I8U cat_id)
 {		
@@ -71,6 +72,17 @@ void NOTIFIC_start_idle_alert()
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.ui.notif_type = NOTIFICATION_TYPE_IDLE_ALERT;
+	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
+	
+	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+}
+
+void NOTIFIC_start_HR_alert()
+{
+	cling.notific.vibrate_time = 0;
+	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
+	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.ui.notif_type = NOTIFICATION_TYPE_HR;
 	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
 	
 	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);

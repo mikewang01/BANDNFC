@@ -317,7 +317,7 @@ I8U TOUCH_get_skin_touch_time()
 }
 
 BOOLEAN TOUCH_is_skin_touched(void)
-{
+{	
 	if (BATT_is_charging())
 		return FALSE;
 	

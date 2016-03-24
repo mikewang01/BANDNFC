@@ -85,7 +85,7 @@ void RTC_timer_handler( void * p_context )
 	// see if a second is hit
 #ifdef _ENABLE_UART_
 	if (tick_in_s) {
-		Y_SPRINTF("[RTC] second is hit");
+		N_SPRINTF("[RTC] second is hit");
 	}
 #endif
 	// Check if we have minute passed by, or 
