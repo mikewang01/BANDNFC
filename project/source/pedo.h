@@ -164,15 +164,12 @@ typedef struct tagACCELEROMETER_ACC {
 typedef struct tagSTATIONARY_STAT {
 	I32S mag_prev;
 	I32S mag_curr;
-	I32S mag_diff;
-	BYTE mag_cnt;
 	I32S mag_win[4];
 	ACCELEROMETER_ACC acc;
 	ACCELEROMETER_ACC init;
 	ACCELEROMETER_3D est;
 	I32S norm;
 	BOOLEAN norm_init;
-    I32S motion_th;  // Threshold for motion detection during low power mode
 } STATIONARY_STAT, *PSTATIONARY_STAT;
 
 // Adaptive gravity estimation
@@ -205,12 +202,9 @@ typedef struct tagSTEP_COUNT_STAT {
 	I32S prev;     // previous A_prime_up
 	I32S curr;     // current A_prime_up
 	I32S cand;     // candidate type
-	I32S pending;  // whether a candidate is pending
 	I32U lim_lo;   // time window limit
 	I32U lim_hi;   // time window limit
 	I32U count;    // overall counts
-    I32U prev_cnt; // Previous overall counts
-    I8U n_to_be_classified;  // the number of steps to be classified
 } STEP_COUNT_STAT, *PSTEP_COUNT_STAT;
 
 
@@ -230,6 +224,11 @@ typedef struct tagANTI_CHEATING_CTX {
     ACCELEROMETER_ACC ap_acc;               // Accumulated A'
     ACCELEROMETER_3D ap_up;                // Up swing A' accumulation
     ACCELEROMETER_3D ap_dw;                // Down swing A' accumulation
+    ACCELEROMETER_3D VF;                   // Forward integration
+    ACCELEROMETER_3D VB;                   // Backward integration
+    ACCELEROMETER_3D VL;                   // Left integration
+    ACCELEROMETER_3D VR;                   // Right integration
+    I32S Kc_flt;                           // Low pass filtered Kc
     ACCELEROMETER_3D ap_prev;              // Right integration
 
     // Non intentional cheating detection feature
@@ -239,12 +238,12 @@ typedef struct tagANTI_CHEATING_CTX {
     ACCELEROMETER_ACC a_acc_s2;          // Raw A integration (finished) for the one before previous step
 
 } ANTI_CHEATING_CTX, *PANTI_CHEATING_CTX;
-#if 0
+
 typedef struct tagUC_CONSTRAINS_TAB {
     I32U a_diff_th;
     I8U step_th;
 } UC_CONSTRAINS_TAB, *PUC_CONSTRAINS_TAB;
-#endif
+
 // Classifier state
 typedef struct tagCLASSIFIER_STAT {
     I8U step_stat[CLASSIFIER_STEP_WIN_SZ];   // step classification Status
@@ -316,6 +315,7 @@ typedef struct tagACCELEROMETER_INPUT_STAT {
     I32U acc;
     I8U peak_vibrate_single;
     I32U peak_vibrate_window;
+    I32U peak_vibrate_smooth;
     I8U peak_strike_single;
     I8U peak_strike_window;         // the maximum of each axis
     I8U acc_symmetric_window;
@@ -355,6 +355,7 @@ typedef struct tagPEDO_STAT {
 	MAGNITUDE_STAT mag; // magnitude of A
 
 	I32S A_prime_up;            // A prime up
+	I32S A_prime_up_no_dc;      // A prime up with DC removed
 	ACCELEROMETER_3D A_prime;   // A prime, A with gravity removed
 
 	STATIONARY_STAT stationary; // stationary state

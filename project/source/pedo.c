@@ -24,7 +24,6 @@ const LP_FILTER lpf_coeff[3] = {
     {17, {2998, 11991, 17986, 11991, 2998}, 14, {-23134, 18395, -6686, 1036}},
 };
 
-#if 0
 // Unintentional cheating constrains
 const UC_CONSTRAINS_TAB constrains_tab[3] = {
     //{658000, 4}, // about 10% overcounting for incidental movement
@@ -34,7 +33,6 @@ const UC_CONSTRAINS_TAB constrains_tab[3] = {
     {65000, 6},
     {60000, 8},
 };
-#endif
 
 #define CONSTRAINS_STEP_TH 4
 #define CONSTRAINS_DIFF_HI_TH 408000
@@ -76,8 +74,6 @@ void PEDO_create()
     // Consistency check step threshold
     gPDM.classifier.step_consistency_th = STEP_CONSISTENCY_THRESHOLD_MIN;
 
-    // Motion activity detection during low power mode
-    gPDM.stationary.motion_th = STATIONARY_ENG_TH;
 }
 
 void PEDO_release()
@@ -221,15 +217,6 @@ static BOOLEAN _det_stationary()
 	if (diff_3 > diff)
 		diff = diff_3;
 
-	// Calculate running average of 3D acceleration differential
-	// Note: the maximum delta between 4 running entries
-    s->mag_diff += diff;
-	s->mag_cnt ++;
-	if (s->mag_cnt >= 32) {
-		s->mag_diff >>= 1;
-		s->mag_cnt >>= 1;
-	}
-	
 	// compare to a threshold to determine whether it is a stationary state
 	if (diff > STATIONARY_ENG_TH) {
 		if (s->acc.samples > STATIONARY_TIME_EARLY_TH) {
@@ -559,12 +546,6 @@ static void _update_w_r_activity(CLASSIFIER_STAT *c)
 
     // Update walking and running vote
     c->w_r_votes[0] = c->apu_p2p-(I32S)CLASSIFIER_WRC_1_TH;
-    if (c->apu_p2p > CLASSIFIER_WRC_1_TH) {
-    } 
-    if (c->apu_p2p > CLASSIFIER_WRC_2_TH) {
-    } 
-    if (c->apu_p2p > CLASSIFIER_WRC_3_TH) {
-    }
 }
 
 static void _update_car_exiting(CLASSIFIER_STAT *c)
@@ -669,9 +650,42 @@ static void _update_classifier_stat(ACCELEROMETER_3D in, I32S apu, BOOLEAN b_ste
     }
 }
 
+static I32S _cheating_kc_calc()
+{
+    ANTI_CHEATING_CTX *ac = &gPDM.classifier.anti_cheating;
+    I32S vfb_mag, vlr_mag, vl_mag, vr_mag;
+    ACCELEROMETER_3D FB_Diff;                   // Right integration
+    
+    // As the integration length varies on VF, VB, VR, VL, should we introduce
+    // a normalization, averaged on all the samples? not for now, suggested by CSW
+    //
+    FB_Diff.x = ac->VF.x-ac->VB.x;
+    FB_Diff.y = ac->VF.y-ac->VB.y;
+    FB_Diff.z = ac->VF.z-ac->VB.z;
+
+    // Scale it down by a factor of 64, so no overflow expected during magnitude 
+    // calculation.
+    vfb_mag = _comp_magnitude(FB_Diff, 6);
+    vl_mag = _comp_magnitude(ac->VL, 6);
+    vr_mag = _comp_magnitude(ac->VR, 6);
+    vlr_mag = (vl_mag+vr_mag)>>7; // Kc scaled by 128.
+    
+    // Kc is set to a large value if the denominator is zero or overflowed.
+    if ((vfb_mag > 0) && (vlr_mag > 0)) 
+        return (vfb_mag/vlr_mag);
+    else if ((vlr_mag < 0) || (vfb_mag < 0))
+        return 128;
+    else
+        return 128;
+}
+
 static void _update_kc(ACCELEROMETER_3D *ap_integ, 
+                       ACCELEROMETER_3D *v1, 
+                       ACCELEROMETER_3D *v2,
                        ANTI_CHEATING_CTX *ac)
 {
+    I32S Kc;
+
     if (!ac->ap_acc.samples) {
         ap_integ->x = 0;
         ap_integ->y = 0;
@@ -685,6 +699,17 @@ static void _update_kc(ACCELEROMETER_3D *ap_integ,
     ac->ap_acc.y = ac->ap_prev.y;
     ac->ap_acc.z = ac->ap_prev.z;
     ac->ap_acc.samples = 1;
+            
+    // Calculate VL, VR
+    *v1 = *v2;
+    v2->x = (ac->ap_up.x+ac->ap_dw.x)>>1;
+    v2->y = (ac->ap_up.y+ac->ap_dw.y)>>1;
+    v2->z = (ac->ap_up.z+ac->ap_dw.z)>>1;
+
+    // Calculate Kc
+    Kc = _cheating_kc_calc();
+
+    ac->Kc_flt = Kc; //ac->Kc_flt + ((Kc-ac->Kc_flt)>>1);
 }
 
 static void _acc_a_prime(ANTI_CHEATING_CTX *ac)
@@ -725,7 +750,7 @@ static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
             {
                 // A prime down update
                 // Update Kc for anti-cheating
-                _update_kc(&ac->ap_dw, ac);
+                _update_kc(&ac->ap_dw, &ac->VL, &ac->VR, ac);
                 ac->ap_mag_dir = GENERAL_DIR_UP;
                 
             } else {
@@ -741,7 +766,7 @@ static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
                 (peak >= ac->ap_mag_prev[3]))
             {
                 // Update Kc for anti-cheating
-                _update_kc(&ac->ap_up, ac);
+                _update_kc(&ac->ap_up, &ac->VF, &ac->VB, ac);
                 ac->ap_mag_dir = GENERAL_DIR_DOWN;
                 
             } else {
@@ -755,6 +780,7 @@ static void _ap_integration(I32S ap_mag, ACCELEROMETER_3D A_prime)
     ac->ap_mag_prev[1] = ac->ap_mag_prev[2];
     ac->ap_mag_prev[2] = ac->ap_mag_prev[3];
     ac->ap_mag_prev[3] = ap_mag;
+
 
 }
 
@@ -817,10 +843,13 @@ static BOOLEAN _step_count()
 	
 	// Remove DC component
 	A_prime_up -= gPDM.dc.v;
+  gPDM.A_prime_up_no_dc = A_prime_up;
 	
 	// counting steps
 	sc->prev = sc->curr;
 	sc->curr = A_prime_up;
+	
+	N_SPRINTF("PRIME UP: %d", A_prime_up);
 	
 	// check whether it is a rising edge or falling edge
 	if ((sc->curr >= AUP_STEP_COUNT_LOW_TH) && (sc->prev <= AUP_STEP_COUNT_LOW_TH)) {
@@ -1391,6 +1420,7 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
         r->pair_ratio_hi <<= 1;
         r->peak_strike_window <<= 1;
         r->peak_vibrate_window <<= 1;
+        r->peak_vibrate_smooth <<= 1;
         if (!p2p.x || !p2p.y || !p2p.z) {
             ratio = 0;
             r->peak_strike_single = 0;
@@ -1448,6 +1478,10 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
         // The maximum magnitude of one axis (peak) is within 1 G range, while it gets a lot of vibration
         if ((r->peak_vibrate_single >= 10) && (r->max_mag >= 300) && (r->max_mag <= 1500))
             r->peak_vibrate_window |= 1;
+
+        // Detect whether device is possiblly in a cheating mode
+        if (r->peak_vibrate_single <= 3)
+            r->peak_vibrate_smooth |= 1;
 
         // Check whether the device is likely in a CAR mode
         cnt = BASE_calculate_occurance(r->peak_vibrate_window, 32);
@@ -1635,6 +1669,9 @@ I16U PEDO_main(ACCELEROMETER_3D in)
     // Get adaptive Gest. Though A has been normalized, but after taking the mean
     // the vector might not be a unit, so we should normalize the adaptive one too (TO-DO).
     gPDM.g_est = gPDM.g_adj.est;
+	 
+	if (stat & PDM_MOTION_DETECTED)
+		return stat;
     
     // Count steps, detect one step, and update classification information
 	if (_step_count()) {

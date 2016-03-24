@@ -2350,6 +2350,7 @@ static void _render_logo()
 	_render_screen();
 }
 
+#ifdef _CLINGBAND_NFC_MODEL_
 static void _render_display_restart()
 {
 	// In the NFC version,we do not display hicling logo.
@@ -2359,6 +2360,7 @@ static void _render_display_restart()
 	
 	_render_screen();
 }
+#endif
 
 static void _display_charging(I16U perc)
 {
@@ -2881,7 +2883,14 @@ void UI_state_machine()
 		case UI_STATE_CLING_START:
 			if (u->state_init) {
 				u->state_init = FALSE;
+#ifdef _CLINGBAND_NFC_MODEL_
 				_render_display_restart();
+#endif
+				
+#ifdef _CLINGBAND_UV_MODEL_
+				_render_logo();
+#endif
+								
 			} else if (t_curr > u->display_to_base + u->frame_interval) {
 				UI_switch_state(UI_STATE_HOME, 1000);
 			}
