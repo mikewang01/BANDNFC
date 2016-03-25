@@ -703,6 +703,7 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
        _ancs_request_attrs_pro(ancs_notif);		
 
       cling.ancs.state = BLE_ANCS_STATE_WAITING_PARSE_COMPLETE;			
+			cling.ancs.parse_time = CLK_get_system_time();
       break;			
 		}
 		case BLE_ANCS_EVT_DISCOVER_FAILED:
@@ -747,6 +748,9 @@ void ANCS_state_machine(void)
 			break;
 		
     case BLE_ANCS_STATE_WAITING_PARSE_COMPLETE:
+			  if (CLK_get_system_time() > (a->parse_time + ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT)) {
+					a->state = BLE_ANCS_STATE_IDLE;
+				}
       break;
 		
 		case BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE:

@@ -40,7 +40,7 @@ typedef enum
 #define ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME    60000   /*60s*/  
 #define ANCS_SUPPORT_MAX_TITLE_LEN                   64      /*64 byte*/
 #define ANCS_SUPPORT_MAX_MESSAGE_LEN                 192     /*192 byte*/
-
+#define ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT           15000   /*15s*/
 typedef enum
 {
   PARSE_STAT_COMMAND_ID,
@@ -96,6 +96,7 @@ typedef struct tagANCS_CONTEXT {
   // Record time flag to filtering old notifications.
   BOOLEAN start_record_time;	
 	
+	I32U parse_time;
 } ANCS_CONTEXT;
 
 
