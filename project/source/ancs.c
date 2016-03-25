@@ -84,7 +84,7 @@ const ble_uuid128_t ble_ancs_ds_base_uuid128 =
 /**@brief Function for handling events from the database discovery module.*/
 static void db_discover_evt_handler(ble_db_discovery_evt_t * p_evt)
 {
-  ANCS_CONTEXT *a = &cling.ancs;
+  ble_ancs_evt_type evt_type;
   ble_gatt_db_char_t * p_chars;
   p_chars = p_evt->params.discovered_db.charateristics;
 
@@ -128,15 +128,15 @@ static void db_discover_evt_handler(ble_db_discovery_evt_t * p_evt)
 			    break;			
 	    }
 	  }
-    // ANCS state switching to "DISCOVER COMPLETE".
-	  a->state = BLE_ANCS_STATE_DISCOVER_COMPLETE;
+		evt_type = BLE_ANCS_EVT_DISCOVER_COMPLETE;
+		ANCS_on_event_handling(evt_type);
   }
   else
   {
 	  // Record the current time ,disconnecting BLE after 60 seconds.
 	  ancs_timer = CLK_get_system_time();	
-	  // ANCS state switching to "DISCOVER FAILED".
-    a->state = BLE_ANCS_STATE_DISCOVER_FAILED;
+		evt_type = BLE_ANCS_EVT_DISCOVER_FAILED;
+		ANCS_on_event_handling(evt_type);
   }
 }
 
@@ -161,7 +161,7 @@ static void _tx_buffer_process(void)
 static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 {
   ANCS_CONTEXT *a = &cling.ancs;
-	static I16U  current_len,buff_idx;
+	static I16U  current_len, buff_idx;
 
   for (I16U i = 0; i < len; i++)
   {
@@ -228,18 +228,19 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 				  N_SPRINTF("[ANCS] get title len overstep the boundary --- parse error.");
 				  return;
 			  }
-        cling.ancs.pkt.title_len=(I8U)ancs_notif_attr.len;
+				// Notification title length.
+				a->buf[0] = (I8U)ancs_notif_attr.len;
         N_SPRINTF("[ANCS] get attr title len :%d",ancs_notif_attr.len );
-        buff_idx = 0;
+        buff_idx = 2;
         current_len = 0;							         
 				a->parse_state = PARSE_STAT_ATTRIBUTE_TITLE_READY;	
 	      break;				
 			}
 			case PARSE_STAT_ATTRIBUTE_TITLE_READY:
 			{
-				cling.ancs.pkt.buf[buff_idx++] = data[i];
+				a->buf[buff_idx++] = data[i];
         current_len++;
-        if(current_len == cling.ancs.pkt.title_len)
+        if(current_len == a->buf[0])
         {
           a->parse_state = PARSE_STAT_ATTRIBUTE_MESSAGE_ID;	
         }
@@ -274,23 +275,22 @@ static void _parse_get_notif_attrs_response( const I8U *data, I16U len)
 			  }
 				if(ancs_notif_attr.len >= 190)
 			    ancs_notif_attr.len=190;
-				
-        cling.ancs.pkt.message_len=(I8U)ancs_notif_attr.len;
+				// Notification message length.
+        a->buf[1] = (I8U)ancs_notif_attr.len;
         N_SPRINTF("[ANCS] get attr title len :%d",ancs_notif_attr.len );		
-        buff_idx = 0;
         current_len = 0;							
 				a->parse_state = PARSE_STAT_ATTRIBUTE_MESSAGE_READY;	
 	      break;				
 			}
 			case PARSE_STAT_ATTRIBUTE_MESSAGE_READY:
 			{
-				cling.ancs.pkt.buf[cling.ancs.pkt.title_len+(buff_idx++)] = data[i];
+				a->buf[buff_idx++] = data[i];
         current_len++;
-        if(current_len == cling.ancs.pkt.message_len)
+        if(current_len == a->buf[1])
         {
           a->parse_state = PARSE_STAT_COMMAND_ID;	
-					// ANCS state switching to "NOTIF ATTRIBUTE".
-					a->state = BLE_ANCS_STATE_NOTIF_ATTRIBUTE;
+					// ANCS state switching to "STATE STORE NOTIF ATTRIBUTE".
+					a->state = BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE;
         }
         break;					
 			}			
@@ -312,6 +312,7 @@ static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 {
 	I32U err_code;
 	ANCS_CONTEXT *a = &cling.ancs;	
+	ble_ancs_evt_type evt_type;
 	
   if(a->start_record_time){	
 		//Record the current time for Filtering old notifiction.
@@ -356,12 +357,12 @@ static void _ancs_parse_notif(const I8U *p_data, const I16U notif_len)
 	// Invalid notific type	
 	  return;
 	
-	// ANCS state machine busy,waiting until the free.
+	// ANCS event busy,waiting until the free.
 	if(a->state != BLE_ANCS_STATE_IDLE)
 		return;
 
-	// ANCS state switching to "NOTIF".
-	a->state =  BLE_ANCS_STATE_NOTIF;
+	evt_type = BLE_ANCS_EVT_NOTIF_REQ;
+	ANCS_on_event_handling(evt_type);
 }
 
 /**@brief Function for receiving and validating notifications received from the Notification Provider.
@@ -658,14 +659,76 @@ static void _ancs_store_attrs_pro(void)
 	
   N_SPRINTF("[ANCS] message total is :%d ",cling.ancs.message_total);
 	
-	p = &cling.ancs.pkt.buf[cling.ancs.pkt.title_len+cling.ancs.pkt.message_len];
-	len = (254 - cling.ancs.pkt.title_len - cling.ancs.pkt.message_len);
+	len = cling.ancs.buf[0] +cling.ancs.buf[1];
+	p = &cling.ancs.buf[len+2];
+	len = (254 - len);
 
 	// Clear the unused data space.
 	memset(p,0,len);
 	
-	ANCS_nflash_store_one_message((I8U *)&cling.ancs.pkt);	 	 	
+	ANCS_nflash_store_one_message(cling.ancs.buf);	 	 	
 }
+
+void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
+{
+	if (OTA_if_enabled())
+    return;
+	
+	// If it's not IOS phone,do nothing.
+	if(cling.gcp.host_type != HOST_TYPE_IOS)
+		return;
+	
+	switch (evt_type)
+	{
+		case BLE_ANCS_EVT_NULL:
+			break;
+		
+		case BLE_ANCS_EVT_DISCOVER_COMPLETE:
+		{
+			Y_SPRINTF("[ANCS] Apple Notification Service discovered on the server.");			
+			// Enable ancs notifiction.
+			_apple_notification_setup();
+			
+			// Attrs parse state init.
+			cling.ancs.parse_state = PARSE_STAT_COMMAND_ID;
+
+			 // Record the current time for Filtering old notifiction.
+      cling.ancs.start_record_time = TRUE;
+			break;
+		}
+		case BLE_ANCS_EVT_NOTIF_REQ:
+		{
+			Y_SPRINTF("[ANCS] Start sent request to access notify.");	
+			// Start sent request to access notify.
+       _ancs_request_attrs_pro(ancs_notif);		
+
+      cling.ancs.state = BLE_ANCS_STATE_WAITING_PARSE_COMPLETE;			
+			cling.ancs.parse_time = CLK_get_system_time();
+      break;			
+		}
+		case BLE_ANCS_EVT_DISCOVER_FAILED:
+    {    
+			Y_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
+		
+			ancs_t_curr =  CLK_get_system_time();		
+	    ancs_t_diff = (ancs_t_curr - ancs_timer);
+			
+			if(ancs_t_diff >= ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME){
+				
+		    if (cling.gcp.host_type == HOST_TYPE_IOS) {
+				
+				  if(BTLE_is_connected())
+					  BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
+			  }
+		  }
+      break;		
+		}
+		default:
+		  // No implementation needed.
+		  break;
+	}
+}
+
 
 /**@brief handling the Apple Notification Service client.*/
 void ANCS_state_machine(void)
@@ -684,60 +747,20 @@ void ANCS_state_machine(void)
 		case BLE_ANCS_STATE_IDLE:
 			break;
 		
-		case BLE_ANCS_STATE_DISCOVER_COMPLETE:
-		{	    
-				Y_SPRINTF("[ANCS]Apple Notification Service discovered on the server.\n");			
-			// Enable ancs notifiction.
-			_apple_notification_setup();
-			
-			// Attrs parse state init.
-			a->parse_state = PARSE_STAT_COMMAND_ID;
-
-			 // Record the current time for Filtering old notifiction.
-      a->start_record_time = TRUE;
-			
-			a->state = BLE_ANCS_STATE_IDLE;		
-		  break;	
-		}
-				
-    case BLE_ANCS_STATE_NOTIF:
-		{	 
-			Y_SPRINTF("[ANCS] Start sent request to access notify.");	
-			// Start sent request to access notify.
-       _ancs_request_attrs_pro(ancs_notif);						
-			
-      a->state = BLE_ANCS_STATE_IDLE;			
-      break;			
-		}
-  	
-		case BLE_ANCS_STATE_NOTIF_ATTRIBUTE:
+    case BLE_ANCS_STATE_WAITING_PARSE_COMPLETE:
+			  if (CLK_get_system_time() > (a->parse_time + ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT)) {
+					a->state = BLE_ANCS_STATE_IDLE;
+				}
+      break;
+		
+		case BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE:
 		{
 			Y_SPRINTF("[ANCS] Start store the specific content of notify.");	
 			// Store notifiction data to nflash.
 		  _ancs_store_attrs_pro();	
 			a->state = BLE_ANCS_STATE_IDLE;
 		  break;
-		}
-		
-    case BLE_ANCS_STATE_DISCOVER_FAILED:
-		{    
-			Y_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
-		
-			ancs_t_curr =  CLK_get_system_time();		
-	    ancs_t_diff = (ancs_t_curr - ancs_timer);
-			
-			if(ancs_t_diff >= ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME){
-				
-		    if (cling.gcp.host_type == HOST_TYPE_IOS) {
-				
-				  if(BTLE_is_connected())
-					  BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DISC_FAIL);
-			  }
-				
-			  a->state = BLE_ANCS_STATE_IDLE;
-		}
-      break;		
-		}
+		}                   
     default:
       // No implementation needed.
       break;

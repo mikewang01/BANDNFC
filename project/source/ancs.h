@@ -40,7 +40,7 @@ typedef enum
 #define ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME    60000   /*60s*/  
 #define ANCS_SUPPORT_MAX_TITLE_LEN                   64      /*64 byte*/
 #define ANCS_SUPPORT_MAX_MESSAGE_LEN                 192     /*192 byte*/
-
+#define ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT           15000   /*15s*/
 typedef enum
 {
   PARSE_STAT_COMMAND_ID,
@@ -58,30 +58,21 @@ typedef enum
   PARSE_STAT_ATTRIBUTE_MESSAGE_READY
 } ANCS_PARSE_STATES;
 
+/**@brief Event types that are passed from client to application on an event. */
+typedef enum
+{
+  BLE_ANCS_EVT_NULL,  	
+  BLE_ANCS_EVT_DISCOVER_COMPLETE,          
+  BLE_ANCS_EVT_DISCOVER_FAILED,            
+  BLE_ANCS_EVT_NOTIF_REQ,                                         
+} ble_ancs_evt_type;
 
 enum
 {
   BLE_ANCS_STATE_IDLE,   	
-  BLE_ANCS_STATE_DISCOVER_COMPLETE,   
-  BLE_ANCS_STATE_DISCOVER_FAILED,            
-  BLE_ANCS_STATE_NOTIF,                      
-  BLE_ANCS_STATE_NOTIF_ATTRIBUTE        
+  BLE_ANCS_STATE_WAITING_PARSE_COMPLETE,                   
+  BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE        
 };
-
-
-typedef struct tagANCS_PACKET {
-  I8U  title_len;
-  I8U  message_len;
-  I8U  buf[254];
-} ANCS_PACKET;
-
-
-enum {
-  BOND_STATE_UNCLEAR=0,
-  BOND_STATE_SUCCESSED,
-  BOND_STATE_ERROR
-};
-
 
 typedef struct tagANCS_CONTEXT {
   // Global state
@@ -91,7 +82,7 @@ typedef struct tagANCS_CONTEXT {
   ANCS_PARSE_STATES	 parse_state;
 	
   // Stored notific	data
-  ANCS_PACKET  pkt;	
+  I8U  buf[256];	
 	
   // The number of the notification
   I8U  message_total;		
@@ -105,6 +96,7 @@ typedef struct tagANCS_CONTEXT {
   // Record time flag to filtering old notifications.
   BOOLEAN start_record_time;	
 	
+	I32U parse_time;
 } ANCS_CONTEXT;
 
 
@@ -114,6 +106,7 @@ typedef struct tagANCS_CONTEXT {
  * @param[in] p_ble_evt  Event received from the BLE stack.
  */
 void  ANCS_on_ble_evt(const ble_evt_t * p_ble_evt);
+void  ANCS_on_event_handling(ble_ancs_evt_type evt_type);
 void  ANCS_service_add(void);
 void  ANCS_nflash_store_one_message(I8U *data);
 void  ANCS_state_machine(void);

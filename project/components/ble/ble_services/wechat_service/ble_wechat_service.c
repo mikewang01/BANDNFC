@@ -366,7 +366,7 @@ int ble_wechat_indicate_data(ble_wechat_t *p_wcs,data_handler *p_data_handler, u
 				return 0;	
 		}
 		if (g_send_data.len != 0 && g_send_data.offset != g_send_data.len) {
-			printf("\r\n offset:%d %d",g_send_data.offset,g_send_data.len);
+			//printf("\r\n offset:%d %d",g_send_data.offset,g_send_data.len);
 //			g_send_data.len = 0;
 //			g_send_data.offset = 0;
 			
