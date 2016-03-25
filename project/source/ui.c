@@ -516,7 +516,8 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 		Y_SPRINTF("[UI] finger right: %d, %d", u->frame_index, u->b_detail_page);
 
 		// Update frame index
-		if (u->frame_index == UI_DISPLAY_SMART_INCOMING_CALL)
+		if ((u->frame_index == UI_DISPLAY_SMART_INCOMING_CALL) ||
+			(u->frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE))
 		{
 			if (!cling.activity.b_workout_active)
 				cling.activity.workout_type = WORKOUT_NONE;
