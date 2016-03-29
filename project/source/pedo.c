@@ -34,11 +34,17 @@ const UC_CONSTRAINS_TAB constrains_tab[3] = {
     {60000, 8},
 };
 
-#define CONSTRAINS_STEP_TH 4
+#define CONSTRAINS_STEP_HI_TH 4
 #define CONSTRAINS_DIFF_HI_TH 408000
+
+#define CONSTRAINS_STEP_ME_TH 5
+#define CONSTRAINS_DIFF_ME_TH 150000
+
+#define CONSTRAINS_STEP_LO_TH 6
 #define CONSTRAINS_DIFF_LO_TH 68400
 
 static I32U pedo_constrain_diff_th;
+static I8U  pedo_constrain_step_th;
 
 // 
 // Argument -
@@ -57,23 +63,17 @@ void PEDO_create()
 	// reset the timer
 	memset(&gPDM, 0, sizeof(PEDO_STAT));
 
-    // Get the sampling rate for accelerometer
-    gPDM.sps = 50;
-    
-    // Initialize a large pace for anti-cheating
-    gPDM.classifier.apu_pace = gPDM.sps<<1;
+	// Initialize a large pace for anti-cheating
+	gPDM.classifier.apu_pace = PEDO_SPS << 1;
 
-    // Initialize the tick parameters for CAR classification
-    gPDM.tick.st.length_sh = 2; // 4 seconds window
-    gPDM.tick.lt.length_sh = 7; // 128 seconds window
-    gPDM.tick.car_context_certainty = CAR_CTX_LOW; // CAR context certainty - low
+	// Initialize the tick parameters for CAR classification
+	gPDM.tick.car_context_certainty = CAR_CTX_LOW; // CAR context certainty - low
 
-    // No motin available
-    gPDM.classifier.motion = MOTION_UNAVAILABLE;
+	// No motin available
+	gPDM.classifier.motion = MOTION_UNAVAILABLE;
 
-    // Consistency check step threshold
-    gPDM.classifier.step_consistency_th = STEP_CONSISTENCY_THRESHOLD_MIN;
-
+	// Consistency check step threshold
+	gPDM.classifier.step_consistency_th = STEP_CONSISTENCY_THRESHOLD_MIN;
 }
 
 void PEDO_release()
@@ -262,7 +262,7 @@ static BOOLEAN _det_stationary()
 	// for Gest
 	if (!s->norm_init) {
 		
-		if (s->init.samples < (gPDM.sps<<1)) {
+		if (s->init.samples < (PEDO_SPS<<1)) {
 			s->init.x += gPDM.A.x;
 			s->init.y += gPDM.A.y;
 			s->init.z += gPDM.A.z;
@@ -802,7 +802,7 @@ static void _classifier_stat_update(ACCELEROMETER_3D in, BOOLEAN b_step)
         if (ts_s && ts_e) {
             c->apu_pace = (ts_s-ts_e) >> 3;
         } else {
-            c->apu_pace = gPDM.sps << 1; // a large cadence - 0.25 steps per second
+            c->apu_pace = PEDO_SPS << 1; // a large cadence - 0.25 steps per second
         }
     }
 		
@@ -996,7 +996,7 @@ static MOTION_TYPE _CAR_classify(CLASSIFIER_STAT *c, MOTION_TYPE motion)
     }
 
     // If device seems to wake up from a non-motion mode, let's pass it through 
-    if (gPDM.global_time < (c->stationary_ts + (gPDM.sps<<4))) {
+    if (gPDM.global_time < (c->stationary_ts + (PEDO_SPS<<4))) {
         if (c->step_consistency_th == STEP_CONSISTENCY_THRESHOLD_MIN)
             return motion;
     }
@@ -1039,7 +1039,7 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
     ac->factor = 0;
 
     // 1/ get the window size (4 seconds of statistics) for classification
-    win_siz = _get_classify_win_siz(c, gPDM.sps<<2);
+    win_siz = _get_classify_win_siz(c, PEDO_SPS<<2);
 
     // 2/ Binary classification on WALKING/RUNNING
     //    Votes are from a span of CLASSIFICATION_TIME_SPAN
@@ -1134,7 +1134,7 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
     cnt = 0;
     idx = 0;
 
-    for (i = 0; i < (CONSTRAINS_STEP_TH<<1); i++) {
+    for (i = 0; i < (pedo_constrain_step_th<<1); i++) {
         if ((c->step_stat[i] == STEP_TO_BE_CLASSIFIED) && c->step_ts[i])  {
             if (c->step_a_diff[i] < pedo_constrain_diff_th) 
             {
@@ -1144,7 +1144,7 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
         }
     }
 
-    if (cnt < CONSTRAINS_STEP_TH) {
+    if (cnt < pedo_constrain_step_th) {
         return TRUE;
     } else {
         for (i = idx+4; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
@@ -1229,7 +1229,7 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
     }
 
     // If consistent step event presents, we further confirm they are not device incidental movement
-    if (i >= CONSTRAINS_STEP_TH) {
+    if (i >= pedo_constrain_step_th) {
         if (_is_incidental_steps(c, i-1))
             return TRUE;
         else
@@ -1301,7 +1301,7 @@ static BOOLEAN _motion_classification()
 	return TRUE;
 }
 
-static BOOLEAN _update_apu_distribution(APU_HISTORGRAM *hist, I8U idx)
+static BOOLEAN _update_apu_distribution(APU_HISTORGRAM *hist, I8U idx, I8U length_sh)
 {
     I8U i;
     I32U perc_20, perc_80, perc=0;
@@ -1309,11 +1309,11 @@ static BOOLEAN _update_apu_distribution(APU_HISTORGRAM *hist, I8U idx)
     hist->dist_update = FALSE;
 
     // Determine threshold
-    if (gPDM.global_time < (hist->ts+(gPDM.sps<<hist->length_sh))) {
+    if (gPDM.global_time < (hist->ts+(PEDO_SPS<<length_sh))) {
         hist->hist[idx] ++;
     } else {
-        perc_20 = (gPDM.sps<<(hist->length_sh+1))/10;
-        perc_80 = (gPDM.sps<<(hist->length_sh+3))/10;
+        perc_20 = (PEDO_SPS<<(length_sh+1))/10;
+        perc_80 = (PEDO_SPS<<(length_sh+3))/10;
         // Update the time stamp.
         hist->ts = gPDM.global_time;
 
@@ -1410,7 +1410,7 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
     I8U cnt;
     
 
-    if (gPDM.global_time >= r->ts+gPDM.sps) {
+    if (gPDM.global_time >= r->ts+PEDO_SPS) {
         r->ts = gPDM.global_time;
         p2p.x = _calc_raw_stat(&r->stat[0], in.x);
         p2p.y = _calc_raw_stat(&r->stat[1], in.y);
@@ -1543,7 +1543,7 @@ static void _tick_processing(ACCELEROMETER_3D in, I32S A_prime_up)
         idx = AUP_HIST_STEPS - 1;
 
     // Calcuate long-term distribution over a window of 128 seconds.
-    if (_update_apu_distribution(&pt->lt, idx)) {
+    if (_update_apu_distribution(&pt->lt, idx, PEDO_TICK_LENGTH_LONG)) {
         // Update the consistency step threshold
         if (pt->lt.cdf_80_percentile > 10) {
             c->step_consistency_th = STEP_CONSISTENCY_THRESHOLD_MIN;
@@ -1560,7 +1560,7 @@ static void _tick_processing(ACCELEROMETER_3D in, I32S A_prime_up)
         } 
     }
     // Calcuate short-term distribution over a window of 5 seconds.
-    if (_update_apu_distribution(&pt->st, idx)) {
+    if (_update_apu_distribution(&pt->st, idx, PEDO_TICK_LENGTH_SHORT)) {
         // Update the consistency step threshold
         pt->car_context_certainty = CAR_CTX_LOW;
         pt->st.dist_update = FALSE;
@@ -1650,7 +1650,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
 		 _clear_steps_buffer();
 	 } else {
 		 // If the device appears to be stationary, skip all the step count and classification
-		 if (gPDM.stationary.acc.samples > gPDM.sps) {
+		 if (gPDM.stationary.acc.samples > PEDO_SPS) {
 			 return stat;
 		 }
 	 }
@@ -1753,8 +1753,23 @@ I8U* PEDO_get_global_buffer()
 
 void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitive)
 {
-	if (b_sensitive)
-		pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
-	else
+	if (b_sensitive) {
+		if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_HIGH) {
+			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
+			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
+		} else if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_MEDIUM) {
+			pedo_constrain_diff_th = CONSTRAINS_DIFF_ME_TH;
+			pedo_constrain_step_th = CONSTRAINS_STEP_ME_TH;
+		} else if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_LOW) {
+			pedo_constrain_diff_th = CONSTRAINS_DIFF_LO_TH;
+			pedo_constrain_step_th = CONSTRAINS_STEP_LO_TH;
+		} else {
+			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
+			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
+		}
+	} else {
+		// If user enters a sendentary state, set pedometer sensitivty to LOW sensitivity
 		pedo_constrain_diff_th = CONSTRAINS_DIFF_LO_TH;
+		pedo_constrain_step_th = CONSTRAINS_STEP_LO_TH;
+	}
 }

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "pedo.h"
 
 static BOOLEAN _is_idle_alert_allowed()
 {	
@@ -331,6 +332,15 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->b_reminder_off_weekends = *pdata++;
 		setting_length --;
 		N_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
+	}
+	
+	if (setting_length >= 1) {
+		
+		u->m_pedo_sensitivity = *pdata++;
+		
+		if (u->m_pedo_sensitivity > PEDO_SENSITIVITY_LOW) {
+			u->m_pedo_sensitivity = PEDO_SENSITIVITY_HIGH;
+		}
 	}
 }
 

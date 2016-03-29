@@ -64,6 +64,10 @@ typedef struct tagUSER_DATA {
 	
 	// Reminder OFF during weekends
 	BOOLEAN b_reminder_off_weekends;
+	
+	// Pedometer sensitivity mode
+	I8U m_pedo_sensitivity;
+
 } USER_DATA;
 
 void USER_data_init(void);

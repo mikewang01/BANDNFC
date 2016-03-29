@@ -25,6 +25,12 @@ enum {
     MAIN_LPF_8HZ,
 };
 
+enum {
+	PEDO_SENSITIVITY_HIGH,
+	PEDO_SENSITIVITY_MEDIUM,
+	PEDO_SENSITIVITY_LOW
+};
+
 #define g1ValueDef 2048
 #define NOMINAL_G g1ValueDef
 #define STATIONARY_ENG_DC 4194304 /* header.g1Value*header.g1Value */
@@ -34,6 +40,10 @@ enum {
 #define NOMINAL_G_MAG (I32S)4194304 /*(g1ValueDef*g1ValueDef) */
 #define NOMINAL_G_MAG_SHIFT 22
 #define _GET_NORM_SH	11
+
+#define PEDO_SPS 50 // Samples per second
+#define PEDO_TICK_LENGTH_SHORT 2 // SHORT TERM WINDOW: 4 seonds (2^2)
+#define PEDO_TICK_LENGTH_LONG  7 // LONG TERM WINDOW: 28 seconds (2^7)
 
 #if 1
 // TEsting ... (exercise testing is about 2% undercounting, should be OK)
@@ -288,7 +298,6 @@ typedef struct tagAPU_HISTOGRAM {
     I32U cdf_20_percentile;  // 20 percentile in a cumulative distribution function
     I32U cdf_80_percentile;  // 80 percentile in a cumulative distribution function
     I32U ts;
-    I8U length_sh;
     I32U dist_update;
     I16U hist[AUP_HIST_STEPS];// Histogram bins
 } APU_HISTORGRAM, *PAPU_HISTOGRAM;
@@ -346,8 +355,6 @@ typedef struct tagPEDO_STAT {
 
 	I32U global_time; // global timer
 
-	I32U sps; // samples per second
-
 	LPF_HISTORY main_lpf;  // Low pass filtering history
 
 	ACCELEROMETER_3D A;// 3D accelerometer data
@@ -371,6 +378,7 @@ typedef struct tagPEDO_STAT {
 	CLASSIFIER_STAT classifier; // Motion classifier
 
 	MOTION_TICK_CTX tick;  // Statistics per second
+	
 } PEDO_STAT, *PPEDO_STAT;
 
 #endif
