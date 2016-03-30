@@ -317,7 +317,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->screen_on_heart_rate = *pdata++;
 		
 		setting_length -= 2;
-		N_SPRINTF("\n screen on: %d,%d\n", u->screen_on_general, u->screen_on_heart_rate);
+		Y_SPRINTF("\n screen on: %d,%d\n", u->screen_on_general, u->screen_on_heart_rate);
 	} else {
 		return;
 	}
@@ -325,13 +325,13 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	if (setting_length >= 1) {
 		cling.sleep.m_sensitive_mode = (SLEEP_SENSITIVE_MODE)(*pdata++);
 		setting_length --;
-		N_SPRINTF("\n sleep sensitivity level: %d", cling.sleep.m_sensitive_mode);
+		Y_SPRINTF("\n sleep sensitivity level: %d", cling.sleep.m_sensitive_mode);
 	}
 	
 	if (setting_length >= 1) {
 		u->b_reminder_off_weekends = *pdata++;
 		setting_length --;
-		N_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
+		Y_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
 	}
 	
 	if (setting_length >= 1) {
@@ -341,7 +341,9 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		if (u->m_pedo_sensitivity > PEDO_SENSITIVITY_LOW) {
 			u->m_pedo_sensitivity = PEDO_SENSITIVITY_HIGH;
 		}
+		Y_SPRINTF("\n Pedo Sensitivity: %d\n", u->m_pedo_sensitivity);
 	}
+	
 }
 
 void USER_state_machine()

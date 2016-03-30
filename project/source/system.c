@@ -102,7 +102,9 @@ I8U SYSTEM_get_ble_device_name(I8U *device_name)
 	
 #ifdef _CLINGBAND_NFC_MODEL_
 	len = sprintf((char *)device_name, "NBAND ");
-#else
+#endif
+	
+#ifdef _CLINGBAND_UV_MODEL_
 	len = sprintf((char *)device_name, "CBAND ");
 #endif
 	

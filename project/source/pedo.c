@@ -41,7 +41,7 @@ const UC_CONSTRAINS_TAB constrains_tab[3] = {
 #define CONSTRAINS_DIFF_ME_TH 150000
 
 #define CONSTRAINS_STEP_LO_TH 6
-#define CONSTRAINS_DIFF_LO_TH 68400
+#define CONSTRAINS_DIFF_LO_TH 65000
 
 static I32U pedo_constrain_diff_th;
 static I8U  pedo_constrain_step_th;
@@ -1752,7 +1752,7 @@ I8U* PEDO_get_global_buffer()
 }
 
 void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitive)
-{
+{	
 	if (b_sensitive) {
 		if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_HIGH) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
@@ -1772,4 +1772,7 @@ void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitive)
 		pedo_constrain_diff_th = CONSTRAINS_DIFF_LO_TH;
 		pedo_constrain_step_th = CONSTRAINS_STEP_LO_TH;
 	}
+	
+	Y_SPRINTF("[PEDO] set sensitivity: %d, %d, %d", 
+		cling.user_data.m_pedo_sensitivity, pedo_constrain_diff_th, pedo_constrain_step_th);
 }
