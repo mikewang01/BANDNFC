@@ -147,6 +147,9 @@ void USER_store_device_param(I8U *data)
 	*pdata++ = u->b_reminder_off_weekends;
 	setting_length ++;
 	
+	*pdata++ = u->m_pedo_sensitivity;
+	setting_length ++;
+	
 	// Finally, we put in the length
 	data[0] = setting_length;
 	
