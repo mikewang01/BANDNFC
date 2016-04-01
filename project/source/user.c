@@ -317,7 +317,7 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		u->screen_on_heart_rate = *pdata++;
 		
 		setting_length -= 2;
-		Y_SPRINTF("\n screen on: %d,%d\n", u->screen_on_general, u->screen_on_heart_rate);
+		N_SPRINTF("\n screen on: %d,%d\n", u->screen_on_general, u->screen_on_heart_rate);
 	} else {
 		return;
 	}
@@ -325,13 +325,13 @@ void USER_setup_device(I8U *data, I8U setting_length)
 	if (setting_length >= 1) {
 		cling.sleep.m_sensitive_mode = (SLEEP_SENSITIVE_MODE)(*pdata++);
 		setting_length --;
-		Y_SPRINTF("\n sleep sensitivity level: %d", cling.sleep.m_sensitive_mode);
+		N_SPRINTF("\n sleep sensitivity level: %d", cling.sleep.m_sensitive_mode);
 	}
 	
 	if (setting_length >= 1) {
 		u->b_reminder_off_weekends = *pdata++;
 		setting_length --;
-		Y_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
+		N_SPRINTF("\n reminder off: %d\n", u->b_reminder_off_weekends);
 	}
 	
 	if (setting_length >= 1) {
