@@ -84,7 +84,6 @@
 #include "ancs.h"
 #endif
 #include "homekey.h"
-#include "font.h"
 #include "ppg.h"
 
 #define TWI_MASTER_UV       1

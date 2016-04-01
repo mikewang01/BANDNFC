@@ -151,6 +151,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	
 	// Page index
 	I8U level_2_index;
+  I8U string_pos_buf[5];	
 	
 	// Icon flashing
 	BOOLEAN clock_sec_blinking;
