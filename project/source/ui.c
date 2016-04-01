@@ -599,9 +599,16 @@ static I8U _ui_touch_sensing()
 	
 	if ((gesture >= TOUCH_SWIPE_LEFT) && (gesture <= TOUCH_BUTTON_SINGLE))
 	{
+		// Stop reminder
 		if (cling.reminder.state != REMINDER_STATE_IDLE) {
 			Y_SPRINTF("[UI] check for next reminder upon touch");
 			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+		}
+		
+		// Stop notification
+		if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+			Y_SPRINTF("[UI] stop notification vibrator");
+			cling.notific.state = NOTIFIC_STATE_STOPPED_EXTERNAL;
 		}
 	}
 

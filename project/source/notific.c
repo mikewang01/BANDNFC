@@ -165,6 +165,12 @@ void NOTIFIC_state_machine()
 			}
 			break;
 		}
+		case NOTIFIC_STATE_STOPPED_EXTERNAL:
+		{
+			cling.notific.state = NOTIFIC_STATE_IDLE;
+			GPIO_vibrator_set(FALSE);
+			break;
+		}
 		default:
 		{
 			N_SPRINTF("[NOTIFIC] Notify wrong state - %d", cling.notific.state);
