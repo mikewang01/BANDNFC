@@ -819,19 +819,17 @@ static I16U _render_middle_section_large(I8U len, I8U *string, I8U margin)
 static void _render_icon_more(I16U offset)
 {
 	I16U j;
-	I8U *p0, *p1, *p2;
+	I8U *p0;
 	const I8U *pin;
 	I8U char_len;
 	
-	p0 = cling.ui.p_oled_up+offset+128;
-	p1 = p0+128;
-	p2 = p1+128;
+	p0 = cling.ui.p_oled_up+128+128+128+offset;
 
 	// "More" icon
 	pin = asset_content+ICON_TOP_MORE;
 	char_len = ICON_TOP_MORE_LEN;
 	for (j = 0; j < char_len; j++) {
-			*p2++ = (*pin++);
+			*p0++ = (*pin++);
 	}
 }
 
@@ -3093,5 +3091,3 @@ void UI_reset_workout_mode()
 		cling.activity.b_workout_active = FALSE;
 	}
 }
-
-
