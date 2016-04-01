@@ -872,7 +872,7 @@ static void _display_dynamic(I8U *pIn, I8U len2, I8U *string2)
 	}
 }
 
-static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
+static void _middle_row_render(I8U mode, BOOLEAN b_center)
 {
 	I16U i;
 	I16U offset = 0; // Pixel offet at top row
@@ -884,7 +884,6 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 	I32U stat;
 	I16U integer, fractional;
 	BOOLEAN b_more = FALSE;
-	BOOLEAN b_full_screen = FALSE;
 	I8U bar_len=0, string_pos=0;;
 	BOOLEAN b_progress_bar = FALSE;
 
@@ -1069,8 +1068,7 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 				
 				_display_dynamic(cling.ui.p_oled_up+128+128, len, string);
 				cling.ui.heart_rate_wave_index ++;
-				
-				return b_full_screen;
+				return;
 			}
 		} else {
 			N_SPRINTF("[UI] Heart rate - not valid");
@@ -1194,8 +1192,6 @@ static BOOLEAN _middle_row_render(I8U mode, BOOLEAN b_center)
 			*p0++ = 0x80;
 		}
 	}
-	
-	return b_full_screen;
 }
 
 static I8U _render_top_sec(I8U *string, I8U len, I8U offset)
@@ -1692,13 +1688,13 @@ static void _core_home_display_horizontal(I8U middle, I8U bottom, BOOLEAN b_rend
 
 static void _core_display_horizontal(I8U top, I8U middle, I8U bottom, BOOLEAN b_render)
 {	
-	// Main info
-	if (!_middle_row_render(middle, TRUE)) {
-		// Info on the left
-		_left_icon_render(top);
+	// Info on the left
+	_left_icon_render(top);
 		
-		_right_row_render(bottom);
-	}
+	_right_row_render(bottom);
+	
+	// Main info
+	_middle_row_render(middle, TRUE);
 	
 	if (b_render) {
 		// Finally, we render the frame
