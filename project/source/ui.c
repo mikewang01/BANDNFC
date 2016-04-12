@@ -61,8 +61,10 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, BOOLEAN b_
 {
 	I8U index = u->frame_prev_idx;
 	I8U max_frame_num=0;
-	
-  if (index == UI_DISPLAY_SMART_APP_NOTIF) {
+
+	if (index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
+		return;
+	} else if (index == UI_DISPLAY_SMART_APP_NOTIF) {
 #ifdef _ENABLE_ANCS_				
 		max_frame_num = NOTIFIC_get_message_total();		
 #endif		
@@ -2994,10 +2996,10 @@ void UI_state_machine()
 				u->vertical_index = 0;
 				u->true_display = FALSE;
 				u->b_detail_page = FALSE;
-				
+#ifdef _CLINGBAND_UV_MODEL_
 				// Reset UV index
 				cling.uv.max_UI_uv = 0;
-				
+#endif
 				// Reset alarm clock flag
 				cling.reminder.ui_alarm_on = FALSE;
 
