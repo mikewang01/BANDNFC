@@ -964,7 +964,7 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		b_more = TRUE;
 		N_SPRINTF("[UI] smart message hit +++++");
 	} else if (mode == UI_MIDDLE_MODE_INCOMING_MESSAGE) {
-		Y_SPRINTF("[UI] Incoming message: %d", cling.ui.level_1_index);
+		Y_SPRINTF("[UI] Incoming message: %d", cling.ui.app_notific_index);
 		cling.ui.app_notific_index = 0;
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);	
 		if(FONT_get_string_display_len((char *)string) > 128) {
@@ -977,7 +977,7 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		b_center = FALSE;
 	} else if (mode == UI_MIDDLE_MODE_APP_NOTIF) {
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
-		Y_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.level_1_index, len, (char *)string);
+		N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
 		if (FONT_get_string_display_len((char *)string) > 112) {
 			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 95, FALSE);
 		} else if (FONT_get_string_display_len((char *)string) >= 96){
@@ -994,7 +994,7 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		  string_pos = cling.ui.string_pos_buf[cling.ui.notif_detail_index - 1];
 		}
     FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, 119, FALSE);		
-		Y_SPRINTF("[UI] message detail: %d %d %s", cling.ui.level_1_index, cling.ui.notif_detail_index, (char *)string);
+		N_SPRINTF("[UI] message detail: %d %d %s", cling.ui.app_notific_index, cling.ui.notif_detail_index, (char *)string);
 		b_more = TRUE;
 		len = 0;
 		b_center = FALSE;
