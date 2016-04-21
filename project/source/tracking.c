@@ -294,7 +294,7 @@ static void _minute_data_flush_file(I32U flash_offset)
 	I32U epoch_head;
 	BOOLEAN b_valid;
 	I16U len = 0;
-	I32U pos;
+	I32U pos, epoch_valid;
 	MINUTE_TRACKING_CTX *pminute = (MINUTE_TRACKING_CTX *)dw_buf;
 
 	// Check if the whole 4 KB block has been erased
@@ -323,9 +323,17 @@ static void _minute_data_flush_file(I32U flash_offset)
 	
 	// If all the entries have been uploaded, go ahead to erase this block
 	if (b_valid) {
+			
+		epoch_valid = pminute->epoch & 0x7fffffff;
 		
+		if (epoch_valid == 0x7fffffff) {
+			// Erase this block and return
+			FLASH_erase_App(flash_offset);
+			return;
+		}
+
 		// generate file name
-		sprintf((char *)name_buf, "epoch_%d.skd", (pminute->epoch&0x7fffffff));
+		sprintf((char *)name_buf, "epoch_%d.skd", epoch_valid);
 
 		// Open this file for write
 		f.type = FILE_TYPE_ACTIVITY;

@@ -3068,3 +3068,5 @@ void UI_reset_workout_mode()
 		cling.activity.b_workout_active = FALSE;
 	}
 }
+
+
