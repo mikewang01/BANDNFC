@@ -424,7 +424,7 @@ static void _create_dev_info_msg()
 #endif
 
     // Amount of minute streaming files
-    t->msg[t->msg_filling_offset++] = cling.ble.streaming_minute_file_amount;
+		t->msg[t->msg_filling_offset++] = FILE_exists_with_prefix((I8U *)"epoch", 5);
 
 		// Valid mac address
 		sd_ble_gap_address_get(&mac_addr_t);
@@ -1430,10 +1430,6 @@ BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
             // Flag this entry to be read
             pminute_1->epoch &= 0x7fffffff;
             N_SPRINTF("[CP] found new entry (%d): %d", s->minutes_repeat_num, offset >> 4);
-
-            if (pminute_1->epoch == 1402248420) {
-                N_SPRINTF("...");
-            }
             break;
         }
         cling.ble.minute_file_entry_index++;
@@ -1459,10 +1455,6 @@ BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
 
             // Check epoch
             pminute_2->epoch &= 0x7fffffff;
-
-            if (pminute_2->epoch == 1402248420) {
-                N_SPRINTF("...");
-            }
 
             // New entry has to have a larger epoch
             if (pminute_2->epoch <= pminute_1->epoch) {
