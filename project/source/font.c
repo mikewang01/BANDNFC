@@ -8,7 +8,7 @@
 
 #include "main.h"
 #include <stdint.h>
-
+#include "font.h"
 
 const I8U font_content[] = {
 	
@@ -97,58 +97,6 @@ static void _font_read_one_Chinese_characters(I8U *utf_8, I16U len, I8U *dataBuf
 	NOR_readData(addr_in, len, dataBuf);	
 }	
 
-/**@brief Function for get entire display length.
- * 
- * Description: display length, must <= 128.
- *
- * height is 8: only need display 5x7 ascii sting.
- *
- * height is 16: display 8x16 ascii sting and 15x16 chinese characters.
- */
-static I8U _font_get_display_len(I8U *data, I8U height)
-{
-	I8U  s_len,d_len;  
-	I8U  a_num=0;
-	I8U  c_num=0;
-	I8U  ch_to_process;
-	I16U s_pos = 0;
-
-	s_len = strlen((char*)data);
-	
-	while(s_pos < s_len)
-	{
-		ch_to_process = (I8U)data[s_pos];
-		
-	  if((ch_to_process >= 0x20)&&(ch_to_process <= 0x7e)){
-	    // ASCII code encode format.
-		  a_num += 1;
-	    s_pos += 1;
-	  }
-    else if(((data[s_pos]&0xF0) == 0xE0)&&((data[s_pos+1]&0xC0) == 0x80)&&((data[s_pos+2]&0xC0) == 0x80)){
-	    // Chinese characters Utf-8 encode format.	
-		  c_num += 1;
-	    s_pos += 3;
-	  }
-		else{
-			// Is not within the scope of the can display,continue to read the next.
-			s_pos++;
-		}
-	}
-	
-	if(height == 16)	
-		d_len = (a_num << 3) + (c_num << 4);	
-	else if(height == 8)
-		d_len = (a_num << 3);
-	else
-		return 0;
-
-	// At present,can only display 128 bytes.	
-	if(d_len >= 128)
-		d_len = 128;
-	
-	return d_len;	
-}
-
 /**@brief Function for loading characters.
  * 
  * Description: get OLED dot matrix data of a continuous string.
@@ -159,86 +107,99 @@ static I8U _font_get_display_len(I8U *data, I8U height)
  *
  * b_center : display in the middle(TRUE),display from the top(FALSE). 
  */
-I8U FONT_load_characters(I8U *ptr, char *data, I8U height, BOOLEAN b_center)
+void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center)
 {	
 	I8U  font_data[32];
-  I8U  s_len,d_len;  
-	I8U  a_num = 0;
-	I8U  c_num = 0;	
-	I8U  ch_to_process;
-	I16U s_pos = 0;
-  I16U p_data_offset = 0;
+	I8U  *p0, *p1, *p2, *p3;	
+ 	I8U  pos=0, offset=0 ,curr_line_pos=0;  	
+	I8U  ptr, i; 	
 
+	p0 = p_in;
+	
 	// When OTA is in progress,do not operate nflash.
   if (OTA_if_enabled())
-    return (0xff);
+    return;
 	
-	s_len  = strlen(data);
-	
-	// The length of the effective display.
-  d_len = _font_get_display_len((I8U*)data,height);
-	
-	while(s_pos < s_len)
+  // At present,can only display 128 bytes size string.		
+	while(pos < 128)
 	{
-		ch_to_process = (I8U)data[s_pos];
+		if(string[pos] == '\0')
+		  break;
 		
-		p_data_offset = (a_num << 3) + (c_num << 4);
-		
-		if(p_data_offset > 128)
-			break;
-		
-	  if((ch_to_process >= 0x20)&&(ch_to_process<=0x7e)){
-	  	// ASCII code encode format.
-		  if(height==16){
-				
-				_font_read_one_8x16_ascii(ch_to_process,16,font_data);
-				
-				if(b_center){
-					memcpy(&ptr[((128 - d_len) >> 1) + p_data_offset],font_data,8);
-					memcpy(&ptr[128 + ((128 - d_len) >> 1) + p_data_offset],&font_data[8],8);	
-				}else{
-					memcpy(&ptr[p_data_offset],font_data,8);
-					memcpy(&ptr[128 + p_data_offset],&font_data[8],8);						
-				}
-		  } else {
-		 
-			  _font_read_one_5x7_ascii(ch_to_process,8,font_data);
-				
-			  if(b_center)
-          memcpy(&ptr[((128 - d_len) >> 1) + 6*a_num],font_data,6);	 
-			  else
-          memcpy(&ptr[6*a_num],font_data,6);  
-		  }
+	  if((string[pos] >= 0x20) && (string[pos] <= 0x7e)) {	
+      // ASCII code encode format.
+			if (height == 8) {
+			  _font_read_one_5x7_ascii(string[pos], 6, font_data);	
+        memcpy(p0 + offset, font_data, 6);  	
+				offset += 6;
+		  } else if (height == 16) {	
+				if(offset > (horizontal_len - 8)){
+				  b_center = FALSE;
+					curr_line_pos++;
+					if(curr_line_pos >= 2)	
+            return;
+          p0 += 256;	
+          offset = 0;					
+		    }					
+				_font_read_one_8x16_ascii(string[pos], 16, font_data);
+				memcpy(p0 + offset, font_data, 8);
+			  memcpy(p0 + offset + 128, &font_data[8], 8);						
+				offset += 8;
+		  } else 	{
+			}
 			
-			a_num += 1;
-		  s_pos += 1;
-	  }	
-    else if(((data[s_pos]&0xF0) == 0xE0)&&((data[s_pos+1]&0xC0) == 0x80)&&((data[s_pos+2]&0xC0) == 0x80)){
-			// Chinese characters Utf-8 encode format.	 
-		  _font_read_one_Chinese_characters((I8U*)(data+s_pos),32,font_data);
-
-		  if(b_center){
-		    memcpy(&ptr[((128 - d_len) >> 1) + p_data_offset],font_data,16);
-        memcpy(&ptr[128+((128 - d_len) >> 1) + p_data_offset],&font_data[16],16);
-		  }else{
-		    memcpy(&ptr[p_data_offset],font_data,16);
-        memcpy(&ptr[128 + p_data_offset],&font_data[16],16);
-		  }
-		   
-		   c_num += 1;
-		   s_pos += 3;
-	  } else{
+		  pos += 1;
+	  } else if (((string[pos]&0xF0) == 0xE0) && ((string[pos+1]&0xC0) == 0x80) && ((string[pos+2]&0xC0) == 0x80)) {
+			// Chinese characters Utf-8 encode format.	
+			if(offset > (horizontal_len - 16)){
+				b_center = FALSE;
+				curr_line_pos++;
+				if(curr_line_pos >= 2)	
+          return;
+				p0 += 256;	
+				offset = 0;					
+			}
+		  _font_read_one_Chinese_characters((I8U *)(string+pos), 32, font_data);
+		  memcpy(p0 + offset, font_data, 16);
+      memcpy(p0 + offset + 128, &font_data[16], 16);
+			offset += 16;
+		  pos += 3;
+					
+	  } else {
 			// Is not within the scope of the can display,continue to read the next.
-			s_pos++;
+			pos++;
 		}
 	}
 	
-	N_SPRINTF("[FONTS] display chinese number: %d,ascii number: %d ",ch_pos,as_pos);
-
-	if(d_len <= 128)
-		return d_len;
-	
-	return (0xff);
+	// Shift all the display to the middle
+	if (b_center) {
+		p0 = p_in;
+		p1 = p0+128;
+		ptr = (128 - offset)>>1;
+		
+		if (ptr > 0) {
+			if (height == 8) {
+				p0 += 127; p2 = p0 - ptr;
+			  for (i = 0; i < 128-ptr; i++) {
+				  *p0-- = *p2--;
+			  }
+			  for (; i < 128; i++) {
+				  *p0-- = 0;
+			  }					
+			} else {
+		   	p0 += 127; p2 = p0 - ptr;
+			  p1 += 127; p3 = p1 - ptr;
+			  for (i = 0; i < 128-ptr; i++) {
+				  *p0-- = *p2--;
+				  *p1-- = *p3--;
+			  }
+			  for (; i < 128; i++) {
+				  *p0-- = 0;
+				  *p1-- = 0;
+			  }				
+			}
+		}
+	}	
 }
 
 /**@brief Function for loading ota percent characters.
@@ -250,32 +211,110 @@ I8U FONT_load_characters(I8U *ptr, char *data, I8U height, BOOLEAN b_center)
  */
 void FONT_load_ota_percent(I8U *ptr, I8U percent)
 {
-  I8U	ten,single;
-	I8U pos_1,pos_2;
+  I8U	ten, single;
+	I8U pos_1, pos_2;
+  I8U *p0;
+	const I8U *pin;
+
+  p0 = ptr;
+	pin = font_content;
 	
 	if(percent >= 99)
 		percent = 99;
 	
-	if(percent <= 9){
+	if(percent <= 9) {
 		pos_1 = percent*16;
-		memcpy(&ptr[52],&font_content[pos_1],8);
-		memcpy(&ptr[180],&font_content[pos_1+8],8);
-		memset(&ptr[60],0,8);
-		memset(&ptr[188],0,8);
-		memcpy(&ptr[68],&font_content[160],8);
-		memcpy(&ptr[196],&font_content[168],8);	
-	}else{
+		memcpy(p0 + 52, pin + pos_1, 8);
+		memcpy(p0 + 180, pin + pos_1 +8, 8);
+		memset(p0 + 60, 0, 8);
+		memset(p0 + 188, 0, 8);
+		memcpy(p0 + 68, pin + 160, 8);
+		memcpy(p0 + 196, pin + 168, 8);	
+	} else {
 		ten = percent/10;
 		single = percent%10;
 		pos_1 = ten*16; 
 		pos_2 = single*16; 
-		memcpy(&ptr[48],&font_content[pos_1],8);
-		memcpy(&ptr[176],&font_content[pos_1+8],8);	
-		memcpy(&ptr[56],&font_content[pos_2],8);
-		memcpy(&ptr[184],&font_content[pos_2+8],8);		
-		memset(&ptr[64],0,8);
-		memset(&ptr[192],0,8);	
-		memcpy(&ptr[72],&font_content[160],8);
-		memcpy(&ptr[200],&font_content[168],8);				
+		memcpy(p0 + 48,pin + pos_1, 8);
+		memcpy(p0 + 176, pin + pos_1 +8, 8);	
+		memcpy(p0 + 56, pin + pos_2, 8);
+		memcpy(p0 + 184, pin + pos_2 +8, 8);		
+		memset(p0 + 64, 0, 8);
+		memset(p0 + 192, 0, 8);	
+		memcpy(p0 + 72, pin + 160, 8);
+		memcpy(p0 + 200, pin + 168, 8);				
 	}	
+}
+
+I8U FONT_get_string_display_depth(char *string)
+{
+	I8U  curr_offset=0, curr_line_pos=0;
+	I8U  pos=0;
+  I8U  sting_index=0;
+	
+	while(pos < 128)
+	{
+		if(string[pos] == '\0')
+		  break;
+
+		if((string[pos] >= 0x20)&&(string[pos] <= 0x7e)) {
+		  // ASCII code encode format.
+			if(curr_offset >= 112) {
+				curr_offset = 0;
+				curr_line_pos++;
+				if ((curr_line_pos%2) == 0) {
+			    cling.ui.string_pos_buf[sting_index++] = pos;
+		    }					
+		  }	
+      curr_offset += 8;
+			pos += 1;
+		} else if (((string[pos]&0xF0) == 0xE0)&&((string[pos+1]&0xC0) == 0x80)&&((string[pos+2]&0xC0) == 0x80)) {
+		  // Chinese characters Utf-8 encode format.
+			if(curr_offset >= 104) {
+				curr_offset = 0;
+				curr_line_pos++;
+				if ((curr_line_pos%2) == 0) {
+			    cling.ui.string_pos_buf[sting_index++] = pos;
+		    }	
+		  }	
+			curr_offset += 16;
+			pos += 3;
+		}
+		else {
+			// Is not within the scope of the can display,continue to read the next.
+			pos++;		
+		}		
+	}
+	
+	if (curr_offset > 0)
+		curr_line_pos ++;
+	
+	return ((curr_line_pos+1)>>1);	
+}
+
+I16U FONT_get_string_display_len(char *string)
+{
+	I16U  offset=0;
+	I8U   pos=0;
+	
+	while(pos < 128)
+	{
+		if (string[pos] == '\0')
+		  break;
+
+		if ((string[pos] >= 0x20)&&(string[pos] <= 0x7e)) {
+		  // ASCII code encode format.
+      offset += 8;
+			pos += 1;
+		} else if (((string[pos]&0xF0) == 0xE0)&&((string[pos+1]&0xC0) == 0x80)&&((string[pos+2]&0xC0) == 0x80)) {
+		  // Chinese characters Utf-8 encode format.
+			offset += 16;
+			pos += 3;
+		}
+		else {
+			// Is not within the scope of the can display,continue to read the next.
+			pos++;		
+		}
+	}
+	return offset;
 }

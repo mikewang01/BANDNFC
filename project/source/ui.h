@@ -106,9 +106,9 @@ enum {
 };
 
 enum {
-	FONTS_TYPE_ENGLISH,
-	FONTS_TYPE_SIMPLE_CHINESE,
-	FONTS_TYPE_TRADITIONAL_CHINESE
+	LANGUAGE_TYPE_ENGLISH=0,
+	LANGUAGE_TYPE_SIMPLE_CHINESE,
+	LANGUAGE_TYPE_TRADITIONAL_CHINESE
 };
 
 #define FRAME_DEPTH_CALORIES 7
@@ -147,10 +147,15 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U frame_next_idx;
 	
 	// Vertical switching
-	I8U level_1_index;
+	I8U vertical_index;
+	
+	// App notific index
+	I8U app_notific_index;
 	
 	// Page index
-	I8U level_2_index;
+	I8U notif_detail_index;
+	
+  I8U string_pos_buf[5];	
 	
 	// Icon flashing
 	BOOLEAN clock_sec_blinking;
@@ -241,6 +246,7 @@ enum {
 	UI_BOTTOM_MODE_DELTA_DATE_BACKWARD,
 	UI_BOTTOM_MODE_FIRMWARE_VER,
 	UI_BOTTOM_MODE_2DIGITS_INDEX,
+	UI_BOTTOM_MODE_APP_NOTIFIC_2DIGITS_INDEX,	
 	UI_BOTTOM_MODE_MAX,
 	UI_BOTTOM_MODE_MIN,
 	UI_BOTTOM_MODE_OK,
