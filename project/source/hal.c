@@ -870,7 +870,7 @@ void HAL_init(void)
 #endif
 
 	// UV sensor initialization
-#ifdef _ENABLE_UV_
+#ifdef _CLINGBAND_UV_MODEL_
 	UV_Init();
 #endif
 

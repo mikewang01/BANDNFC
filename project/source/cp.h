@@ -91,6 +91,7 @@ enum {
 	CP_MSG_TYPE_SOS_MESSAGE,               
 	CP_MSG_TYPE_SET_LANGUAGE,              // 25
 	CP_MSG_TYPE_SET_USER_PROFILE, 
+	CP_MSG_TYPE_PHONE_FINDER_MESSAGE,
 };
 
 typedef struct tagCP_PACKET {
@@ -190,13 +191,13 @@ typedef struct tagCP_CTX {
 
 void CP_API_received_pkt(BYTE *data);
 void CP_state_machine_update(void);
-void CP_create_streaming_second_msg( void );
 void CP_create_streaming_daily_msg( void );
 BOOLEAN CP_create_streaming_minute_msg(I32U space_size);
 BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size);
 void CP_create_register_rd_msg(void);
 void CP_create_auth_stat_msg(void);
 void CP_create_sos_msg(void);
+void CP_create_phone_finder_msg(void);
 
 #endif // __CP_API_HEADER__
 /** @} */

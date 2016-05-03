@@ -22,11 +22,7 @@
 #include "main.h"
 #include "uicoTouch.h"
 
-//#define UICO_FORCE_BURN_FIRMWARE
-//#define UICO_INCLUDE_FIRMWARE_BINARY
-#ifdef UICO_INCLUDE_FIRMWARE_BINARY
 #include "uicoData.h"
-#endif
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //
@@ -283,6 +279,7 @@ static void _write_clear_response()
     _i2c_main_write(buf, 1);
 }
 #endif
+
 static void _write_start_acknowledge(I8U *buf)
 {
     // Write Start Acknowledge (0x20)
@@ -325,6 +322,7 @@ void UICO_dbg_write_read(I8U *obuf, I8U len, I8U *ibuf)
 void GPIO_interrupt_handle(void);
 bool uico_touch_is_floating_calibration_sucessfully(void);
 #define MAX_CYCLES_WAITING_FOR_CALIBRATION_RESPONSE  2000
+
 bool uico_touch_ic_floating_calibration_start()
 {
 
@@ -438,7 +436,7 @@ void UICO_set_power_mode(UICO_POWER_MODE mode)
     _i2c_main_write(buf, 2);
 }
 
-#ifdef UICO_INCLUDE_FIRMWARE_BINARY
+#ifdef UICO_INCLUDE_FIRMWARE_BINARY_UPDATE_ENABLE
 static void _setup_buffer(I8U* dest, I32S start_byte, I32S length, unsigned char *s)
 {
     I32S i;
@@ -640,7 +638,7 @@ static I32S _try_firmware_update()
         cling.whoami.touch_ver[1] = data[11];
         cling.whoami.touch_ver[2] = data[18];
 
-#ifdef UICO_INCLUDE_FIRMWARE_BINARY
+#ifdef UICO_INCLUDE_FIRMWARE_BINARY_UPDATE_ENABLE
         // Now look in the box and check software versions.
         //
         // *** NOTE: We don't check if the version # is going UP.  This check will let any non-matching file burn.
@@ -672,16 +670,16 @@ static I32S _try_firmware_update()
         }
 #endif
 
-        _execute_bootloader(uico_binary_lenth, s);
+        _execute_bootloader(uico_binary_lenth, (unsigned char*)s);
 
         SYSTEM_reboot();
 #else
         return 0;
 #endif
     } else {
-#if ((defined UICO_FORCE_BURN_FIRMWARE) || (defined UICO_INCLUDE_FIRMWARE_BINARY)) 
-        N_SPRINTF("[UICO] uico ic has been bricked force to update it .");
-        _execute_bootloader(uico_binary_lenth, s);
+#if ((defined UICO_FORCE_BURN_FIRMWARE) || (defined UICO_INCLUDE_FIRMWARE_BINARY_UPDATE_ENABLE)) 
+        Y_SPRINTF("[UICO] uico ic has been bricked force to update it .");
+        _execute_bootloader(uico_binary_lenth, (unsigned char*)s);
         SYSTEM_reboot();
 #endif
     }
@@ -1118,8 +1116,7 @@ int read_data_from_uico_touch(uint8_t *buffer_p, uint16_t rx_lenth)
 
 #else
     uint8_t *buffer = buffer_p; //[100];
-
-    uint8_t i = 0;
+	
     if(buffer == NULL) {
         return  false;
     }
@@ -1164,7 +1161,6 @@ int read_unkown_lenth_from_uico_touch(uint8_t *buffer_p, uint16_t *rx_lenth)
 #else
     uint8_t *buffer = buffer_p; //[100];
 
-    uint8_t i = 0;
     if(buffer == NULL) {
         return  false;
     }

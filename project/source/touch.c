@@ -237,7 +237,7 @@ void TOUCH_gesture_check(void)
 	
 	// get gesture
 	//
-	Y_SPRINTF("[TOUCH] Interrupt status (%d): %d", CLK_get_system_time(), int_pin);
+	N_SPRINTF("[TOUCH] Interrupt status (%d): %d", CLK_get_system_time(), int_pin);
 	
 	//
 	// Gesture byte definition -

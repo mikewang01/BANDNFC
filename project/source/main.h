@@ -15,12 +15,6 @@
 
 //#define _CLINGBAND_UV_MODEL_
 
-#ifdef _CLINGBAND_UV_MODEL_
-
-#define _ENABLE_UV_
-
-#endif
-
 // 
 // Global device id address
 //
@@ -236,10 +230,11 @@ typedef struct tagCLING_MAIN_CTX {
 	
 	// Homekey state
 	HOMEKEY_CLICK_STAT key;
-	
+#ifdef _CLINGBAND_UV_MODEL_
 	// uv index
 	UV_CTX uv;
-	
+#endif
+
 } CLING_MAIN_CTX;
 
 // CLING main context

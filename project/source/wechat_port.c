@@ -39,7 +39,7 @@ uint32_t wechat_get_step_count()
 {
     uint32_t i = 0;
     TRACKING_get_activity(0, TRACKING_STEPS, &i);
-    Y_SPRINTF("[wechat port] get steps count = %d", i);
+    N_SPRINTF("[wechat port] get steps count = %d", i);
     return i;
 }
 /*****************************************************************************
@@ -274,15 +274,15 @@ void get_mac_addr(uint8_t *p_mac_addr)
     error_code = sd_ble_gap_address_get(&mac_addr_tmp);
     APP_ERROR_CHECK(error_code);
 #ifdef CATCH_LOG
-    Y_SPRINTF("\r\n error:%d", error_code);
-    Y_SPRINTF("\r\n get mac addr");
+    N_SPRINTF("\r\n error:%d", error_code);
+    N_SPRINTF("\r\n get mac addr");
 #endif
     uint8_t *d = mac_addr_tmp.addr;
     for ( uint8_t i = 6; i > 0;) {
         i--;
         p_mac_addr[5 - i] = d[i];
 #ifdef CATCH_LOG
-        Y_SPRINTF ( ":%02x", d[i]);
+        N_SPRINTF ( ":%02x", d[i]);
 #endif
     }
 #ifdef CATCH_LOG
@@ -340,7 +340,9 @@ uint16_t  wechat_ble_evt_dispatch(ble_evt_t * p_ble_evt)
 uint16_t  wechat_init(void)
 {
     wehchat_resource_init();
+		app_layer_obtain_system_data_call_back = app_layer_obtain_system_data_call_back;
+		app_layer_upload_stream_call_back = app_layer_upload_stream_call_back;
     return TRUE;
 }
-
+ 
 

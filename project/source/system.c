@@ -134,7 +134,9 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 	twentyCharDevID[2] = 'C'; // Cling
 #ifdef _CLINGBAND_NFC_MODEL_
 	twentyCharDevID[3] = 'N'; // NFC Band
-#else
+#endif
+
+#ifdef _CLINGBAND_UV_MODEL_
 	twentyCharDevID[3] = 'B'; // UV Band
 #endif
 	
@@ -401,9 +403,10 @@ static void _startup_logging()
 
 void SYSTEM_init(void)
 {
-	I16U page_erased = 0;
-//				page_erased = FLASH_erase_all(TRUE);
-
+#if 0 // Enable it if wiping off everything on the Flash
+	FLASH_erase_all(TRUE);
+#endif
+	
 	// Start RTC timer
 	RTC_Start();
 			
@@ -418,16 +421,14 @@ void SYSTEM_init(void)
 	{
 		// Erase Nor Flash if device is not authorized or File system undetected
 		if (LINK_is_authorized()) {
-			page_erased = FLASH_erase_all(FALSE);
-
+			FLASH_erase_all(FALSE);
 			// Print out the amount of page that gets erased
-			Y_SPRINTF("[MAIN] No FAT, With Auth, erase %d blocks (4 KB) ", page_erased);
+			Y_SPRINTF("[MAIN] No FAT, With Auth ");
 		} else {
-			// If this is not a authorized device, erase auth info section and critical info section.
-			page_erased = FLASH_erase_all(TRUE);
+			FLASH_erase_all(TRUE);
 			
 			// Print out the amount of page that gets erased
-			Y_SPRINTF("[MAIN] No FAT, No Auth, erase %d blocks (4 KB) ", page_erased);
+			Y_SPRINTF("[MAIN] No FAT, No Auth");
 		}
 		
 		// Extra latency before initializing file system (Erasure latency: 50 ms)
@@ -438,15 +439,13 @@ void SYSTEM_init(void)
 		FAT_clear_fat_and_root_dir();
 		
 	} else if (!LINK_is_authorized()) {
-		page_erased = FLASH_erase_application_data(TRUE);
-		
-		// Extra latency before initializing file system (Erasure latency: 50 ms)
-		BASE_delay_msec(50);
-	  		
-		// Print out the amount of page that gets erased
-		Y_SPRINTF("[MAIN] YES FAT, No AUTH, erase %d blocks (4 KB) ", page_erased);
+			FLASH_erase_application_data(TRUE);
+			// Extra latency before initializing file system (Erasure latency: 50 ms)
+			BASE_delay_msec(50);
+			// Print out the amount of page that gets erased
+			Y_SPRINTF("[MAIN] YES FAT, No AUTH");		
 	} else {
-		Y_SPRINTF("[MAIN] YES FAT, YES AUTH, erase %d blocks (4 KB) ", page_erased);
+		Y_SPRINTF("[MAIN] YES FAT, YES AUTH");
 	}
 	
 	// Init the file system

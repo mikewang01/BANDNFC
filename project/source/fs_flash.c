@@ -419,6 +419,7 @@ I16U FLASH_erase_application_data(BOOLEAN b_erase_auth)
 	I32U addr = 0;
 	
 	if (!b_erase_auth) {
+		N_SPRINTF("[FLASH] Erase %d application blocks (4 KB) ", page_end);
 		// user doesn't want to erase auth, we go return (not erasue any data on the Flash)
 		return page_end;
 	} 
@@ -431,7 +432,9 @@ I16U FLASH_erase_application_data(BOOLEAN b_erase_auth)
 	
 	N_SPRINTF("+++ erase application data: %d, %d", page_end, addr);
 	_core_erase(page_end, addr);
-	
+		
+	N_SPRINTF("[FLASH] Erase %d application blocks (4 KB) ", page_end);
+
 	return page_end;
 }
 
@@ -441,7 +444,9 @@ I16U FLASH_erase_all(BOOLEAN b_erase_auth)
 
 	page_erased = FLASH_erase_file_system();
 	page_erased += FLASH_erase_application_data(b_erase_auth);
-	
+					
+	N_SPRINTF("[FLASH] Erase %d blocks (4 KB) ", page_erased);
+
 	return page_erased;
 }
 

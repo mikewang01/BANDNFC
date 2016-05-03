@@ -940,7 +940,7 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		FONT_load_ota_percent(cling.ui.p_oled_up+128,cling.ota.percent);
 		len = 0;
 	} else if (mode == UI_MIDDLE_MODE_UV_IDX) {
-#ifdef _ENABLE_UV_
+#ifdef _CLINGBAND_UV_MODEL_
   	integer = cling.uv.max_UI_uv;
 		len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
 #endif
@@ -1508,7 +1508,14 @@ static void _render_clock(SYSTIME_CTX time)
 	I8U string[64];
 	I8U len;
 
-	len = sprintf((char *)string, "%d:%02d",time.hour, time.minute);
+	if (cling.ui.clock_sec_blinking) {
+		cling.ui.clock_sec_blinking = FALSE;
+		len = sprintf((char *)string, "%d:%02d",time.hour, time.minute);
+	} else {
+		cling.ui.clock_sec_blinking = TRUE;
+		len = sprintf((char *)string, "%d %02d",time.hour, time.minute);		
+	}
+
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 

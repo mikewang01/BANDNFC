@@ -1,6 +1,7 @@
 
 #include "main.h"
 
+#ifdef _CLINGBAND_UV_MODEL_
 #define UV_MEASURING_PERIOD_FOREGROUND 1
 #define UV_MEASURING_PERIOD_BACKGROUND 100
 
@@ -385,3 +386,4 @@ void UV_state_machine()
 	}
 }
 
+#endif

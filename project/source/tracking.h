@@ -165,7 +165,6 @@ BOOLEAN TRACKING_is_not_active(void);
 void TRACKING_algorithms_proc(ACCELEROMETER_3D A);
 void TRACKING_initialization(void);
 void TRACKING_data_logging(void);
-void TRACKING_get_minute_delta(MINUTE_TRACKING_CTX *pminute);
 
 void TRACKING_exit_low_power_mode(BOOLEAN b_force);
 void TRACKING_total_data_load_file(void);

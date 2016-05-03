@@ -200,8 +200,8 @@ void GPIO_twi_init(I8U twi_master_instance)
 		const nrf_drv_twi_t p_twi1_instance = NRF_DRV_TWI_INSTANCE(1);
 		
 		twi_config.frequency = NRF_TWI_FREQ_400K;
-		twi_config.scl = 24;
-		twi_config.sda = 26;
+		twi_config.scl = GPIO_TWI1_CLK;
+		twi_config.sda = GPIO_TWI1_DATA;
 		twi_config.interrupt_priority = APP_IRQ_PRIORITY_LOW;
 		error_code = nrf_drv_twi_init(&p_twi1_instance, &twi_config, NULL, NULL);
 		APP_ERROR_CHECK(error_code);

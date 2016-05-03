@@ -406,14 +406,16 @@ static void _create_dev_info_msg()
     t->msg[t->msg_filling_offset++] = cling.system.reset_count & 0xff;
 
 #ifdef _CLINGBAND_NFC_MODEL_
-    // Add model number (Clingband NFC fixed model number: AU0703)
+    // Add model number (Clingband NFC fixed model number: AU0923)
+		// Created on September 23, 2015
     t->msg[t->msg_filling_offset++] = 'A';
     t->msg[t->msg_filling_offset++] = 'U';
     t->msg[t->msg_filling_offset++] = '0';
     t->msg[t->msg_filling_offset++] = '9';
     t->msg[t->msg_filling_offset++] = '2';
     t->msg[t->msg_filling_offset++] = '3';
-#else
+#endif
+#ifdef _CLINGBAND_UV_MODEL_
     // Add model number (Clingband UV fixed model number: AU0703)
     t->msg[t->msg_filling_offset++] = 'A';
     t->msg[t->msg_filling_offset++] = 'U';
@@ -424,7 +426,7 @@ static void _create_dev_info_msg()
 #endif
 
     // Amount of minute streaming files
-		t->msg[t->msg_filling_offset++] = FILE_exists_with_prefix((I8U *)"epoch", 5);
+    t->msg[t->msg_filling_offset++] = FILE_exists_with_prefix((I8U *)"epoch", 5);
 
 		// Valid mac address
 		sd_ble_gap_address_get(&mac_addr_t);
@@ -526,7 +528,7 @@ static void _create_daily_activity_info_msg()
     t->msg[t->msg_filling_offset++] = (day_streaming.temperature >> 8) & 0xff;
     t->msg[t->msg_filling_offset++] = (day_streaming.temperature & 0xff);
     // UV index
-#ifdef _ENABLE_UV_
+#ifdef _CLINGBAND_UV_MODEL_
     t->msg[t->msg_filling_offset++] = (cling.uv.max_uv + 5) / 10;
 #else
     t->msg[t->msg_filling_offset++] = 0;
@@ -1239,6 +1241,35 @@ void CP_create_sos_msg()
 
 }
 
+void CP_create_phone_finder_msg()
+{
+    CP_CTX *g = &cling.gcp;
+    CP_TX_CTX *t = &g->tx;
+
+    // Creat a new message
+    t->msg_id ++;
+
+    // Get message length
+    t->msg_len = CP_PAYLOAD_SIZE;
+
+    // Single packet messagef
+    t->pkt.uuid[0] = (UUID_TX_SP >> 8) & 0xff;
+    t->pkt.uuid[1] = UUID_TX_SP & 0xff;
+
+    // Filling up the message buffer
+    t->msg_filling_offset = 0;
+    t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_PHONE_FINDER_MESSAGE;
+
+    // Create packet payload
+    // Pending message delivery
+    t->msg_type = CP_MSG_TYPE_PHONE_FINDER_MESSAGE;
+    t->state = CP_TX_PACKET_PENDING_SEND;
+    g->state = CP_MCU_STAT_TX_COMPLETE;
+
+    memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
+
+}
+
 void CP_create_register_rd_msg()
 {
     CP_CTX *g = &cling.gcp;
@@ -1357,6 +1388,8 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 
     // skin touch (1B)
     pkt[filling_offset++] = pminute->skin_touch_pads;
+		
+    N_SPRINTF("[CP] Sleep state: %02x, skin touch: %02x", pminute->sleep_state, pminute->skin_touch_pads);
 
     // Activity count (2B)
     pkt[filling_offset++] = (pminute->activity_count >> 8) & 0xff;
@@ -1674,25 +1707,6 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
     return TRUE;
 }
 
-void CP_create_streaming_second_msg( void )
-{
-    CP_TX_STREAMING_CTX *s = &cling.gcp.streaming;
-    MINUTE_TRACKING_CTX minute;
-
-    // If there is already a pending activity streaming packet,
-    // ignore further streaming request until current one is sent out.
-    //
-    if (s->pending)
-        return;
-
-    // Make sure minute data has gone out
-    TRACKING_get_minute_delta(&minute);
-
-    // Filling up the single packet message
-    _fillup_streaming_packet(s->pkt, &minute, CP_MSG_TYPE_STREAMING_SECOND, 0);
-
-    s->pending = TRUE;
-}
 
 void CP_create_streaming_daily_msg( void )
 {
@@ -1761,9 +1775,13 @@ void CP_create_streaming_daily_msg( void )
 
     // skin touch (1B)
     pkt[filling_offset++] = TOUCH_is_skin_touched();
-
+#ifdef _CLINGBAND_UV_MODEL_
     // UV index
     pkt[filling_offset++] = (cling.uv.max_uv + 5) / 10;
+#else
+    pkt[filling_offset++] = 0;
+#endif
+
     s->pending = TRUE;
 }
 

@@ -26,9 +26,9 @@ static void _start_OTA()
     /*=================check out crc to make sure the data in flash has been writen tolally correct=========================*/
     uint16_t crc16_origin = fc->crc;
     uint16_t crc16_check = file_check_crc(fc, fc->size);
-    Y_SPRINTF("[OTA] original file crc = %x,  crc16_check = %x ", crc16_origin , crc16_check);
+    N_SPRINTF("[OTA] original file crc = %x,  crc16_check = %x ", crc16_origin , crc16_check);
     if(crc16_origin == crc16_check) {
-        Y_SPRINTF("[OTA] nor flash crc checkout sucessfully");
+        N_SPRINTF("[OTA] nor flash crc checkout sucessfully");
     } else {
         Y_SPRINTF("[OTA] failed to checkout flash crc ");
         /*skip */
@@ -45,7 +45,7 @@ static void _start_OTA()
         /*skip following steps*/
         goto failed;
     }
-    Y_SPRINTF("[OTA] start address: %d", data);
+    N_SPRINTF("[OTA] start address: %d", data);
 
     // 2. File length
     config = (uint32_t *)APP_UPDATE_FLAG_FILE_LEN;
@@ -129,7 +129,7 @@ BOOLEAN OTA_if_enabled()
 #if 0
         // Switch to fast connection mode to exchange data (no need, just
         if (HAL_set_conn_params(TRUE)) {
-            Y_SPRINTF("OTA update with FAST Connection interval");
+            N_SPRINTF("OTA update with FAST Connection interval");
         }
 #endif
         return TRUE;

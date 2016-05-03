@@ -277,7 +277,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 			UI_turn_on_display(UI_STATE_CLOCK_GLANCE, 2000);
 		} else {
 			
-			if (t_curr > (b->charging_timebase + 60000)) {
+			if (t_curr > (b->charging_timebase + BATTERY_CHARGING_SPEED)) {
 				b->charging_timebase = t_curr;
 				
 				if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] < 100) {

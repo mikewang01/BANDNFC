@@ -477,17 +477,14 @@ int main(void)
         PPG_state_machine();
 #endif
 
-#ifdef _ENABLE_UV_
+#ifdef _CLINGBAND_UV_MODEL_
         // UV index measure
         UV_state_machine();
 #endif
 
         THERMISTOR_state_machine();
-#if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
-        // Debug processing
-        DBG_event_processing();
-#endif
-
+	
+				// Wechat fitness routine
 #ifdef __WECHAT_SUPPORTED__
         wechat_sports_main_process();
 #endif
