@@ -1515,7 +1515,7 @@ static void _render_clock(SYSTIME_CTX time)
 		cling.ui.clock_sec_blinking = TRUE;
 		len = sprintf((char *)string, "%d %02d",time.hour, time.minute);		
 	}
-
+	
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 
