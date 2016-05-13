@@ -459,20 +459,6 @@ void SYSTEM_init(void)
 	//
 	_critical_info_restored();
 	
-		// Initialize DM
-#ifdef _ENABLE_ANCS_
-	if (!LINK_is_authorized()){
-		// Delete	bond infomation.
-		Y_SPRINTF("[MAIN] device manger init delete bond infomation");
-	  HAL_device_manager_init(TRUE);
-
-	}else{
-		// Reserve	bond infomation.
-		Y_SPRINTF("[MAIN] device manger init reserve bond infomation");
-		HAL_device_manager_init(FALSE);	
-	}	
-#endif
-	
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();

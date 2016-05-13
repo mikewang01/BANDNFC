@@ -36,11 +36,16 @@ typedef enum
 
 #define ANCS_UUID_SERVICE                            0xF431  /**< 16-bit service UUID for the Apple Notification Center Service. */
 
+#define ANCS_START_SERVICE_DISCOVERY_DELAY_TIME      1000    /*1s*/ 
 #define ANCS_FILTERING_OLD_MSG_DELAY_TIME            10000   /*10s*/ 
 #define ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME    60000   /*60s*/  
 #define ANCS_SUPPORT_MAX_TITLE_LEN                   64      /*64 byte*/
 #define ANCS_SUPPORT_MAX_MESSAGE_LEN                 192     /*192 byte*/
 #define ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT           15000   /*15s*/
+
+#define ANCS_BOND_STATE_NUKNOW_FLAG                  0x01   
+#define ANCS_BOND_STATE_SUCCESSED_FLAG               0x02                   
+#define ANCS_BOND_STATE_FAIL_FLAG                    0x04
 typedef enum
 {
   PARSE_STAT_COMMAND_ID,
@@ -69,7 +74,8 @@ typedef enum
 
 enum
 {
-  BLE_ANCS_STATE_IDLE,   	
+  BLE_ANCS_STATE_IDLE,   
+  BLE_ANCS_STATE_START_DISCOVER,  		
   BLE_ANCS_STATE_WAITING_PARSE_COMPLETE,                   
   BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE        
 };
@@ -97,6 +103,11 @@ typedef struct tagANCS_CONTEXT {
   BOOLEAN start_record_time;	
 	
 	I32U parse_time;
+	
+	// Pair state
+	BOOLEAN bond_flag;
+	
+	I32U dis_time;
 } ANCS_CONTEXT;
 
 

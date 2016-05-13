@@ -10,7 +10,6 @@
 
 #ifndef _CLING_PC_SIMULATION_	
 #include "device_manager.h"
-#include "ancs.h"
 #endif
 #include "standard_types.h"
 
@@ -29,5 +28,5 @@ void HAL_advertising_start(void);
 BOOLEAN HAL_set_conn_params(BOOLEAN b_fast);
 BOOLEAN HAL_set_slow_conn_params(void);
 void HAL_disconnect_for_fast_connection(void);
-void HAL_delete_bond_info(void);
+void HAL_start_ancs_service_discovery(void);
 #endif

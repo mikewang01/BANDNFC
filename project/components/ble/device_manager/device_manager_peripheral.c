@@ -13,8 +13,7 @@
 #include "pstorage.h"
 #include "ble_hci.h"
 #include "app_error.h"
-#include "hal.h"
-#include "ancs.h"
+#include "main.h"
 
 #if defined ( __CC_ARM )
     #ifndef __ALIGN
@@ -2691,13 +2690,15 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
 
                     handle.device_id                        = device_index;
                     m_connection_table[index].bonded_dev_id = device_index;
+ #ifdef _ENABLE_ANCS_											
+									  cling.ancs.bond_flag = ANCS_BOND_STATE_SUCCESSED_FLAG;
+ #endif										
                 }
                 else
                 {
-					          #ifdef _ENABLE_ANCS_
-					          HAL_delete_bond_info();
-					          #endif
-									
+ #ifdef _ENABLE_ANCS_									
+									  cling.ancs.bond_flag = ANCS_BOND_STATE_FAIL_FLAG;
+ #endif									
                     DM_LOG("[DM]: Security parameter request failed, reason 0x%08X.\r\n", err_code);
                     event_result = err_code;
                     notify_app   = true;

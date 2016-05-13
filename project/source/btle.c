@@ -242,14 +242,14 @@ static void _on_disconnect()
 	
 	// Stop notifying vibration
 	NOTIFIC_stop_notifying();
-	
+		
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FAST_CONNECT)
 		return;
 	
 	if (!r->disconnect_evt) {
 //		NOTIFIC_start_idle_alert();
 	}
-	
+
 	if (OTA_if_enabled()) {
 		
 		N_SPRINTF("[BTLE] reboot if BLE disconnected in middle of OTA! ");
@@ -601,9 +601,26 @@ static void _disconnect_clean_up()
 		return;
 	}
 	
+	if (r->disconnect_evt & BLE_DISCONN_EVT_BONDMGR_ERROR) {
+		Y_SPRINTF("[BTLE] disconn event: bond error");
+		
+		// clear factory reset flag
+		r->disconnect_evt &= ~BLE_DISCONN_EVT_BONDMGR_ERROR;		
+		
+		// Clear bond information
+    HAL_device_manager_init(TRUE);		
+		
+		cling.ancs.bond_flag = ANCS_BOND_STATE_NUKNOW_FLAG;
+		return;
+	}
+		
 	// Factory reset
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FACTORY_RESET) {
 		Y_SPRINTF("[BTLE] disconn event: factory reset");
+		
+		// Clear bond information
+		HAL_device_manager_init(TRUE);		
+		
 		// De-authorize
 		LINK_deauthorize();
 

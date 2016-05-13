@@ -107,7 +107,7 @@ static dm_handle_t               m_peer_handle;                            /**< 
 #endif
 #ifdef _ENABLE_ANCS_
 static  ble_db_discovery_t        m_ble_db_discovery;                       /**< Structure used to identify the DB Discovery module. */
-APP_TIMER_DEF(m_ancs_pair_timer_id);                     /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
+APP_TIMER_DEF(m_ancs_pair_timer_id);                                        /**< Security request timer. The timer lets us start pairing request if one does not arrive from the Central. */
 static  ble_uuid_t m_adv_uuids[] = {{ANCS_UUID_SERVICE, BLE_UUID_TYPE_VENDOR_BEGIN}}; /**< Universally unique service identifiers. */
 
 /* Security requirements for this application. */
@@ -127,15 +127,6 @@ ble_gap_sec_params_t m_ancs_sec_params = {
     .max_key_size = SEC_PARAM_MAX_KEY_SIZE
 };
 
-void HAL_delete_bond_info(void)
-{
-	if(BTLE_is_connected())
-		BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);
-	
-  HAL_device_manager_init(TRUE);
-}
-
-
 /**@brief Function for handling the security request timer time-out.
  *
  * @details This function is called each time the security request timer expires.
@@ -143,7 +134,7 @@ void HAL_delete_bond_info(void)
  * @param[in] p_context  Pointer used for passing context information from the
  *                       app_start_timer() call to the time-out handler.
  */
-static void _sec_req_timeout_handler(void * p_context)
+static void _ancs_pair_handler(void * p_context)
 {
 	dm_security_status_t status;
 	I32U err_code;
@@ -151,7 +142,11 @@ static void _sec_req_timeout_handler(void * p_context)
 	if(cling.gcp.host_type != HOST_TYPE_IOS)
 		return;
 
-	if(cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID) {
+  if (cling.ancs.bond_flag == ANCS_BOND_STATE_FAIL_FLAG) 
+		return;
+
+	if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID) {
+		
 		// Inquire current device whether has paired.
 		err_code = dm_security_status_req(&m_peer_handle, &status);
 		APP_ERROR_CHECK(err_code);
@@ -163,10 +158,20 @@ static void _sec_req_timeout_handler(void * p_context)
 			if(err_code == NRF_SUCCESS) {
 				// Pair successed.
 				Y_SPRINTF("[HAL] Successfully initiated authentication procedure.");
+				cling.ancs.bond_flag = ANCS_BOND_STATE_SUCCESSED_FLAG;
 			}
 			APP_ERROR_CHECK(err_code);
 		}
 	}
+}
+
+void HAL_start_ancs_service_discovery()
+{
+	I32U err_code;
+	
+	// Start discovery ancs service.
+	err_code = ble_db_discovery_start(&m_ble_db_discovery, cling.ble.conn_handle);
+	APP_ERROR_CHECK(err_code);
 }
 
 
@@ -178,30 +183,28 @@ static void _ancs_pair_req_timer_init(void)
 
 	err_code = app_timer_create(&m_ancs_pair_timer_id,
 															APP_TIMER_MODE_SINGLE_SHOT,
-															_sec_req_timeout_handler);
+															_ancs_pair_handler);
 	APP_ERROR_CHECK(err_code);
 }
-
-
-/**@brief Function for initializing the database discovery module.*/
-static void _ancs_service_discovery_init(void)
-{
-	I32U err_code;
-
-	err_code = ble_db_discovery_init();
-	APP_ERROR_CHECK(err_code);
-}
-
 
 #endif
-#ifndef _CLING_PC_SIMULATION_
 
+#ifndef _CLING_PC_SIMULATION_
 static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
         dm_event_t const  * p_event,
         ret_code_t        event_result)
 {
   I32U err_code;
 
+	if (cling.ancs.bond_flag == ANCS_BOND_STATE_FAIL_FLAG) {
+			
+	  if(BTLE_is_connected())
+		  BTLE_disconnect(BTLE_DISCONN_REASON_ANCS_DELETE_BOND);	
+			
+		cling.ble.disconnect_evt |= BLE_DISCONN_EVT_BONDMGR_ERROR;
+		return NRF_SUCCESS;
+  }
+			
   switch(p_event->event_id) {
 		
 		case DM_EVT_LINK_SECURED:
@@ -210,11 +213,11 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 			  APP_ERROR_CHECK(event_result);
 			
 #ifdef _ENABLE_ANCS_
-			if(cling.gcp.host_type == HOST_TYPE_IOS){
-        // Start discovery ancs service.
-				err_code = ble_db_discovery_start(&m_ble_db_discovery, cling.ble.conn_handle);
-				APP_ERROR_CHECK(err_code);
-			}
+	    if(cling.gcp.host_type == HOST_TYPE_IOS){
+				// Start do service discovery.
+        cling.ancs.state = BLE_ANCS_STATE_START_DISCOVER;
+				cling.ancs.dis_time = CLK_get_system_time();
+	    }		
 #endif
 			break;
 		}
@@ -229,6 +232,7 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 				// Start do pairing.
 				err_code = app_timer_start(m_ancs_pair_timer_id, SECURITY_REQUEST_DELAY, NULL);
 				APP_ERROR_CHECK(err_code);
+				Y_SPRINTF("[HAL] start ancs pair timer moudle");
 			}
 #endif
 			break;
@@ -813,12 +817,13 @@ static void _ble_init()
 
 	// BLE stack init, enable softdevice
   _ble_stack_init();
-
-	// Timer init
-	RTC_Init();
-		
+	
+	// Device manager init.
+  HAL_device_manager_init(FALSE);	
+	
 #ifdef _ENABLE_ANCS_
-  _ancs_service_discovery_init();
+  //Function for initializing the database discovery module.*/
+	ble_db_discovery_init();
 #endif
 
   _gap_params_init();
@@ -827,6 +832,7 @@ static void _ble_init()
   // ANCS service add
   ANCS_service_add();
 #endif
+	
   _services_init();
 
 #ifdef __WECHAT_SUPPORTED__
@@ -849,11 +855,14 @@ void HAL_init(void)
 	UART_disabled();
 #endif
  
+		// Timer init
+	RTC_Init();
+	
 	// BLE initialization
 	_ble_init();
 
 #ifdef _ENABLE_ANCS_
-	//ANCS pairing req initialization
+	// ANCS pairing req timer moudle initialization
 	_ancs_pair_req_timer_init();
 #endif
 

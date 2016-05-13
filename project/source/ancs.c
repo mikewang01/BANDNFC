@@ -681,8 +681,8 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
 	switch (evt_type)
 	{
 		case BLE_ANCS_EVT_NULL:
+			// No implementation needed.
 			break;
-		
 		case BLE_ANCS_EVT_DISCOVER_COMPLETE:
 		{
 			Y_SPRINTF("[ANCS] Apple Notification Service discovered on the server.");			
@@ -729,7 +729,6 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
 	}
 }
 
-
 /**@brief handling the Apple Notification Service client.*/
 void ANCS_state_machine(void)
 {
@@ -746,13 +745,22 @@ void ANCS_state_machine(void)
   {
 		case BLE_ANCS_STATE_IDLE:
 			break;
-		
+		case BLE_ANCS_STATE_START_DISCOVER:
+		{
+		  if (CLK_get_system_time() > (a->dis_time + ANCS_START_SERVICE_DISCOVERY_DELAY_TIME)) {
+		    HAL_start_ancs_service_discovery();	
+			  a->state = BLE_ANCS_STATE_IDLE;
+				Y_SPRINTF("[ANCS] start ancs service discovery");
+		  }
+		  break;		
+		}		
     case BLE_ANCS_STATE_WAITING_PARSE_COMPLETE:
-			  if (CLK_get_system_time() > (a->parse_time + ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT)) {
-					a->state = BLE_ANCS_STATE_IDLE;
-				}
+		{
+			if (CLK_get_system_time() > (a->parse_time + ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT)) {
+				a->state = BLE_ANCS_STATE_IDLE;
+			}
       break;
-		
+		}
 		case BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE:
 		{
 			Y_SPRINTF("[ANCS] Start store the specific content of notify.");	

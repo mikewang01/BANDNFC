@@ -74,9 +74,7 @@
 #include "sleep.h"
 #include "reminder.h"
 #include "notific.h"
-#ifdef _ENABLE_ANCS_
 #include "ancs.h"
-#endif
 #include "homekey.h"
 #include "ppg.h"
 
