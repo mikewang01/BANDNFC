@@ -1508,12 +1508,16 @@ static void _render_clock(SYSTIME_CTX time)
 	I8U string[64];
 	I8U len;
 
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
+  if (cling.ui.frame_index != UI_DISPLAY_VITAL_HEART_RATE)	{
+		if (cling.ui.clock_sec_blinking) {
+		  cling.ui.clock_sec_blinking = FALSE;
+		  len = sprintf((char *)string, "%d:%02d",time.hour, time.minute);
+	  } else {
+		  cling.ui.clock_sec_blinking = TRUE;
+		  len = sprintf((char *)string, "%d %02d",time.hour, time.minute);		
+	  }
+  } else {
 		len = sprintf((char *)string, "%d:%02d",time.hour, time.minute);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;
-		len = sprintf((char *)string, "%d %02d",time.hour, time.minute);		
 	}
 	
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
