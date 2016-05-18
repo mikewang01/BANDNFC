@@ -20,7 +20,8 @@
 
 #define BATTERY_MAXIMUM_CHARGING_TIME 5400 // 5400 Seconds -> 1.5 hours
 #define BATTERY_75_PERC_FULL_CHARGE 3600 // 3600 Seconds -> 1.0 hour
-#define BATTERY_CHARGING_SPEED 42000 // 42 Seconds one percent (charging speed)
+#define BATTERY_MINIMUM_CHARGING_TIME 2700 // 2700 Seconds -> 45 minutes
+#define BATTERY_CHARGING_SPEED 38000 // 38 Seconds one percent (charging speed)
 enum {
 	CHARGER_REMOVED,
 	CHARGER_FULL,

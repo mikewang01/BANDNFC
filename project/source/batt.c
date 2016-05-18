@@ -322,6 +322,12 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 			// Set to 100% if charger is removed.
 			if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] >= 99) {
 				cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 100;
+			} else if (b->charging_overall_time > BATTERY_MINIMUM_CHARGING_TIME) {
+				// if device has been charging over 30 minutes, and battery level is greater than 80%
+				// just force it set to 100 %
+				if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] > 80) {
+					cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 100;
+				}
 			}
 
 			if (b->state_switching_duration > 5) {
