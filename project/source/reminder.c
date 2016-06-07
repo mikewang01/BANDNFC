@@ -22,12 +22,12 @@
 #define REMINDER_VIBRATION_REPEAT_TIME 2
 #define SECOND_REMINDER_TIME 8
 
-//static BOOLEAN reminder_testing_flag = TRUE;
-
-void REMINDER_setup(I8U *msg)
+void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 {
 	I32U data[32];
 	I8U *pdata = (I8U*)data;
+	I8U *pmsg;
+	I8U i, a, b;
 
 	FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
 	BASE_delay_msec(50); // Latency before refreshing reminder space. (Erasure latency: 50 ms)
@@ -35,26 +35,55 @@ void REMINDER_setup(I8U *msg)
 	if (cling.reminder.total > 32)
 		cling.reminder.total = 32;
 
-  if (cling.reminder.total>0)
-		REMINDER_get_time_at_index(0);
-
-	memcpy(pdata, msg + 1, 64);
-	FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 64); // Maximum 32 entries
-	Y_SPRINTF("[CP] reminder update, len: %d", cling.reminder.total);
+	pmsg = msg + 1;
+  if (cling.reminder.total == 0) {
+		cling.reminder.ui_hh = 0xff;
+		cling.reminder.ui_mm = 0xff;
+		N_SPRINTF("[REMINDER] No reminder, set invalid hh/mm");
+	} else {
+		
+		memset(pdata, 0, 128);
+		
+		// Copy all the alarm clock, and set it to everyday
+		for (i = 0; i < cling.reminder.total; i++) {
+			if (b_daily) 
+				*pdata = *pmsg++;
+			else
+				*pdata++ = 0x7f;
+			//*pdata++ = *pmsg++;
+			//*pdata++ = *pmsg++;
+			a = *pmsg++;
+			b = *pmsg++;
+			*pdata++ = a;
+			*pdata++ = b;
+			if (i == 0) {
+				cling.reminder.ui_hh = a;
+				cling.reminder.ui_mm = b;
+			}
+			N_SPRINTF("[CP] reminder setup(%d), %d:%d", i, a, b);
+		}
+		pdata = (I8U *)data;
+		FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 128); // Maximum 32 entries
+	}
 	cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 }
 
 void REMINDER_set_next_reminder()
 {
-	I8U i, hour, minute;
+	I8U i, hour, minute, week, day;
 	BOOLEAN b_found = FALSE;
+	BOOLEAN b_first_alarm = FALSE;
 	I32U buffer[32];
 	I8U *data = (I8U *)buffer;
+	
+	cling.reminder.ui_hh = 0xff;
+	cling.reminder.ui_mm = 0xff;
 	
 	if (!LINK_is_authorized()) {
 		cling.reminder.b_valid = FALSE;
 		cling.reminder.hour = 0;
 		cling.reminder.minute = 0;
+		N_SPRINTF("[REMINDER] NOT authorized, set invalid hh/mm");
 		return;
 	}
 	
@@ -64,30 +93,47 @@ void REMINDER_set_next_reminder()
 			cling.reminder.b_valid = FALSE;
 			cling.reminder.hour = 0;
 			cling.reminder.minute = 0;
+			N_SPRINTF("[REMINDER] Weekend OFF mode, set invalid hh/mm");
 			return;
 		}
 	}
 	
 	if (cling.reminder.total) {
-		FLASH_Read_App(SYSTEM_REMINDER_SPACE_START, (I8U *)buffer, 64);
+		FLASH_Read_App(SYSTEM_REMINDER_SPACE_START, (I8U *)buffer, 128);
+		
+		// Get current day
+		day = 1 << cling.time.local.dow;
+		N_SPRINTF("[REMINDER] today is: 0x%02x, %d", day, cling.time.local.dow);
 
 		for (i = 0; i < cling.reminder.total; i++) {
+			week = *data++;
 			hour = *data++;
 			minute = *data++;
 			
-			Y_SPRINTF("[REMINDER] current time: %d:%d, reminder: %d:%d", cling.time.local.hour, cling.time.local.minute, hour, minute);
+			N_SPRINTF("[REMINDER] current time: %d:%d, reminder: %d:%d, %02x", 
+				cling.time.local.hour, cling.time.local.minute, hour, minute, week);
 
 			if (hour >= 24) break;
 			if (minute >= 60) break;
 			
-			if (hour == cling.time.local.hour) {
-				if (minute > cling.time.local.minute) {
-					b_found = TRUE;				
+			if (week & day) {
+				
+				if (!b_first_alarm) {
+					b_first_alarm = TRUE;
+					cling.reminder.ui_hh = hour;
+					cling.reminder.ui_mm = minute;
+					N_SPRINTF("[REMINDER] first reminder is set: %d:%d", hour, minute);
+
+				}
+				if (hour == cling.time.local.hour) {
+					if (minute > cling.time.local.minute) {
+						b_found = TRUE;				
+						break;
+					}
+				} else if (hour > cling.time.local.hour) {
+					b_found = TRUE;
 					break;
 				}
-			} else if (hour > cling.time.local.hour) {
-				b_found = TRUE;
-				break;
 			}
 		}
 	}
@@ -106,8 +152,8 @@ void REMINDER_set_next_reminder()
 		N_SPRINTF("[REMINDER] No new reminder is found");
 	}
 	
-	if (cling.reminder.total>0) {
-		REMINDER_get_time_at_index(0);
+	if (!b_first_alarm) {
+		N_SPRINTF("[REMINDER] NOT reminder found for today, set invalid hh/mm");
   }
 
 	N_SPRINTF("[REMINDER] Set next reminder - done");
@@ -142,7 +188,7 @@ void REMINDER_state_machine()
 		case REMINDER_STATE_IDLE:
 		{
 			if (_check_reminder()) {
-				Y_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+				N_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 				cling.reminder.state = REMINDER_STATE_ON;
 				// Reset vibration times
 				cling.reminder.vibrate_time = 0;
@@ -196,7 +242,7 @@ void REMINDER_state_machine()
 			if (t_curr > (cling.reminder.ts + REMINDER_SECOND_REMINDER_LATENCY)) {
 				if (cling.reminder.second_vibrate_time >= SECOND_REMINDER_TIME) {
 					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-					Y_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
+					N_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
 				} else {
 					N_SPRINTF("[REMINDER] second reminder on");
 					cling.reminder.state = REMINDER_STATE_ON;					
@@ -225,42 +271,67 @@ void REMINDER_state_machine()
 
 I8U REMINDER_get_time_at_index(I8U index)
 {
-	I8U new_idx, hh, mm;
+	I8U new_idx, hh, mm, i, week, day, total;
 	I32U i32_buf[32];
-	I8U *data;;
-
-	FLASH_Read_App(SYSTEM_REMINDER_SPACE_START, (I8U *)i32_buf, 64);
-
-	data = (I8U *)i32_buf;
-	new_idx = index;
-	N_SPRINTF("[REMINDER] maximum entry: %d, %d", cling.reminder.total, new_idx);
-	
-	if (cling.reminder.total) {
-		if (new_idx >= cling.reminder.total) {
-			N_SPRINTF("[REMINDER] reset entry: %d, %d", cling.reminder.total, new_idx);
-			new_idx = 0;
-		}
-		hh = data[new_idx<<1];
-		mm = data[(new_idx<<1)+1];
-
-    if (hh>=24 || mm>=60) {
-			cling.reminder.ui_hh = 0xff;
-			cling.reminder.ui_mm = 0xff;
-			return 0;
-	  }
-
-		cling.reminder.ui_hh = hh;
-		cling.reminder.ui_mm = mm;
+	I8U *data;
+	I8U alarm[64];
+	I8U *palarm;
 		
-		N_SPRINTF("[REMINDER] ui display: %d:%d", hh, mm);
-		
-		// In case that some rediculous number comes up, go reset
-	} else {
-		cling.reminder.ui_hh = 0xff;
-		cling.reminder.ui_mm = 0xff;
-		new_idx = 0;
+	// In case that no reminder is configure, go return
+	cling.reminder.ui_hh = 0xff;
+	cling.reminder.ui_mm = 0xff;
+	if (cling.reminder.total == 0) {
+		N_SPRINTF("[REMINDER] no reminder due to ZERO total");
+		return 0;
 	}
 	
+	// First we get Alarms for the day
+	FLASH_Read_App(SYSTEM_REMINDER_SPACE_START, (I8U *)i32_buf, 128);
+	
+	total = 0;
+	data = (I8U *)i32_buf;
+	palarm = alarm;
+
+	// Get correct day for alarm checkup
+	day = 1 << cling.time.local.dow;
+
+	for (i = 0; i < cling.reminder.total; i++) {
+		week = *data++;
+		hh = *data++;
+		mm = *data++;
+		if (week & day) {
+			*palarm++ = hh;
+			*palarm++ = mm;
+			total++;
+		}
+	}
+	
+	if (total == 0) {
+		N_SPRINTF("[REMINDER] No reminder found for today, set invalid hh/mm");
+		return 0;
+	}
+
+	palarm = alarm;
+	new_idx = index;
+	N_SPRINTF("[REMINDER] maximum entry: %d, %d", total, new_idx);
+
+	if (new_idx >= total) {
+		N_SPRINTF("[REMINDER] reset entry: %d, %d", total, new_idx);
+		new_idx = 0;
+	}
+	hh = alarm[new_idx<<1];
+	mm = alarm[(new_idx<<1)+1];
+
+	if (hh>=24 || mm>=60) {
+		N_SPRINTF("[REMINDER] invalid alarm set up from flash, set invalid hh/mm");
+		return 0;
+	}
+
+	cling.reminder.ui_hh = hh;
+	cling.reminder.ui_mm = mm;
+	
+	N_SPRINTF("[REMINDER] ui display: %d:%d", hh, mm);
+		
 	return new_idx;
 }
 

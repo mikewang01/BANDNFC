@@ -678,7 +678,7 @@ static I32S _try_firmware_update()
 #endif
     } else {
 #if ((defined UICO_FORCE_BURN_FIRMWARE) || (defined UICO_INCLUDE_FIRMWARE_BINARY_UPDATE_ENABLE)) 
-        Y_SPRINTF("[UICO] uico ic has been bricked force to update it .");
+        N_SPRINTF("[UICO] uico ic has been bricked force to update it .");
         _execute_bootloader(uico_binary_lenth, (unsigned char*)s);
         SYSTEM_reboot();
 #endif
@@ -1049,11 +1049,11 @@ int transfer_data_to_uico_touch(uint8_t *buffer_p, uint16_t tx_lenth, uint16_t *
         /*--------------------------- Read Response  ---------------------------*/
         // Read First 2 bytes
         _i2c_main_read (buffer, 2);
-        Y_SPRINTF("[UICO]: 0x%02x 0x%02x", buffer[0], buffer[1]);
+        N_SPRINTF("[UICO]: 0x%02x 0x%02x", buffer[0], buffer[1]);
         // Read 2 + buf[1] bytes
         _i2c_main_read(buffer, 2 + buffer[1]);
 
-        Y_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+        N_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
         // Write Stop Acknowledge (0x20, 0x01)
         _write_stop_acknowledge();
 
@@ -1082,7 +1082,7 @@ int transfer_data_to_uico_touch(uint8_t *buffer_p, uint16_t tx_lenth, uint16_t *
     // Read First 2 bytes
 
     _i2c_main_read (buffer, 2);
-    Y_SPRINTF("[UICO]: 0x%02x 0x%02x", buffer[0], buffer[1]);
+    N_SPRINTF("[UICO]: 0x%02x 0x%02x", buffer[0], buffer[1]);
 
     /*--------------------------- Acknowledge for Correct Command  ---------------------------*/
     *rx_lenth_p = buffer[1];
@@ -1090,13 +1090,13 @@ int transfer_data_to_uico_touch(uint8_t *buffer_p, uint16_t tx_lenth, uint16_t *
         /*read data of rx_lenth_p lenth*/
         buffer[0] = 0;
         _i2c_main_read(buffer,  2 + *rx_lenth_p);
-        Y_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+        N_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
 
     }
     // Write Stop Acknowledge
     _write_stop_acknowledge();
     *rx_lenth_p += 2;
-    Y_SPRINTF("[UICO] lenth %d", *rx_lenth_p );
+    N_SPRINTF("[UICO] lenth %d", *rx_lenth_p );
     return true;
     /*some thing eroor happened return false*/
     *rx_lenth_p = 0;

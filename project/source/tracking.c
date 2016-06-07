@@ -505,7 +505,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 {
 	I32U t_curr;
-	I8U touch_time;
+	I8U touch_total_time;
 	
 	t_curr = CLK_get_system_time() - cling.activity.step_detect_ts;
 	
@@ -515,7 +515,7 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 	vital->skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
 	return;
 #endif
-	touch_time = TOUCH_get_skin_touch_time();
+	touch_total_time = TOUCH_get_skin_touch_time();
 		
 		// Debouncing logic for skin touch detection
 		//
@@ -527,7 +527,7 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 		vital->skin_touch_pads = 0;
 		if (TOUCH_is_skin_touched())
 			vital->skin_touch_pads = 1;
-		else if (touch_time > TOUCH_DEBOUNCING_TIME_PER_MINUTE)
+		else if (touch_total_time > TOUCH_DEBOUNCING_TIME_PER_MINUTE)
 			vital->skin_touch_pads = 1;
 		
 		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
@@ -643,7 +643,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	}
 	
 	if ((pminute->running + pminute->walking) > 4) {
-		SLEEP_wake_up_upon_motion();
+		SLEEP_wake_up_by_force(TRUE);
 	}
 	
 	// For compatibility, we set activity count flag
@@ -1029,6 +1029,7 @@ void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
 	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
 	I8U *pbuf = (I8U *)dw_buf;
 	I32U previous_sleep_state;
+	I8U sleep_active_state;
 	/*	
 	if (cling.time.local.hour >= 12) {
 		epoch_start += (EPOCH_DAY_SECOND>>1);
@@ -1063,19 +1064,19 @@ void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
 		minute->epoch &= 0x7fffffff;
 		if (minute->epoch >= epoch_start) {
 
-			
+			sleep_active_state = minute->sleep_state  & 0x07;
 			// 5. Sleep times + sleep duration
-			if (minute->sleep_state == SLP_STAT_LIGHT) {
+			if (sleep_active_state == SLP_STAT_LIGHT) {
 				day_streaming->sleep_light += 60;
 				if ((previous_sleep_state == SLP_STAT_SOUND) || (previous_sleep_state == SLP_STAT_REM)) {
 					day_streaming->wake_up_time ++;
 				}
-			} else if (minute->sleep_state == SLP_STAT_SOUND) {
+			} else if (sleep_active_state == SLP_STAT_SOUND) {
 				day_streaming->sleep_sound += 60;
 				if ((previous_sleep_state == SLP_STAT_REM) || (previous_sleep_state == SLP_STAT_LIGHT)) {
 					day_streaming->wake_up_time ++;
 				}
-			} else if (minute->sleep_state == SLP_STAT_REM) {
+			} else if (sleep_active_state == SLP_STAT_REM) {
 				day_streaming->sleep_rem += 60;
 				if ((previous_sleep_state == SLP_STAT_SOUND) || (previous_sleep_state == SLP_STAT_LIGHT)) {
 					day_streaming->wake_up_time ++;
@@ -1143,7 +1144,7 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 			}
 			
 			// 4. Wearing minutes, and average heart_rate & temperature
-			if (minute->skin_touch_pads > 0) {
+			if ((minute->skin_touch_pads & 0x07)> 0) {
 				wearing_minutes ++;
 				overall_heart_rate += minute->heart_rate;
 				overall_temperature += minute->skin_temperature;
@@ -1174,6 +1175,7 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day)
 	I32U dw_buf[4];
 	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
 	I8U *pbuf = (I8U *)dw_buf;
+	I8U sleep_active_state;
 	
 	// Check whether we want to get previous 24 hours sleep data
 	if (b_previous_day) {
@@ -1195,12 +1197,14 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day)
       continue;
 		}
 		offset += 16;
-
+ 
 		minute->epoch &= 0x7fffffff;
 		if (minute->epoch > epoch_start) {
-			if ((minute->sleep_state == SLP_STAT_LIGHT) ||
-				  (minute->sleep_state == SLP_STAT_SOUND) ||
-			    (minute->sleep_state == SLP_STAT_REM))
+			// Get LSB 3 bits for sleep state, the high bits might be used for other parameters, such as VOC value
+			sleep_active_state = minute->sleep_state & 0x07;
+			if ((sleep_active_state == SLP_STAT_LIGHT) ||
+				  (sleep_active_state == SLP_STAT_SOUND) ||
+			    (sleep_active_state == SLP_STAT_REM))
 			{
 				sleep_seconds += 60;
 			}

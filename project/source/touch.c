@@ -43,7 +43,7 @@ void TOUCH_power_set(TOUCH_POWER_MODE mode)
 	} else {
 		UICO_set_power_mode(UICO_POWER_FAST_SCAN);	
 	}
-	Y_SPRINTF("\n[TOUCH] power mode setting --- %d ---\n", mode);
+	N_SPRINTF("\n[TOUCH] power mode setting --- %d ---\n", mode);
 #endif
 #endif
 }
@@ -104,15 +104,15 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 	// finger down
 	if (op_detail == 0) {
 		t->gesture = TOUCH_FINGER_LEFT;
-		Y_SPRINTF("[TOUCH] ------------ FINGER: left --------");
+		N_SPRINTF("[TOUCH] ------------ FINGER: left --------");
 		N_SPRINTF("Finger: left");
 	} else if (op_detail == 1) {
 		t->gesture = TOUCH_FINGER_MIDDLE;
-		Y_SPRINTF("[TOUCH] ------------ FINGER: middle --------");
+		N_SPRINTF("[TOUCH] ------------ FINGER: middle --------");
 		N_SPRINTF("Finger: middle");
 	} else if (op_detail == 2) {
 		t->gesture = TOUCH_FINGER_RIGHT;
-		Y_SPRINTF("[TOUCH] ------------ FINGER: right --------");
+		N_SPRINTF("[TOUCH] ------------ FINGER: right --------");
 		N_SPRINTF("Finger: right");
 	}
 					
@@ -158,11 +158,11 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 	// Swipe
 	if (op_detail == 0) {
 		t->gesture = TOUCH_SWIPE_LEFT;
-		Y_SPRINTF("[TOUCH] ------------ SWIPE: left --------");
+		N_SPRINTF("[TOUCH] ------------ SWIPE: left --------");
 		N_SPRINTF("SWIPE: left");
 	} else if (op_detail == 1) {
 		t->gesture = TOUCH_SWIPE_RIGHT;
-		Y_SPRINTF("[TOUCH] ------------ SWIPE: right --------");
+		N_SPRINTF("[TOUCH] ------------ SWIPE: right --------");
 		N_SPRINTF("SWIPE: Right");
 	} else {
 		return;
@@ -202,11 +202,11 @@ static void _skin_touch_processing(TOUCH_CTX *t, BOOLEAN b_skin_detected)
 		// skin touch
 		if (b_skin_detected) {
 			t->b_skin_touch = TRUE;
-			Y_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
+			N_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
 			N_SPRINTF("SKIN: ON");
 		} else {
 			t->b_skin_touch = FALSE;
-			Y_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
+			N_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
 			N_SPRINTF("SKIN: OFF");
 		}		
 }

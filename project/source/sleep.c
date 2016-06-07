@@ -22,11 +22,11 @@ static I32U _calc_sample_corr(ACC_AXIS s1, ACC_AXIS s2)
 	       (s1.z - s2.z)*(s1.z - s2.z);
 }
 
-void SLEEP_wake_up_upon_motion()
+void SLEEP_wake_up_by_force(BOOLEAN b_motion)
 {
 	SLEEP_CTX *slp = &cling.sleep;
 	slp->b_sudden_wake_from_sleep = TRUE;
-	slp->b_step_flag = TRUE;
+	slp->b_step_flag = b_motion;
 }
 
 static void _calc_activity_per_minute(ACC_AXIS d)
@@ -284,7 +284,7 @@ void SLEEP_minute_proc()
 	t_diff -= cling.lps.ts;	
 	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
 					
-		// Get out of sleep mode if device has been off the wrist for more than 20 minutes (1 hour)
+		// Get out of sleep mode if device has been off the wrist for more than 120 minutes (1 hour)
     if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
@@ -495,7 +495,7 @@ void SLEEP_activity_minute_sim(int activity_per_min, int steps, int skin_touch)
 	}
 
 	if (steps > 4)
-		SLEEP_wake_up_upon_motion();
+		SLEEP_wake_up_by_force(TRUE);
 
 	//
 	_sleep_main_state();

@@ -33,6 +33,7 @@ typedef struct tagNOTIFIC_CTX {
 	I8U vibrate_time;
 	I8U second_reminder_time;
 	I8U second_reminder_max;
+	I8U first_reminder_max;
 	I8U cat_id;
 	NOTIFIC_STATE_TYPE state;
 } NOTIFIC_CTX;

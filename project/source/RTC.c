@@ -172,7 +172,7 @@ void RTC_stop_operation_clk(void)
     if (t_curr > (cling.time.operation_clk_start_in_ms + OPERATION_CLK_EXPIRATION)) {
 
         if (cling.time.operation_clk_enabled) {
-            Y_SPRINTF("[SYSCLK] OPERATION clk stop, %d @ %d ", t_curr, cling.time.operation_clk_start_in_ms);
+            N_SPRINTF("[SYSCLK] OPERATION clk stop, %d @ %d ", t_curr, cling.time.operation_clk_start_in_ms);
             cling.time.operation_clk_enabled = FALSE;
             app_timer_stop(m_operation_timer_id);
         }
@@ -188,7 +188,7 @@ void RTC_start_operation_clk()
     cling.time.operation_clk_start_in_ms = CLK_get_system_time();
 
     if (!cling.time.operation_clk_enabled) {
-        Y_SPRINTF("[SYSCLK] OPERATION clk start, %d ", cling.time.operation_clk_start_in_ms);
+        N_SPRINTF("[SYSCLK] OPERATION clk start, %d ", cling.time.operation_clk_start_in_ms);
         cling.time.operation_clk_enabled = TRUE;
         err_code = app_timer_start(m_operation_timer_id, SYSCLK_INTERVAL_20MS, NULL);
         APP_ERROR_CHECK(err_code);

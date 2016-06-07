@@ -19,7 +19,8 @@
 #define NOTIFIC_ON_TIME_IN_MS 100
 #define NOTIFIC_OFF_TIME_IN_MS 400
 #define NOTIFIC_VIBRATION_REPEAT_TIME 3
-
+#define NOTIFIC_VIBRATION_SHORT_TIME  2
+#define NOTIFIC_VIBRATION_SINGLE_TIME 1
 #define NOTIFIC_MULTI_REMINDER_LATENCY 2000
 
 #define NOTIFIC_MULTI_REMINDER_TIME 15
@@ -57,6 +58,7 @@ void NOTIFIC_start_notifying(I8U cat_id)
 	else
 		cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_OTHERS;
 	cling.notific.cat_id = cat_id;
+	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
 	cling.ui.notif_type = NOTIFICATION_TYPE_MESSAGE;
@@ -69,6 +71,7 @@ void NOTIFIC_start_notifying(I8U cat_id)
 void NOTIFIC_start_idle_alert()
 {
 	cling.notific.vibrate_time = 0;
+	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.ui.notif_type = NOTIFICATION_TYPE_IDLE_ALERT;
@@ -80,6 +83,7 @@ void NOTIFIC_start_idle_alert()
 void NOTIFIC_start_HR_alert()
 {
 	cling.notific.vibrate_time = 0;
+	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.ui.notif_type = NOTIFICATION_TYPE_HR;
@@ -138,7 +142,7 @@ void NOTIFIC_state_machine()
 		case NOTIFIC_STATE_REPEAT:
 		{
 			if (t_curr > (cling.notific.ts + NOTIFIC_OFF_TIME_IN_MS)) {
-				if (cling.notific.vibrate_time >= NOTIFIC_VIBRATION_REPEAT_TIME) {
+				if (cling.notific.vibrate_time >= cling.notific.first_reminder_max) {
 					cling.notific.state = NOTIFIC_STATE_SECOND_REMINDER;
 					cling.notific.second_reminder_time ++;
 					cling.notific.ts = t_curr;

@@ -142,9 +142,11 @@ static void _ancs_pair_handler(void * p_context)
 	if(cling.gcp.host_type != HOST_TYPE_IOS)
 		return;
 
+#ifdef _ENABLE_ANCS_		
   if (cling.ancs.bond_flag == ANCS_BOND_STATE_FAIL_FLAG) 
 		return;
-
+#endif
+	
 	if (cling.ble.conn_handle != BLE_CONN_HANDLE_INVALID) {
 		
 		// Inquire current device whether has paired.
@@ -196,6 +198,7 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 {
   I32U err_code;
 
+#ifdef _ENABLE_ANCS_		
 	if (cling.ancs.bond_flag == ANCS_BOND_STATE_FAIL_FLAG) {
 			
 	  if(BTLE_is_connected())
@@ -204,7 +207,8 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 		cling.ble.disconnect_evt |= BLE_DISCONN_EVT_BONDMGR_ERROR;
 		return NRF_SUCCESS;
   }
-			
+#endif
+	
   switch(p_event->event_id) {
 		
 		case DM_EVT_LINK_SECURED:

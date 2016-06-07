@@ -34,6 +34,6 @@ typedef struct tagREMINDER_CTX {
 void REMINDER_set_next_reminder(void);
 void REMINDER_state_machine(void);
 I8U REMINDER_get_time_at_index(I8U index);
-void REMINDER_setup(I8U *msg);
+void REMINDER_setup(I8U *msg, BOOLEAN b_daily);
 
 #endif  // __REMINDER_HEADER__

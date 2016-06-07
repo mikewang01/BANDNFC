@@ -610,7 +610,9 @@ static void _disconnect_clean_up()
 		// Clear bond information
     HAL_device_manager_init(TRUE);		
 		
+#ifdef _ENABLE_ANCS_		
 		cling.ancs.bond_flag = ANCS_BOND_STATE_NUKNOW_FLAG;
+#endif		
 		return;
 	}
 		

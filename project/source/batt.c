@@ -261,6 +261,8 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 			N_SPRINTF("[BATT] ---5+ V is supplied (%d)---", b->toggling_number);
 			b->charging_state = CHARGER_IN_CHARGING;
 			b->charging_timebase = t_curr;
+			// if device is in sleep state, wake it up!
+			SLEEP_wake_up_by_force(FALSE);
 			if (b->state_switching_duration > 5) {
 				// Turn on OLED panel
 				b->state_switching_duration = 0;

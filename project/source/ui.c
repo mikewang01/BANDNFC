@@ -371,7 +371,7 @@ static void _perform_ui_with_button_click(UI_ANIMATION_CTX *u)
 		u->app_notific_index = 0; 
 		// Reset notif detail index
 		u->notif_detail_index = 0; 
-		Y_SPRINTF("[UI] button single: %d", u->frame_index);
+		N_SPRINTF("[UI] button single: %d", u->frame_index);
 	}
 }
 
@@ -390,7 +390,7 @@ static void _perform_ui_with_button_press_hold(UI_ANIMATION_CTX *u)
 		u->app_notific_index = 0; 
 		// Reset notif detail index
 		u->notif_detail_index = 0; 
-		Y_SPRINTF("[UI] button press and hold: %d", u->frame_index);
+		N_SPRINTF("[UI] button press and hold: %d", u->frame_index);
 	}
 }
 
@@ -409,20 +409,29 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 	if (gesture == TOUCH_FINGER_MIDDLE) {
 		u->b_detail_page = TRUE;
 					
-		Y_SPRINTF("[UI] finger middle: %d, %d", u->frame_index, u->b_detail_page);
+		N_SPRINTF("[UI] finger middle: %d, %d", u->frame_index, u->b_detail_page);
 
 		p_matrix = ui_matrix_finger_middle;
 		
 		_set_animation(ANIMATION_IRIS, TRANSITION_DIR_NONE);
 
 		// Update frame index
+		prev_index = u->frame_index;
 		u->frame_index = p_matrix[u->frame_index];
 		u->frame_next_idx = u->frame_index;
+		
+		if ((prev_index == UI_DISPLAY_CAROUSEL_2) && (u->frame_index == UI_DISPLAY_SMART_REMINDER))
+		{
+			Y_SPRINTF("[UI] check on alarm clock");
+			// Always set to the first alarm clock
+			REMINDER_get_time_at_index(0);
+		}
+		
 	} else if (gesture == TOUCH_FINGER_LEFT) {
 					
 		u->b_detail_page = TRUE;
 		
-		Y_SPRINTF("[UI] finger left: %d, %d", u->frame_index, u->b_detail_page);
+		N_SPRINTF("[UI] finger left: %d, %d", u->frame_index, u->b_detail_page);
 
 		p_matrix = ui_matrix_finger_left;
 	
@@ -450,7 +459,6 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 		}
 	} else if (gesture == TOUCH_FINGER_RIGHT) {
 	
-
 		p_matrix = ui_matrix_finger_right;
 		
 		if (u->b_detail_page) {
@@ -476,7 +484,7 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 			}
 		}
 		
-		Y_SPRINTF("[UI] finger right: %d, %d", u->frame_index, u->b_detail_page);
+		N_SPRINTF("[UI] finger right: %d, %d", u->frame_index, u->b_detail_page);
 
 		// Update frame index
 		if ((u->frame_index == UI_DISPLAY_SMART_INCOMING_CALL) ||
@@ -545,7 +553,7 @@ static I8U _ui_touch_sensing()
 		case TOUCH_DOUBLE_TAP:
 		{
 			UI_switch_state(UI_STATE_APPEAR, 0);
-			Y_SPRINTF("[UI] double tapped: %d", u->frame_index);
+			N_SPRINTF("[UI] double tapped: %d", u->frame_index);
 			u->b_detail_page = FALSE;
 			break;
 		}
@@ -723,7 +731,6 @@ static void _fill_vertical_local_clock(BOOLEAN b_180_rotation)
 	// Render the clock sign
 	if (cling.ui.clock_sec_blinking) {
 		cling.ui.clock_sec_blinking = FALSE;
-		sprintf((char *)string, ":");
 		
 		p0 = cling.ui.p_oled_up+61;
 		p1 = p0+128;
@@ -1008,12 +1015,13 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 	} else if (mode == UI_MIDDLE_MODE_REMINDER) {
 		
 		if (cling.reminder.total>0) { 
-			
+
 			if (cling.reminder.ui_alarm_on) {
 				len = sprintf((char *)string, "%d:%02d", cling.reminder.ui_hh, cling.reminder.ui_mm);
 			} else {
 				
-				if (cling.reminder.ui_hh == 0xff || cling.reminder.ui_mm == 0xff || cling.reminder.ui_hh >= 24 || cling.reminder.ui_mm >= 60) {
+				if (cling.reminder.ui_hh >= 24 || cling.reminder.ui_mm >= 60) {
+					Y_SPRINTF("[UI] alarm invalid - %d:%d", cling.reminder.ui_hh, cling.reminder.ui_mm);
 					len = sprintf((char *)string, "0:00");
 				} else {
 					len = sprintf((char *)string, "%d:%02d", cling.reminder.ui_hh, cling.reminder.ui_mm);
@@ -1022,7 +1030,6 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 				}
 			}
 		} else {
-//			len = sprintf((char *)string, "0:00");
   		  len = 0;
   		  string[len++] = ICON_MIDDLE_NO_SKIN_TOUCH;
   		  string[len] = 0;
@@ -1519,7 +1526,7 @@ static void _render_clock(SYSTIME_CTX time)
   } else {
 		len = sprintf((char *)string, "%d:%02d",time.hour, time.minute);
 	}
-	
+
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 
@@ -1767,7 +1774,7 @@ static void _display_idle_alert()
 	
 	if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {	
 	  sprintf((char *)string1, "time for a move");
-	} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLE_CHINESE) {	
+	} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
 		sprintf((char *)string1, "该起来动动了");
 	} else {
 		sprintf((char *)string1, "該起來動動了");
@@ -1805,7 +1812,7 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		
 	if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {	
 		sprintf((char *)string1, "%s", workout_en[workout_idx]);
-	}	else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLE_CHINESE) {	
+	}	else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
 		sprintf((char *)string1, "%s", workout_s_cn[workout_idx]);
 	} else {
 		sprintf((char *)string1, "%s", workout_t_cn[workout_idx]);
@@ -2000,7 +2007,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 	switch (index) {
 		case UI_DISPLAY_STOPWATCH_START:
 		{
-			len1 = sprintf((char *)string1, "00.00");
+			len1 = sprintf((char *)string1, "00:00");
 			_display_stopwatch_start(string1, len1, UI_TOP_MODE_WORKOUT_START);
 			_left_icon_render(UI_TOP_MODE_RETURN);
 			//_render_one_icon(ICON_TOP_RETURN_LEN, cling.ui.p_oled_up, asset_content+ICON_TOP_RETURN);
@@ -2016,7 +2023,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 			minute = t_diff / 60;
 			t_diff -= minute * 60;
 			second = t_diff;
-			len1 = sprintf((char *)string1, "%d:%02d.%02d", hour, minute, second);
+			len1 = sprintf((char *)string1, "%d:%02d:%02d", hour, minute, second);
 			len2 = sprintf((char *)string2, "-,,");
 			b_center = FALSE;
 			_display_stopwatch_core(string1, len1, string2, len2, UI_TOP_MODE_WORKOUT_STOP, b_center);
@@ -2033,7 +2040,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 			minute = t_diff / 60;
 			t_diff -= minute * 60;
 			second = t_diff;
-			len1 = sprintf((char *)string1, "%d:%d.%d", hour, minute, second);
+			len1 = sprintf((char *)string1, "%d:%02d:%02d", hour, minute, second);
 			len2 = 0;
 			b_center = 2;
 			_display_stopwatch_core(string1, len1, string2, len2, UI_TOP_MODE_RETURN, b_center);
@@ -2215,38 +2222,22 @@ static void _display_frame_appear(I8U index, BOOLEAN b_render)
 #ifdef _CLINGBAND_UV_MODEL_
 static void _render_logo()
 {
-	I16U i;
-	I16U strt_offset;
-	I8U *p0, *p1, *p2, *p3;
-	const I8U *pin;
-
+	I8U string[128];
 	memset(cling.ui.p_oled_up, 0, 512);
-	strt_offset = (128-ICON32_LOGO_LEN)>>1;
-	p0 = cling.ui.p_oled_up+strt_offset;
-	p1 = p0+128;
-	p2 = p1+128;
-	p3 = p2+128;
-	pin = asset_content+ICON32_LOGO;
-	for (i = 0; i < ICON32_LOGO_LEN; i++) {
-			*p0++ = (*pin++);
-			*p1++ = (*pin++);
-			*p2++ = (*pin++);
-			*p3++ = (*pin++);
-	}
-
-	// Finally, we render the frame
-	_render_screen();
+	sprintf((char *)string, "UV Fitness");
+	
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 }
 #endif
 
 #ifdef _CLINGBAND_NFC_MODEL_
 static void _render_display_restart()
 {
-	// In the NFC version,we do not display hicling logo.
-  memset(cling.ui.p_oled_up, 0, 512);
-  
-  FONT_load_characters(cling.ui.p_oled_up+128, "Restart...", 16, 128, TRUE);
+	I8U string[128];
+	memset(cling.ui.p_oled_up, 0, 512);
+	sprintf((char *)string, "NFC Fitness");
 	
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 	_render_screen();
 }
 #endif
@@ -2924,7 +2915,7 @@ void UI_state_machine()
 			} else if (_ui_frame_blinking()) {
 				// Otherwise, blinking every 800 ms.
 				if (t_curr > u->display_to_base + u->frame_interval) {
-					N_SPRINTF("[UI] Go blinking the icon");
+					N_SPRINTF("[UI] Go blinking the icon: %d", u->frame_index);
 					UI_switch_state(UI_STATE_APPEAR, 400);
 				}
 			}

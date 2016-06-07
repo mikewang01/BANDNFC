@@ -51,14 +51,14 @@ void HOMEKEY_check_on_hook_change()
 		// update the click time stamp
 		k->temp_st = stat;
 		k->ticks[stat] = t_curr;
-		Y_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
+		N_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
 		if (k->temp_st == ON_CLICK) {
 		
 			// Make sure OLED display panel is faced up.
 			if (LINK_is_authorized()) {
 					
-				Y_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
+				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
 				// Turn on OLED panel
 				OLED_set_panel_on();
@@ -71,11 +71,11 @@ void HOMEKEY_check_on_hook_change()
 				if (UI_is_idle()) {
 					// UI initial state, a glance of current clock
 					UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-					Y_SPRINTF("[KEY] set UI: button clicked (glance)");
+					N_SPRINTF("[KEY] set UI: button clicked (glance)");
 				} else {
 					// 
 					UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-					Y_SPRINTF("[KEY] set UI: button clicked (sensing)");
+					N_SPRINTF("[KEY] set UI: button clicked (sensing)");
 				}
 			} else {
 				RTC_start_operation_clk();
@@ -124,7 +124,7 @@ void HOMEKEY_click_check()
 				
 				cling.touch.b_valid_gesture = TRUE;
 				cling.touch.gesture = TOUCH_BUTTON_PRESS_SOS;
-				Y_SPRINTF("[HOMEKEY] +++ button (SOS), %d, %d, %d", t_curr, offset, t_sos);
+				N_SPRINTF("[HOMEKEY] +++ button (SOS), %d, %d, %d", t_curr, offset, t_sos);
 				
 				// Send SOS message to the App
 				CP_create_sos_msg();
@@ -155,7 +155,7 @@ void HOMEKEY_click_check()
 
 			cling.touch.b_valid_gesture = TRUE;
 			cling.touch.gesture = TOUCH_BUTTON_PRESS_HOLD;
-			Y_SPRINTF("[HOMEKEY] +++ button press and hold: %d, %d, %d, %d", offset, t_curr, k->ticks[ON_CLICK], CLK_get_system_time());
+			N_SPRINTF("[HOMEKEY] +++ button press and hold: %d, %d, %d, %d", offset, t_curr, k->ticks[ON_CLICK], CLK_get_system_time());
 			
 			// if unauthorized, we should turn off screen, or turn it on
 			if (!cling.system.b_powered_up) {
@@ -184,7 +184,7 @@ void HOMEKEY_click_check()
 			
 			cling.touch.b_valid_gesture = TRUE;
 			cling.touch.gesture = TOUCH_BUTTON_SINGLE;
-			Y_SPRINTF("[HOMEKEY] +++ button single click");
+			N_SPRINTF("[HOMEKEY] +++ button single click");
 		}
 		else {
 			// declare a new state --> OFF HOOK
@@ -268,11 +268,11 @@ static void _sim_physical_touch()
 		if (UI_is_idle()) {
 			// UI initial state, a glance of current clock
 			UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-			Y_SPRINTF("[KEY] set UI: sim click (glance)");
+			N_SPRINTF("[KEY] set UI: sim click (glance)");
 		} else {
 			// 
 			UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-			Y_SPRINTF("[KEY] set UI: sim clicked (sensing)");
+			N_SPRINTF("[KEY] set UI: sim clicked (sensing)");
 		}
 }
 
@@ -287,7 +287,7 @@ void HOMEKEY_sim()
 	
 	if (cling.time.system_clock_in_sec > t_gap) {
 		
-		Y_SPRINTF("[HOMEKEY] index: %d, key: %d", sim_idx, cling.touch.gesture);
+		N_SPRINTF("[HOMEKEY] index: %d, key: %d", sim_idx, cling.touch.gesture);
 		_sim_physical_touch();
 		
 		time_key = cling.time.system_clock_in_sec;

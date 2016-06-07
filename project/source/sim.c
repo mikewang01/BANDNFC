@@ -96,7 +96,7 @@ void SIM_init()
 	t->time_since_1970 -= 18 * 60 * 60;
 	RTC_get_local_clock(t->time_since_1970, &cling.time.local);
 
-	Y_SPRINTF("[SIM] virtual device gets initialized");
+	N_SPRINTF("[SIM] virtual device gets initialized");
 	
 	_weather_init();
 	
@@ -297,7 +297,7 @@ void SIM_setup_reminder()
 		msg[j++] = minute[i];
 	}
 
-	REMINDER_setup(msg);
+	REMINDER_setup(msg, FALSE);
 }
 
 #ifdef _SLEEP_SIMULATION_

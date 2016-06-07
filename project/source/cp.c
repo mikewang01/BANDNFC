@@ -826,7 +826,7 @@ static void _pending_process()
 
     switch (p->task_id) {
         case CP_MSG_TYPE_REGISTER_WRITE: {
-            N_SPRINTF("[CP] write reg");
+            Y_SPRINTF("[CP] write reg");
             _proc_pending_ctrl_wr();
             break;
         }
@@ -848,33 +848,40 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_LOAD_DAILY_ACTIVITY: {
-            N_SPRINTF("[CP] load daily activity stat");
+            Y_SPRINTF("[CP] load daily activity stat");
             _create_daily_activity_info_msg();
             BTLE_reset_streaming(); //
             break;
         }
         case CP_MSG_TYPE_DEBUG_MSG: {
-
+            Y_SPRINTF("[CP] debug msg");
             break;
         }
         case CP_MSG_TYPE_WEATHER: {
+            Y_SPRINTF("[CP] set weather");
             WEATHER_set_weather(p->msg + 1);
             break;
         }
         case CP_MSG_TYPE_USER_REMINDER: {
-            REMINDER_setup(p->msg + 1);
+            Y_SPRINTF("[CP] Reminder setup - all week");
+            REMINDER_setup(p->msg + 1, FALSE);
             break;
         }
+		case CP_MSG_TYPE_DAILY_ALARM: {
+            Y_SPRINTF("[CP] Reminder setup - daily");
+            REMINDER_setup(p->msg + 1, TRUE);
+			break;
+		}
         case CP_MSG_TYPE_START_OTA: {
+            Y_SPRINTF("[CP] << OTA enabled >>");
             HAL_disconnect_for_fast_connection();
 
             // Enable over the air update flag, and exit low power mode
             OTA_set_state(TRUE);
-            Y_SPRINTF("[CP] << OTA enabled >>");
             break;
         }
         case CP_MSG_TYPE_REBOOT: {
-            N_SPRINTF("[CP] reboot");
+            Y_SPRINTF("[CP] reboot");
             SYSTEM_reboot();
             break;
         }
@@ -919,7 +926,7 @@ static void _pending_process()
         }
         case CP_MSG_TYPE_BLE_DISCONNECT: {
             // Disconnect BLE service
-            N_SPRINTF("[CP] BLE disconnecting ...");
+            Y_SPRINTF("[CP] BLE disconnecting ...");
             if(BTLE_is_connected())
                 BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
             break;
@@ -936,6 +943,7 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_SET_LANGUAGE: {
+            Y_SPRINTF("[CP] SET LANGUAGE");
             // Display fonts type.
             cling.ui.fonts_type = p->msg[1];
             break;
