@@ -139,13 +139,13 @@ static EN_STATUSCODE _i2c_btld_read(I8U *pi8uRegValue, I8U number_of_bytes)
     }
 
     err_code = nrf_drv_twi_rx(&twi, (DURATOUCH_I2C_ADDRESS_BOOTLOADER_0x58 >> 1), pi8uRegValue, number_of_bytes, FALSE);
-
+ 
     if (err_code == NRF_SUCCESS) {
         N_SPRINTF("[UICO] BOOTLOADER ADDR READ PASS.");
 
         return STATUSCODE_SUCCESS;
     } else {
-        Y_SPRINTF("[UICO] BOOTLOADER ADDR READ FAIL - %d", err_code);
+        N_SPRINTF("[UICO] BOOTLOADER ADDR READ FAIL - %d", err_code);
 				APP_ERROR_CHECK(err_code);
         return STATUSCODE_FAILURE;
     }
@@ -548,7 +548,7 @@ static I32S _execute_bootloader(I32S payload_length, unsigned char *s)
 //	N_SPRINTF("[UICO] Returned Data: %02x %02x %02x %02x %02x %02x %02x %02x", response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7]);
 
         if ((response[0] != BOOTLOAD_MODE) && (s[index + 1] != COMMAND_BOOTLOAD_DONE) && (length != 0)) {
-            Y_SPRINTF("[UICO] FAIL on block 0x%02x write (response 0x%02x 0x%02x)  0x%02x  %d", uicoDat[index + 11], response[0], response[1], uicoDat[index + 1], length);
+            N_SPRINTF("[UICO] FAIL on block 0x%02x write (response 0x%02x 0x%02x)  0x%02x  %d", uicoDat[index + 11], response[0], response[1], uicoDat[index + 1], length);
             return response[0];
         }
         // block was acknowledged, move to next block and loop
@@ -567,7 +567,7 @@ static I32S _execute_bootloader(I32S payload_length, unsigned char *s)
         BASE_delay_msec(5);
     }                   // end while (sending)
 
-    Y_SPRINTF("[UICO] Upgrade completed, touchscreen is restarting");
+    N_SPRINTF("[UICO] Upgrade completed, touchscreen is restarting");
     BASE_delay_msec(526);
     return 0;                     // Success!
 }
@@ -1030,7 +1030,7 @@ int transfer_data_to_uico_touch(uint8_t *buffer_p, uint16_t tx_lenth, uint16_t *
 {
 #if 0
     uint8_t *buffer = buffer_p; //[100];
-    //  Y_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+    //  N_SPRINTF("[UICO]: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
     while( !((buffer[0] == COMMAND_GET_DATA) && (buffer[1] == 0x11)) ) {
         /*--------------------------- Write Command ---------------------------*/
         /*

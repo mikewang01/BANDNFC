@@ -61,7 +61,7 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, BOOLEAN b_
 {
 	I8U index = u->frame_prev_idx;
 	I8U max_frame_num=0;
-
+	
 	if (index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
 		return;
 	} else if (index == UI_DISPLAY_SMART_APP_NOTIF) {
@@ -143,7 +143,7 @@ static void _update_vertical_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 	// Read out reminder index from Flash
 	if (index == UI_DISPLAY_SMART_REMINDER) {
 		cling.ui.vertical_index = REMINDER_get_time_at_index(cling.ui.vertical_index);
-		Y_SPRINTF("[UI] new vertical index(Reminder): %d", cling.ui.vertical_index);
+		N_SPRINTF("[UI] new vertical index(Reminder): %d", cling.ui.level_1_index);
 	}
 	
 	if (index == UI_DISPLAY_HOME) {
@@ -312,7 +312,7 @@ static void _perform_ui_with_a_swipe(UI_ANIMATION_CTX *u, I8U gesture)
 			u->vertical_index = 0;
 			// Clear notific detail index
 			u->notif_detail_index = 0;
-			Y_SPRINTF("[UI] swipe left: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);
+			N_SPRINTF("[UI] swipe left: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);
 		} else  {
 			p_matrix = ui_matrix_swipe_right;
 			if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
@@ -332,7 +332,7 @@ static void _perform_ui_with_a_swipe(UI_ANIMATION_CTX *u, I8U gesture)
 			// Clear notific detail index
 			u->notif_detail_index = 0;
 			
-			Y_SPRINTF("[UI] swipe right: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);
+			N_SPRINTF("[UI] swipe right: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);
 		}
 	} else {
 		// Animation is not needed
@@ -1278,7 +1278,7 @@ static void _render_indicator(I8U len1, const I8U *in1, I8U offset)
 }
 
 
-static void _left_icon_render(I8U mode)
+static void _top_icon_render(I8U mode)
 {
 	I16U i;
 	I16U offset = 0; // Pixel offet at top row
@@ -1544,7 +1544,6 @@ static void _right_row_render(I8U mode)
 			return;
 		len = sprintf((char *)string, "%02d", cling.ui.vertical_index);
 		FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);
-
 	} else if (mode == UI_BOTTOM_MODE_APP_NOTIFIC_2DIGITS_INDEX) {
 		len = sprintf((char *)string, "%02d", cling.ui.app_notific_index);
 		FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);		
@@ -1580,7 +1579,7 @@ static void _right_row_render(I8U mode)
 			_render_battery_perc_rotation(TRUE);
 		}
 	} else if (mode == UI_BOTTOM_MODE_OK) {
-		_render_one_icon(ICON_TOP_OK_LEN, cling.ui.p_oled_up+111, asset_content+ICON_TOP_OK);
+		_render_one_icon(ICON_TOP_OK_LEN, cling.ui.p_oled_up+110, asset_content+ICON_TOP_OK);
 	}
 }
 
@@ -1705,7 +1704,7 @@ static void _core_display_horizontal(I8U top, I8U middle, I8U bottom, BOOLEAN b_
 	_middle_row_render(middle, TRUE);
 	
 	// Info on the left
-	_left_icon_render(top);
+	_top_icon_render(top);
 		
 	_right_row_render(bottom);
 	
@@ -1824,8 +1823,8 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 	
 	_display_dynamic(cling.ui.p_oled_up+128*3, len2, string2);
 	
-	_left_icon_render(UI_TOP_MODE_RETURN);
-	_left_icon_render(UI_TOP_MODE_OK);
+	_top_icon_render(UI_TOP_MODE_RETURN);
+	_top_icon_render(UI_TOP_MODE_OK);
 	
 	if (b_render) {
 
@@ -1932,7 +1931,7 @@ static void _display_stopwatch_core(I8U *string1, I8U len1, I8U *string2, I8U le
 		}
 	}
 	
-	_left_icon_render(mode);
+	_top_icon_render(mode);
 }
 
 static void _display_stopwatch_start(I8U *string1, I8U len1, I8U mode)
@@ -1985,7 +1984,8 @@ static void _display_stopwatch_start(I8U *string1, I8U len1, I8U mode)
 		}
 	}
 
-	_left_icon_render(mode);
+	
+	_top_icon_render(mode);
 }
 
 static void _display_frame_setting(I8U index, BOOLEAN b_render)
@@ -2009,7 +2009,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 		{
 			len1 = sprintf((char *)string1, "00:00");
 			_display_stopwatch_start(string1, len1, UI_TOP_MODE_WORKOUT_START);
-			_left_icon_render(UI_TOP_MODE_RETURN);
+			_top_icon_render(UI_TOP_MODE_RETURN);
 			//_render_one_icon(ICON_TOP_RETURN_LEN, cling.ui.p_oled_up, asset_content+ICON_TOP_RETURN);
 			break;
 		} 
@@ -2078,7 +2078,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 			break;
 	}
 	
-	//_left_icon_render(UI_TOP_MODE_RETURN);
+	//_top_icon_render(UI_TOP_MODE_RETURN);
 	
 	if (b_render) {
 
@@ -2679,10 +2679,12 @@ static void _restore_ui_index()
 static BOOLEAN _ui_frame_blinking()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-	if ((u->frame_index >= UI_DISPLAY_SMART) && (u->frame_index <= UI_DISPLAY_SMART_END))
+	
+	if ((u->frame_index >= UI_DISPLAY_SMART) && (u->frame_index <= UI_DISPLAY_SMART_END)) {
 		return FALSE;
-	else 
+	} else {
 		return TRUE;
+	}
 }
 
 static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)

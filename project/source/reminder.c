@@ -27,11 +27,17 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 	I32U data[32];
 	I8U *pdata = (I8U*)data;
 	I8U *pmsg;
-	I8U i, a, b;
+	I8U i, a, b, c;
 
 	FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
 	BASE_delay_msec(50); // Latency before refreshing reminder space. (Erasure latency: 50 ms)
-	cling.reminder.total = (msg[0] >> 1);
+	if (b_daily) {
+		// 3 bytes per one alarm clock
+		cling.reminder.total = (msg[0] / 3);
+	} else {
+		// 2 bytes per one alarm clock
+		cling.reminder.total = (msg[0] >> 1);
+	}
 	if (cling.reminder.total > 32)
 		cling.reminder.total = 32;
 
@@ -47,20 +53,21 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 		// Copy all the alarm clock, and set it to everyday
 		for (i = 0; i < cling.reminder.total; i++) {
 			if (b_daily) 
-				*pdata = *pmsg++;
+				c = *pmsg++;
 			else
-				*pdata++ = 0x7f;
+				c = 0x7f;
 			//*pdata++ = *pmsg++;
 			//*pdata++ = *pmsg++;
 			a = *pmsg++;
 			b = *pmsg++;
+			*pdata++ = c;
 			*pdata++ = a;
 			*pdata++ = b;
 			if (i == 0) {
 				cling.reminder.ui_hh = a;
 				cling.reminder.ui_mm = b;
 			}
-			N_SPRINTF("[CP] reminder setup(%d), %d:%d", i, a, b);
+			N_SPRINTF("[CP] reminder setup(%d, %d), %d:%d(%02x)", i, cling.reminder.total, a, b, c);
 		}
 		pdata = (I8U *)data;
 		FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 128); // Maximum 32 entries

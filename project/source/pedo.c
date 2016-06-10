@@ -816,70 +816,94 @@ static void _classifier_stat_update(ACCELEROMETER_3D in, BOOLEAN b_step)
 static BOOLEAN _step_count()
 {
 	ACCELEROMETER_3D A_prime;
-	I32S A_prime_up;
+	I32S A_prime_up, peak, bottom, diff0, diff1;
 	STEP_COUNT_STAT *sc=&gPDM.step;
-	
+	BOOLEAN b_p2p = FALSE;
+
     // Calculate A prime, A minus earth gravity
 	A_prime = _add_3d(gPDM.A, gPDM.g_est);
-  gPDM.A_prime = A_prime;
+    gPDM.A_prime = A_prime;
 	
 	// dot product to obtain vertical projection of A_prime
 	A_prime_up = -_dot_3d(A_prime, gPDM.g_est);
 	gPDM.A_prime_up = A_prime_up;
 
-	// Estimate DC compnent or using a low pass filtering
-    // For now, simulation shows removing DC is more effective
-    // than low pass filtering A'up.
-	gPDM.dc.cnt ++;
-	gPDM.dc.acc += A_prime_up;
-	
-	if (gPDM.dc.cnt >= DC_A_PRIME_UP_SAMPLES) {
-		// Update DC component, and reset the acc
-		gPDM.dc.v = gPDM.dc.acc >> DC_A_PRIME_UP_TIME;
-    gPDM.dc.mag = BASE_abs(gPDM.dc.v);
-		gPDM.dc.acc = A_prime_up;
-		gPDM.dc.cnt = 1;
-	}
-	
-	// Remove DC component
-	A_prime_up -= gPDM.dc.v;
-  gPDM.A_prime_up_no_dc = A_prime_up;
-	
+
 	// counting steps
+	sc->prev2 = sc->prev;
 	sc->prev = sc->curr;
 	sc->curr = A_prime_up;
 	
-	N_SPRINTF("PRIME UP: %d", A_prime_up);
-	
-	// check whether it is a rising edge or falling edge
-	if ((sc->curr >= AUP_STEP_COUNT_LOW_TH) && (sc->prev <= AUP_STEP_COUNT_LOW_TH)) {
-		// rising edge and crossing the threshold
-		if (sc->cand == POS_TO_NEG) {
-			if (gPDM.global_time > sc->lim_lo) {
-				sc->lim_lo = gPDM.global_time + STEP_WIN_MIN;
-				sc->cand = NEG_TO_POS;
-			}
-		} else if (sc->cand == NO_CROSSING) {
-			sc->cand = NEG_TO_POS;
-		} else {
-		}
-	} else if ((sc->curr <= AUP_STEP_COUNT_HIGH_TH) && (sc->prev >= AUP_STEP_COUNT_HIGH_TH)) {
-		// falling edge
-		if (sc->cand == NEG_TO_POS) {
-			if (gPDM.global_time > sc->lim_lo) {
-				sc->count ++;
-				
-				sc->lim_lo = gPDM.global_time + STEP_WIN_MIN;
-				sc->cand = POS_TO_NEG;
+	if (gPDM.global_time < (sc->prev_g_time + 4))
+		return FALSE;
 
-				return TRUE;
-			}
-		} else if (sc->cand == NO_CROSSING) {
-			sc->cand = POS_TO_NEG;
-		} else {
+	if ((sc->prev > sc->prev2) && (sc->prev > sc->curr)) {
+		sc->prev_g_time = gPDM.global_time;
+		peak = sc->prev;
+		if (peak > sc->p2p_peak) {
+			sc->p2p_peak = peak;
+			sc->p2p_bump_set |= 2;
+			b_p2p = TRUE;
+		}
+		// Find a new Peak, we should update bottom if the nearest bottom is much lower
+		if (sc->p2p_bottom_0 > sc->p2p_bottom_1) {
+			sc->p2p_bottom_0 = sc->p2p_bottom_1;
+			sc->p2p_bump_set |= 1;
+			sc->p2p_bump_set &= 0x03;
+			sc->p2p_bottom_1 = 0x7fffffff; // set a maximum value
+
+			// This seems to be a valid bottom point, let's update peak as well
+			sc->p2p_peak = peak;
+			sc->p2p_bump_set |= 2;
+			b_p2p = TRUE;
+		}
+
+		if (b_p2p) {
+			sc->p2p_bump_set &= 0x03;
+			sc->p2p_bottom_1 = 0x7fffffff; // set a maximum value
 		}
 	}
-	
+	else if ((sc->prev < sc->prev2) && (sc->prev < sc->curr)) {
+		sc->prev_g_time = gPDM.global_time;
+		bottom = sc->prev;
+		if (bottom < sc->p2p_bottom_1) {
+			sc->p2p_bottom_1 = bottom;
+			sc->p2p_bump_set |= 0x04;
+
+			// This is the point to check whether a valid step is detected
+			if (sc->p2p_bump_set == 0x07) {
+				diff0 = sc->p2p_peak - sc->p2p_bottom_0;
+				diff1 = sc->p2p_peak - sc->p2p_bottom_1;
+				if (diff0 > diff1) {
+					if (diff1 > STEP_COUNT_PEAK_DIFF_TH) {
+						diff0 *= 0.25;
+						if (diff1 > diff0) {
+							// a step is detected
+							sc->p2p_bump_set = 0x01;
+							sc->p2p_peak = 0x80000000;
+							sc->p2p_bottom_0 = bottom;
+							sc->p2p_bottom_1 = 0x7fffffff;
+							return TRUE;
+						}
+					}
+				}
+				else {
+					if (diff0 > STEP_COUNT_PEAK_DIFF_TH) {
+						diff1 *= 0.25;
+						if (diff0 > diff1) {
+							// a step is detected
+							sc->p2p_bump_set = 0x01;
+							sc->p2p_peak = 0x80000000;
+							sc->p2p_bottom_0 = bottom;
+							sc->p2p_bottom_1 = 0x7fffffff;
+							return TRUE;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return FALSE;
 }
 
@@ -954,31 +978,54 @@ static I32S _get_classify_win_siz(CLASSIFIER_STAT *c, I32U ts_th)
 // make sure it is consistent
 static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U idx)
 {
-    I32U diff;
-    
-    // The pace
-    if ((idx == CLASSIFIER_STEP_WIN_SZ-1) || !c->step_ts[idx+1]) {
-        return motion;
-    }
-    diff = c->step_ts[idx] - c->step_ts[idx+1];
- 
-    c->step_is_noise = FALSE;
+	I32U end_ts;
+	I8U valid_step_cnt = 0;
+	I8U i;
 
-    // Need a double check on whether it is a real step, as we know two steps cannot be really close
-    // - overcount - if we do not validate the step timing
-    // 50/12 ~ 4.1  -> Assumption: two steps should be at least 12 samples apart.
-    if (motion == MOTION_WALKING)  {
-        if (diff < 14) {
-            motion = MOTION_UNKNOWN;
-            c->step_is_noise = TRUE;
-        }
-    } else if (motion == MOTION_RUNNING) {
-        if (diff < 13) {
-            motion = MOTION_UNKNOWN;
-            c->step_is_noise = TRUE;
-        }
-    }
-    return motion;
+	// The pace
+	if ((idx == CLASSIFIER_STEP_WIN_SZ - 1) || !c->step_ts[idx + 1]) {
+		return motion;
+	}
+	// Make sure we can go back for 1 second
+	if (c->step_ts[idx] < 43)
+		return motion;
+	end_ts = c->step_ts[idx] - 43;
+
+	c->step_is_noise = FALSE;
+
+	// Need a double check on whether it is a real step, as we know two steps cannot be really close
+	// - overcount - if we do not validate the step timing
+	// 50/12 ~ 4.1  -> Assumption: two steps should be at least 12 samples apart.
+	if (motion == MOTION_WALKING) {
+		for (i = idx + 1; i < CLASSIFIER_STEP_WIN_SZ; i++) {
+			if ((c->step_motion[i] == MOTION_RUNNING) || (c->step_motion[i] == MOTION_WALKING)) {
+				if (c->step_ts[i] < end_ts)
+					break;
+				else
+					valid_step_cnt++;
+			}
+		}
+		if (valid_step_cnt >= 2) {
+			motion = MOTION_UNKNOWN;
+			c->step_is_noise = TRUE;
+		}
+	}
+	else if (motion == MOTION_RUNNING) {
+		for (i = idx + 1; i < CLASSIFIER_STEP_WIN_SZ; i++) {
+			if ((c->step_motion[i] == MOTION_RUNNING) || (c->step_motion[i] == MOTION_WALKING))
+			{
+				if (c->step_ts[i] < end_ts)
+					break;
+				else
+					valid_step_cnt++;
+			}
+		}
+		if (valid_step_cnt >= 3) {
+			motion = MOTION_UNKNOWN;
+			c->step_is_noise = TRUE;
+		}
+	}
+	return motion;
 }
 
 static MOTION_TYPE _CAR_classify(CLASSIFIER_STAT *c, MOTION_TYPE motion)

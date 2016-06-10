@@ -45,17 +45,7 @@ enum {
 #define PEDO_TICK_LENGTH_SHORT 2 // SHORT TERM WINDOW: 4 seonds (2^2)
 #define PEDO_TICK_LENGTH_LONG  7 // LONG TERM WINDOW: 28 seconds (2^7)
 
-#if 1
-// TEsting ... (exercise testing is about 2% undercounting, should be OK)
-#define AUP_STEP_COUNT_LOW_TH (I32S) -473316 /*(-(0.120)*NOMINAL_G_MAG)*/
-#define AUP_STEP_COUNT_HIGH_TH (I32S) 473316 /*((0.120)*NOMINAL_G_MAG) */
-// Following number has about 5% overcounting
-//#define AUP_STEP_COUNT_LOW_TH (I32S) -453316 /*(-(0.120)*NOMINAL_G_MAG)*/
-//#define AUP_STEP_COUNT_HIGH_TH (I32S) 453316 /*((0.120)*NOMINAL_G_MAG) */
-#else
-#define AUP_STEP_COUNT_LOW_TH (I32S) -503316 /*(-(0.120)*NOMINAL_G_MAG)*/
-#define AUP_STEP_COUNT_HIGH_TH (I32S) 503316 /*((0.120)*NOMINAL_G_MAG) */
-#endif
+#define STEP_COUNT_PEAK_DIFF_TH (I32S) 1048576 /* (0.25*NOMINAL_G_MAG) */
 
 //
 //  APU:  walking / running / cheating classification thresholds
@@ -209,12 +199,15 @@ typedef struct tagDC_A_PRIME_UP {
 
 // Step count state
 typedef struct tagSTEP_COUNT_STAT {
+	I32S prev2;     // previous A_prime_up
 	I32S prev;     // previous A_prime_up
 	I32S curr;     // current A_prime_up
-	I32S cand;     // candidate type
-	I32U lim_lo;   // time window limit
-	I32U lim_hi;   // time window limit
 	I32U count;    // overall counts
+	I32S p2p_peak;
+	I32S p2p_bottom_0;
+	I32S p2p_bottom_1;
+	I32U prev_g_time;
+	I8U p2p_bump_set;
 } STEP_COUNT_STAT, *PSTEP_COUNT_STAT;
 
 
@@ -362,7 +355,6 @@ typedef struct tagPEDO_STAT {
 	MAGNITUDE_STAT mag; // magnitude of A
 
 	I32S A_prime_up;            // A prime up
-	I32S A_prime_up_no_dc;      // A prime up with DC removed
 	ACCELEROMETER_3D A_prime;   // A prime, A with gravity removed
 
 	STATIONARY_STAT stationary; // stationary state
@@ -370,8 +362,6 @@ typedef struct tagPEDO_STAT {
 	ACCELEROMETER_3D g_est; // gravity estimates
 
 	ADAPTIVE_G_ESTIMATE g_adj; // gravity estimates
-
-	DC_A_PRIME_UP dc; // the dc component
 
 	STEP_COUNT_STAT step; // step count states
 
