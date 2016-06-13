@@ -153,7 +153,7 @@ void USER_store_device_param(I8U *data)
 	// Finally, we put in the length
 	data[0] = setting_length;
 	
-	Y_SPRINTF("[USER] critical store device param: %d", setting_length);
+	N_SPRINTF("[USER] critical store device param: %d", setting_length);
 }
 
 void USER_setup_profile(I8U *data)
@@ -171,7 +171,7 @@ void USER_setup_profile(I8U *data)
 	stride_in_cm = *pdata++; // stride
 	stride_in_cm |= (*pdata++)<<8; // 
 	
-	Y_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
+	N_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
 	
 	// Initialize stride length and weight for distance calculation
 	u->profile.stride_in_cm = stride_in_cm; // In center meters

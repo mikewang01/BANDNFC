@@ -2227,6 +2227,8 @@ static void _render_logo()
 	sprintf((char *)string, "UV Fitness");
 	
 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
+
+	_render_screen();
 }
 #endif
 
