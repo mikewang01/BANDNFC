@@ -23,18 +23,26 @@ const LP_FILTER lpf_coeff[3] = {
     // Sampling rate: 50 Hz, 8 Hz
     {17, {2998, 11991, 17986, 11991, 2998}, 14, {-23134, 18395, -6686, 1036}},
 };
-
-#define CONSTRAINS_STEP_HI_TH 6
+#if 0
+#define CONSTRAINS_STEP_HI_TH 5
 #define CONSTRAINS_DIFF_HI_TH 408000
+#endif
 
-#define CONSTRAINS_STEP_ME_TH 7
-#define CONSTRAINS_DIFF_ME_TH 150000
+#define CONSTRAINS_STEP_HI_TH 7
+#define CONSTRAINS_DIFF_HI_TH 90000
+#define NOISE_STEP_CLEANUP_HI_TH 250
+
+#define CONSTRAINS_STEP_ME_TH 8
+#define CONSTRAINS_DIFF_ME_TH 80000
+#define NOISE_STEP_CLEANUP_ME_TH 200
 
 #define CONSTRAINS_STEP_LO_TH 8
 #define CONSTRAINS_DIFF_LO_TH 65000
+#define NOISE_STEP_CLEANUP_LO_TH 150
 
 static I32U pedo_constrain_diff_th;
 static I8U  pedo_constrain_step_th;
+static I8U  pedo_noise_cleanup_th;
 
 // 
 // Argument -
@@ -866,7 +874,8 @@ static BOOLEAN _step_count()
 				diff1 = sc->p2p_peak - sc->p2p_bottom_1;
 				if (diff0 > diff1) {
 					if (diff1 > STEP_COUNT_PEAK_DIFF_TH) {
-						diff0 *= 0.25;
+						diff0 *= 215;
+						diff0 >>= 10; // 225/1024 ~ 0.22
 						if (diff1 > diff0) {
 							// a step is detected
 							sc->p2p_bump_set = 0x01;
@@ -879,7 +888,8 @@ static BOOLEAN _step_count()
 				}
 				else {
 					if (diff0 > STEP_COUNT_PEAK_DIFF_TH) {
-						diff1 *= 0.25;
+						diff1 *= 215;
+						diff1 >>= 10; // 225/1024 ~ 0.22
 						if (diff0 > diff1) {
 							// a step is detected
 							sc->p2p_bump_set = 0x01;
@@ -977,9 +987,9 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
 		return motion;
 	}
 	// Make sure we can go back for 1 second
-	if (c->step_ts[idx] < 43)
+	if (c->step_ts[idx] < 37)
 		return motion;
-	end_ts = c->step_ts[idx] - 43;
+	end_ts = c->step_ts[idx] - 37;
 
 	c->step_is_noise = FALSE;
 
@@ -1143,7 +1153,6 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
                 if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
                     // If these steps are noise, we should clean the step compensation counter as well
                     // For CAR steps, we should show them since we do care about CAR steps as a indicator
-                    // in Meta-layer filter
                     if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
 												c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
                         c->car_steps_compensation ++;
@@ -1181,9 +1190,10 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
         }
     }
 
-    if (cnt < pedo_constrain_step_th) {
+    //if (cnt < pedo_constrain_step_th) {
+		if (cnt < 3) { 
         return TRUE;
-    } else {
+    } else { // If we have at least 4 steps looks very similar, start up counting procedure
         for (i = idx+4; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
             if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
                 // If these steps are noise, we should clean the step compensation counter as well
@@ -1233,7 +1243,6 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
                 if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
                     // If these steps are noise, we should clean the step compensation counter as well
                     // For CAR steps, we should show them since we do care about CAR steps as a indicator
-                    // in Meta-layer filter
                     if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
 												c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
                         c->car_steps_compensation ++;
@@ -1627,7 +1636,6 @@ static void _clear_steps_buffer()
 					c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
 					// If these steps are noise, we should clean the step compensation counter as well
 					// For CAR steps, we should show them since we do care about CAR steps as a indicator
-					// in Meta-layer filter
 					if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
 							c->car_steps_compensation ++;
 							c->step_motion[i] = MOTION_CAR;
@@ -1648,7 +1656,7 @@ static void _clean_up_random_steps()
 	
 	tick_diff -= gPDM.classifier.step_ts[0];
 	
-	if (tick_diff > NOISE_STEP_CLEANUP_TH) {
+	if (tick_diff > pedo_noise_cleanup_th) {
 		 gPDM.classifier.start_normal_activity = FALSE;
 		 
 		 // Clear up all un-classified steps
@@ -1794,15 +1802,19 @@ void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitive)
 		if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_HIGH) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
+			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_HI_TH;
 		} else if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_MEDIUM) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_ME_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_ME_TH;
+			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_ME_TH;
 		} else if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_LOW) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_LO_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_LO_TH;
+			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_LO_TH;
 		} else {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
+			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_HI_TH;
 		}
 	} else {
 		// If user enters a sendentary state, set pedometer sensitivty to LOW sensitivity

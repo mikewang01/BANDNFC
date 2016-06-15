@@ -1382,6 +1382,8 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
     // Running (1B)
     pkt[filling_offset++] = pminute->running;
 
+    N_SPRINTF("[CP] time: %d, %d, %d(%d, %d)", local.day, local.hour, local.minute, pminute->walking, pminute->running);
+
     // Calories (1B)
     pkt[filling_offset++] = pminute->calories;
 

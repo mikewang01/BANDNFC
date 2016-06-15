@@ -45,7 +45,9 @@ enum {
 #define PEDO_TICK_LENGTH_SHORT 2 // SHORT TERM WINDOW: 4 seonds (2^2)
 #define PEDO_TICK_LENGTH_LONG  7 // LONG TERM WINDOW: 28 seconds (2^7)
 
-#define STEP_COUNT_PEAK_DIFF_TH (I32S) 1048576 /* (0.25*NOMINAL_G_MAG) */
+//#define STEP_COUNT_PEAK_DIFF_TH (I32S) 1048576 /* (0.25*NOMINAL_G_MAG) */
+//#define STEP_COUNT_PEAK_DIFF_TH (I32S)838861 /*(0.20*NOMINAL_G_MAG) */
+#define STEP_COUNT_PEAK_DIFF_TH (I32S)754975 /*(0.18*NOMINAL_G_MAG) */
 
 //
 //  APU:  walking / running / cheating classification thresholds
@@ -100,7 +102,6 @@ enum {
 #define STATIONARY_TIME_EARLY_TH    65
 
 #define NOISE_STEP_TIME_TH  100 /* 2 second noise threshold to eliminate inconsistent small motion .*/
-#define NOISE_STEP_CLEANUP_TH 500
 
 #define GEST_PROTECTION_PERIOD  500
 #define WIN_ADJ_G_MIN   13      /* 13/50 = 0.26 second -> 0.26 seconds for half step. */
@@ -275,7 +276,7 @@ typedef struct tagCLASSIFIER_STAT {
     I8U start_normal_activity; // The flag controlling the normal activity classification, and used to eliminate random steps
     
     I16S car_steps_compensation;      /* CAR step compensation. */
-    I16S unknown_steps_compensation; /* unknown step compensation as a indicator to reset Meta-layer state . */
+    I16S unknown_steps_compensation; /* unknown step compensation . */
 
     // Anti-cheating scheme
     ANTI_CHEATING_CTX anti_cheating;
