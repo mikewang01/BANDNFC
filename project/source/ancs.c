@@ -374,12 +374,12 @@ static void _on_evt_gattc_notif(const ble_evt_t * p_ble_evt)
 
 	if (p_notif->handle == m_service.notif_source.handle_value)
 	{
-	  N_SPRINTF("[ANCS] get notif source len :%d",p_notif->len);
-	  _ancs_parse_notif(p_notif->data,p_notif->len);
+	  N_SPRINTF("[ANCS] get notif len :%d", p_notif->len);
+	  _ancs_parse_notif(p_notif->data, p_notif->len);
 	}
 	else if (p_notif->handle == m_service.data_source.handle_value)
 	{
-		N_SPRINTF("[ANCS] get data source len :%d",p_notif->len);
+		N_SPRINTF("[ANCS] get data source len :%d", p_notif->len);
 		_parse_get_notif_attrs_response(p_notif->data, p_notif->len);
 	}
 	else
@@ -535,24 +535,29 @@ static I32U _ble_ancs_get_notif_attrs( const I32U p_uid)
 	return NRF_SUCCESS;
 }
 
-static I32U _ancs_request_attrs_pro(const ble_ancs_notif_t notif)
+static BOOLEAN _ancs_request_attrs_pro(const ble_ancs_notif_t notif)
 {
-	I32U err_code;
-	
-	// When incoming call removed,stop notifying.
-	if((ancs_notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_REMOVED)&&(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)){
-	
-	  NOTIFIC_stop_notifying();
-		return NRF_SUCCESS;
-	}
+	ANCS_CONTEXT *a = &cling.ancs;
+
+	if((ancs_notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_REMOVED)&&(ancs_notif.category_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)) {
+	  // When incoming call removed,stop notifying.	  
+		NOTIFIC_stop_notifying();
+		
+	  a->state = BLE_ANCS_STATE_IDLE;
+		
+		return FALSE;
+	}	
 	
 	// We only need receive new added notifications,ignore modified and removed notifications.
   if(ancs_notif.evt_id == BLE_ANCS_EVENT_ID_NOTIFICATION_ADDED){
 		
-	  err_code = _ble_ancs_get_notif_attrs(notif.notif_uid);
+	  _ble_ancs_get_notif_attrs(notif.notif_uid);
+		return TRUE;
+	} else {
+		
+		a->state = BLE_ANCS_STATE_IDLE;
+		return FALSE;
 	}
-	
-	return err_code;
 }
 
 /**@brief Function for setting up GATTC notifications from the Notification Provider.
@@ -698,12 +703,16 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
 		}
 		case BLE_ANCS_EVT_NOTIF_REQ:
 		{
-			Y_SPRINTF("[ANCS] Start sent request to access notify.");	
 			// Start sent request to access notify.
-       _ancs_request_attrs_pro(ancs_notif);		
+      if (_ancs_request_attrs_pro(ancs_notif)) {
+				
+			  cling.ancs.state = BLE_ANCS_STATE_WAITING_PARSE_COMPLETE;			
+			
+			  cling.ancs.parse_time = CLK_get_system_time();	
 
-      cling.ancs.state = BLE_ANCS_STATE_WAITING_PARSE_COMPLETE;			
-			cling.ancs.parse_time = CLK_get_system_time();
+        Y_SPRINTF("[ANCS] Start sent request to access notify.");					
+			}				
+			
       break;			
 		}
 		case BLE_ANCS_EVT_DISCOVER_FAILED:
