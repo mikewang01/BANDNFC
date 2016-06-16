@@ -249,7 +249,7 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 }
 
 
-void HAL_disconnect_for_fast_connection()
+void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
 {
 #if 1
 	BLE_CTX *r = &cling.ble;
@@ -284,31 +284,29 @@ void HAL_disconnect_for_fast_connection()
 		r->disconnect_evt |= BLE_DISCONN_EVT_FAST_CONNECT;
 	}
 #endif
-	
-	//conn_params_mgr_set_device_type(CONN_PARAMS_MGR_DEVICE_IOS);
-	params.min_conn_interval = conn_param_active[0];
-	params.max_conn_interval = conn_param_active[1];
-	params.slave_latency = conn_param_active[2];
-	params.conn_sup_timeout = conn_param_active[3];
-	//current_params = params;
-	if(ble_conn_params_com_conn_params(params, true) == true) {
-		N_SPRINTF("[HAL] STILL IN fast connection");
-		return ;
-	}
-	
-	uint32_t err_code = ble_conn_params_change_conn_params(&params);
 
-	if (err_code == NRF_SUCCESS) {
-		r->b_conn_params_updated = FALSE;
-		Y_SPRINTF("[HAL] connection params update -- HIGH --");
-		//err_code = app_timer_start(m_conn_params_timer_id, APP_TIMER_TICKS(1*1000, APP_TIMER_PRESCALER), &current_params);
-		sd_ble_tx_buffer_count_get(&r->tx_buf_available);
-	}
+    //conn_params_mgr_set_device_type(CONN_PARAMS_MGR_DEVICE_IOS);
+    params.min_conn_interval = conn_param_active[0];
+    params.max_conn_interval = conn_param_active[1];
+    params.slave_latency = conn_param_active[2];
+    params.conn_sup_timeout = conn_param_active[3];
+    //current_params = params;
+    if(ble_conn_params_com_conn_params(params, true) == true) {
+        N_SPRINTF("[HAL] STILL IN fast connection");
+        return ;
+    }
+    uint32_t err_code = ble_conn_params_change_conn_params(&params, swith_purpose);
+    if (err_code == NRF_SUCCESS) {
+        r->b_conn_params_updated = FALSE;
+        Y_SPRINTF("[HAL] connection params update -- HIGH --");
+        //err_code = app_timer_start(m_conn_params_timer_id, APP_TIMER_TICKS(1*1000, APP_TIMER_PRESCALER), &current_params);
+        sd_ble_tx_buffer_count_get(&r->tx_buf_available);
+    }
 #endif
 }
 #endif
 
-BOOLEAN HAL_set_slow_conn_params()
+BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose)
 {
 #ifndef _CLING_PC_SIMULATION_
 	ble_gap_conn_params_t params;
@@ -336,7 +334,7 @@ BOOLEAN HAL_set_slow_conn_params()
 
 	/*ckeck connection parameter*/
 	if(ble_conn_params_com_conn_params(params, false) == true) {
-		N_SPRINTF("[HAL] still in slow connection");
+		Y_SPRINTF("[HAL] still in slow connection");
 		return TRUE;
 	}
 
@@ -349,8 +347,8 @@ BOOLEAN HAL_set_slow_conn_params()
 		conn_params_mgr_set_device_type(CONN_PARAMS_MGR_DEVICE_NULL);
 	}
 #endif
-	
-	err_code = ble_conn_params_change_conn_params(&params);
+
+    err_code = ble_conn_params_change_conn_params(&params, swith_purpose);
 
 	if (err_code == NRF_SUCCESS) {
 		// Connection parameters get updated, which means BLE is in a slow connection mode

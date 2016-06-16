@@ -99,10 +99,10 @@ uint32_t ble_conn_params_stop(void);
  *       this function initiates a new negotiation.
  *
  * @param[in]   new_params  This contains the new connections parameters to setup.
- *
+ *  					  change_purpose  This indicate the purpose for this speed swicth action
  * @return      NRF_SUCCESS on successful initialization, otherwise an error code.
  */
-uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t *new_params);
+uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t *new_params, uint8_t change_purpose);
 
 /**@brief Function for handling the Application's BLE Stack events.
  *
@@ -114,6 +114,10 @@ void ble_conn_params_on_ble_evt(ble_evt_t * p_ble_evt);
 bool conn_params_mgr_set_device_type(uint16_t dev_type);
 bool ble_conn_params_com_conn_params(ble_gap_conn_params_t new_params, bool b_conn_speed_fast);
 ble_gap_conn_params_t get_current_conn_params(void);
+
+#define SWITCH_SPEED_FOR_DATA_SYNC		(0x00)
+#define SWITCH_SPEED_FOR_FW_UPGRADE		(0X01)
+#define SWITCH_SPEED_FOR_POWER_SAVING	(0X02)
 #endif // BLE_CONN_PARAMS_H__
 
 /** @} */

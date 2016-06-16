@@ -11,7 +11,7 @@
 
 #include "main.h"
 #include "Aes.h"
-
+#include "ble_conn_params.h"
 #define BLE_PAYLOAD_LEN 20
 #ifndef _CLING_PC_SIMULATION_
 extern int8_t ancs_master_handle;
@@ -584,6 +584,50 @@ BOOLEAN BTLE_is_streaming_enabled(void)
 	return TRUE;
 }
 
+/*
+	retrive the amount of minute activity need to be uploaded
+*/
+uint32_t get_flash_minute_activity_offset()
+{
+	#define DATA_SENDED_MARK (0x80000000)
+	I32U stored_offset=0;
+	/*remember the last position we end our search*/
+	static I32U data_sended_offset = 0;
+	I32U offset = data_sended_offset;
+	I32U dw_buf[4];
+	uint32_t epoch_file_count = FILE_exists_with_prefix((I8U *)"epoch", 5);
+	Y_SPRINTF("[TRACKING] epoch file number = %d", epoch_file_count);
+	/*if a buffered file existed in file system this means this device has not been synced for days*/
+	if(epoch_file_count > 0){
+			return ((epoch_file_count*4096)/sizeof(MINUTE_TRACKING_CTX));
+	}
+	/*if no buffer file existed, then check out data entried today*/
+	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
+	I8U *pbuf = (I8U *)dw_buf;
+	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
+		FLASH_Read_App(offset + SYSTEM_TRACKING_SPACE_START, pbuf, 16);
+		if (minute->epoch == 0xffffffff) {
+				stored_offset = offset;
+				stored_offset -= sizeof(MINUTE_TRACKING_CTX);
+				break;
+		}else if(((minute->epoch&DATA_SENDED_MARK) == 0)){
+				/*the first entry point has been found */
+				data_sended_offset = offset;
+		}
+		offset += sizeof(MINUTE_TRACKING_CTX);		
+	}
+	Y_SPRINTF("[TRACKING] stored_offset = %d : data_sended_offset = %d", stored_offset, data_sended_offset);
+	/*if glitch happened*/
+	if(data_sended_offset > stored_offset || data_sended_offset >= SYSTEM_TRACKING_SPACE_SIZE){
+			data_sended_offset = 0;
+			return 0;
+	}
+	/*for origin offset take the unint of Bytes, and one package contians 16 bytes, so this is the reason why 4 bytes righ shift 
+	necessary here*/
+	return ((stored_offset - data_sended_offset) >> 4);
+}
+
+
 static void _disconnect_clean_up()
 {
 	BLE_CTX *r = &cling.ble;
@@ -674,7 +718,7 @@ BOOLEAN BTLE_streaming_authorized()
 	// Streaming second based activity packets
 	if (r->streaming_second_count > BLE_STREAMING_SECOND_MAX) {
 		// Switch to slow connection mode if the streaming part is done
-		if (HAL_set_slow_conn_params()) {
+		if (HAL_set_slow_conn_params(SWITCH_SPEED_FOR_POWER_SAVING)) {
 			N_SPRINTF("Streaming ends: Slow Connection interval(%d)", cling.system.reconfig_cnt);
 		}
 		return FALSE;
@@ -684,7 +728,7 @@ BOOLEAN BTLE_streaming_authorized()
 			BTLE_reset_streaming();
 #endif
 			// if we haven't seen anything in about 20 seconds, switch to slow connection mode
-			if (HAL_set_slow_conn_params()) {
+			if (HAL_set_slow_conn_params(SWITCH_SPEED_FOR_POWER_SAVING)) {
 				N_SPRINTF("No packets: Slow Connection interval");
 			}
 		} else {
@@ -747,7 +791,7 @@ BOOLEAN BTLE_streaming_authorized()
 	if (t_curr > (r->streaming_ts + 1000)) {
 
 		// Streaming seconds means we are done with syncing, so switch to slow connection mode
-		HAL_set_slow_conn_params();
+		HAL_set_slow_conn_params(SWITCH_SPEED_FOR_POWER_SAVING);
 
 		// For background activity streaming, we default media to be BLE.
 		CP_create_streaming_daily_msg();

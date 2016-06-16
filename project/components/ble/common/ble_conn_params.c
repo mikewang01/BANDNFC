@@ -18,7 +18,7 @@
 #include "ble_srv_common.h"
 #include "app_util.h"
 #include "main.h"
-
+ 
 #define  BLE_CONN_PARAMS_DEBUG 1
 
 static ble_conn_params_init_t m_conn_params_config;     /**< Configuration as specified by the application. */
@@ -225,7 +225,7 @@ static void on_connect(ble_evt_t * p_ble_evt)
     err_code = sd_ble_gap_ppcp_set(&m_preferred_conn_params);
 		APP_ERROR_CHECK(err_code);
 
-		Y_SPRINTF("[BLE CONN]-- on_connect Current (on CONN) Max: %d, Min: %d", 
+		N_SPRINTF("[BLE CONN]-- on_connect Current (on CONN) Max: %d, Min: %d", 
 				m_current_conn_params.max_conn_interval, m_current_conn_params.min_conn_interval);
 
     // Check if we shall handle negotiation on connect
@@ -292,7 +292,7 @@ static void on_conn_params_update(ble_evt_t * p_ble_evt)
     // Copy the parameters
     m_current_conn_params = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params;
 	
-		Y_SPRINTF("[BLE CONN]-- Current (on UPDATE) Max: %d, Min: %d", 
+		N_SPRINTF("[BLE CONN]-- Current (on UPDATE) Max: %d, Min: %d", 
 				m_current_conn_params.max_conn_interval, m_current_conn_params.min_conn_interval);
 
     conn_params_negotiation();
@@ -337,9 +337,10 @@ void ble_conn_params_on_ble_evt(ble_evt_t * p_ble_evt)
  *   Modification: Created function
 
 *****************************************************************************/
-uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params)
+uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params, uint8_t change_purpose)
 {  uint32_t err_code;
 #define ANDOIRD_CONN_PARAMS_TIMES 2
+#define DATA_SYNC_SPEED_SWICTH_THEAHOLD 15 /*this means only when activity data exceed 15, it gonna perfom a speed swcth action*/ 
     m_preferred_conn_params = *new_params;
     // Set the connection params in stack
     err_code = sd_ble_gap_ppcp_set(&m_preferred_conn_params);
@@ -358,8 +359,14 @@ uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params)
 								if(m_update_count < ANDOIRD_CONN_PARAMS_TIMES){
 									 err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_preferred_conn_params);
 								}else{
-									m_update_count = 0;
-									conn_mgr_disconnect_for_fast_connection(&m_preferred_conn_params);
+									/*only when this is a data sync procedure, no switching process is true*/
+									if((get_flash_minute_activity_offset() < DATA_SYNC_SPEED_SWICTH_THEAHOLD)&&(change_purpose == SWITCH_SPEED_FOR_DATA_SYNC)){
+										/*if this procedure has been entered 254 counts, this m_update_count gona wrapp to 0 without assignment which gonna cause a bug*/
+										m_update_count = ANDOIRD_CONN_PARAMS_TIMES;
+									}else{
+										m_update_count = 0;
+										conn_mgr_disconnect_for_fast_connection(&m_preferred_conn_params);
+									}
 								}
                
             }
@@ -374,7 +381,7 @@ uint32_t ble_conn_params_change_conn_params(ble_gap_conn_params_t * new_params)
             }
             err_code = NRF_SUCCESS;
         }
-				Y_SPRINTF("[BLE CONN]-- IOS update times = %d, andorid update times = %d",ios_update_times, andorid_update_times);
+				N_SPRINTF("[BLE CONN]-- IOS update times = %d, andorid update times = %d",ios_update_times, andorid_update_times);
 
     }
     return err_code;

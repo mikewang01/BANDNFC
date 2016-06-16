@@ -842,7 +842,7 @@ static void _pending_process()
             cling.gcp.host_type = p->msg[1];
             Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
 
-            HAL_disconnect_for_fast_connection();
+            HAL_disconnect_for_fast_connection(SWITCH_SPEED_FOR_DATA_SYNC);
             _create_dev_info_msg();
             BTLE_reset_streaming();  // Reset streaming as the App is trying to figure whether it is an authorized device
             break;
@@ -874,7 +874,7 @@ static void _pending_process()
 		}
         case CP_MSG_TYPE_START_OTA: {
             Y_SPRINTF("[CP] << OTA enabled >>");
-            HAL_disconnect_for_fast_connection();
+            HAL_disconnect_for_fast_connection(SWITCH_SPEED_FOR_FW_UPGRADE);
 
             // Enable over the air update flag, and exit low power mode
             OTA_set_state(TRUE);
