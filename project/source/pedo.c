@@ -931,7 +931,11 @@ static MOTION_TYPE _WALKING_RUNNING_classify(CLASSIFIER_STAT *c, I32S win_siz)
     //
     if (c->apu_pace < 20) {
         // 1. High pace
-        //    Running: Faster than 2.5 steps per second
+        //    Running: Faster than 2.5 steps per second (and P2P is less the pure walking threshold
+			votes += (CLASSIFIER_WRC_1_TH - CLASSIFIER_WRC_PURE_WALK_TH);
+			if (votes < 0)
+				motion = MOTION_WALKING;
+			else
         motion = MOTION_RUNNING;
     } else if (votes > 0) {
         // 2. High APU magnitude
