@@ -46,7 +46,8 @@ enum {
 #define PEDO_TICK_LENGTH_LONG  7 // LONG TERM WINDOW: 28 seconds (2^7)
 
 //#define STEP_COUNT_PEAK_DIFF_TH (I32S) 1048576 /* (0.25*NOMINAL_G_MAG) */
-//#define STEP_COUNT_PEAK_DIFF_TH (I32S)838861 /*(0.20*NOMINAL_G_MAG) */
+#define CLASSIFIER_RUNNING_MIN_TH (I32S)2097152 /*(0.20*NOMINAL_G_MAG) */
+
 #define STEP_COUNT_PEAK_DIFF_TH (I32S)754975 /*(0.18*NOMINAL_G_MAG) */
 
 //
@@ -260,6 +261,7 @@ typedef struct tagCLASSIFIER_STAT {
     BOOLEAN step_is_noise;
     
 		MOTION_TYPE motion;     // Motion: walking/running and stationary
+    I32U step_count;        // Step: step count
     BOOLEAN step_compensation;
 
     // Walking/running classification

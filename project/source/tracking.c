@@ -1199,7 +1199,7 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day)
 		offset += 16;
  
 		minute->epoch &= 0x7fffffff;
-		if (minute->epoch > epoch_start) {
+		if (minute->epoch >= epoch_start) {
 			// Get LSB 3 bits for sleep state, the high bits might be used for other parameters, such as VOC value
 			sleep_active_state = minute->sleep_state & 0x07;
 			if ((sleep_active_state == SLP_STAT_LIGHT) ||
@@ -1247,7 +1247,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 		offset += 16;
 
 		minute->epoch &= 0x7fffffff;
-		if (minute->epoch > epoch_start) {
+		if (minute->epoch >= epoch_start) {
 			day_total->walking += minute->walking;
 			day_total->running += minute->running;
 			day_total->distance += minute->distance;

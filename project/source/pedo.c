@@ -30,15 +30,15 @@ const LP_FILTER lpf_coeff[3] = {
 
 #define CONSTRAINS_STEP_HI_TH 8
 #define CONSTRAINS_DIFF_HI_TH 80000
-#define NOISE_STEP_CLEANUP_HI_TH 250
+#define NOISE_STEP_CLEANUP_HI_TH 200
 
 #define CONSTRAINS_STEP_ME_TH 9
 #define CONSTRAINS_DIFF_ME_TH 70000
-#define NOISE_STEP_CLEANUP_ME_TH 200
+#define NOISE_STEP_CLEANUP_ME_TH 150
 
 #define CONSTRAINS_STEP_LO_TH 10
 #define CONSTRAINS_DIFF_LO_TH 60000
-#define NOISE_STEP_CLEANUP_LO_TH 150
+#define NOISE_STEP_CLEANUP_LO_TH 100
 
 static I32U pedo_constrain_diff_th;
 static I8U  pedo_constrain_step_th;
@@ -496,7 +496,8 @@ static I32S _dot_3d(ACCELEROMETER_3D in1, ACCELEROMETER_3D in2)
 static void _calc_apu_p2p(CLASSIFIER_STAT *c, I32S apu)
 {
     // Two steps a time for P2P check
-    if (gPDM.step.count & 0x01) {
+    //if (gPDM.step.count & 0x01) 
+	{
         c->apu_p2p = BASE_abs(c->apu_max - c->apu_min);
         c->apu_max = apu;
         c->apu_min = apu;
@@ -878,6 +879,7 @@ static BOOLEAN _step_count()
 						diff0 >>= 10; // 225/1024 ~ 0.22
 						if (diff1 > diff0) {
 							// a step is detected
+							sc->count ++;
 							sc->p2p_bump_set = 0x01;
 							sc->p2p_peak = 0x80000000;
 							sc->p2p_bottom_0 = bottom;
@@ -892,6 +894,7 @@ static BOOLEAN _step_count()
 						diff1 >>= 10; // 225/1024 ~ 0.22
 						if (diff0 > diff1) {
 							// a step is detected
+							sc->count ++;
 							sc->p2p_bump_set = 0x01;
 							sc->p2p_peak = 0x80000000;
 							sc->p2p_bottom_0 = bottom;
@@ -932,11 +935,11 @@ static MOTION_TYPE _WALKING_RUNNING_classify(CLASSIFIER_STAT *c, I32S win_siz)
     if (c->apu_pace < 20) {
         // 1. High pace
         //    Running: Faster than 2.5 steps per second (and P2P is less the pure walking threshold
-			votes += (CLASSIFIER_WRC_1_TH - CLASSIFIER_WRC_PURE_WALK_TH);
-			if (votes < 0)
-				motion = MOTION_WALKING;
-			else
-        motion = MOTION_RUNNING;
+		votes += (CLASSIFIER_WRC_1_TH - CLASSIFIER_WRC_PURE_WALK_TH);
+		if (votes < 0)
+			motion = MOTION_WALKING;
+		else
+			motion = MOTION_RUNNING;
     } else if (votes > 0) {
         // 2. High APU magnitude
         //    Running: > 2 steps per second
@@ -982,7 +985,7 @@ static I32S _get_classify_win_siz(CLASSIFIER_STAT *c, I32U ts_th)
 // make sure it is consistent
 static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U idx)
 {
-	I32U end_ts;
+	I32U walk_end_ts, run_end_ts, p2p;
 	I8U valid_step_cnt = 0;
 	I8U i;
 
@@ -991,9 +994,10 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
 		return motion;
 	}
 	// Make sure we can go back for 1 second
-	if (c->step_ts[idx] < 37)
+	if (c->step_ts[idx] < 47)
 		return motion;
-	end_ts = c->step_ts[idx] - 37;
+	run_end_ts = c->step_ts[idx] - 47;
+	walk_end_ts = c->step_ts[idx] - 37;
 
 	c->step_is_noise = FALSE;
 
@@ -1003,7 +1007,7 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
 	if (motion == MOTION_WALKING) {
 		for (i = idx + 1; i < CLASSIFIER_STEP_WIN_SZ; i++) {
 			if ((c->step_motion[i] == MOTION_RUNNING) || (c->step_motion[i] == MOTION_WALKING)) {
-				if (c->step_ts[i] < end_ts)
+				if (c->step_ts[i] < walk_end_ts)
 					break;
 				else
 					valid_step_cnt++;
@@ -1018,7 +1022,7 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
 		for (i = idx + 1; i < CLASSIFIER_STEP_WIN_SZ; i++) {
 			if ((c->step_motion[i] == MOTION_RUNNING) || (c->step_motion[i] == MOTION_WALKING))
 			{
-				if (c->step_ts[i] < end_ts)
+				if (c->step_ts[i] < run_end_ts)
 					break;
 				else
 					valid_step_cnt++;
@@ -1027,6 +1031,13 @@ static MOTION_TYPE _noise_validate(CLASSIFIER_STAT *c, MOTION_TYPE motion, I32U 
 		if (valid_step_cnt >= 3) {
 			motion = MOTION_UNKNOWN;
 			c->step_is_noise = TRUE;
+		}
+		else {
+			p2p = c->w_r_votes[idx] + CLASSIFIER_WRC_1_TH;
+			if (p2p < CLASSIFIER_RUNNING_MIN_TH) {
+				motion = MOTION_UNKNOWN;
+				c->step_is_noise = TRUE;
+			}
 		}
 	}
 	return motion;
@@ -1245,21 +1256,19 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
             cnt = 0;
             for (; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
                 if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
-                    // If these steps are noise, we should clean the step compensation counter as well
+					c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
+					// If these steps are noise, we should clean the step compensation counter as well
                     // For CAR steps, we should show them since we do care about CAR steps as a indicator
                     if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
-												c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
                         c->car_steps_compensation ++;
                         c->step_motion[i] = MOTION_CAR;
 											
 												N_SPRINTF("--- unknow steps -> CAR (1)");
-											#if 0
                     } else {
                         c->unknown_steps_compensation ++;
                         c->step_motion[i] = MOTION_UNKNOWN;
                         cnt ++;
 												N_SPRINTF("--- unknown steps -> unknown (1)");
-											#endif
                     }
                 }
             }
@@ -1668,7 +1677,6 @@ static void _clean_up_random_steps()
 	}
 }
 static int steps_overall = 0;
-static int steps_motion = 0;
 
 I16U PEDO_main(ACCELEROMETER_3D in)
 {
@@ -1749,7 +1757,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
 			stat = PDM_STEP_DETECTED | PDM_MOTION_DETECTED;
 			
 			if (gPDM.classifier.motion != MOTION_UNKNOWN)
-				steps_motion ++;
+				gPDM.classifier.step_count ++;
 				N_SPRINTF("STEPS motion ++ %d ++", steps_motion);
 			
 				// User is in a motion state, tune up sensitivity
