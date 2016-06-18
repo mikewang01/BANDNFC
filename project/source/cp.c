@@ -64,12 +64,11 @@ static void _sync_time_proc(I8U *data)
     }
 
     if (b_activity_consistency) {
-        N_SPRINTF("-- CP Tracking OK (%d): %d, %d, %d, %d, %d",
+        N_SPRINTF("-- CP Tracking OK (%d): %d, %d, %d, %d",
                   cling.activity.tracking_flash_offset,
                   stored_day_total.calories,
                   stored_day_total.distance,
                   stored_day_total.running,
-                  stored_day_total.sleep,
                   stored_day_total.walking);
         return;
     }
@@ -79,12 +78,11 @@ static void _sync_time_proc(I8U *data)
     memcpy(&cling.activity.day_stored, &stored_day_total, sizeof(DAY_TRACKING_CTX));
 
     // Reset day_stored structure too ...
-    N_SPRINTF("-- Tracking reset (%d): %d, %d, %d, %d, %d",
+    Y_SPRINTF("-- Tracking reset (%d): %d, %d, %d, %d",
               cling.activity.tracking_flash_offset,
               stored_day_total.calories,
               stored_day_total.distance,
               stored_day_total.running,
-              stored_day_total.sleep,
               stored_day_total.walking);
 }
 
