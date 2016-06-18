@@ -29,11 +29,11 @@ const LP_FILTER lpf_coeff[3] = {
 #endif
 
 #define CONSTRAINS_STEP_HI_TH 8
-#define CONSTRAINS_DIFF_HI_TH 80000
+#define CONSTRAINS_DIFF_HI_TH 60000
 #define NOISE_STEP_CLEANUP_HI_TH 100
 
 #define CONSTRAINS_STEP_ME_TH 9
-#define CONSTRAINS_DIFF_ME_TH 70000
+#define CONSTRAINS_DIFF_ME_TH 60000
 #define NOISE_STEP_CLEANUP_ME_TH 100
 
 #define CONSTRAINS_STEP_LO_TH 10
@@ -977,7 +977,6 @@ static void _core_classify(CLASSIFIER_STAT *c, STEP_COUNT_STAT *sc, I8U step_idx
 {
     MOTION_TYPE motion = MOTION_UNKNOWN;
     I32S win_siz;
-    ANTI_CHEATING_CTX *ac = &c->anti_cheating;
     
     //
     // The classification follows a sequence as (Walking/Running) -> (StairsUp) -> (Car) -> (Cheating)
@@ -1106,7 +1105,7 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
     }
 
     // Make sure we have balanced A prime up
-		_small_step_check(c);
+	_small_step_check(c);
 
     // Make sure not some hand-shaking like movement causing device to count steps
     cnt = BASE_calculate_occurance(gPDM.tick.raw.pair_ratio_lo, 6);
@@ -1128,9 +1127,11 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
         }
     }
 
-    if (cnt < (pedo_constrain_step_th>>1)) {
+//    if (cnt < (pedo_constrain_step_th>>1)) {
+	if (cnt < 6) {
         return TRUE;
     } else { // If we have at least 6 steps looks very similar, start up counting procedure
+#if 0
         for (i = idx+4; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
             if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
                 // If these steps are noise, we should clean the step compensation counter as well
@@ -1140,16 +1141,13 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
 										c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
                     c->car_steps_compensation ++;
                     c->step_motion[i] = MOTION_CAR;
-										N_SPRINTF("--- unknown --> CAR (4) ---");
-									#if 0
                 } else {
                     c->unknown_steps_compensation ++;
                     c->step_motion[i] = MOTION_UNKNOWN;
-										N_SPRINTF("--- unknown --> UNKNOWN (4) ---");
-									#endif
                 }
             }
         }
+#endif
         return FALSE;
     }
 }
@@ -1161,7 +1159,7 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
 
     if (c->step_stat[0] != STEP_TO_BE_CLASSIFIED) {
 	    return TRUE;
-		}
+	}
 
     ts_strt = gPDM.global_time;
 
@@ -1184,20 +1182,13 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
                     if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
                         c->car_steps_compensation ++;
                         c->step_motion[i] = MOTION_CAR;
-						N_SPRINTF("--- unknow steps -> CAR (1)");
                     } else {
                         c->unknown_steps_compensation ++;
                         c->step_motion[i] = MOTION_UNKNOWN;
                         cnt ++;
-						N_SPRINTF("--- unknown steps -> unknown (1)");
                     }
                 }
             }
-            // Set a threshold for adaptive unintentional cheating at 4 steps, i.e. if continous 3+ steps, assign 
-            // them with a confidence level, otherwise, we won't report it
-            if (cnt < 3) {
- //               c->unknown_steps_compensation = 0;
-            } 
         }
         ts_strt = c->step_ts[i];
     }
@@ -1560,12 +1551,12 @@ static void _tick_processing(ACCELEROMETER_3D in, I32S A_prime_up)
 }
 
 
-static void _clear_steps_buffer()
+static void _clear_steps_buffer(I8U start_idx)
 {
 	I8U i;
 	CLASSIFIER_STAT *c = &gPDM.classifier;
 
-	for (i = 0; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
+	for (i = start_idx; i < CLASSIFIER_STEP_WIN_SZ; i++) {
 			if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
 					c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
 					// If these steps are noise, we should clean the step compensation counter as well
@@ -1573,12 +1564,9 @@ static void _clear_steps_buffer()
 					if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
 							c->car_steps_compensation ++;
 							c->step_motion[i] = MOTION_CAR;
-						
-							N_SPRINTF("--- unknow steps -> CAR (3)");
 					} else {
 							c->unknown_steps_compensation ++;
 							c->step_motion[i] = MOTION_UNKNOWN;
-							N_SPRINTF("--- unknown steps --> unknown (3)");
 					}
 			}
 	}
@@ -1597,7 +1585,8 @@ static void _clean_up_random_steps()
 			gPDM.classifier.start_normal_activity = FALSE;
 
 			// Clear up all un-classified steps
-			_clear_steps_buffer();
+			_clear_steps_buffer(0);
+			return;
 		}
 	}
 	else
@@ -1605,9 +1594,35 @@ static void _clean_up_random_steps()
 		gPDM.classifier.start_normal_activity = FALSE;
 
 		// Clear up all un-classified steps
-		_clear_steps_buffer();
+		_clear_steps_buffer(0);
+		return;
 	}
+
+	// Check pace, pause pedometer if pace is detected lower than 1 step per second
+	if (gPDM.classifier.step_ts[2]) {
+		tick_diff = tick_first_step - gPDM.classifier.step_ts[2];
+		if (tick_diff >= 100) { // 2 seconds for 2 steps
+			gPDM.classifier.start_normal_activity = FALSE;
+
+			// Clear up all un-classified steps from the 2nd steps forward
+			_clear_steps_buffer(1);
+			return;
+		}
+	}
+
+	if (gPDM.classifier.step_ts[3]) {
+		tick_diff = tick_first_step - gPDM.classifier.step_ts[3];
+		if (tick_diff >= 150) {// 3 seconds for 3 steps
+			gPDM.classifier.start_normal_activity = FALSE;
+
+			// Clear up all un-classified steps from the 2nd steps forward
+			_clear_steps_buffer(1);
+			return;
+		}
+	}
+
 }
+
 static int steps_overall = 0;
 
 I16U PEDO_main(ACCELEROMETER_3D in)
@@ -1636,7 +1651,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
 		 
 		 N_SPRINTF("-- STATIONARY DETECTED --");
 		 // Clear up all un-classified steps
-		 _clear_steps_buffer();
+		 _clear_steps_buffer(0);
 	 } else {
 		 // If the device appears to be stationary, skip all the step count and classification
 		 if (gPDM.stationary.acc.samples > PEDO_SPS) {
@@ -1664,7 +1679,6 @@ I16U PEDO_main(ACCELEROMETER_3D in)
     
     // Count steps, detect one step, and update classification information
 	if (_step_count()) {
-						
         // Every new step is detected, we update the peak-to-peak of A prime up
         // and take current A prime up as the max/min initialization
         _classifier_stat_update(in, TRUE);
