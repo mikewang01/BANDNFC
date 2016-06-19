@@ -29,15 +29,15 @@ const LP_FILTER lpf_coeff[3] = {
 #endif
 
 #define CONSTRAINS_STEP_HI_TH 8
-#define CONSTRAINS_DIFF_HI_TH 60000
+#define CONSTRAINS_DIFF_HI_TH 50000
 #define NOISE_STEP_CLEANUP_HI_TH 100
 
-#define CONSTRAINS_STEP_ME_TH 9
-#define CONSTRAINS_DIFF_ME_TH 60000
+#define CONSTRAINS_STEP_ME_TH 8
+#define CONSTRAINS_DIFF_ME_TH 50000
 #define NOISE_STEP_CLEANUP_ME_TH 100
 
-#define CONSTRAINS_STEP_LO_TH 10
-#define CONSTRAINS_DIFF_LO_TH 60000
+#define CONSTRAINS_STEP_LO_TH 8
+#define CONSTRAINS_DIFF_LO_TH 50000
 #define NOISE_STEP_CLEANUP_LO_TH 100
 
 static I32U pedo_constrain_diff_th;
@@ -643,10 +643,9 @@ static void _update_classifier_stat(ACCELEROMETER_3D in, I32S apu, BOOLEAN b_ste
 static void _classifier_stat_update(ACCELEROMETER_3D in, BOOLEAN b_step)
 {
     CLASSIFIER_STAT *c = &gPDM.classifier;
-    I32S Ap_mag_main;  // magnitude of A prime
     I32U ts_s, ts_e;
 	
-    Ap_mag_main = _comp_magnitude(gPDM.A_prime, 0);
+    //Ap_mag_main = _comp_magnitude(gPDM.A_prime, 0);
 
     if (b_step) {
         // Looking back past 8 steps, and calculate the pace
@@ -1074,8 +1073,7 @@ static void _small_step_check(CLASSIFIER_STAT *c)
 
 static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
 {
-    I8U cnt, i, j, idx;
-	I32U t_prev, t_next;
+    I8U cnt, i;
 
     // Get rid of any previous incidental steps
     cnt = 0;
@@ -1115,14 +1113,12 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
 
     // Apply non-intentional cheating criterion.
     cnt = 0;
-    idx = 0;
 
     for (i = 0; i < (pedo_constrain_step_th<<1); i++) {
         if ((c->step_stat[i] == STEP_TO_BE_CLASSIFIED) && c->step_ts[i])  {
             if (c->step_a_diff[i] < pedo_constrain_diff_th) 
             {
                 cnt ++;
-                idx = i;
             }
         }
     }
@@ -1131,23 +1127,6 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
 	if (cnt < 6) {
         return TRUE;
     } else { // If we have at least 6 steps looks very similar, start up counting procedure
-#if 0
-        for (i = idx+4; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
-            if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
-                // If these steps are noise, we should clean the step compensation counter as well
-                // For CAR steps, we should show them since we do care about CAR steps as a indicator
-                // in Meta-layer filter
-                if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
-										c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
-                    c->car_steps_compensation ++;
-                    c->step_motion[i] = MOTION_CAR;
-                } else {
-                    c->unknown_steps_compensation ++;
-                    c->step_motion[i] = MOTION_UNKNOWN;
-                }
-            }
-        }
-#endif
         return FALSE;
     }
 }

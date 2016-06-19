@@ -277,11 +277,10 @@ void SLEEP_minute_proc()
 	SLEEP_CTX *slp = &cling.sleep;
 	I8U  threshold = 0;
 	I8U  wakeup_threshold = 0;
-	I32U t_diff  = CLK_get_system_time();
+	I32U time_diff;
 	I8U  step_status_tmp;
 	I8U  i, step_cnt;
 
-	t_diff -= cling.lps.ts;	
 	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
 					
 		// Get out of sleep mode if device has been off the wrist for more than 120 minutes (1 hour)
@@ -291,6 +290,22 @@ void SLEEP_minute_proc()
 
 		// As user is currently in sleep state, reset idle alert
 		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
+	}
+	
+	// Check unnormal sleep state (Special when skin touch sensor doesn't work)
+	// If a device stays in deep sleep for over 90 minutes, this is unusual, wake it up from sleep, and
+  // put it in a charging recovery state
+	if (SLEEP_is_sleep_state(SLP_STAT_SOUND)) {
+
+		time_diff = cling.time.system_clock_in_sec - slp->sound_sleep_timestamp;
+		
+		if (time_diff > 5400) {
+			slp->b_sudden_wake_from_sleep = TRUE;
+			cling.batt.non_charging_accumulated_steps = 0;
+			cling.batt.non_charging_accumulated_active_sec = 0;
+		}
+	} else {
+		slp->sound_sleep_timestamp = cling.time.system_clock_in_sec;
 	}
 	
 	// monitoring sleep stage switching.

@@ -729,7 +729,6 @@ static void _logging_per_minute()
 	// Update the buffer length
 	a->tracking_flash_offset += 16;
 	
-
 	// Erase next block we now just switch to a new space
 	if ((a->tracking_flash_offset & 0x0fff) == 0) {
 		a->b_pending_erase = TRUE;
@@ -1064,6 +1063,11 @@ void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
 		minute->epoch &= 0x7fffffff;
 		if (minute->epoch >= epoch_start) {
 
+			// For some reason (surely we need to figure out the root cause),
+			// if epoch appears invalid, go look for next valid entry
+			if (minute->epoch == 0x7fffffff)
+				continue;
+			
 			sleep_active_state = minute->sleep_state  & 0x07;
 			// 5. Sleep times + sleep duration
 			if (sleep_active_state == SLP_STAT_LIGHT) {
@@ -1128,6 +1132,12 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 
 		minute->epoch &= 0x7fffffff;
 		if (minute->epoch >= epoch_start) {
+			
+			// For some reason (surely we need to figure out the root cause),
+			// if epoch appears invalid, go look for next valid entry
+			if (minute->epoch == 0x7fffffff)
+				continue;
+			
 			steps_in_a_minute = minute->walking+minute->running;
 			
 			// 1. Accumulating steps
@@ -1200,6 +1210,11 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day)
  
 		minute->epoch &= 0x7fffffff;
 		if (minute->epoch >= epoch_start) {
+			// For some reason (surely we need to figure out the root cause),
+			// if epoch appears invalid, go look for next valid entry
+			if (minute->epoch == 0x7fffffff)
+				continue;
+			
 			// Get LSB 3 bits for sleep state, the high bits might be used for other parameters, such as VOC value
 			sleep_active_state = minute->sleep_state & 0x07;
 			if ((sleep_active_state == SLP_STAT_LIGHT) ||
@@ -1223,7 +1238,6 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	BOOLEAN b_init_offset = FALSE;
 	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
 	I8U *pbuf = (I8U *)dw_buf;
-	
 	N_SPRINTF("[TRACKING] total epoch start: %d", epoch_start);
 
 	day_total->walking = 0;
@@ -1245,13 +1259,27 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
       continue;
 		}
 		offset += 16;
-
 		minute->epoch &= 0x7fffffff;
+
 		if (minute->epoch >= epoch_start) {
-			day_total->walking += minute->walking;
-			day_total->running += minute->running;
-			day_total->distance += minute->distance;
-			day_total->calories += minute->calories;
+			// For some reason (surely we need to figure out the root cause),
+			// if epoch appears invalid, go look for next valid entry
+			if (minute->epoch != 0x7fffffff) {
+				
+				day_total->walking += minute->walking;
+				day_total->running += minute->running;
+				day_total->distance += minute->distance;
+				day_total->calories += minute->calories;
+#if 0
+				{
+					SYSTIME_CTX local;
+
+					RTC_get_local_clock(minute->epoch, &local);
+
+					Y_SPRINTF("Activity total(%d, %d): %d, %d (%d:%d)", offset, minute->epoch, day_total->walking, day_total->running, local.hour, local.minute);
+				}
+#endif
+			}
 		}
 		
 	}
