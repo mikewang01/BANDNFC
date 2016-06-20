@@ -86,8 +86,9 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 	TRACKING_initialization();
 	
 	// No motion for 10 minutes, set pedometer to a low sensitivity state.
-	if (t_curr > (cling.lps.ts + 300000))
+	if (t_curr > (cling.lps.ts + 300000)) {
 		PEDO_set_step_detection_sensitivity(FALSE);
+	}
 	
 	cling.lps.ts = t_curr;
 #ifdef _CLINGBAND_UV_MODEL_
@@ -491,9 +492,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				(diff->sleep_state == SLP_STAT_REM))
 			{
 				a->sleep_by_noon += 60;
-				
-				// As we detect sleep state, adjust step detection threshold to low sensitivity
-				PEDO_set_step_detection_sensitivity(FALSE);
 			}
   		diff->activity_count = cling.sleep.m_activity_per_min;
 		}

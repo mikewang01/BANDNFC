@@ -284,12 +284,15 @@ void SLEEP_minute_proc()
 	if ( SLEEP_is_sleep_state(SLP_STAT_LIGHT) || SLEEP_is_sleep_state(SLP_STAT_SOUND) ) {    // check whether the device has been put on the desk when getting up..
 					
 		// Get out of sleep mode if device has been off the wrist for more than 120 minutes (1 hour)
-    if (slp->m_successive_no_skin_touch_mins > 120) {
+    	if (slp->m_successive_no_skin_touch_mins > 120) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 		}
 
 		// As user is currently in sleep state, reset idle alert
 		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
+		
+		// As we detect sleep state, adjust step detection threshold to low sensitivity
+		PEDO_set_step_detection_sensitivity(FALSE);
 	}
 	
 	// Check unnormal sleep state (Special when skin touch sensor doesn't work)
@@ -299,7 +302,7 @@ void SLEEP_minute_proc()
 
 		time_diff = cling.time.system_clock_in_sec - slp->sound_sleep_timestamp;
 		
-		if (time_diff > 5400) {
+		if (time_diff > 7200) {
 			slp->b_sudden_wake_from_sleep = TRUE;
 			cling.batt.non_charging_accumulated_steps = 0;
 			cling.batt.non_charging_accumulated_active_sec = 0;

@@ -32,13 +32,17 @@ const LP_FILTER lpf_coeff[3] = {
 #define CONSTRAINS_DIFF_HI_TH 60000
 #define NOISE_STEP_CLEANUP_HI_TH 100
 
-#define CONSTRAINS_STEP_ME_TH 8
-#define CONSTRAINS_DIFF_ME_TH 60000
+#define CONSTRAINS_STEP_ME_TH 9
+#define CONSTRAINS_DIFF_ME_TH 55000
 #define NOISE_STEP_CLEANUP_ME_TH 100
 
-#define CONSTRAINS_STEP_LO_TH 8
-#define CONSTRAINS_DIFF_LO_TH 60000
+#define CONSTRAINS_STEP_LO_TH 10
+#define CONSTRAINS_DIFF_LO_TH 50000
 #define NOISE_STEP_CLEANUP_LO_TH 100
+
+
+#define CONSTRAINS_SLEEP_STEP_TH 10
+#define CONSTRAINS_SLEEP_DIFF_TH 50000
 
 static I32U pedo_constrain_diff_th;
 static I8U  pedo_constrain_step_th;
@@ -1733,9 +1737,9 @@ I8U* PEDO_get_global_buffer()
 	return (I8U *)&gPDM;
 }
 
-void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitive)
+void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitivity)
 {	
-	if (b_sensitive) {
+	if (b_sensitivity) {
 		if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_HIGH) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
@@ -1753,10 +1757,13 @@ void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitive)
 			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
 			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_HI_TH;
 		}
+		return;
 	} else {
 		// If user enters a sendentary state, set pedometer sensitivty to LOW sensitivity
-		pedo_constrain_diff_th = CONSTRAINS_DIFF_LO_TH;
-		pedo_constrain_step_th = CONSTRAINS_STEP_LO_TH;
+		pedo_constrain_diff_th = CONSTRAINS_SLEEP_DIFF_TH;
+		pedo_constrain_step_th = CONSTRAINS_SLEEP_STEP_TH;
+		
+		return;
 	}
 	
 	Y_SPRINTF("[PEDO] set sensitivity: %d, %d, %d", 
