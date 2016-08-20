@@ -27,7 +27,11 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 	I32U data[32];
 	I8U *pdata = (I8U*)data;
 	I8U *pmsg;
-	I8U i, a, b, c;
+	I8U i, a, b, c, day;
+	BOOLEAN b_init_alarm = FALSE;
+	
+	// Get current day
+	day = 1 << cling.time.local.dow;
 
 	FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
 	BASE_delay_msec(50); // Latency before refreshing reminder space. (Erasure latency: 50 ms)
@@ -41,12 +45,11 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 	if (cling.reminder.total > 32)
 		cling.reminder.total = 32;
 
+	cling.reminder.ui_hh = 0xff;
+	cling.reminder.ui_mm = 0xff;
+	
 	pmsg = msg + 1;
-  if (cling.reminder.total == 0) {
-		cling.reminder.ui_hh = 0xff;
-		cling.reminder.ui_mm = 0xff;
-		N_SPRINTF("[REMINDER] No reminder, set invalid hh/mm");
-	} else {
+  if (cling.reminder.total > 0) {
 		
 		memset(pdata, 0, 128);
 		
@@ -63,9 +66,13 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 			*pdata++ = c;
 			*pdata++ = a;
 			*pdata++ = b;
-			if (i == 0) {
-				cling.reminder.ui_hh = a;
-				cling.reminder.ui_mm = b;
+
+			if (c & day) {
+				if (!b_init_alarm) {
+					b_init_alarm = TRUE;
+					cling.reminder.ui_hh = a;
+					cling.reminder.ui_mm = b;
+				}
 			}
 			N_SPRINTF("[CP] reminder setup(%d, %d), %d:%d(%02x)", i, cling.reminder.total, a, b, c);
 		}

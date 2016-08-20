@@ -579,7 +579,11 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;
-		
+	// Set a invalid activity count
+	if (BATT_charging_det_for_sleep()) {
+		pminute->activity_count = 199; // Set a large number to indicate device is currently charging
+	}
+	
 	// Get the maximum UV in past minute as part of minute data
 #ifdef _CLINGBAND_UV_MODEL_
 	{
@@ -849,6 +853,9 @@ void TRACKING_data_logging()
 {
 	// Activity update only for a device that is authenticated
 	if (!LINK_is_authorized()) {
+                cling.time.local_minute_updated = FALSE;
+                cling.time.local_day_updated = FALSE;
+                cling.time.local_noon_updated = FALSE;
 		return;
 	}
 	

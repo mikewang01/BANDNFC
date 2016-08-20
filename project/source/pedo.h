@@ -249,7 +249,6 @@ typedef struct tagCLASSIFIER_STAT {
     
 		MOTION_TYPE motion;     // Motion: walking/running and stationary
     I32U step_count;        // Step: step count
-    BOOLEAN step_compensation;
 
     // Walking/running classification
     I32S apu_p2p;           // P2P examination for Walking/Running classification

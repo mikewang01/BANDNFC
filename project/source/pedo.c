@@ -23,31 +23,30 @@ const LP_FILTER lpf_coeff[3] = {
     // Sampling rate: 50 Hz, 8 Hz
     {17, {2998, 11991, 17986, 11991, 2998}, 14, {-23134, 18395, -6686, 1036}},
 };
-#if 0
-#define CONSTRAINS_STEP_HI_TH 5
-#define CONSTRAINS_DIFF_HI_TH 408000
-#endif
 
 #define CONSTRAINS_STEP_HI_TH 8
-#define CONSTRAINS_DIFF_HI_TH 55000
-#define NOISE_STEP_CLEANUP_HI_TH 100
+#define CONSTRAINS_DIFF_HI_TH 35000
+#define NOISE_STEP_CLEANUP_HI_TH 50
+#define CONSISTENT_STEP_HI_TH 6
 
 #define CONSTRAINS_STEP_ME_TH 9
-#define CONSTRAINS_DIFF_ME_TH 55000
-#define NOISE_STEP_CLEANUP_ME_TH 100
+#define CONSTRAINS_DIFF_ME_TH 35000
+#define NOISE_STEP_CLEANUP_ME_TH 50
+#define CONSISTENT_STEP_ME_TH 6
 
 #define CONSTRAINS_STEP_LO_TH 10
-#define CONSTRAINS_DIFF_LO_TH 50000
-#define NOISE_STEP_CLEANUP_LO_TH 100
+#define CONSTRAINS_DIFF_LO_TH 33000
+#define NOISE_STEP_CLEANUP_LO_TH 50
+#define CONSISTENT_STEP_LO_TH 7
 
 
 #define CONSTRAINS_SLEEP_STEP_TH 10
-#define CONSTRAINS_SLEEP_DIFF_TH 50000
+#define CONSTRAINS_SLEEP_DIFF_TH 34000
 
 static I32U pedo_constrain_diff_th;
 static I8U  pedo_constrain_step_th;
 static I8U  pedo_noise_cleanup_th;
-
+static I8U pedo_constrain_consistent_step_th;
 // 
 // Argument -
 //
@@ -1041,11 +1040,10 @@ static void _small_step_check(CLASSIFIER_STAT *c)
 	I32U tick_diff;
 	I8U i, j;
 
-	for (i = 0; i < CLASSIFIER_STEP_WIN_SZ; i++) {
+	for (i = 0; i < (CLASSIFIER_STEP_WIN_SZ - 4); i++) {
 		if (c->step_stat[i] == STEP_ALREADY_CLASSIFIED)
 			break;
 		// Check 4 STEP TIME WINDOW,
-		if (i < (CLASSIFIER_STEP_WIN_SZ - 4)) {
 			tick_diff = c->step_ts[i] - c->step_ts[i + 3];
 			if (tick_diff <= 50) {
 				apu_avg += c->w_r_votes[i];
@@ -1067,10 +1065,6 @@ static void _small_step_check(CLASSIFIER_STAT *c)
 				}
 
 			}
-		}
-		else {
-			break;
-		}
 	}
 }
 
@@ -1135,15 +1129,36 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
     }
 }
 
+static BOOLEAN _do_steps_keep_consistent(CLASSIFIER_STAT *c)
+{
+	I8U i, cnt;
+	
+	cnt = 0;
+	
+    for (i = 0; i < 10; i++) {
+				if (c->step_a_diff[i] < pedo_constrain_diff_th) 
+				{
+						cnt ++;
+				}
+    }
+		
+		// Make sure the latest 6 steps (out of 10) are consistent
+		if (cnt < pedo_constrain_consistent_step_th)
+			return FALSE;
+		else
+			return TRUE;
+}
+
 static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
 {
     I8U i;
-    I32U ts_strt, diff, cnt;
+    I32U ts_strt, diff;
 
     if (c->step_stat[0] != STEP_TO_BE_CLASSIFIED) {
 	    return TRUE;
 	}
 
+	// Clean up random steps, then perform a consistency exam
     ts_strt = gPDM.global_time;
 
     for (i = 0; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
@@ -1155,8 +1170,7 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
 				return FALSE;
 			else
 				break;
-		} else if (diff > NOISE_STEP_TIME_TH) {
-            cnt = 0;
+		} else if (diff > pedo_noise_cleanup_th) {
             for (; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
                 if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
 					c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
@@ -1168,7 +1182,6 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
                     } else {
                         c->unknown_steps_compensation ++;
                         c->step_motion[i] = MOTION_UNKNOWN;
-                        cnt ++;
                     }
                 }
             }
@@ -1202,23 +1215,30 @@ static BOOLEAN _motion_classification()
     // Reset confidence level
 	c->step_is_noise = FALSE;
 
-	// Clear step compensation flag
-	c->step_compensation = FALSE;
-
 	if (c->car_steps_compensation > 0) {
+#if 1
+			c->car_steps_compensation = 0;
+#else
 			// Show the steps as a indication of driving.
 			c->car_steps_compensation --;
 			c->motion = MOTION_CAR;
 
+		// Do NOT set up motion flag as it won't go into overall step count
 			return TRUE;
+#endif
 	}
 	
 	if (c->unknown_steps_compensation > 0) {
+#if 1
+		c->unknown_steps_compensation = 0;
+#else
 			// Show the steps as a indication of driving.
 			c->unknown_steps_compensation --;
     c->motion = MOTION_UNKNOWN;
 
-			return TRUE;
+		// Do NOT set up motion flag as it won't go into overall step count
+			return FALSE;
+#endif
 	}
 
 	// Pre-classifcation, filtering out random steps
@@ -1239,8 +1259,6 @@ static BOOLEAN _motion_classification()
 			}
 	}
 
-	c->step_compensation = FALSE;
-
 	// The classification starts after a pre-defined latency, 
 	step_idx = _if_a_step_to_classify(c);
 
@@ -1251,7 +1269,15 @@ static BOOLEAN _motion_classification()
 
     // core classification
 	_core_classify(&gPDM.classifier, &gPDM.step, (I8U) step_idx);
-        
+	
+	if (!cling.activity.b_workout_active) {
+
+		// Finally, make sure we are getting consistent steps, otherwise, restart incidental movement detection
+		if (!_do_steps_keep_consistent(c)) {
+				c->start_normal_activity = FALSE;
+		}
+	}
+	
 	return TRUE;
 }
 
@@ -1744,18 +1770,22 @@ void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitivity)
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
 			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_HI_TH;
+			pedo_constrain_consistent_step_th = CONSISTENT_STEP_HI_TH;
 		} else if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_MEDIUM) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_ME_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_ME_TH;
 			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_ME_TH;
+			pedo_constrain_consistent_step_th = CONSISTENT_STEP_ME_TH;
 		} else if (cling.user_data.m_pedo_sensitivity == PEDO_SENSITIVITY_LOW) {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_LO_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_LO_TH;
 			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_LO_TH;
+			pedo_constrain_consistent_step_th = CONSISTENT_STEP_LO_TH;
 		} else {
 			pedo_constrain_diff_th = CONSTRAINS_DIFF_HI_TH;
 			pedo_constrain_step_th = CONSTRAINS_STEP_HI_TH;
 			pedo_noise_cleanup_th = NOISE_STEP_CLEANUP_HI_TH;
+			pedo_constrain_consistent_step_th = CONSISTENT_STEP_HI_TH;
 		}
 		return;
 	} else {
@@ -1766,6 +1796,6 @@ void PEDO_set_step_detection_sensitivity(BOOLEAN b_sensitivity)
 		return;
 	}
 	
-	Y_SPRINTF("[PEDO] set sensitivity: %d, %d, %d", 
+	N_SPRINTF("[PEDO] set sensitivity: %d, %d, %d", 
 		cling.user_data.m_pedo_sensitivity, pedo_constrain_diff_th, pedo_constrain_step_th);
 }

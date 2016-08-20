@@ -40,6 +40,9 @@ static void _sync_time_proc(I8U *data)
     // Reset minute streaming amount;
     BTLE_reset_streaming();
 	
+		// Reset alarm
+		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+	
 		// Make sure the minute file has correct offset	
 #ifdef _ENABLE_UART_
 		{
