@@ -2198,7 +2198,6 @@ static void _display_frame_appear(I8U index, BOOLEAN b_render)
 		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_SMART) && (index <= UI_DISPLAY_SMART_END)) {
 		_display_frame_smart(index, b_render);
-		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_VITAL) && (index <= UI_DISPLAY_VITAL_END)) {
 		_display_frame_vital(index, b_render);
 		u->frame_cached_index = index;
@@ -2649,22 +2648,6 @@ static void _restore_ui_index()
 		return;
 	}
 	
-	if ((u->frame_cached_index == UI_DISPLAY_SMART_INCOMING_MESSAGE) ||
-			(u->frame_cached_index == UI_DISPLAY_SMART_MESSAGE) ||
-			(u->frame_cached_index == UI_DISPLAY_SMART_APP_NOTIF) ||
-			(u->frame_cached_index == UI_DISPLAY_SMART_DETAIL_NOTIF))
-	{
-		// Make sure it is activity workout alive
-		if (!cling.activity.b_workout_active)
-			cling.activity.workout_type = WORKOUT_NONE;
-		
-		if (cling.activity.workout_type > WORKOUT_NONE) {
-			u->frame_cached_index = UI_DISPLAY_STOPWATCH_STOP;
-		} else {
-			u->frame_cached_index = UI_DISPLAY_SMART_MESSAGE;
-		}
-	}
-
 	// If it is charging
 	
 	if (BATT_is_charging()) {
