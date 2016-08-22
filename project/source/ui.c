@@ -2189,10 +2189,10 @@ static void _display_frame_appear(I8U index, BOOLEAN b_render)
 	UI_ANIMATION_CTX *u = &cling.ui;
 	
 	N_SPRINTF("[UI] frame appear: %d", index);
+	u->frame_cached_index = UI_DISPLAY_HOME;
 
 	if (index == UI_DISPLAY_HOME) {
 		_display_frame_home(b_render);
-		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_TRACKER) && (index <= UI_DISPLAY_TRACKER_END)) {
 		_display_frame_tracker(index, b_render);
 		u->frame_cached_index = index;
@@ -2209,7 +2209,6 @@ static void _display_frame_appear(I8U index, BOOLEAN b_render)
 		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_SETTING) && (index <= UI_DISPLAY_SETTING_END)) {
 		_display_frame_setting(index, b_render);
-		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_CAROUSEL) && (index <= UI_DISPLAY_CAROUSEL_END)) {
 		_display_frame_carousel(index, b_render);
 	} else if (index == UI_DISPLAY_OTA) {
