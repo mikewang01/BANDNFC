@@ -334,6 +334,19 @@ static void _perform_ui_with_a_swipe(UI_ANIMATION_CTX *u, I8U gesture)
 			
 			N_SPRINTF("[UI] swipe right: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);
 		}
+		
+		// Initialize PPG approximation detection with a swipe
+		if ((u->frame_index == UI_DISPLAY_STOPWATCH_HEARTRATE) || 
+			(u->frame_index == UI_DISPLAY_VITAL_HEART_RATE))
+		{
+			if (BATT_is_charging()) {
+				PPG_disable_sensor();
+				cling.hr.b_closing_to_skin = FALSE;
+				cling.hr.current_rate = 0;
+			} else {
+				PPG_closing_to_skin_detect_init();
+			}
+		}
 	} else {
 		// Animation is not needed
 		u->frame_next_idx = u->frame_index;
@@ -1022,7 +1035,7 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 				
 				if (cling.reminder.ui_hh >= 24 || cling.reminder.ui_mm >= 60) {
 					Y_SPRINTF("[UI] alarm invalid - %d:%d", cling.reminder.ui_hh, cling.reminder.ui_mm);
-					len = sprintf((char *)string, "0:00");
+					len = sprintf((char *)string, "--:--");
 				} else {
 					len = sprintf((char *)string, "%d:%02d", cling.reminder.ui_hh, cling.reminder.ui_mm);
 					
@@ -1036,7 +1049,7 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		}
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_HEART_RATE) {
-		if (TOUCH_is_skin_touched()) {
+		if (cling.hr.b_closing_to_skin) {
 			N_SPRINTF("[UI] Heart rate - valid");
 
 			len = 0;
@@ -1083,17 +1096,10 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 			string[len] = 0;
 		}
 	} else if (mode == UI_MIDDLE_MODE_SKIN_TEMP) {
-		if (TOUCH_is_skin_touched()) {
   		integer = cling.therm.current_temperature/10;
 			fractional = cling.therm.current_temperature - integer * 10;
 			len = sprintf((char *)string, "%d.%d", integer, fractional);
 			string[len++] = ICON_MIDDLE_CELCIUS_IDX;
-		} else {
-			N_SPRINTF("[UI] skin temp - not valid");
-			len = 0;
-			string[len++] = ICON_MIDDLE_NO_SKIN_TOUCH;
-			string[len] = 0;
-		}
 	} else if (mode == UI_MIDDLE_MODE_WEATHER) {
 
 		if (WEATHER_get_weather(0, &weather)) {
@@ -2048,7 +2054,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_STOPWATCH_HEARTRATE:
 		{
-			if (TOUCH_is_skin_touched()) {
+			if (cling.hr.b_closing_to_skin && cling.hr.heart_rate_ready) {
 
 				len1 = sprintf((char *)string1, "%d", PPG_minute_hr_calibrate());
 
@@ -2188,29 +2194,33 @@ static void _display_frame_appear(I8U index, BOOLEAN b_render)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 	
-	N_SPRINTF("[UI] frame appear: %d", index);
-	u->frame_cached_index = UI_DISPLAY_HOME;
+	N_SPRINTF("[UI] frame appear: %d, %d", index, u->frame_cached_index);
 
 	if (index == UI_DISPLAY_HOME) {
 		_display_frame_home(b_render);
+		u->frame_cached_index = UI_DISPLAY_HOME;
 	} else if ((index >= UI_DISPLAY_TRACKER) && (index <= UI_DISPLAY_TRACKER_END)) {
 		_display_frame_tracker(index, b_render);
 		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_SMART) && (index <= UI_DISPLAY_SMART_END)) {
 		_display_frame_smart(index, b_render);
+		u->frame_cached_index = UI_DISPLAY_HOME;
 	} else if ((index >= UI_DISPLAY_VITAL) && (index <= UI_DISPLAY_VITAL_END)) {
 		_display_frame_vital(index, b_render);
-		u->frame_cached_index = index;
-	} else if ((index >= UI_DISPLAY_WORKOUT) && (index <= UI_DISPLAY_WORKOUT_END)) {
-		_display_frame_workout(index, b_render);
 		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_STOPWATCH) && (index <= UI_DISPLAY_STOPWATCH_END)) {
 		_display_frame_stopwatch(index, b_render);
 		u->frame_cached_index = index;
+	} else if ((index >= UI_DISPLAY_WORKOUT) && (index <= UI_DISPLAY_WORKOUT_END)) {
+		_display_frame_workout(index, b_render);
+		u->frame_cached_index = index;
+		u->frame_cached_index = index;
 	} else if ((index >= UI_DISPLAY_SETTING) && (index <= UI_DISPLAY_SETTING_END)) {
 		_display_frame_setting(index, b_render);
+		u->frame_cached_index = UI_DISPLAY_HOME;
 	} else if ((index >= UI_DISPLAY_CAROUSEL) && (index <= UI_DISPLAY_CAROUSEL_END)) {
 		_display_frame_carousel(index, b_render);
+		u->frame_cached_index = UI_DISPLAY_HOME;
 	} else if (index == UI_DISPLAY_OTA) {
 		_display_frame_ota(index, b_render);
 	} else {
@@ -2320,7 +2330,7 @@ void UI_switch_state(I8U state, I32U interval)
 	u->frame_interval = interval;
 	u->display_to_base = CLK_get_system_time();
 	
-	N_SPRINTF("[UI] state switching: %d, %d", state, u->display_to_base);
+	N_SPRINTF("[UI] state switching: %d, %d, %d, %d", state, u->display_to_base, u->frame_index, u->frame_cached_index);
 }
 
 BOOLEAN UI_is_idle()
@@ -2844,7 +2854,7 @@ void UI_state_machine()
 		case UI_STATE_LOW_POWER:
 		{
 			if (u->state_init) {
-				Y_SPRINTF("[UI] low power (or charging) shown");
+				Y_SPRINTF("[UI] low power (or charging) shown, %d, %d", u->frame_index, u->frame_cached_index);
 				u->state_init = FALSE;
 				_display_charging(cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 				u->touch_time_stamp = t_curr;
@@ -2916,17 +2926,24 @@ void UI_state_machine()
 				t_threshold = 2;
 			t_threshold *= 1000; // second -> milli-second
 			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {
-				if (TOUCH_is_skin_touched()) {
-					t_threshold = cling.user_data.screen_on_heart_rate; // in second
-					t_threshold *= 1000; // second -> milli-second
+				t_threshold = cling.user_data.screen_on_heart_rate; // in second
+				t_threshold *= 1000; // second -> milli-second
+
+				if (!cling.hr.b_closing_to_skin) {
+					// if detection is done over 3 seconds, time out screen display
+					if (t_curr > (cling.hr.approximation_decision_ts + 3000)) {
+						t_threshold  = 1000;
+						N_SPRINTF("[UI] sensor is off skin at %d", t_curr);
+					}
 				}
+
 			} else if (u->frame_index == UI_DISPLAY_TRACKER_UV_IDX) {
 				t_threshold += 5000;
 			}
 			
 			// If we don't see any gesture in 4 seconds, dark out screen
 			if (t_curr > (u->touch_time_stamp+t_threshold)) {
-				N_SPRINTF("[UI] gesture monitor time out - %d", t_threshold);
+				N_SPRINTF("[UI] gesture monitor time out - %d at %d", t_threshold, t_curr);
 				if (BATT_is_charging()) {
 					if (t_curr > (u->touch_time_stamp+10000)) {
 						u->state = UI_STATE_DARK;
@@ -2949,6 +2966,13 @@ void UI_state_machine()
 				if (u->frame_index == UI_DISPLAY_PREVIOUS) {
 					u->frame_index = u->frame_cached_index;
 					Y_SPRINTF("[UI] load cached index: %d", u->frame_index);
+					if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) || 
+						(u->frame_index == UI_DISPLAY_STOPWATCH_HEARTRATE))
+					{
+						// Since we just turn on the screen and land on heart rate page, 
+						// initialize the proximation detection
+						PPG_closing_to_skin_detect_init();
+					}
 				}
 				// Display this frame.
 				_display_frame_appear(u->frame_index, TRUE);
@@ -2977,7 +3001,6 @@ void UI_state_machine()
 		case UI_STATE_DARK:
 		{
 			if (t_curr > (u->display_to_base+u->frame_interval)) {
-				Y_SPRINTF("[UI] screen go dark");
 				// Turn off OLED panel
 				OLED_set_panel_off();
 				u->state = UI_STATE_IDLE;
@@ -3008,6 +3031,7 @@ void UI_state_machine()
 				} else {
 					TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
 				}
+				Y_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
 			}
 			break;
 		}

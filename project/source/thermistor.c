@@ -188,11 +188,7 @@ void THERMISTOR_state_machine()
 			break;
 		}
 	  case THERMISTOR_STAT_DUTY_OFF:
-		{
-			// If skin touch is positive, go ahead to measure PPG
-			if (!TOUCH_is_skin_touched()) 
-				break;
-		
+		{		
 	  	t_diff = cling.time.system_clock_in_sec - t->measure_timebase;
 			
 	  	if (_is_user_viewing_skin_temp()) {

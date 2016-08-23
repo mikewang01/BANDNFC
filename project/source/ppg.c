@@ -254,6 +254,55 @@ static void _seek_cross_point(I16S instSample)
   }
 }
 
+//static void _closing_to_skin_detect_init()
+void PPG_closing_to_skin_detect_init()
+{
+	HEARTRATE_CTX *h = &cling.hr;
+
+	h->b_closing_to_skin = TRUE;
+  h->m_closing_to_skin_detection_timer = CLK_get_system_time();
+	h->approximation_decision_ts = CLK_get_system_time();
+	h->m_sample_cnt = 0;
+	h->m_sample_sum = 0;
+		Y_SPRINTF("[PPG] start approximation at %d ----", h->approximation_decision_ts);
+}
+
+static void _closing_to_skin_detect(I16S sample)
+{
+	HEARTRATE_CTX *h = &cling.hr;
+	I32S sample_val;
+	I32S t_curr, t_diff;
+	
+	t_curr = CLK_get_system_time();
+
+	h->m_sample_sum += sample;
+	h->m_sample_cnt++;
+	if (h->m_sample_cnt > PPG_SAMPLE_COUNT_THRESHOLD) {
+		h->m_sample_cnt = PPG_SAMPLE_COUNT_THRESHOLD;
+	}
+
+	if (h->m_sample_cnt<PPG_SAMPLE_COUNT_THRESHOLD) {
+		return;
+	}
+	
+	sample_val = (h->m_sample_sum) >> 5;               // accumulating 32 sample, so right shift 6-bit.
+	h->m_sample_sum  = sample_val * 31;
+	h->m_sample_sum += sample;
+	
+	sample_val = (h->m_sample_sum) >> 5;               // new sample average value, plusing the input current sample.
+	if (sample_val>PPG_SAMPLE_AVERATE_THRESHOLD) {
+		h->m_closing_to_skin_detection_timer = CLK_get_system_time();
+	}
+
+	t_diff = t_curr - h->m_closing_to_skin_detection_timer;
+	if (t_diff > 500) {          					           // Turn off PPG module.
+		h->current_rate = 0;
+    h->b_closing_to_skin = FALSE;    
+		h->approximation_decision_ts = CLK_get_system_time();
+		Y_SPRINTF("[PPG] ppg is detached at %d ----", h->approximation_decision_ts);
+	}
+}
+
 static void _ppg_sample_proc()
 {
 	HEARTRATE_CTX *h = &cling.hr;
@@ -268,6 +317,8 @@ static void _ppg_sample_proc()
 	t_diff = t_sec - h->m_measuring_timer_in_s;
 
 	sample = _get_light_strength_register();
+
+	_closing_to_skin_detect(sample);
 
 	high_pass_filter_val = Butterworth_Filter_HP( (double) sample);
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
@@ -381,7 +432,7 @@ void ppg_Enable_Sensor()
 #endif
 }
 
-void ppg_Disable_Sensor()
+void PPG_disable_sensor()
 {
 	HEARTRATE_CTX *h = &cling.hr;
 
@@ -444,7 +495,7 @@ void PPG_init()
 
 //ppg_Init_Sensor();
 //ppg_Enable_Sensor();
-	ppg_Disable_Sensor();
+	PPG_disable_sensor();
 
 	// Initialize butterworth filter
 	// below initialization code segment only called once
@@ -457,6 +508,7 @@ void PPG_init()
 	
 	h->m_zero_point_timer   = CLK_get_system_time();
   for (i=0; i<8; i++) h->m_epoch_num[i] = 42;
+	PPG_closing_to_skin_detect_init();
 }
 
 BOOLEAN _is_user_viewing_heart_rate()
@@ -503,20 +555,6 @@ void PPG_state_machine()
 
 		case PPG_STAT_SAMPLE_READY:		
 		{			
-			
-			// If skin touch is positive, go ahead to measure PPG
-			if (!TOUCH_is_skin_touched()) {
-				t_diff = t_sec - h->m_no_skin_touch_in_s;
-				
-				if (t_diff > 2) {
-          ppg_Disable_Sensor();					       // Turn off ppg sensor module
-          h->state = PPG_STAT_DUTY_OFF;
-          N_SPRINTF("[PPG] PPG (No skin touch) State off, %d, %d", t_diff, cling.ui.state);
-				}
-
-				break;
-			}
-			
 			h->m_no_skin_touch_in_s = t_sec;
 			
 		  RTC_start_operation_clk();
@@ -531,26 +569,29 @@ void PPG_state_machine()
         }
 
   			if (t_diff > PPG_HR_MEASURING_TIMEOUT && !_is_user_viewing_heart_rate() ) {
-          ppg_Disable_Sensor();					       // Turn off ppg sensor module
+          PPG_disable_sensor();					       // Turn off ppg sensor module
           h->state = PPG_STAT_DUTY_OFF;
           N_SPRINTF("[PPG] PPG (TIME OUT) State off, %d, %d", t_diff, cling.ui.state);
 				}
+			}
+
+			if (!h->b_closing_to_skin) {
+				Y_SPRINTF("[PPG] not closing to skin.");				
+				PPG_disable_sensor();
+				h->state = PPG_STAT_DUTY_OFF;
 			}
 		}
 		break;
 
 		case PPG_STAT_DUTY_OFF:
-		{
-			// If skin touch is positive, go ahead to measure PPG
-			if (!TOUCH_is_skin_touched()) 
-				break;
-		
+		{		
 			t_diff = t_sec - h->m_measuring_timer_in_s;
-			if (_is_user_viewing_heart_rate() || cling.activity.b_workout_active) {
+			
+  		if ((_is_user_viewing_heart_rate() || cling.activity.b_workout_active) && cling.hr.b_closing_to_skin) {
 				t_threshold = PPG_MEASURING_PERIOD_FOREGROUND;
 				if ( t_diff > t_threshold ) {
 						h->state = PPG_STAT_DUTY_ON;
-						N_SPRINTF("[PPG] PPG State on (force)");
+						Y_SPRINTF("[PPG] PPG State on (force)");
 				}
 			} else {
 				//t_threshold = cling.user_data.ppg_day_interval>>10;
@@ -579,6 +620,11 @@ void PPG_state_machine()
 				// State in low power stationary for more than 5 seconds
 				t_curr = CLK_get_system_time();
 				if (t_curr < (cling.lps.ts + PPG_WEARING_DETECTION_LPS_INTERVAL)) {
+					break;
+				}
+				
+				// If device stays in background LPS for more than 5 minutes, no heart rate detection detection needed
+				if (t_curr > (cling.lps.ts + PPG_WEARING_DETECTION_BG_IDLE_INTERVAL)) {
 					break;
 				}
 

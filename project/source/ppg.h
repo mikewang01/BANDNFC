@@ -3,7 +3,7 @@
 #define __PPG_H__
 
 #include "standards.h"
-
+#include "butterworth.h"
 #define _ENABLE_PPG_
 
 #define ppg_I2C_ADDR    		(0xB4)            // 0x5A
@@ -177,16 +177,19 @@ void ppg_PS_Auto                 (void);
 void ppg_ALS_Auto                (void);
 void ppg_PS_ALS_Auto             (void);
 
-#define PPG_MEASURING_PERIOD_FOREGROUND          1    // real time measuring
-#define PPG_MEASURING_PERIOD_BACKGROUND_DAY          600    // real time measuring
-#define PPG_MEASURING_PERIOD_BACKGROUND_NIGHT          1800    // real time measuring
-#define PPG_SAMPLE_PROCESSING_PERIOD             1
-#define PPG_HR_MEASURING_TIMEOUT                25
-#define PPG_NEXT_CHECK_LATENCY                 180
+#define PPG_MEASURING_PERIOD_FOREGROUND                             1    // real time measuring
+#define PPG_MEASURING_PERIOD_BACKGROUND_DAY                       600    // real time measuring
+#define PPG_MEASURING_PERIOD_BACKGROUND_NIGHT                    1800    // real time measuring
+#define PPG_SAMPLE_PROCESSING_PERIOD                                1
+#define PPG_HR_MEASURING_TIMEOUT                                   25
+#define PPG_NEXT_CHECK_LATENCY                                    180
 
-#define PPG_WEARING_DETECTION_OVERALL_INTERVAL      180000   // 180 seconds
-#define PPG_WEARING_DETECTION_LPS_INTERVAL          5000     //   5 seconds
-#define PPG_WEARING_DETECTION_BACKIDLE_INTERVAL     30000    // 300 seconds
+#define PPG_WEARING_DETECTION_OVERALL_INTERVAL                 180000     // 180 seconds
+#define PPG_WEARING_DETECTION_LPS_INTERVAL                       5000     //   5 seconds
+#define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 300000     // background idle for 300 seconds
+
+#define PPG_SAMPLE_COUNT_THRESHOLD                                 32
+#define PPG_SAMPLE_AVERATE_THRESHOLD                             2000
 
 typedef enum {
 	PPG_BODY_NOT_WEAR, 
@@ -236,6 +239,13 @@ typedef struct tagHEARTRATE_CTX{
 	I8U update_cnt;
 	I8U minute_rate;
 	
+	// sample value for ppg wearing/not-wearing-detection
+	I32S m_sample_sum;
+	I8U  m_sample_cnt;
+	I32U m_closing_to_skin_detection_timer;
+	BOOLEAN b_closing_to_skin;
+	I32U approximation_decision_ts;
+	
 	// Heart rate calculation variables
 	I32U  m_pre_zero_point;
 	I16S  m_pre_ppg_sample;
@@ -254,13 +264,14 @@ typedef struct tagHEARTRATE_CTX{
 BOOLEAN _is_user_viewing_heart_rate(void);
 I16S    _get_light_strength_register(void);
 
-void ppg_Disable_Sensor(void);
+void PPG_disable_sensor(void);
 void ppg_configure_sensor(void);
 
 void PPG_init(void);
 void PPG_state_machine(void);
 void PPG_wearing_detection_state_machine(void);
 I8U PPG_minute_hr_calibrate(void);
+void PPG_closing_to_skin_detect_init(void);
 
 #endif // __PPG_H__
 /** @} */

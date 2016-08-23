@@ -513,33 +513,13 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 	vital->skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
 	return;
 #endif
-	touch_total_time = TOUCH_get_skin_touch_time();
-		
-		// Debouncing logic for skin touch detection
-		//
-		// Conditions:
-		//
-		// 1. Positive if band is currently touched
-		// 2. Positive if band is touched for more than 30 seconds in past minute
-		//
-		vital->skin_touch_pads = 0;
-		if (TOUCH_is_skin_touched())
-			vital->skin_touch_pads = 1;
-		else if (touch_total_time > TOUCH_DEBOUNCING_TIME_PER_MINUTE)
-			vital->skin_touch_pads = 1;
-		
 		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
 		
-		if (BATT_charging_det_for_sleep())
-			vital->skin_touch_pads = 0;
-		
-		// Make sure the device touches skin, otherwise, the number make no use
-		if (vital->skin_touch_pads == 0)  {
-			if ((cling.sleep.state != SLP_STAT_LIGHT) && (cling.sleep.state != SLP_STAT_SOUND)) {
+		if (!cling.hr.b_closing_to_skin) {
+			// if sensor is detached from skin, set both vital signals to 0
 				vital->skin_temperature = 0;
 				vital->heart_rate = 0;
 				return;
-			}
 		}
 		
 		vital->skin_temperature = cling.therm.current_temperature;
@@ -612,7 +592,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	
 	adj = 0;
 	// Adjust heart rate in case of intense activity
-	if (vital.skin_touch_pads > 0) {	
+	if (cling.hr.b_closing_to_skin) {	
 		// If heart rate is not updated for 2 minutes, interpolate heart rate during intensive exercise period
 		//
 		// Not sure why we have heart rate measuring time threshold setup here
