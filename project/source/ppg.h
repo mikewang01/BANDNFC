@@ -241,6 +241,7 @@ typedef struct tagHEARTRATE_CTX{
 	
 	// sample value for ppg wearing/not-wearing-detection
 	I32S m_sample_sum;
+	I32S m_prev_sample_sum;
 	I8U  m_sample_cnt;
 	I32U m_closing_to_skin_detection_timer;
 	BOOLEAN b_closing_to_skin;

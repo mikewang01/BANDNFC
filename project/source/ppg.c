@@ -264,42 +264,56 @@ void PPG_closing_to_skin_detect_init()
 	h->approximation_decision_ts = CLK_get_system_time();
 	h->m_sample_cnt = 0;
 	h->m_sample_sum = 0;
-		Y_SPRINTF("[PPG] start approximation at %d ----", h->approximation_decision_ts);
+	Y_SPRINTF("[PPG] start approximation at %d ----", h->approximation_decision_ts);
+	h->m_prev_sample_sum = 0;
 }
 
 static void _closing_to_skin_detect(I16S sample)
 {
 	HEARTRATE_CTX *h = &cling.hr;
 	I32S sample_val;
+	I32S sample_diff;
 	I32S t_curr, t_diff;
 	
-	t_curr = CLK_get_system_time();
-
-	h->m_sample_sum += sample;
+	t_curr = CLK_get_system_time();	
+	Y_SPRINTF("[PPG] counter: %4d", h->m_sample_cnt);
+	
 	h->m_sample_cnt++;
-	if (h->m_sample_cnt > PPG_SAMPLE_COUNT_THRESHOLD) {
-		h->m_sample_cnt = PPG_SAMPLE_COUNT_THRESHOLD;
-	}
-
 	if (h->m_sample_cnt<PPG_SAMPLE_COUNT_THRESHOLD) {
+		h->m_sample_sum += sample;
 		return;
 	}
-	
-	sample_val = (h->m_sample_sum) >> 5;               // accumulating 32 sample, so right shift 6-bit.
-	h->m_sample_sum  = sample_val * 31;
-	h->m_sample_sum += sample;
-	
-	sample_val = (h->m_sample_sum) >> 5;               // new sample average value, plusing the input current sample.
-	if (sample_val>PPG_SAMPLE_AVERATE_THRESHOLD) {
-		h->m_closing_to_skin_detection_timer = CLK_get_system_time();
+	else if (h->m_sample_cnt>=PPG_SAMPLE_COUNT_THRESHOLD && h->m_sample_cnt<(PPG_SAMPLE_COUNT_THRESHOLD<<1)) {
+		sample_val = (h->m_sample_sum) >> 5;
+		h->m_sample_sum  = sample_val * (PPG_SAMPLE_COUNT_THRESHOLD - 1);
+		h->m_sample_sum += sample;
+
+		sample_val = (h->m_sample_sum) >> 5;
+		if (sample_val>PPG_SAMPLE_AVERATE_THRESHOLD) {
+			h->m_closing_to_skin_detection_timer = CLK_get_system_time();
+		}
+		
+		if (h->m_sample_cnt==PPG_SAMPLE_COUNT_THRESHOLD) h->m_prev_sample_sum = h->m_sample_sum;
 	}
+	else if (h->m_sample_cnt>=(PPG_SAMPLE_COUNT_THRESHOLD<<1)) {
+		h->m_sample_cnt = 32;
+		sample_diff = h->m_prev_sample_sum - h->m_sample_sum;
+		if (sample_diff<0) sample_diff=-sample_diff;
+		if (sample_diff>((h->m_prev_sample_sum)>>3)) {
+			Y_SPRINTF("[PPG] message1.");
+  		h->current_rate = 0;
+      h->b_closing_to_skin = FALSE;    
+  		h->approximation_decision_ts = CLK_get_system_time();
+		}		
+	} 
 
 	t_diff = t_curr - h->m_closing_to_skin_detection_timer;
-	if (t_diff > 500) {          					           // Turn off PPG module.
+	if (t_diff > 500) {
+  	N_SPRINTF("[PPG] message2.");
 		h->current_rate = 0;
     h->b_closing_to_skin = FALSE;    
 		h->approximation_decision_ts = CLK_get_system_time();
-		Y_SPRINTF("[PPG] ppg is detached at %d ----", h->approximation_decision_ts);
+		Y_SPRINTF("[PPG] ppg is detached at %d ---- %d", h->approximation_decision_ts, t_diff);
 	}
 }
 
