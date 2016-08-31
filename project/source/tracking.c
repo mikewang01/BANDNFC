@@ -220,7 +220,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			// 
 			cling.activity.day.walking ++;
 			cling.activity.day.distance += _get_stride_length(); // 0.75 meters
-			cling.activity.step_detect_ts = CLK_get_system_time();
+			cling.activity.step_detect_ts = cling.time.system_clock_in_sec;
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
 				cling.user_data.idle_step_countdown --;
@@ -231,7 +231,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 		} else if (act_motion == MOTION_RUNNING) {
 			cling.activity.day.running ++;
 			cling.activity.day.distance += _get_stride_length(); // 1.41 meters
-			cling.activity.step_detect_ts = CLK_get_system_time();
+			cling.activity.step_detect_ts = cling.time.system_clock_in_sec;
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
 				cling.user_data.idle_step_countdown --;
@@ -505,29 +505,26 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 	I32U t_curr;
 	I8U touch_total_time;
 	
-	t_curr = CLK_get_system_time() - cling.activity.step_detect_ts;
-	
-#ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
-	vital->skin_temperature = SIM_get_current_activity(TRACKING_SKIN_TEMPERATURE);
-	vital->heart_rate = (I8U)SIM_get_current_activity(TRACKING_HEART_RATE);
-	vital->skin_touch_pads = (I8U)SIM_get_current_activity(TRACKING_SKIN_TOUCH);
-	return;
-#endif
+	t_curr = cling.time.system_clock_in_sec - cling.activity.step_detect_ts;
+
 		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
 		
+		vital->skin_temperature = cling.therm.current_temperature;
+		vital->skin_touch_pads = 1;
+	
 		if (!cling.hr.b_closing_to_skin) {
 			// if sensor is detached from skin, set both vital signals to 0
-				vital->skin_temperature = 0;
 				vital->heart_rate = 0;
+				vital->skin_temperature = 0;
 				return;
-		}
+		} 
 		
-		vital->skin_temperature = cling.therm.current_temperature;
 		vital->heart_rate = cling.hr.current_rate;
-		if (t_curr > 300000) {
-			// If no steps for over 5 minutes, filter out the heart rate that is greater than 90
-			if (vital->heart_rate >= 90) {
-				vital->heart_rate = 90 - (cling.hr.current_rate >> 3);
+		
+		if (t_curr > 300) {
+			// If no steps for over 5 minutes (300 seconds), filter out the heart rate that is greater than 95
+			if (vital->heart_rate >= 95) {
+				vital->heart_rate = 95 - (cling.hr.current_rate >> 3);
 
 				N_SPRINTF("[TRACKING] heart rate: %d, original: %d", vital->heart_rate, cling.hr.current_rate);
 
@@ -559,6 +556,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;
+	
 	// Set a invalid activity count
 	if (BATT_charging_det_for_sleep()) {
 		pminute->activity_count = 199; // Set a large number to indicate device is currently charging

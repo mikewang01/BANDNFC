@@ -25,16 +25,16 @@ const LP_FILTER lpf_coeff[3] = {
 };
 
 #define CONSTRAINS_STEP_HI_TH 8
-#define CONSTRAINS_DIFF_HI_TH 35000
+#define CONSTRAINS_DIFF_HI_TH 39000
 #define NOISE_STEP_CLEANUP_HI_TH 50
 #define CONSISTENT_STEP_HI_TH 6
 
-#define CONSTRAINS_STEP_ME_TH 9
+#define CONSTRAINS_STEP_ME_TH 8
 #define CONSTRAINS_DIFF_ME_TH 35000
 #define NOISE_STEP_CLEANUP_ME_TH 50
 #define CONSISTENT_STEP_ME_TH 6
 
-#define CONSTRAINS_STEP_LO_TH 10
+#define CONSTRAINS_STEP_LO_TH 9
 #define CONSTRAINS_DIFF_LO_TH 33000
 #define NOISE_STEP_CLEANUP_LO_TH 50
 #define CONSISTENT_STEP_LO_TH 7
@@ -1079,7 +1079,7 @@ static BOOLEAN _is_incidental_steps(CLASSIFIER_STAT *c, I8U last_step_ts)
         if (c->step_a_diff[i] < pedo_constrain_diff_th) {
             cnt = 0;
         } else {
-            cnt ++;
+            cnt ++; // Counts how many inconsistent steps in the window
         }
 
         if (cnt >= 12) {
@@ -1173,8 +1173,8 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
 		} else if (diff > pedo_noise_cleanup_th) {
             for (; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
                 if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
-					c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
-					// If these steps are noise, we should clean the step compensation counter as well
+										c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
+										// If these steps are noise, we should clean the step compensation counter as well
                     // For CAR steps, we should show them since we do care about CAR steps as a indicator
                     if (c->step_consistency_th > STEP_CONSISTENCY_THRESHOLD_MIN) {
                         c->car_steps_compensation ++;
@@ -1194,6 +1194,17 @@ static BOOLEAN _is_noise_non_step(CLASSIFIER_STAT *c)
             break;
         }
     }
+		
+		// Check if device is in a transportation mode
+		if (PEDO_is_transport_mode()) {
+					for (i = 0; i < CLASSIFIER_STEP_WIN_SZ; i ++) {
+							if (c->step_stat[i] == STEP_TO_BE_CLASSIFIED) {
+								c->step_stat[i] = STEP_ALREADY_CLASSIFIED;
+                c->step_motion[i] = MOTION_UNKNOWN;
+							}
+					}
+					return TRUE;
+		}
 
     // If consistent step event presents, we further confirm they are not device incidental movement
     if (i >= pedo_constrain_step_th) {
@@ -1276,6 +1287,12 @@ static BOOLEAN _motion_classification()
 		if (!_do_steps_keep_consistent(c)) {
 				c->start_normal_activity = FALSE;
 		}
+
+		// If device enters transportation mode, get out the state
+		if (PEDO_is_transport_mode()) {
+			c->start_normal_activity = FALSE;
+		}
+
 	}
 	
 	return TRUE;
@@ -1388,7 +1405,6 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
     ACCELEROMETER_3D p2p;   // the maximum of each axis
     I32U ratio;
     I8U cnt;
-    
 
     if (gPDM.global_time >= r->ts+PEDO_SPS) {
         r->ts = gPDM.global_time;
@@ -1470,6 +1486,7 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
             pt->b_vibrate_mode = TRUE;
             pt->vibrate_ts = gPDM.global_time;
         }
+				
         if (pt->b_vibrate_mode) {
             // Vibration mode expires after 60 seconds
             if (gPDM.global_time > (pt->vibrate_ts + 2500)) {

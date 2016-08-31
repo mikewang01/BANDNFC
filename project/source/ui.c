@@ -1050,7 +1050,6 @@ static void _middle_row_render(I8U mode, BOOLEAN b_center)
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_HEART_RATE) {
 		if (cling.hr.b_closing_to_skin) {
-			N_SPRINTF("[UI] Heart rate - valid");
 
 			len = 0;
 			//cling.hr.heart_rate_ready = 0;
@@ -1330,7 +1329,6 @@ static void _top_icon_render(I8U mode)
 				_render_one_icon(ICON_TOP_REMINDER_LEN, cling.ui.p_oled_up+offset, asset_content+ICON_TOP_REMINDER);
 		}
 	} else if (mode == UI_TOP_MODE_HEART_RATE) {
-		if (TOUCH_is_skin_touched()) {
 				if (cling.ui.clock_sec_blinking) {
 					cling.ui.clock_sec_blinking = FALSE;
 					_render_one_icon(ICON_TOP_HEART_RATE_LEN, cling.ui.p_oled_up+offset, asset_content+ICON_TOP_HEART_RATE);
@@ -1338,10 +1336,6 @@ static void _top_icon_render(I8U mode)
 					cling.ui.clock_sec_blinking = TRUE;
 					// Empty icon to have blinking effects
 				}
-		} else {
-			// Render top row heart rate icon
-			_render_one_icon(ICON_TOP_HEART_RATE_LEN, cling.ui.p_oled_up+offset, asset_content+ICON_TOP_HEART_RATE);
-		}
 	} else if (mode == UI_TOP_MODE_SKIN_TEMP) {
 		N_SPRINTF("[UI] display skin temp (2)");
 		_render_one_icon(ICON_TOP_SKIN_TEMP_LEN, cling.ui.p_oled_up+offset, asset_content+ICON_TOP_SKIN_TEMP);

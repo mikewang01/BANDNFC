@@ -259,6 +259,9 @@ static BOOLEAN _critical_info_restored()
 	// Epoch time
 	t->time_since_1970 = dw_buf[0];
 	
+	// add 30 seconds to correct bias of time when system rebooting..
+	t->time_since_1970 += 30;
+
 	// Bytes: 5 - 49: device related parameters,
 	// length: p_byte_addr[4]
 	//
@@ -350,9 +353,6 @@ static BOOLEAN _critical_info_restored()
 	
 	// Add latency right before backup critical info (Erasure latency: 50 ms)
 	BASE_delay_msec(50);
-
-	// add 30 seconds to correct bias of time when system rebooting..
-	t->time_since_1970 += 30;
 
 	// Initialize INFO-D section with the new time
 	SYSTEM_backup_critical();

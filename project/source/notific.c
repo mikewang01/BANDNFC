@@ -42,10 +42,6 @@ void NOTIFIC_start_notifying(I8U cat_id)
 {		
 #ifndef _CLING_PC_SIMULATION_
 #ifdef _ENABLE_ANCS_
-	// Do not notify user if unit is not worn
-	if (!TOUCH_is_skin_touched())
-		return;
-	
 	// Do not notify user if unit is in sleep state
 	if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
 		return;

@@ -186,7 +186,7 @@ void ppg_PS_ALS_Auto             (void);
 
 #define PPG_WEARING_DETECTION_OVERALL_INTERVAL                 180000     // 180 seconds
 #define PPG_WEARING_DETECTION_LPS_INTERVAL                       5000     //   5 seconds
-#define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 300000     // background idle for 300 seconds
+#define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 3600000     // background idle for 300 seconds
 
 #define PPG_SAMPLE_COUNT_THRESHOLD                                 32
 #define PPG_SAMPLE_AVERATE_THRESHOLD                             2000
@@ -241,7 +241,6 @@ typedef struct tagHEARTRATE_CTX{
 	
 	// sample value for ppg wearing/not-wearing-detection
 	I32S m_sample_sum;
-	I32S m_prev_sample_sum;
 	I8U  m_sample_cnt;
 	I32U m_closing_to_skin_detection_timer;
 	BOOLEAN b_closing_to_skin;
