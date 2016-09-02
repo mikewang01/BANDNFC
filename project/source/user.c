@@ -359,7 +359,7 @@ void USER_state_machine()
 				if (cling.time.local.hour>=cling.user_data.idle_time_start) {
 					if (cling.time.local.hour < cling.user_data.idle_time_end) {
 						u->idle_minutes_countdown = u->idle_time_in_minutes;
-						u->idle_step_countdown = 64;
+						u->idle_step_countdown = u->idle_minutes_countdown<<1;
 						u->idle_state = IDLE_ALERT_STATE_COUNT_DOWN;
 						Y_SPRINTF("[USER] reset idle alert: %d, %d", u->idle_minutes_countdown, u->idle_step_countdown);
 					}

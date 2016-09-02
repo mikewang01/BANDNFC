@@ -54,7 +54,7 @@ typedef struct tagUSER_DATA {
 	I8U idle_state;
 	I8U idle_time_in_minutes;
 	I8U idle_minutes_countdown;
-	I8U idle_step_countdown;
+	I16U idle_step_countdown;
 	I8U idle_time_start;
 	I8U idle_time_end;
 	
