@@ -558,7 +558,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->activity_count = diff->activity_count;
 	
 	// Set a invalid activity count
-	if (BATT_charging_det_for_sleep()) {
+	if (BATT_is_charging()) {
 		pminute->activity_count = 199; // Set a large number to indicate device is currently charging
 	}
 	
