@@ -301,7 +301,8 @@ static BOOLEAN _critical_info_restored()
 	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
 	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
     
-	// 50 reserve 
+		// 50: HR skin attachment 
+	cling.hr.b_closing_to_skin = p_byte_addr[50];
 	
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
@@ -538,7 +539,8 @@ BOOLEAN SYSTEM_backup_critical()
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
 
-	// 50 reserve 
+	// 50: HR skin attachment
+	critical[50] = cling.hr.b_closing_to_skin;
 	
 	// Store total reminders
 	critical[51] = cling.reminder.total;

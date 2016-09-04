@@ -21,11 +21,7 @@ static BOOLEAN _is_idle_alert_allowed()
 		return FALSE;
 	}
 	
-  if (cling.sleep.state==SLP_STAT_LIGHT || cling.sleep.state==SLP_STAT_SOUND) {
-		return FALSE;
-  }
-	
-	if (!TOUCH_is_skin_touched()) {
+	if (!cling.hr.b_closing_to_skin) {
 		return FALSE;
 	}
 	
@@ -359,7 +355,7 @@ void USER_state_machine()
 				if (cling.time.local.hour>=cling.user_data.idle_time_start) {
 					if (cling.time.local.hour < cling.user_data.idle_time_end) {
 						u->idle_minutes_countdown = u->idle_time_in_minutes;
-						u->idle_step_countdown = u->idle_minutes_countdown<<1;
+						u->idle_step_countdown = u->idle_time_in_minutes<<2;
 						u->idle_state = IDLE_ALERT_STATE_COUNT_DOWN;
 						Y_SPRINTF("[USER] reset idle alert: %d, %d", u->idle_minutes_countdown, u->idle_step_countdown);
 					}
