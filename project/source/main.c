@@ -466,7 +466,11 @@ int main(void)
 
             // Notific state machine
             NOTIFIC_state_machine();
-        }
+        } else {
+					// Reset notification and reminder state machine when system is in a low power state
+					cling.notific.state = NOTIFIC_STATE_IDLE;
+					cling.reminder.state = REMINDER_STATE_IDLE;
+				}
         //get_max_used_stack_size();
 #if 0
         HOMEKEY_sim();

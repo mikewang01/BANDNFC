@@ -301,7 +301,8 @@ static BOOLEAN _critical_info_restored()
 	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
 	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
     
-		// 50: HR skin attachment 
+	// 50: HR skin attachment 
+	cling.hr.current_rate = p_byte_addr[43];
 	cling.hr.b_closing_to_skin = p_byte_addr[50];
 	
 	// Restoring amount of reminders
@@ -540,6 +541,7 @@ BOOLEAN SYSTEM_backup_critical()
 	critical[49] = t->time_zone;
 
 	// 50: HR skin attachment
+	critical[43] = cling.hr.current_rate;
 	critical[50] = cling.hr.b_closing_to_skin;
 	
 	// Store total reminders
