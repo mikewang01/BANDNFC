@@ -76,18 +76,24 @@
 #define ICON_MIDDLE_CHARGING_BATT_IDX             157
 #define ICON_MIDDLE_CHARGING_ICON_IDX             159
 
-#define ICON_MIDDLE_SLEEP_K                           153
-#define ICON_MIDDLE_SLEEP_H                           146
-#define ICON_MIDDLE_SLEEP_M                           147
+// Middle row icons - 24 pixels high
+#define ICON_MIDDLE_STEPS                             131
+#define ICON_MIDDLE_CALORIES                          132
+#define ICON_MIDDLE_DISTANCE                          133
+#define ICON_MIDDLE_HEART_RATE                        130
+#define ICON_MIDDLE_REMINDER                          139
+#define ICON_MIDDLE_SKIN_TEMP                         134
+#define ICON_MIDDLE_WEATHER_IDX                       135
+#define ICON_MIDDLE_WEATHER_UNIT                      151
+#define ICON_MIDDLE_PM2P5                             134
+#define ICON_MIDDLE_TEMP_RANGE_IDX                    126
+#define ICON_MIDDLE_NO_SKIN_TOUCH                     152		
+#define ICON_MIDDLE_IDLE_ALERT                        142
+
 #define ICON_MIDDLE_LOW_TEMP_IDX                      149
 #define ICON_MIDDLE_CELCIUS_IDX                       151
 #define ICON_MIDDLE_HIGH_TEMP_IDX                     148
 #define ICON_MIDDLE_INCOMING_CALL                     138
-#define ICON_MIDDLE_INCOMING_CALL_E1                  139
-#define ICON_MIDDLE_INCOMING_CALL_E2                  140
-#define ICON_MIDDLE_INCOMING_CALL_E3                  141
-#define ICON_MIDDLE_NOTIF_MORE                        143
-#define ICON_MIDDLE_NO_SKIN_TOUCH                     152		
 
 #define ICON_BOTTOM_HEART_RATE_LEN           asset_len[512+128]
 #define ICON_BOTTOM_HEART_RATE               asset_pos[512+128]

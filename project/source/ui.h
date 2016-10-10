@@ -115,7 +115,7 @@ enum {
 #define FRAME_DEPTH_DISTANCE 7
 #define FRAME_DEPTH_STEP 7
 #define FRAME_DEPTH_SLEEP 7
-#define FRAME_DEPTH_CLOCK 3
+#define FRAME_DEPTH_CLOCK 2
 #define FRAME_DEPTH_WEATHER 2
 
 typedef struct tagUI_ANIMATION_CTX {
