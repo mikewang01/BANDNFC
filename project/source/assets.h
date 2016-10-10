@@ -183,9 +183,9 @@
 #define ICON32_TIME_LEN                      asset_len[512+135]
 #define ICON32_TIME                          asset_pos[512+135]
 #define ICON32_TIME_IDX                      135
-#define ICON32_WEATHER_LEN                   asset_len[512+136]
-#define ICON32_WEATHER                       asset_pos[512+136]
-#define ICON32_WEATHER_IDX                   136
+#define ICON32_WEATHER_LEN                   asset_len[512+155]
+#define ICON32_WEATHER                       asset_pos[512+155]
+#define ICON32_WEATHER_IDX                   155
 #define ICON32_WORKOUT_LEN                   asset_len[512+137]
 #define ICON32_WORKOUT                       asset_pos[512+137]
 #define ICON32_WORKOUT_IDX                   137

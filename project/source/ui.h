@@ -270,5 +270,7 @@ void UI_test(void);
 BOOLEAN UI_is_idle(void);
 void UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset);
 void UI_reset_workout_mode(void);
+void UI_reset_index(void);
+
 #endif
 

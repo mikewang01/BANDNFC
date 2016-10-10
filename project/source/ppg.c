@@ -211,6 +211,7 @@ static void _seek_cross_point(I16S instSample)
   				h->m_pre_zero_point  = t_curr;
   				h->m_pre_pulse_width = t_peak_diff;
 					h->heart_rate_ready  = TRUE;
+					h->first_hr_measurement_in_sec = cling.time.system_clock_in_sec;
 					// The time of latest heart rate measured
   				_reset_heart_rate_calculator();
   				_calc_heart_rate();
@@ -266,18 +267,19 @@ void PPG_closing_to_skin_detect_init()
 	Y_SPRINTF("[PPG] start approximation at %d ----", h->approximation_decision_ts);
 }
 
-static void _closing_to_skin_detect(I16S sample)
+static void _skin_touch_detect(I16S sample)
 {
 	HEARTRATE_CTX *h = &cling.hr;
 	I32S sample_val;
 	I32S t_curr, t_diff;
 
 	t_curr = CLK_get_system_time();	
-	Y_SPRINTF("[PPG] counter: %4d", h->m_sample_cnt);
+	N_SPRINTF("[PPG] counter: %4d", h->m_sample_cnt);
 	
 	h->m_sample_cnt++;
 	if (h->m_sample_cnt<PPG_SAMPLE_COUNT_THRESHOLD) {
 		h->m_sample_sum += sample;
+		h->m_closing_to_skin_detection_timer = t_curr;
 		return;
 	} else {
 		h->m_sample_cnt = PPG_SAMPLE_COUNT_THRESHOLD;
@@ -294,9 +296,8 @@ static void _closing_to_skin_detect(I16S sample)
 	
 	t_diff = t_curr - h->m_closing_to_skin_detection_timer;
 	if (t_diff > 500) {
-		h->current_rate = 0;
     h->b_closing_to_skin = FALSE;    
-		h->approximation_decision_ts = CLK_get_system_time();
+		h->approximation_decision_ts = t_curr;
 		Y_SPRINTF("[PPG] ppg is detached at %d ---- %d", h->approximation_decision_ts, t_diff);
 	}
 }
@@ -316,7 +317,7 @@ static void _ppg_sample_proc()
 
 	sample = _get_light_strength_register();
 
-	_closing_to_skin_detect(sample);
+	_skin_touch_detect(sample);
 
 	high_pass_filter_val = Butterworth_Filter_HP( (double) sample);
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
@@ -443,7 +444,7 @@ void PPG_disable_sensor()
 	ppg_write_reg(REGS_MEAS_RATE, 0);
 	ppg_write_reg(REGS_ALS_RATE,  0);
 	ppg_write_reg(REGS_PS_RATE,   0);
-
+	
 	h->heart_rate_ready  = FALSE;
 }
 
@@ -522,7 +523,7 @@ BOOLEAN _is_user_viewing_heart_rate()
 void PPG_state_machine()
 {
 	HEARTRATE_CTX *h = &cling.hr;
-	I32U t_curr, t_diff, t_step_diff, t_threshold, t_sec;
+	I32U t_curr, t_diff, t_step_diff, t_threshold, t_sec, t_measuring_diff;
 	
 	if (OTA_if_enabled()) {
 		return;
@@ -541,7 +542,6 @@ void PPG_state_machine()
 		{
 			// Update time stamp to start measuring right away
 			h->m_measuring_timer_in_s = t_sec;
-			h->m_no_skin_touch_in_s = t_sec;
 			h->state = PPG_STAT_SAMPLE_READY;
 			N_SPRINTF("[PPG] duty on: %d", h->m_measuring_timer_in_s);
   	  ppg_configure_sensor();			// initialize the PPG module
@@ -549,9 +549,7 @@ void PPG_state_machine()
 		break;
 
 		case PPG_STAT_SAMPLE_READY:		
-		{			
-			h->m_no_skin_touch_in_s = t_sec;
-			
+		{						
 		  RTC_start_operation_clk();
 		  if (h->sample_ready) {
 			  h->sample_ready = FALSE;
@@ -560,7 +558,22 @@ void PPG_state_machine()
 				// Check if measuring is timed up
 				t_diff = t_sec - h->m_measuring_timer_in_s;
 				if (t_diff > PPG_SAMPLE_PROCESSING_PERIOD) {
-          _ppg_sample_proc();				    // Process current sample
+					if (h->heart_rate_ready) {
+						// If heart rate is ready, we should just keep measuring for no more than 5 sec
+						t_measuring_diff = t_sec - h->first_hr_measurement_in_sec;
+						if (t_measuring_diff > 5) {
+							// If user is not viewing HR page, exit measuring state
+							// otherwise, simply just stop updating
+							if (!_is_user_viewing_heart_rate()) {
+								PPG_disable_sensor();					       // Turn off ppg sensor module
+								h->state = PPG_STAT_DUTY_OFF;
+							}
+						} else {
+							_ppg_sample_proc();				    // Process current sample
+						}
+					} else {
+						_ppg_sample_proc();				    // Process current sample
+					}
         }
 
   			if (t_diff > PPG_HR_MEASURING_TIMEOUT && !_is_user_viewing_heart_rate() ) {
@@ -585,7 +598,6 @@ void PPG_state_machine()
 
 			// If device is in a charging state, do not perform PPG detection
 			if (BATT_is_charging()) {
-				h->current_rate = 0;
 				h->b_closing_to_skin = FALSE;
 				break;
 			}
@@ -644,23 +656,35 @@ void PPG_state_machine()
 I8U PPG_minute_hr_calibrate()
 {
 	I8U hr_diff;
+	I8U hr_rendering;
 	
-	if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90))
-		return cling.hr.current_rate;
-	
-	if (cling.hr.current_rate > cling.hr.minute_rate) {
-		hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
-		if (hr_diff < 10) {
-			return cling.hr.current_rate;
-		} else {
-			return (cling.hr.minute_rate+(hr_diff&0x07));
-		} 
+	if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {
+		hr_rendering = cling.hr.current_rate;
 	} else {
-		hr_diff = cling.hr.minute_rate-cling.hr.current_rate;
-		
-		if (hr_diff < 16)
-			return cling.hr.current_rate;
-		else 
-			return (cling.hr.minute_rate - (hr_diff&0x07));
+		if (cling.hr.current_rate > cling.hr.minute_rate) {
+			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
+			if (hr_diff < 10) {
+				hr_rendering = cling.hr.current_rate;
+			} else {
+				hr_rendering = (cling.hr.minute_rate+(hr_diff&0x07));
+			} 
+		} else {
+			hr_diff = cling.hr.minute_rate-cling.hr.current_rate;
+			
+			if (hr_diff < 16)
+				hr_rendering = cling.hr.current_rate;
+			else 
+				hr_rendering = (cling.hr.minute_rate - (hr_diff&0x07));
+		}
 	}
+	
+	if (hr_rendering < 60) {
+		if (cling.hr.minute_rate > cling.hr.current_rate)
+			hr_diff = cling.hr.minute_rate - cling.hr.current_rate;
+		else
+			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
+		hr_rendering = 60 + (hr_diff & 0x07);
+	}
+	
+	return hr_rendering;
 }

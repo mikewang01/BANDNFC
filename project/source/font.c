@@ -107,18 +107,19 @@ static void _font_read_one_Chinese_characters(I8U *utf_8, I16U len, I8U *dataBuf
  *
  * b_center : display in the middle(TRUE),display from the top(FALSE). 
  */
-void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center)
+I8U FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center)
 {	
 	I8U  font_data[32];
 	I8U  *p0, *p1, *p2, *p3;	
  	I8U  pos=0, offset=0 ,curr_line_pos=0;  	
 	I8U  ptr, i; 	
+	I8U  line_len = 0;
 
 	p0 = p_in;
 	
 	// When OTA is in progress,do not operate nflash.
   if (OTA_if_enabled())
-    return;
+    return line_len;
 	
   // At present,can only display 128 bytes size string.		
 	while(pos < 128)
@@ -132,12 +133,13 @@ void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_le
 			  _font_read_one_5x7_ascii(string[pos], 6, font_data);	
         memcpy(p0 + offset, font_data, 6);  	
 				offset += 6;
+				line_len += 6;
 		  } else if (height == 16) {	
 				if(offset > (horizontal_len - 8)){
 				  b_center = FALSE;
 					curr_line_pos++;
 					if(curr_line_pos >= 2)	
-            return;
+            return line_len;
           p0 += 256;	
           offset = 0;					
 		    }					
@@ -145,6 +147,7 @@ void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_le
 				memcpy(p0 + offset, font_data, 8);
 			  memcpy(p0 + offset + 128, &font_data[8], 8);						
 				offset += 8;
+				line_len += 8;
 		  } else 	{
 			}
 			
@@ -155,7 +158,7 @@ void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_le
 				b_center = FALSE;
 				curr_line_pos++;
 				if(curr_line_pos >= 2)	
-          return;
+          return line_len;
 				p0 += 256;	
 				offset = 0;					
 			}
@@ -164,7 +167,7 @@ void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_le
       memcpy(p0 + offset + 128, &font_data[16], 16);
 			offset += 16;
 		  pos += 3;
-					
+			line_len += 16;
 	  } else {
 			// Is not within the scope of the can display,continue to read the next.
 			pos++;
@@ -200,6 +203,8 @@ void FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_le
 			}
 		}
 	}	
+	
+	return line_len;
 }
 
 /**@brief Function for loading ota percent characters.

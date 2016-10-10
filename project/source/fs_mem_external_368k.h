@@ -30,8 +30,9 @@
 	// General scratch pad: 4 KB
 	// Tracking space: 32 KB
 	// Reminder space: 4 KB
+	// Message notification space: 4 KB
 	//
-	// Overall: 4+4+4+4+32+4 = 52 KB
+	// Overall: 4+4+4+4+32+4+4 = 56 KB
 	//
 	#define FAT_CLING_APP_SPACE_SIZE				(65536)
 	#define FAT_CLING_APP_PAGE_ALL				   16

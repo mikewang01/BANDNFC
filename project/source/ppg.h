@@ -225,11 +225,11 @@ typedef enum {
 typedef struct tagHEARTRATE_CTX{
 	I32U m_measuring_timer_in_s;
 	I32U m_zero_point_timer;
-	I32U m_no_skin_touch_in_s;
 	I32U alert_ts;
 	
 	BOOLEAN sample_ready;
 	BOOLEAN heart_rate_ready;
+	I32U first_hr_measurement_in_sec;
 
 	// PPG state machine
 	PPG_STATES state;

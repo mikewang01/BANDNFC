@@ -101,6 +101,12 @@ void RTC_timer_handler( void * p_context )
 			cling.user_data.idle_minutes_countdown --;
 		}
 		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
+		
+		tick_diff = CLK_get_system_time() - cling.ui.touch_time_stamp;
+		
+		if (tick_diff > 300000) {
+			UI_reset_index();
+		}
 	}	
 	
 	if (cling.time.local.day != cling.time.local_day) {

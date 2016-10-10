@@ -303,7 +303,7 @@ void TOUCH_init(void)
 	// Initialize skin touch states
 	UICO_init();
 	//uico_touch_ic_floating_calibration_start();
-	Y_SPRINTF("[TOUCH] skin touched: %d", cling.touch.b_skin_touch);
+	N_SPRINTF("[TOUCH] skin touched: %d", cling.touch.b_skin_touch);
 
 #endif
 }
