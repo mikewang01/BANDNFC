@@ -77,13 +77,13 @@
 #define ICON_MIDDLE_CHARGING_ICON_IDX             159
 
 // Middle row icons - 24 pixels high
+#define ICON_MIDDLE_HEART_RATE                        130
 #define ICON_MIDDLE_STEPS                             131
 #define ICON_MIDDLE_CALORIES                          132
 #define ICON_MIDDLE_DISTANCE                          133
-#define ICON_MIDDLE_HEART_RATE                        130
-#define ICON_MIDDLE_REMINDER                          139
 #define ICON_MIDDLE_SKIN_TEMP                         134
 #define ICON_MIDDLE_WEATHER_IDX                       135
+#define ICON_MIDDLE_REMINDER                          139
 #define ICON_MIDDLE_WEATHER_UNIT                      151
 #define ICON_MIDDLE_PM2P5                             134
 #define ICON_MIDDLE_TEMP_RANGE_IDX                    126
@@ -165,30 +165,9 @@
 
 #define ICON32_NONE_CAROUSEL                 0
 
-#define ICON32_HEART_RATE_LEN                asset_len[512+128]
-#define ICON32_HEART_RATE                    asset_pos[512+128]
-#define ICON32_HEART_RATE_IDX                128
-#define ICON32_SKIN_TEMP_LEN                 asset_len[512+129]
-#define ICON32_SKIN_TEMP                     asset_pos[512+129]
-#define ICON32_SKIN_TEMP_IDX                 129
-#define ICON32_SLEEP_LEN                     asset_len[512+130]
-#define ICON32_SLEEP                         asset_pos[512+130]
-#define ICON32_SLEEP_IDX                     130
-#define ICON32_STEP_LEN                      asset_len[512+131]
-#define ICON32_STEP                          asset_pos[512+131]
-#define ICON32_STEP_IDX                      131
-#define ICON32_CALORIES_LEN                  asset_len[512+132]
-#define ICON32_CALORIES                      asset_pos[512+132]
-#define ICON32_CALORIES_IDX                  132
-#define ICON32_DISTANCE_LEN                  asset_len[512+133]
-#define ICON32_DISTANCE                      asset_pos[512+133]
-#define ICON32_DISTANCE_IDX                  133
 #define ICON32_UV_LEN                        asset_len[512+134]
 #define ICON32_UV                            asset_pos[512+134]
 #define ICON32_UV_IDX                        134
-#define ICON32_TIME_LEN                      asset_len[512+135]
-#define ICON32_TIME                          asset_pos[512+135]
-#define ICON32_TIME_IDX                      135
 #define ICON32_WEATHER_LEN                   asset_len[512+155]
 #define ICON32_WEATHER                       asset_pos[512+155]
 #define ICON32_WEATHER_IDX                   155
