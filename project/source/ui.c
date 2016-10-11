@@ -113,8 +113,6 @@ static void _update_vertical_index(UI_ANIMATION_CTX *u, BOOLEAN b_up)
 			return;
 		max_frame_num = cling.reminder.total;
 		N_SPRINTF("[UI] max reminder num: %d", max_frame_num);
-	} else if (index == UI_DISPLAY_SMART_WEATHER) {
-		max_frame_num = FRAME_DEPTH_WEATHER;
 	} else {
 		max_frame_num = 0;
 	}
@@ -1293,7 +1291,7 @@ static void _fill_vertical_heart_rate(char *string)
 	}
 }
 
-static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
+static void _middle_row_horizontal(I8U mode)
 {
 	I16U i;
 	I16U offset = 0; // Pixel offet at top row
@@ -1307,7 +1305,8 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 	BOOLEAN b_more = FALSE;
 	I8U bar_len=0, string_pos=0;;
 	BOOLEAN b_progress_bar = FALSE;
-
+	I8U b_position = POSITION_CENTER;
+	
 	// Set up margin between characters
 	margin = 3;
 	
@@ -1316,7 +1315,7 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		len = _fill_local_clock((char *)string);
 		N_SPRINTF("[UI] flip clock (h): %d", cling.ui.clock_orientation);
 		offset = 20;
-		b_center = FALSE;
+		b_position = POSITION_LEFT;
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_STEPS) {
 		TRACKING_get_activity(cling.ui.vertical_index, TRACKING_STEPS, &stat);
@@ -1367,9 +1366,9 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		string[16] = 0;
 		FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 128, TRUE);
 		len = 0;
-		b_center = FALSE;
+		b_position = POSITION_LEFT;
 	} else if (mode == UI_MIDDLE_MODE_OTA) {
-		b_center = FALSE;
+		b_position = POSITION_LEFT;
 		b_progress_bar = TRUE;
 		sprintf((char *)string, "%d %%", cling.ota.percent);
 		bar_len = cling.ota.percent;
@@ -1398,7 +1397,7 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		}
 		len = 0;
 		b_more = TRUE;
-		b_center = FALSE;
+		b_position = POSITION_LEFT;
 	} else if (mode == UI_MIDDLE_MODE_APP_NOTIF) {
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 		N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
@@ -1411,7 +1410,7 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		}
 		len = 0;
 		b_more = TRUE;
-		b_center = FALSE;
+		b_position = POSITION_LEFT;
 	} else if (mode == UI_MIDDLE_MODE_DETAIL_NOTIF) {
 		NOTIFIC_get_app_message_detail(cling.ui.app_notific_index, (char *)string);
 		if (cling.ui.notif_detail_index) {
@@ -1421,7 +1420,7 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		N_SPRINTF("[UI] message detail: %d %d %s", cling.ui.app_notific_index, cling.ui.notif_detail_index, (char *)string);
 		b_more = TRUE;
 		len = 0;
-		b_center = FALSE;
+		b_position = POSITION_LEFT;
 	} else if (mode == UI_MIDDLE_MODE_PHONE_FINDER) {
 		string[0] = ICON32_PHONE_FINDER_1;	
 		string[1] = ' ';
@@ -1507,31 +1506,21 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 
 		if (WEATHER_get_weather(0, &weather)) {
 			
-			if (cling.ui.vertical_index & 0x01) {
 				len = 0;
-				string[len++] = ICON_MIDDLE_LOW_TEMP_IDX;
 				len += sprintf((char *)string+len, "%d", weather.low_temperature);
-				string[len++] = ICON_MIDDLE_CELCIUS_IDX;
-			} else {
-				len = 0;
-				string[len++] = ICON_MIDDLE_HIGH_TEMP_IDX;
+				string[len++] = ICON_MIDDLE_TEMP_RANGE_IDX;
 				len += sprintf((char *)string+len, "%d", weather.high_temperature);
 				string[len++] = ICON_MIDDLE_CELCIUS_IDX;
-			}
 		} else {
-			if (cling.ui.vertical_index & 0x01) {
+
 				len = 0;
-				string[len++] = ICON_MIDDLE_LOW_TEMP_IDX;
 				len += sprintf((char *)string+len, "15");
-				string[len++] = ICON_MIDDLE_CELCIUS_IDX;
-			} else {
-				len = 0;
-				string[len++] = ICON_MIDDLE_HIGH_TEMP_IDX;
+				string[len++] = ICON_MIDDLE_TEMP_RANGE_IDX;
 				len += sprintf((char *)string+len, "22");
 				string[len++] = ICON_MIDDLE_CELCIUS_IDX;
-			}
 		}
-		b_more = TRUE;
+		b_more = FALSE;
+		b_position = POSITION_RIGHT;
 	} else if (mode == UI_MIDDLE_MODE_SOS) {
 
 		string[0] = 'S';
@@ -1540,11 +1529,9 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		string[3] = ' ';
 		string[4] = ICON32_PHONE_FINDER_1;
 		len = 5;
-		b_center = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_BLE_CODE) {
 		SYSTEM_get_ble_code(string);
 		len = 4;
-		b_center = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_LINKING) {
 		
 		string[0] = ICON32_PHONE_FINDER_1;
@@ -1553,7 +1540,6 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 		string[3] = ' ';
 		string[4] = ICON32_PHONE_FINDER_4;
 		len = 5;
-		b_center = TRUE;
 	}
 
 	if (len > 0) {
@@ -1561,7 +1547,7 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 	}
 	
 	// Shift all the display to the middle
-	if (b_center) {
+	if (b_position == POSITION_CENTER) {
 		p0 = cling.ui.p_oled_up+128;
 		p1 = p0+128;
 		p2 = p1+128;
@@ -1584,7 +1570,29 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 				*p2-- = 0;
 			}
 		}
-	}	
+	}	else if (b_position == POSITION_RIGHT) {
+		p0 = cling.ui.p_oled_up+128;
+		p1 = p0+128;
+		p2 = p1+128;
+		ptr = 128 - offset;
+		
+		if (ptr > 0) {
+			p0 += 127; p4 = p0 - ptr;
+			p1 += 127; p5 = p1 - ptr;
+			p2 += 127; p6 = p2 - ptr;
+			for (i = 0; i < offset; i++) {
+				*p0-- = *p4--;
+				*p1-- = *p5--;
+				*p2-- = *p6--;
+			}
+			// Update new offset and clean up the rest area
+			for (; i < 128; i++) {
+				*p0-- = 0;
+				*p1-- = 0;
+				*p2-- = 0;
+			}
+		}
+	}
 	
 	// Add large week day display
 	if (mode == UI_MIDDLE_MODE_CLOCK) {
@@ -1620,7 +1628,7 @@ static void _middle_row_horizontal(I8U mode, BOOLEAN b_center)
 	}
 }
 
-static void _middle_row_vertical_270(I8U mode, BOOLEAN b_center)
+static void _middle_row_vertical_270(I8U mode)
 {
 	I8U string[128];
 
@@ -1644,20 +1652,20 @@ static void _middle_row_vertical_270(I8U mode, BOOLEAN b_center)
 	} else if (mode == UI_MIDDLE_MODE_SKIN_TEMP) {
 		_fill_vertical_skin_temp((char *)string);
 	} else {
-		_middle_row_horizontal(mode, b_center);
+		_middle_row_horizontal(mode);
 	}
 }
 
-static void _middle_row_render(I8U mode, BOOLEAN b_center)
+static void _middle_row_render(I8U mode)
 {
 	// Clean up top row
 	memset(cling.ui.p_oled_up, 0, 512);
 	
 	if (cling.ui.clock_orientation == 1) {
-		_middle_row_horizontal(mode, b_center);
+		_middle_row_horizontal(mode);
 	} else {
 		N_SPRINTF("[UI] flip clock (v-270): %d", cling.ui.clock_orientation);
-		_middle_row_vertical_270(mode, b_center);
+		_middle_row_vertical_270(mode);
 	} 
 }
 
@@ -2240,7 +2248,7 @@ static void _core_home_display_horizontal(I8U middle, I8U bottom, BOOLEAN b_rend
 	BOOLEAN b_conn = FALSE;
 	
 	// Main info
-	_middle_row_render(middle, TRUE);
+	_middle_row_render(middle);
 
 	// Info on the right
 	if (BATT_is_charging())
@@ -2287,7 +2295,7 @@ static void _render_clock_rotation(SYSTIME_CTX time)
 static void _core_display_horizontal(I8U top, I8U middle, I8U bottom, BOOLEAN b_render)
 {	
 	// Main info
-	_middle_row_render(middle, TRUE);
+	_middle_row_render(middle);
 	
 	// Info on the left
 	_top_icon_render(top, FALSE);
@@ -2354,7 +2362,7 @@ static void _display_frame_tracker(I8U index, BOOLEAN b_render)
 
 static void _display_weather(UI_ANIMATION_CTX *u, BOOLEAN b_render)
 {
-		_core_display_horizontal(UI_TOP_MODE_WEATHER, UI_MIDDLE_MODE_WEATHER, UI_BOTTOM_MODE_CLOCK, b_render);
+		_core_display_horizontal(UI_TOP_MODE_WEATHER, UI_MIDDLE_MODE_WEATHER, UI_BOTTOM_MODE_NONE, b_render);
 }
 
 static void _display_idle_alert()
@@ -2692,7 +2700,7 @@ static void _display_frame_smart(I8U index, BOOLEAN b_render)
 			_display_weather(u, b_render);
 			break;
 		case UI_DISPLAY_SMART_MESSAGE:
-			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_MESSAGE, UI_BOTTOM_MODE_CLOCK, b_render);
+			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_MESSAGE, UI_BOTTOM_MODE_NONE, b_render);
 			break;
 		case UI_DISPLAY_SMART_APP_NOTIF:
 			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_APP_NOTIF, UI_BOTTOM_MODE_APP_NOTIFIC_2DIGITS_INDEX, b_render);
@@ -2710,7 +2718,7 @@ static void _display_frame_smart(I8U index, BOOLEAN b_render)
 			_core_display_horizontal(UI_TOP_MODE_INCOMING_CALL, UI_MIDDLE_MODE_INCOMING_CALL, UI_BOTTOM_MODE_OK, b_render);
 			break;
 		case UI_DISPLAY_SMART_INCOMING_MESSAGE:
-			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_INCOMING_MESSAGE, UI_BOTTOM_MODE_CLOCK, b_render);
+			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_INCOMING_MESSAGE, UI_BOTTOM_MODE_NONE, b_render);
 			break;
 		default:
 			break;
@@ -2768,7 +2776,7 @@ static void _display_frame_ota(I8U index, BOOLEAN b_render)
 
 static void _display_sos(BOOLEAN b_render)
 {
-	_core_display_horizontal(UI_TOP_MODE_NONE, UI_MIDDLE_MODE_SOS, UI_BOTTOM_MODE_CLOCK, b_render);
+	_core_display_horizontal(UI_TOP_MODE_NONE, UI_MIDDLE_MODE_SOS, UI_BOTTOM_MODE_NONE, b_render);
 }
 
 static void _display_frame_home(BOOLEAN b_render)
