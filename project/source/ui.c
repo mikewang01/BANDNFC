@@ -985,12 +985,13 @@ static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U 
 		_rotate_270_degree(buf3, cling.ui.p_oled_up+384+offset+16);
 }
 
-static void _fill_vertical_distance(char *string)
+static void _fill_vertical_distance()
 {
 	I32U stat;
 	I8U len, margin;
 	I8U b_24_size = 24;
 	I32U v_1000, v_100;
+	char string[128];
 
 	v_1000 = 0;
 	v_100 = 0;
@@ -1035,12 +1036,13 @@ static void _fill_vertical_distance(char *string)
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
 }
 			
-static void _fill_vertical_calories(char *string)
+static void _fill_vertical_calories()
 {
 	I32U stat;
 	I8U len, margin;
 	I8U b_24_size = 24;
 	I32U v_10000, v_1000, v_100;
+	char string[128];
 
 	v_10000 = 0;
 	v_1000 = 0;
@@ -1105,11 +1107,12 @@ static void _fill_vertical_calories(char *string)
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
 }
 
-static void _fill_vertical_skin_temp(char *string)
+static void _fill_vertical_skin_temp()
 {
 	I16S integer;
 	I8U len, margin;
 	I8U b_24_size = 24;
+	char string[128];
 	
 	margin = 2;
 
@@ -1129,12 +1132,13 @@ static void _fill_vertical_skin_temp(char *string)
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, FALSE);
 }
 		
-static void _fill_vertical_steps(char *string)
+static void _fill_vertical_steps()
 {
 	I32U stat;
 	I8U len, margin;
 	I8U b_24_size = 24;
 	I32U v_10000, v_1000, v_100;
+	char string[128];
 
 	v_10000 = 0;
 	v_1000 = 0;
@@ -1218,12 +1222,13 @@ static void _fill_vertical_steps(char *string)
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
 }
 		
-static void _fill_vertical_heart_rate(char *string)
+static void _fill_vertical_heart_rate()
 {
 	I8U margin = 2;
 	I8U b_24_size = 24;
 	I16U stat;
 	I8U len;
+	char string[128];
 	
 	// First, render the icon
 	if (cling.ui.clock_sec_blinking) {
@@ -1628,29 +1633,48 @@ static void _middle_row_horizontal(I8U mode)
 	}
 }
 
+
+static void _fill_vertical_uv()
+{
+	I8U len, margin;
+	I8U b_24_size = 24;
+	I8U integer;
+	I8U string[32];
+
+	string[0] = ICON_MIDDLE_UV;
+	len = 1;
+	_render_vertical_character((I8U *)string, 0, margin, len, b_24_size, FALSE);
+	integer = cling.uv.max_UI_uv;
+	if (integer > 99)
+		len = sprintf((char *)string, "%d",(integer/10));
+	else
+		len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
+	margin = 1;
+	
+	_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
+		
+}
+
 static void _middle_row_vertical_270(I8U mode)
 {
-	I8U string[128];
-
 	// Render the left side 
 	if (mode == UI_MIDDLE_MODE_CLOCK) {
 		N_SPRINTF("[UI] flip clock (v-270): %d", cling.ui.clock_orientation);
 		_fill_vertical_local_clock(TRUE);
 	} else if (mode == UI_MIDDLE_MODE_STEPS) {
-		_fill_vertical_steps((char *)string);
+		_fill_vertical_steps();
 	} else if (mode == UI_MIDDLE_MODE_DISTANCE) {
-		_fill_vertical_distance((char *)string);
+		_fill_vertical_distance();
 	} else if (mode == UI_MIDDLE_MODE_CALORIES) {
-		_fill_vertical_calories((char *)string);
+		_fill_vertical_calories();
 	} else if (mode == UI_MIDDLE_MODE_UV_IDX) {
 #ifdef _CLINGBAND_UV_MODEL_
-  	integer = cling.uv.max_UI_uv;
-		len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
+		_fill_vertical_uv();
 #endif
 	} else if (mode == UI_MIDDLE_MODE_HEART_RATE) {
-		_fill_vertical_heart_rate((char *)string);
+		_fill_vertical_heart_rate();
 	} else if (mode == UI_MIDDLE_MODE_SKIN_TEMP) {
-		_fill_vertical_skin_temp((char *)string);
+		_fill_vertical_skin_temp();
 	} else {
 		_middle_row_horizontal(mode);
 	}
@@ -1667,31 +1691,6 @@ static void _middle_row_render(I8U mode)
 		N_SPRINTF("[UI] flip clock (v-270): %d", cling.ui.clock_orientation);
 		_middle_row_vertical_270(mode);
 	} 
-}
-
-static I8U _render_top_sec(I8U *string, I8U len, I8U offset)
-{
-	I8U i, j, margin = 1;
-	const I8U *pin;
-	I8U *p0;
-	
-	for (i = 0; i < len; i++) {
-		p0 = cling.ui.p_oled_up+offset; // Add extra 10 pixels to make it center
-		if (string[i] == ' ') {
-			offset += 4;
-		} else {
-			pin = asset_content+asset_pos[string[i]];
-			for (j = 0; j < asset_len[string[i]]; j++) {
-					*p0++ = (*pin++);
-			}
-			if (i != (len-1))
-				offset += asset_len[string[i]] + margin;
-			else
-				offset += asset_len[string[i]];
-		}
-	}
-	
-	return offset;
 }
 
 static void _render_firmware_ver()
@@ -2069,7 +2068,7 @@ static void _right_row_horizontal_render(I8U mode)
 	}
 }
 
-static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more) 
+static void _render_vertical_clock(BOOLEAN b_extended_more)
 {
 	I8U buf1[32];
 	I8U buf2[32];
@@ -2077,11 +2076,9 @@ static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more)
 	I8U string[32];
 	I8U line_len = 0;
 	I8U offset;
-	SYSTIME_CTX delta;
-
+	
 	memset(buf1, 0, 32);
 	
-	if (mode == UI_BOTTOM_MODE_CLOCK) {
 		// Render clock
 		if (cling.ui.b_detail_page && b_extended_more) {
 			offset = 110;
@@ -2092,6 +2089,19 @@ static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more)
 		line_len = FONT_load_characters(buf1, (char *)string, 8, 128, FALSE);
 		_vertical_centerize(buf1, buf2, buf3, line_len);
 		_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
+			
+		if (cling.ui.b_detail_page && b_extended_more) {
+			_render_icon_vertical_more(120);
+		}
+}
+
+static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more) 
+{
+	SYSTIME_CTX delta;
+
+	if (mode == UI_BOTTOM_MODE_CLOCK) {
+		// Render clock
+		_render_vertical_clock(b_extended_more);
 			
 		if (cling.ui.b_detail_page && b_extended_more) {
 			_render_icon_vertical_more(120);
@@ -2111,18 +2121,11 @@ static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more)
 	}
 }
 
-static void _right_row_render(I8U mode, BOOLEAN b_extended_more)
+static void _clock_face_switching(I8U mode)
 {
 	I8U *p0, *p1, *p2, *p3;
 	I8U i;
 	I8U string[64];
-	
-	if (cling.ui.clock_orientation == 1) {
-		_right_row_horizontal_render(mode);
-	} else  {
-		_right_row_vertical_270_render(mode, b_extended_more);
-	}
-	
 	if ((mode == UI_BOTTOM_MODE_CHARGING_PERCENTAGE) || (mode == UI_BOTTOM_MODE_CALENDAR)) {
 
 		// For clock page, we clean up a bit for the 'more' icon
@@ -2145,6 +2148,19 @@ static void _right_row_render(I8U mode, BOOLEAN b_extended_more)
 			_render_icon_more(110);
 		}
 	}
+}
+
+static void _right_row_render(I8U mode, BOOLEAN b_extended_more)
+{
+	
+	if (cling.ui.clock_orientation == 1) {
+		_right_row_horizontal_render(mode);
+	} else  {
+		_right_row_vertical_270_render(mode, b_extended_more);
+	}
+	
+	// Render clock face switching 
+	_clock_face_switching(mode);
 }
 
 static void _render_screen()
@@ -2274,22 +2290,6 @@ static void _core_home_display_horizontal(I8U middle, I8U bottom, BOOLEAN b_rend
 		// Finally, we render the frame
 		_render_screen();
 	}
-}
-
-static void _render_clock_rotation(SYSTIME_CTX time)
-{
-	I8U buf1[32];
-	I8U buf2[32];
-	I8U buf3[32];
-	I8U string[32];
-	I8U line_len = 0;
-
-	memset(buf1, 0, 32);
-	
-	sprintf((char *)string, "%d:%02d",time.hour, time.minute);
-	line_len = FONT_load_characters(buf1, (char *)string, 8, 128, FALSE);
-	_vertical_centerize(buf1, buf2, buf3, line_len);
-	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+120);
 }
 
 static void _core_display_horizontal(I8U top, I8U middle, I8U bottom, BOOLEAN b_render)

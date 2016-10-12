@@ -80,6 +80,7 @@
 #define ICON_MIDDLE_HEART_RATE                        130
 #define ICON_MIDDLE_STEPS                             131
 #define ICON_MIDDLE_CALORIES                          132
+#define ICON_MIDDLE_UV                                129
 #define ICON_MIDDLE_DISTANCE                          133
 #define ICON_MIDDLE_SKIN_TEMP                         134
 #define ICON_MIDDLE_WEATHER_IDX                       135
