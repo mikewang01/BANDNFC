@@ -1097,9 +1097,9 @@ static void _fill_vertical_calories(char *string)
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
 			len = sprintf((char *)string, "Cal");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "卡");
+			len = sprintf((char *)string, "卡 ");
 		} else {
-			len = sprintf((char *)string, "卡");
+			len = sprintf((char *)string, "卡 ");
 		}
 	}
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
@@ -1210,9 +1210,9 @@ static void _fill_vertical_steps(char *string)
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
 			len = sprintf((char *)string, "S");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "步");
+			len = sprintf((char *)string, "步 ");
 		} else {
-			len = sprintf((char *)string, "步");
+			len = sprintf((char *)string, "步 ");
 		}
 	}
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
