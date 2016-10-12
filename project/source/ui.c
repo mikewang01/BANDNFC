@@ -1633,6 +1633,7 @@ static void _middle_row_horizontal(I8U mode)
 	}
 }
 
+#ifdef _CLINGBAND_UV_MODEL_
 
 static void _fill_vertical_uv()
 {
@@ -1654,6 +1655,7 @@ static void _fill_vertical_uv()
 	_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
 		
 }
+#endif
 
 static void _middle_row_vertical_270(I8U mode)
 {
