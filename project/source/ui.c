@@ -1557,6 +1557,16 @@ static void _middle_row_horizontal(I8U mode)
 		p1 = p0+128;
 		p2 = p1+128;
 		ptr = (128 - offset)>>1;
+	
+		// Update new offset and clean up the rest area
+		offset = 128 - ptr;
+		// Special process for distance
+		if (mode == UI_MIDDLE_MODE_DISTANCE) {
+				if (ptr > 12) {
+					offset -= 12;
+					ptr -= 12;
+			}
+		}
 		
 		if (ptr > 0) {
 			p0 += 127; p4 = p0 - ptr;
@@ -1567,8 +1577,6 @@ static void _middle_row_horizontal(I8U mode)
 				*p1-- = *p5--;
 				*p2-- = *p6--;
 			}
-			// Update new offset and clean up the rest area
-			offset = 128 - ptr;
 			for (; i < 128; i++) {
 				*p0-- = 0;
 				*p1-- = 0;
@@ -1652,7 +1660,7 @@ static void _fill_vertical_uv()
 		len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
 	margin = 1;
 	
-	_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
+	_render_vertical_character((I8U *)string, 50, margin, len, b_24_size, FALSE);
 		
 }
 #endif
