@@ -755,7 +755,7 @@ static void _render_calendar_weekday_large(SYSTIME_CTX time)
 	I8U string[64];
 	char *week_en[] = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
 	char *week_cn_s[] = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
-	char *week_cn_t[] = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+	char *week_cn_t[] = {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"};
 		
 	if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {	
 		sprintf((char *)string, "%s", week_en[time.dow]);
@@ -1031,7 +1031,7 @@ static void _fill_vertical_distance()
 	} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
 		len = sprintf((char *)string, "公里");
 	} else {
-		len = sprintf((char *)string, "公里");
+		len = sprintf((char *)string, "公裏");
 	}
 	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
 }
@@ -1198,7 +1198,7 @@ static void _fill_vertical_steps()
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
 			len = sprintf((char *)string, "万步");
 		} else {
-			len = sprintf((char *)string, "万步");
+			len = sprintf((char *)string, "萬步");
 		}
 	} else if (stat > 999) {
 		b_24_size = 16;
@@ -1620,7 +1620,7 @@ static void _middle_row_horizontal(I8U mode)
 			sprintf((char *)string, "公里");
 			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
 		} else {
-			sprintf((char *)string, "公里");
+			sprintf((char *)string, "公裏");
 			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
 		}
 	}
@@ -1961,7 +1961,7 @@ static void _render_dow_rotation(SYSTIME_CTX time, BOOLEAN b_90_degree)
 	I8U line_len;
 	char *week_en[] = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
 	char *week_cn_s[] = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
-	char *week_cn_t[] = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+	char *week_cn_t[] = {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"};
 
 	memset(data_buf, 0, 256);
 	
