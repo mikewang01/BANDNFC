@@ -50,6 +50,8 @@
 #define ICON_TOP_MESSAGE                     asset_pos[256+140]
 #define ICON_TOP_RETURN_LEN                  asset_len[256+145]
 #define ICON_TOP_RETURN                      asset_pos[256+145]
+#define ICON_TOP_PROPERTY_LEN                asset_len[256+141]
+#define ICON_TOP_PROPERTY                    asset_pos[256+141]
 #define ICON_TOP_CALLS_LEN                   asset_len[256+160]
 #define ICON_TOP_CALLS                       asset_pos[256+160]
 #define ICON_TOP_OK_LEN                      asset_len[256+161]

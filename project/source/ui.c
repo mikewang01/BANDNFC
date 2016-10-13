@@ -794,19 +794,16 @@ static I16U _render_middle_section_large(I8U len, I8U *string, I8U margin, I8U m
 						pin = asset_content+asset_pos[512+string[i]];
 						char_len = asset_len[512+string[i]];
 					}
+				} else if (mode == UI_MIDDLE_MODE_BLE_CODE) {
+						pin = asset_content+asset_pos[512+string[i]];
+						char_len = asset_len[512+string[i]];
 				} else {
-					if (string[i] < 128) {
-						if ((string[i] >= '0') && (string[i] <= '9')) {
-							// Using "light" font for all other statistics except for clock
-							pin = asset_content+asset_pos[512+string[i]+152];
-							char_len = asset_len[512+string[i]+152];
-						} else {
-							// For punctuation, just show what it is
-							pin = asset_content+asset_pos[512+string[i]];
-							char_len = asset_len[512+string[i]];
-						}
+					if ((string[i] >= '0') && (string[i] <= '9')) {
+						// Using "light" font for all other statistics except for clock
+						pin = asset_content+asset_pos[512+string[i]+152];
+						char_len = asset_len[512+string[i]+152];
 					} else {
-						// For icons, just show what it is
+						// For punctuation, just show what it is
 						pin = asset_content+asset_pos[512+string[i]];
 						char_len = asset_len[512+string[i]];
 					}
@@ -1818,6 +1815,8 @@ static void _top_icon_horizontal_render(I8U mode)
 		_render_one_icon(asset_len[ICON_WEATHER_IDX+weather.type], cling.ui.p_oled_up+offset, asset_content+asset_pos[ICON_WEATHER_IDX+weather.type]);
 	} else if (mode == UI_TOP_MODE_RETURN) {
 		_render_one_icon(ICON_TOP_RETURN_LEN, cling.ui.p_oled_up, asset_content+ICON_TOP_RETURN);
+	} else if (mode == UI_TOP_MODE_PROPERTY) {
+		_render_one_icon(ICON_TOP_PROPERTY_LEN, cling.ui.p_oled_up, asset_content+ICON_TOP_PROPERTY);
 	} else if (mode == UI_TOP_MODE_OK) {
 		_render_one_icon(ICON_TOP_OK_LEN, cling.ui.p_oled_up+111, asset_content+ICON_TOP_OK);
 	} else if (mode == UI_TOP_MODE_WORKOUT_START) {
@@ -2605,7 +2604,7 @@ static void _display_stopwatch_start(I8U *string1, I8U len1, I8U mode)
 
 static void _display_frame_setting(I8U index, BOOLEAN b_render)
 {
-	_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_BLE_CODE, UI_BOTTOM_MODE_FIRMWARE_VER, b_render);
+	_core_display_horizontal(UI_TOP_MODE_PROPERTY, UI_MIDDLE_MODE_BLE_CODE, UI_BOTTOM_MODE_FIRMWARE_VER, b_render);
 }
 
 
