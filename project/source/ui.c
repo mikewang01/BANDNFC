@@ -1248,8 +1248,10 @@ static void _fill_vertical_heart_rate()
 				
 				stat = PPG_minute_hr_calibrate();
 				
-				if (stat > 99)
+				if (stat > 99) {
 					b_24_size = FALSE; 
+					margin = 1;
+				}
 				
 				len = sprintf((char *)string, "%d", stat);
 							
@@ -1621,7 +1623,6 @@ static void _middle_row_horizontal(I8U mode)
 			sprintf((char *)string, "公里");
 			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
 		}
-	} else if (mode == UI_MIDDLE_MODE_HEART_RATE) {
 	}
 	
 	if (b_more & cling.ui.b_detail_page) {
@@ -1977,8 +1978,8 @@ static void _render_dow_rotation(SYSTIME_CTX time, BOOLEAN b_90_degree)
 	
 	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
 
-		_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+96);
-		_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+104);
+	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+96);
+	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+104);
 }
 
 static void _render_battery_perc_rotation(BOOLEAN b_90_degree)
@@ -2849,7 +2850,7 @@ static void _render_logo()
 #endif
 
 #ifdef _CLINGBAND_NFC_MODEL_
-static void _render_display_restart()
+static void _render_display_restart_nfc()
 {
 	I8U string[128];
 	memset(cling.ui.p_oled_up, 0, 512);
@@ -3369,7 +3370,7 @@ void UI_state_machine()
 			if (u->state_init) {
 				u->state_init = FALSE;
 #ifdef _CLINGBAND_NFC_MODEL_
-				_render_display_restart();
+				_render_display_restart_nfc();
 #endif
 				
 #ifdef _CLINGBAND_UV_MODEL_
