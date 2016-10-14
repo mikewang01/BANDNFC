@@ -3323,6 +3323,12 @@ static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)
 				// Any touch event, go to touch sensing state
 				u->touch_time_stamp = t_curr;
 				u->frame_index = NOTIFICATION_TYPE_REMINDER;
+				
+				// Higher priority for workout mode
+				if (cling.activity.b_workout_active) {
+					u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
+				} 
+
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 4000);
 			} else if (t_curr > u->touch_time_stamp + 5000) {
 				// Freshing for 5 seconds, then go dark
