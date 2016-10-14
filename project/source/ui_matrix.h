@@ -364,7 +364,7 @@ const I8U ui_gesture_constrain[UI_DISPLAY_MAXIMUM] = {
 	// 5: Special back panel mode
 	/*UI_DISPLAY_SETTING_VER,*/                  S_F_BS_BH,
 	// 6: Confirmation messages
-	/*UI_DISPLAY_STOPWATCH_START,*/              N_F,
+	/*UI_DISPLAY_STOPWATCH_START,*/              F_BS,
 	/*UI_DISPLAY_STOPWATCH_STOP,*/               S_F,
 	/*UI_DISPLAY_STOPWATCH_HEARTRATE,*/          S_F,
 	/*UI_DISPLAY_STOPWATCH_CALORIES,*/           S_F,
