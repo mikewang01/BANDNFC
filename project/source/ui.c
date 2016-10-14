@@ -2312,7 +2312,8 @@ static void _core_display_horizontal(I8U top, I8U middle, I8U bottom, BOOLEAN b_
 		
 	// Bottom row
 	if ((middle == UI_MIDDLE_MODE_SKIN_TEMP) || 
-		  (middle == UI_MIDDLE_MODE_HEART_RATE) ) {
+		  (middle == UI_MIDDLE_MODE_HEART_RATE) ||
+	    (middle == UI_MIDDLE_MODE_UV_IDX) ) {
 		_right_row_render(bottom, FALSE);
 	} else {
 		_right_row_render(bottom, TRUE);
@@ -3318,17 +3319,18 @@ static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)
 		}
 		N_SPRINTF("[UI] Notification (%d): %d", cling.notific.cat_id, (t_curr-u->touch_time_stamp));
 	} else {
-		if (t_curr > u->display_to_base + u->frame_interval) {
+		if (t_curr > u->display_to_base + 100) {
+			u->display_to_base = t_curr;
+			
+			// Higher priority for workout mode
+			if (cling.activity.b_workout_active) {
+				u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
+			} 
+
 			if (_ui_touch_sensing()) {
 				// Any touch event, go to touch sensing state
 				u->touch_time_stamp = t_curr;
-				u->frame_index = NOTIFICATION_TYPE_REMINDER;
 				
-				// Higher priority for workout mode
-				if (cling.activity.b_workout_active) {
-					u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
-				} 
-
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 4000);
 			} else if (t_curr > u->touch_time_stamp + 5000) {
 				// Freshing for 5 seconds, then go dark
