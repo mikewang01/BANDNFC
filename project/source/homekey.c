@@ -59,24 +59,9 @@ void HOMEKEY_check_on_hook_change()
 			if (LINK_is_authorized()) {
 					
 				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
+				
+				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
 
-				// Turn on OLED panel
-				OLED_set_panel_on();
-				
-				cling.ui.true_display = TRUE;
-				
-				// Update touch event time
-				cling.ui.touch_time_stamp = CLK_get_system_time();
-				
-				if (UI_is_idle()) {
-					// UI initial state, a glance of current clock
-					UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-					N_SPRINTF("[KEY] set UI: button clicked (glance)");
-				} else {
-					// 
-					UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-					N_SPRINTF("[KEY] set UI: button clicked (sensing)");
-				}
 			} else {
 				RTC_start_operation_clk();
 			}
@@ -258,22 +243,7 @@ void HOMEKEY_sim_kickoff()
 static void _sim_physical_touch()
 {
 		// Turn on OLED panel
-		OLED_set_panel_on();
-		
-		cling.ui.true_display = TRUE;
-		
-		// Update touch event time
-		cling.ui.touch_time_stamp = CLK_get_system_time();
-		
-		if (UI_is_idle()) {
-			// UI initial state, a glance of current clock
-			UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-			N_SPRINTF("[KEY] set UI: sim click (glance)");
-		} else {
-			// 
-			UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-			N_SPRINTF("[KEY] set UI: sim clicked (sensing)");
-		}
+		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
 }
 
 void HOMEKEY_sim()

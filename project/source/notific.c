@@ -88,6 +88,18 @@ void NOTIFIC_start_HR_alert()
 	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 }
 
+void NOTIFIC_start_10KStep_alert()
+{
+	cling.notific.vibrate_time = 0;
+	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
+	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
+	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.ui.notif_type = NOTIFICATION_TYPE_10KSTEP;
+	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
+	
+	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+}
+
 void NOTIFIC_state_machine()
 {
 	I32U t_curr = CLK_get_system_time();

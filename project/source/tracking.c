@@ -689,6 +689,13 @@ static void _logging_per_minute()
 		}
 	}
 	
+	// alert user if steps go beyond 10 K steps
+	if ((cling.activity.day.walking + cling.activity.day.running) >= 10000) {
+		if ((cling.activity.day_stored.walking+cling.activity.day_stored.running) < 10000) {
+			NOTIFIC_start_10KStep_alert();
+		}
+	}
+	
 	N_SPRINTF("[LOGGING1] %08x %08x %08x %08x", tracking_minute[0], tracking_minute[1], tracking_minute[2], tracking_minute[3]);
 
 	// sleep minute process

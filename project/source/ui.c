@@ -3312,6 +3312,9 @@ static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)
 		} else if (type == NOTIFICATION_TYPE_HR) {
 			u->frame_index = UI_DISPLAY_VITAL_HEART_RATE;
 			_display_frame_vital(u->frame_index, TRUE);
+		} else if (type == NOTIFICATION_TYPE_10KSTEP) {
+			u->frame_index = UI_DISPLAY_TRACKER_STEP;
+			_display_frame_tracker(u->frame_index, TRUE);
 		}
 		N_SPRINTF("[UI] Notification (%d): %d", cling.notific.cat_id, (t_curr-u->touch_time_stamp));
 	} else {
@@ -3395,7 +3398,11 @@ void UI_state_machine()
 					_display_frame_home(TRUE);
 				}
 				N_SPRINTF("[UI] clock glance");
-			} else if ((t_curr > u->display_to_base + 1000) || TOUCH_new_gesture()) {
+			} else if ((t_curr > u->display_to_base + 500) || TOUCH_new_gesture()) {
+				if (cling.activity.b_workout_active) {
+					u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
+				} 
+				
 				N_SPRINTF("[UI] switch to sensing mode, %d, %d", t_curr, u->display_to_base);
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 2000);
 				u->touch_time_stamp = t_curr;
@@ -3621,9 +3628,6 @@ void UI_state_machine()
 #endif
 				// Reset alarm clock flag
 				cling.reminder.ui_alarm_on = FALSE;
-
-				// Reset workout type
-				UI_reset_workout_mode();
 				
 				// Remember the last screen so that 
 				/*
@@ -3650,48 +3654,34 @@ void UI_state_machine()
 
 void UI_reset_index()
 {
+	// Do not reset frame index if device is in a workout mode
+	if (cling.activity.b_workout_active) {
+		cling.ui.frame_index = UI_DISPLAY_STOPWATCH_STOP;
+		return;
+	}
+	
 	cling.ui.frame_index = UI_DISPLAY_HOME;
 }
 
-void UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
+BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 {
+	BOOLEAN b_panel_on;
+	
 	// Turn on OLED panel
-	OLED_set_panel_on();
+	b_panel_on = OLED_set_panel_on();
 	
 	// touch time update
 	cling.ui.touch_time_stamp = CLK_get_system_time()-time_offset;
 	cling.ui.true_display = TRUE;
 
-	if (state != UI_STATE_IDLE) {
-		UI_switch_state(state, 0);
+	if (UI_is_idle()) {
+		// UI initial state, A glance of current time
+		UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
 	} else {
-		if (UI_is_idle()) {
-			// UI initial state, A glance of current time
-			UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-		}
-	}
-}
-
-void UI_reset_workout_mode()
-{
-	if (cling.ui.frame_index < UI_DISPLAY_STOPWATCH_STOP) {
-		//
-		if (cling.ui.frame_index < UI_DISPLAY_SMART) {
-			cling.activity.workout_type = WORKOUT_NONE;
-			cling.activity.workout_place = WORKOUT_PLACE_NONE;
-			cling.activity.b_workout_active = FALSE;
-		} else if (cling.ui.frame_index > UI_DISPLAY_SMART_END) {
-			cling.activity.workout_type = WORKOUT_NONE;
-			cling.activity.workout_place = WORKOUT_PLACE_NONE;
-			cling.activity.b_workout_active = FALSE;
-		}
+		UI_switch_state(state, 0);
 	}
 	
-	if (cling.ui.frame_index > UI_DISPLAY_STOPWATCH_CALORIES) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.workout_place = WORKOUT_PLACE_NONE;
-		cling.activity.b_workout_active = FALSE;
-	}
+	return b_panel_on;
 }
 
 

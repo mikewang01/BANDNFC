@@ -101,6 +101,7 @@ enum {
 	NOTIFICATION_TYPE_MESSAGE,
 	NOTIFICATION_TYPE_IDLE_ALERT,
 	NOTIFICATION_TYPE_HR,
+	NOTIFICATION_TYPE_10KSTEP,
 };
 
 enum {
@@ -273,10 +274,8 @@ enum {
 void UI_state_machine(void);
 void UI_init(void);
 void UI_switch_state(I8U state, I32U interval);
-void UI_test(void);
 BOOLEAN UI_is_idle(void);
-void UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset);
-void UI_reset_workout_mode(void);
+BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset);
 void UI_reset_index(void);
 
 #endif

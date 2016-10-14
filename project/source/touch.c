@@ -123,27 +123,12 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
 		// Turn on OLED panel
-		if (!OLED_set_panel_on()) {
+		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0)) {
 			t->b_valid_gesture = TRUE;
 					
 			// Tap detection
 			_tap_process(t, t_curr);
 		} 
-		
-		cling.ui.true_display = TRUE;
-		
-		// Update touch event time
-		cling.ui.touch_time_stamp = CLK_get_system_time();
-		
-		if (UI_is_idle()) {
-			// UI initial state, a glance of current clock
-			UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-			N_SPRINTF("[TOUCH] set UI: clock glance (finger down)");
-		} else {
-			// 
-			UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-			N_SPRINTF("[TOUCH] set UI: touch sensing (finger down)");
-		}
 	}
 }
 
@@ -174,25 +159,11 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 		
 		// Turn on OLED panel
-		if (!OLED_set_panel_on()) {
+		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0)) {
 			t->b_valid_gesture = TRUE;
 		
 			N_SPRINTF("[TOUCH] ------------ VALID gesture --------");
 		
-		}
-		
-		cling.ui.true_display = TRUE;
-		
-		// touch time update
-		cling.ui.touch_time_stamp = CLK_get_system_time();
-
-		if (UI_is_idle()) {
-			// UI initial state, A glance of current time
-			UI_switch_state(UI_STATE_CLOCK_GLANCE, 0);
-			N_SPRINTF("[TOUCH] set UI: clock glance (swipe)");
-		} else {
-			UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-			N_SPRINTF("[TOUCH] set UI: touch sensing (swipe)");
 		}
 	}
 }
