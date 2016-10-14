@@ -134,10 +134,7 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 		if (LINK_is_authorized()) {
 			
 			// Turn on screen
-			UI_turn_on_display(UI_STATE_IDLE, 0);
-			
-			// This might be falsly triggered, set a short display time
-			cling.ui.true_display = FALSE;
+			UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
 		}
 	}
 }
@@ -358,27 +355,8 @@ static void _tapping_screen_activation(I32U t_curr)
 	}
 
 	if (LINK_is_authorized()) {
-		UI_turn_on_display(UI_STATE_IDLE, 0);
+		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
 	}
-#if 0
-	return;
-
-	if (int_source & 0x20) {
-		N_SPRINTF("[SENSOR] ++++ DOUBLE TAP EVENT: %02x ++++", int_source);
-		cling.activity.tap_ts = 0;
-		UI_turn_on_display(UI_STATE_IDLE, 0);
-	} else if (int_source & 0x10) {
-		t_diff = t_curr - cling.activity.tap_ts;
-		
-		if (t_diff < 1000) {
-			N_SPRINTF("[SENSOR] ++++ SINGLE TAP EVENT (TWICE): %02x ++++", int_source);
-			cling.activity.tap_ts = 0; // Reset timing
-			UI_turn_on_display(UI_STATE_IDLE, 0);
-		} else {
-			cling.activity.tap_ts = t_curr; // Refresh tapping time stamp
-		}
-	}
-#endif
 }
 
 void SENSOR_accel_processing()
