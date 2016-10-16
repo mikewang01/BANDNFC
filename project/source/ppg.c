@@ -297,9 +297,22 @@ static void _skin_touch_detect(I16S sample)
 	t_diff = t_curr - h->m_closing_to_skin_detection_timer;
 	if (t_diff > 500) {
     h->b_closing_to_skin = FALSE;    
+		h->heart_rate_ready  = FALSE;
 		h->approximation_decision_ts = t_curr;
 		Y_SPRINTF("[PPG] ppg is detached at %d ---- %d", h->approximation_decision_ts, t_diff);
 	}
+}
+static I16S _get_light_strength_register()
+{
+	I16S proxData;
+	I8U  buf[2];
+
+	ppg_read_reg(REGS_PS1_DATA0,  1, (buf+0));
+	ppg_read_reg(REGS_PS1_DATA1,  1, (buf+1));
+	
+	proxData = ((I16S)buf[1]<<8) | buf[0];
+
+	return proxData;
 }
 
 static void _ppg_sample_proc()
@@ -445,10 +458,9 @@ void PPG_disable_sensor()
 	ppg_write_reg(REGS_ALS_RATE,  0);
 	ppg_write_reg(REGS_PS_RATE,   0);
 	
-	h->heart_rate_ready  = FALSE;
 }
 
-void ppg_configure_sensor()
+static void _configure_sensor()
 {
 	HEARTRATE_CTX *h = &cling.hr;
 
@@ -463,18 +475,6 @@ void ppg_configure_sensor()
 	h->update_cnt        = 0;
 }
 
-I16S _get_light_strength_register()
-{
-	I16S proxData;
-	I8U  buf[2];
-
-	ppg_read_reg(REGS_PS1_DATA0,  1, (buf+0));
-	ppg_read_reg(REGS_PS1_DATA1,  1, (buf+1));
-	
-	proxData = ((I16S)buf[1]<<8) | buf[0];
-
-	return proxData;
-}
 
 void PPG_init()
 {
@@ -510,6 +510,10 @@ void PPG_init()
 BOOLEAN _is_user_viewing_heart_rate()
 {
 	if (UI_is_idle()) {
+
+		if (!cling.activity.b_workout_active)
+			cling.hr.heart_rate_ready  = FALSE;
+
 		return FALSE;
 	}
 	
@@ -542,9 +546,10 @@ void PPG_state_machine()
 		{
 			// Update time stamp to start measuring right away
 			h->m_measuring_timer_in_s = t_sec;
+			h->first_hr_measurement_in_sec = cling.time.system_clock_in_sec;
 			h->state = PPG_STAT_SAMPLE_READY;
 			N_SPRINTF("[PPG] duty on: %d", h->m_measuring_timer_in_s);
-  	  ppg_configure_sensor();			// initialize the PPG module
+  	  _configure_sensor();			// initialize the PPG module
 		}
 		break;
 
@@ -599,6 +604,7 @@ void PPG_state_machine()
 			// If device is in a charging state, do not perform PPG detection
 			if (BATT_is_charging()) {
 				h->b_closing_to_skin = FALSE;
+				h->heart_rate_ready  = FALSE;
 				break;
 			}
 			

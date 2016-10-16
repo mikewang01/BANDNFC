@@ -261,15 +261,10 @@ typedef struct tagHEARTRATE_CTX{
 //
 
 
-BOOLEAN _is_user_viewing_heart_rate(void);
-I16S    _get_light_strength_register(void);
-
 void PPG_disable_sensor(void);
-void ppg_configure_sensor(void);
 
 void PPG_init(void);
 void PPG_state_machine(void);
-void PPG_wearing_detection_state_machine(void);
 I8U PPG_minute_hr_calibrate(void);
 void PPG_closing_to_skin_detect_init(void);
 

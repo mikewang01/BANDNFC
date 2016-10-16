@@ -200,14 +200,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			N_SPRINTF("[ACTIVITY] --- Motion unknown ---");
 		}
 	} else if (PDM_STEP_DETECTED == (pdm_stat & PDM_STEP_DETECTED)) {
-		// For any position motion detected, we need to remeasure heart rate
-		#if 0
-		if (!PPG_is_user_viewing_heart_rate()) {
-			N_SPRINTF("[TRACKING] reset heart rate, %d, %d, %d", cling.sleep.state, cling.ui.frame_index, cling.ui.state);
-			cling.hr.heart_rate_ready = FALSE;
-		}
-#endif
-	
+		// For any position motion detected, we need to remeasure heart rate	
 		if (act_motion == MOTION_WALKING) {
 			//
 			// Simple conversion:

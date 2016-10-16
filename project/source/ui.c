@@ -340,6 +340,7 @@ static void _perform_ui_with_a_swipe(UI_ANIMATION_CTX *u, I8U gesture)
 			if (BATT_is_charging()) {
 				PPG_disable_sensor();
 				cling.hr.b_closing_to_skin = FALSE;
+				cling.hr.heart_rate_ready  = FALSE;
 				cling.hr.current_rate = 0;
 			} else {
 				PPG_closing_to_skin_detect_init();
@@ -2148,7 +2149,6 @@ static void _clock_face_switching(I8U mode)
 				*p2++ = 0;
 				*p3++ = 0;
 			}
-			cling.ui.fonts_type = LANGUAGE_TYPE_SIMPLIFIED_CHINESE;
 
 			if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {	
 				sprintf((char *)string, "CLK");
@@ -2500,7 +2500,7 @@ static void _display_stopwatch_core(I8U *string1, I8U len1, I8U *string2, I8U le
 	p0 = cling.ui.p_oled_up;
 	p1 = p0+128;
 	p2 = p1+128;
-	if (b_center) {
+	if (b_center && len1) {
 		
 		ptr = (128 - offset1)>>1;
 		
@@ -2669,9 +2669,46 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_STOPWATCH_HEARTRATE:
 		{
-			if (cling.hr.b_closing_to_skin && cling.hr.heart_rate_ready) {
+			
 
-				len1 = sprintf((char *)string1, "%d", PPG_minute_hr_calibrate());
+			if (cling.hr.b_closing_to_skin) {
+				
+				len1 = 0;
+				//cling.hr.heart_rate_ready = 0;
+				if (cling.hr.heart_rate_ready) {
+					len1 = sprintf((char *)string1, "%d", PPG_minute_hr_calibrate());
+				} else {
+					
+					if (cling.ui.heart_rate_wave_index > 5) {
+						cling.ui.heart_rate_wave_index = 0;
+					}
+					switch (cling.ui.heart_rate_wave_index) {
+						case 0:
+							len1 = sprintf((char *)string1, "-,,,,,");
+							break;
+						case 1:
+							len1 = sprintf((char *)string1, ",-,,,,");
+							break;
+						case 2:
+							len1 = sprintf((char *)string1, ",,-,,,");
+							break;
+						case 3:
+							len1 = sprintf((char *)string1, ",,,-,,");
+							break;
+						case 4:
+							len1 = sprintf((char *)string1, ",,,,-,");
+							break;
+						case 5:
+							len1 = sprintf((char *)string1, ",,,,,-");
+							break;
+						default:
+							break;
+					}
+					
+					cling.ui.heart_rate_wave_index ++;
+					_display_dynamic(cling.ui.p_oled_up+128, len1, string1);
+					len1 = 0;
+				}
 
 			} else {
 				N_SPRINTF("[UI] Heart rate - not valid");
