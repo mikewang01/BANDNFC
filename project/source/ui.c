@@ -840,6 +840,23 @@ static void _render_icon_more(I16U offset)
 	}
 }
 
+static void _render_icon_switch(I16U offset)
+{
+	I16U j;
+	I8U *p0;
+	const I8U *pin;
+	I8U char_len;
+	
+	p0 = cling.ui.p_oled_up+128+128+128+offset;
+
+	// "More" icon
+	pin = asset_content+ICON_TOP_ROTATE;
+	char_len = ICON_TOP_ROTATE_LEN;
+	
+	for (j = 0; j < char_len; j++) {
+			*p0++ = (*pin++);
+	}
+}
 static void _display_dynamic(I8U *pIn, I8U len2, I8U *string2)
 {
 	I8U *p, *pin;
@@ -1246,13 +1263,13 @@ static void _fill_vertical_heart_rate()
 				stat = PPG_minute_hr_calibrate();
 				
 				if (stat > 99) {
-					b_24_size = FALSE; 
+					b_24_size = 16; 
 					margin = 1;
 				}
 				
 				len = sprintf((char *)string, "%d", stat);
 							
-				if (b_24_size) 
+				if (b_24_size == 24) 
 					_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
 				else
 					_render_vertical_character((I8U *)string, 46, margin, len, b_24_size, FALSE);
@@ -1332,14 +1349,6 @@ static void _middle_row_horizontal(I8U mode)
 		} else {
 			len = sprintf((char *)string, "%d", stat);
 		}
-		#if 0
-		b_progress_bar = TRUE;
-		if (stat > 9999) {
-			bar_len = 100;
-		} else {
-			bar_len = stat / 100;
-		}
-		#endif
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_DISTANCE) {
 		TRACKING_get_activity(cling.ui.vertical_index, TRACKING_DISTANCE, &stat);
@@ -1717,25 +1726,18 @@ static void _render_firmware_ver()
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 
-static void _render_2_indicator(I8U len1, const I8U *in1, I8U offset1, I8U len2, const I8U *in2, I8U offset2)
+static void _render_1_indicator(I8U len, const I8U *in, I8U offset)
 {
 	I8U *p0, *p1, *pin;
 	I8U j;
 
 	// Render the left side (offset set to 60 for steps comment)
-	p0 = cling.ui.p_oled_up+offset1+98;
+	p0 = cling.ui.p_oled_up+offset;
 	p1 = p0 + 128;
-	pin = (I8U *)in1;
-	for (j = 0; j < len1; j++) {
+	pin = (I8U *)in;
+	for (j = 0; j < len; j++) {
 		*p0++ = (*pin++);
 		*p1++ = (*pin++);
-	}
-	
-	// Render the left side (offset set to 60 for steps comment)
-	p0 = cling.ui.p_oled_up+offset2+128+128+128+98;
-	pin = (I8U *)in2;
-	for (j = 0; j < len2; j++) {
-			*p0++ = (*pin++);
 	}
 }
 
@@ -1818,13 +1820,11 @@ static void _top_icon_horizontal_render(I8U mode)
 	} else if (mode == UI_TOP_MODE_PROPERTY) {
 		_render_one_icon(ICON_TOP_PROPERTY_LEN, cling.ui.p_oled_up, asset_content+ICON_TOP_PROPERTY);
 	} else if (mode == UI_TOP_MODE_OK) {
-		_render_one_icon(ICON_TOP_OK_LEN, cling.ui.p_oled_up+111, asset_content+ICON_TOP_OK);
+		_render_one_icon(ICON_TOP_OK_LEN, cling.ui.p_oled_up+108, asset_content+ICON_TOP_OK);
 	} else if (mode == UI_TOP_MODE_WORKOUT_START) {
-		_render_2_indicator(ICON_TOP_WORKOUT_START_ICON_LEN, asset_content+ICON_TOP_WORKOUT_START_ICON, 5,
-												ICON_TOP_WORKOUT_START_TEXT_LEN, asset_content+ICON_TOP_WORKOUT_START_TEXT, 0);
+		_render_one_icon(ICON_TOP_WORKOUT_START_LEN, cling.ui.p_oled_up+108, asset_content+ICON_TOP_WORKOUT_START);
 	} else if (mode == UI_TOP_MODE_WORKOUT_STOP) {
-		_render_2_indicator(ICON_TOP_WORKOUT_STOP_ICON_LEN, asset_content+ICON_TOP_WORKOUT_STOP_ICON, 5,
-												ICON_TOP_WORKOUT_STOP_TEXT_LEN, asset_content+ICON_TOP_WORKOUT_STOP_TEXT, 0);
+		_render_one_icon(ICON_TOP_WORKOUT_STOP_LEN, cling.ui.p_oled_up+108, asset_content+ICON_TOP_WORKOUT_STOP);
 	}
 
 	
@@ -1848,8 +1848,6 @@ static void _top_icon_vertical_270_render(I8U mode)
 	} else if (mode == 	UI_TOP_MODE_DISTANCE) {
 		return;
 	} else if (mode == UI_TOP_MODE_CALORIES) {
-		return;
-	} else if (mode == UI_TOP_MODE_SLEEP) {
 		return;
 	} else if (mode == UI_TOP_MODE_UV_IDX) {
 		return;
@@ -2150,12 +2148,20 @@ static void _clock_face_switching(I8U mode)
 				*p2++ = 0;
 				*p3++ = 0;
 			}
-		
-			sprintf((char *)string, "CLK");
-			FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);
-		
+			cling.ui.fonts_type = LANGUAGE_TYPE_SIMPLIFIED_CHINESE;
+
+			if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {	
+				sprintf((char *)string, "CLK");
+				FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);
+			} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
+				sprintf((char *)string, "显示");
+				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
+			} else {
+				sprintf((char *)string, "显示");
+				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
+			}
 			N_SPRINTF("[UI] clean up space for detail icon");
-			_render_icon_more(110);
+			_render_icon_switch(110);
 		}
 	}
 }
@@ -3319,9 +3325,8 @@ static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)
 		}
 		N_SPRINTF("[UI] Notification (%d): %d", cling.notific.cat_id, (t_curr-u->touch_time_stamp));
 	} else {
-		if (t_curr > u->display_to_base + 100) {
-			u->display_to_base = t_curr;
-			
+		if (t_curr > u->display_to_base + 1000) {
+
 			// Higher priority for workout mode
 			if (cling.activity.b_workout_active) {
 				u->frame_index = UI_DISPLAY_STOPWATCH_STOP;

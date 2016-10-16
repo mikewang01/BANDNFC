@@ -56,6 +56,10 @@
 #define ICON_TOP_CALLS                       asset_pos[256+160]
 #define ICON_TOP_OK_LEN                      asset_len[256+161]
 #define ICON_TOP_OK                          asset_pos[256+161]
+#define ICON_TOP_WORKOUT_START_LEN           asset_len[256+147]
+#define ICON_TOP_WORKOUT_START               asset_pos[256+147]
+#define ICON_TOP_WORKOUT_STOP_LEN            asset_len[256+146]
+#define ICON_TOP_WORKOUT_STOP                asset_pos[256+146]
 
 #define ICON_BOTTOM_IND_NO_CHARGING_LEN     asset_len[128]
 #define ICON_BOTTOM_IND_NO_CHARGING         asset_pos[128]
@@ -63,17 +67,10 @@
 #define ICON_BOTTOM_IND_CHARGING            asset_pos[129]
 #define ICON_TOP_SMALL_BLE_LEN              asset_len[130]
 #define ICON_TOP_SMALL_BLE                  asset_pos[130]
-#define ICON_TOP_WORKOUT_START_TEXT_LEN     asset_len[143]
-#define ICON_TOP_WORKOUT_START_TEXT         asset_pos[143]
-#define ICON_TOP_WORKOUT_STOP_TEXT_LEN      asset_len[144]
-#define ICON_TOP_WORKOUT_STOP_TEXT          asset_pos[144]
 #define ICON_TOP_MORE_LEN                   asset_len[147]
 #define ICON_TOP_MORE                       asset_pos[147]
-
-#define ICON_TOP_WORKOUT_START_ICON_LEN     asset_len[256+147]
-#define ICON_TOP_WORKOUT_START_ICON         asset_pos[256+147]
-#define ICON_TOP_WORKOUT_STOP_ICON_LEN      asset_len[256+146]
-#define ICON_TOP_WORKOUT_STOP_ICON          asset_pos[256+146]
+#define ICON_TOP_ROTATE_LEN                 asset_len[141]
+#define ICON_TOP_ROTATE                     asset_pos[141]
 
 #define ICON_MIDDLE_CHARGING_BATT_IDX             157
 #define ICON_MIDDLE_CHARGING_ICON_IDX             159
