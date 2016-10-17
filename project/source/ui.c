@@ -3364,9 +3364,10 @@ static void _display_notifications(UI_ANIMATION_CTX *u, I32U t_curr, I8U type)
 	} else {
 		if (t_curr > u->display_to_base + 1000) {
 
-			// Higher priority for workout mode
+			// Higher priority for workout mode, jump to calories page in order to prevent
+			// from stoping workout mode by accident
 			if (cling.activity.b_workout_active) {
-				u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
+				u->frame_index = UI_DISPLAY_STOPWATCH_CALORIES;
 			} 
 
 			if (_ui_touch_sensing()) {
@@ -3406,12 +3407,12 @@ void UI_state_machine()
 		return;
 	#if 0
 	if (uistate != u->state) {
-		N_SPRINTF("[UI] new state: %d, %d @ %d", uistate, u->state, CLK_get_system_time());
+		Y_SPRINTF("[UI] new state: %d, %d @ %d", uistate, u->state, CLK_get_system_time());
 		uistate = u->state;
 	}
 	
 	if (ui_frame_idx != u->frame_index) {
-		N_SPRINTF("[UI] new index: %d (%d)", u->frame_index, ui_frame_idx);
+		Y_SPRINTF("[UI] new index: %d (%d)", u->frame_index, ui_frame_idx);
 		ui_frame_idx = u->frame_index;
 	}
 	#endif
@@ -3447,13 +3448,13 @@ void UI_state_machine()
 				} else {
 					_display_frame_home(TRUE);
 				}
-				N_SPRINTF("[UI] clock glance");
-			} else if ((t_curr > u->display_to_base + 500) || TOUCH_new_gesture()) {
+				N_SPRINTF("[UI] clock glance at %d", t_curr);
+			} else if ((t_curr > (u->display_to_base + 500)) || TOUCH_new_gesture()) {
 				if (cling.activity.b_workout_active) {
 					u->frame_index = UI_DISPLAY_STOPWATCH_STOP;
 				} 
 				
-				N_SPRINTF("[UI] switch to sensing mode, %d, %d", t_curr, u->display_to_base);
+				N_SPRINTF("[UI] switch to sensing mode, %d, %d, %d", t_curr, u->display_to_base, TOUCH_new_gesture());
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 2000);
 				u->touch_time_stamp = t_curr;
 			}
@@ -3730,6 +3731,8 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	} else {
 		UI_switch_state(state, 0);
 	}
+	
+	N_SPRINTF("UI SWITCH: %d, %d", state, time_offset);
 	
 	return b_panel_on;
 }

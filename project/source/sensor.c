@@ -133,8 +133,10 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 		
 		if (LINK_is_authorized()) {
 			
-			// Turn on screen
-			UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+			if (UI_is_idle()) {
+				// Turn on screen
+				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 20);
+			}
 		}
 	}
 }
@@ -355,7 +357,7 @@ static void _tapping_screen_activation(I32U t_curr)
 	}
 
 	if (LINK_is_authorized()) {
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 30);
 	}
 }
 

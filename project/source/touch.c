@@ -123,7 +123,7 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
 		// Turn on OLED panel
-		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0)) {
+		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 60)) {
 			t->b_valid_gesture = TRUE;
 					
 			// Tap detection
@@ -159,7 +159,7 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 		
 		// Turn on OLED panel
-		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0)) {
+		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 10)) {
 			t->b_valid_gesture = TRUE;
 		
 			N_SPRINTF("[TOUCH] ------------ VALID gesture --------");

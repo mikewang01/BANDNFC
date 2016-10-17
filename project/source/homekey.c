@@ -60,7 +60,7 @@ void HOMEKEY_check_on_hook_change()
 					
 				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 				
-				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
 
 			} else {
 				RTC_start_operation_clk();
@@ -243,7 +243,7 @@ void HOMEKEY_sim_kickoff()
 static void _sim_physical_touch()
 {
 		// Turn on OLED panel
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 50);
 }
 
 void HOMEKEY_sim()
