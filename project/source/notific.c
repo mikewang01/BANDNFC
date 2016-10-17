@@ -16,7 +16,8 @@
 
 //#define _NOTIFIC_TESTING_
 
-#define NOTIFIC_ON_TIME_IN_MS 30
+#define NOTIFIC_ON_SHORT_TIME_IN_MS 40
+#define NOTIFIC_ON_LONG_TIME_IN_MS 100
 #define NOTIFIC_OFF_TIME_IN_MS 400
 #define NOTIFIC_VIBRATION_REPEAT_TIME 3
 #define NOTIFIC_VIBRATION_SHORT_TIME  2
@@ -56,6 +57,7 @@ void NOTIFIC_start_notifying(I8U cat_id)
 	cling.notific.cat_id = cat_id;
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
 	N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
 	cling.ui.notif_type = NOTIFICATION_TYPE_MESSAGE;
 	// Also, turn on screen
@@ -70,6 +72,7 @@ void NOTIFIC_start_idle_alert()
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
 	cling.ui.notif_type = NOTIFICATION_TYPE_IDLE_ALERT;
 	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
 	
@@ -82,6 +85,7 @@ void NOTIFIC_start_HR_alert()
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
 	cling.ui.notif_type = NOTIFICATION_TYPE_HR;
 	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
 	
@@ -94,6 +98,7 @@ void NOTIFIC_start_10KStep_alert()
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_LONG_TIME_IN_MS;
 	cling.ui.notif_type = NOTIFICATION_TYPE_10KSTEP;
 	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
 	
@@ -132,19 +137,17 @@ void NOTIFIC_state_machine()
 		{
 			N_SPRINTF("[NOTIFIC] vibrator is ON, %d", t_curr);
 			cling.notific.ts = t_curr;
-			GPIO_vibrator_on_block(NOTIFIC_ON_TIME_IN_MS);
+			GPIO_vibrator_on_block(cling.notific.vibrate_on_time);
 			cling.notific.state = NOTIFIC_STATE_OFF;
 			break;
 		}
 		case NOTIFIC_STATE_OFF:
 		{
-			if (t_curr > (cling.notific.ts + NOTIFIC_ON_TIME_IN_MS)) {
-				N_SPRINTF("[NOTIFIC] vibrator is OFF, %d", t_curr);
-				GPIO_vibrator_set(FALSE);
-				cling.notific.state = NOTIFIC_STATE_REPEAT;
-				cling.notific.ts = t_curr;
-				cling.notific.vibrate_time ++;
-			}
+			N_SPRINTF("[NOTIFIC] vibrator is OFF, %d", t_curr);
+			GPIO_vibrator_set(FALSE);
+			cling.notific.state = NOTIFIC_STATE_REPEAT;
+			cling.notific.ts = t_curr;
+			cling.notific.vibrate_time ++;
 			break;
 		}
 		case NOTIFIC_STATE_REPEAT:
