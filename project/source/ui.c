@@ -2154,10 +2154,10 @@ static void _clock_face_switching(I8U mode)
 				sprintf((char *)string, "CLK");
 				FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);
 			} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-				sprintf((char *)string, "显示");
+				sprintf((char *)string, "切换");
 				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
 			} else {
-				sprintf((char *)string, "显示");
+				sprintf((char *)string, "切换");
 				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
 			}
 			N_SPRINTF("[UI] clean up space for detail icon");

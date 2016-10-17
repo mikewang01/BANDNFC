@@ -22,8 +22,10 @@ static void _sync_time_proc(I8U *data)
 {
     DAY_TRACKING_CTX stored_day_total;
     BOOLEAN b_activity_consistency = TRUE;//
+		I32U previous_time_zone;
 
     // Record time difference
+		previous_time_zone = cling.time.time_zone;
     cling.time.time_zone = data[0];
 
     cling.time.time_since_1970 = data[1];
@@ -55,38 +57,23 @@ static void _sync_time_proc(I8U *data)
 #else
 		TRACKING_get_daily_total(&stored_day_total);
 #endif
-    // Check if we have consistent daily stored activity
-    if (stored_day_total.calories != cling.activity.day_stored.calories) {
-        b_activity_consistency = FALSE;
-    } else if (stored_day_total.distance != cling.activity.day_stored.distance) {
-        b_activity_consistency = FALSE;
-    } else if (stored_day_total.running != cling.activity.day_stored.running) {
-        b_activity_consistency = FALSE;
-    } else if (stored_day_total.walking != cling.activity.day_stored.walking) {
-        b_activity_consistency = FALSE;
-    }
-
-    if (b_activity_consistency) {
-        N_SPRINTF("-- CP Tracking OK (%d): %d, %d, %d, %d",
-                  cling.activity.tracking_flash_offset,
-                  stored_day_total.calories,
-                  stored_day_total.distance,
-                  stored_day_total.running,
-                  stored_day_total.walking);
-        return;
-    }
-
-    // If not, take the flash as new startin point
-    memcpy(&cling.activity.day, &stored_day_total, sizeof(DAY_TRACKING_CTX));
-    memcpy(&cling.activity.day_stored, &stored_day_total, sizeof(DAY_TRACKING_CTX));
-
-    // Reset day_stored structure too ...
-    Y_SPRINTF("-- Tracking reset (%d): %d, %d, %d, %d",
-              cling.activity.tracking_flash_offset,
-              stored_day_total.calories,
-              stored_day_total.distance,
-              stored_day_total.running,
-              stored_day_total.walking);
+		
+		if (previous_time_zone == cling.time.time_zone)
+			return;
+			
+		// Update stored total
+		cling.activity.day.walking = stored_day_total.walking;
+		cling.activity.day.running = stored_day_total.running;
+		cling.activity.day.distance = stored_day_total.distance;
+		cling.activity.day.calories = stored_day_total.calories;
+	
+		cling.activity.day_stored.walking = stored_day_total.walking;
+		cling.activity.day_stored.running = stored_day_total.running;
+		cling.activity.day_stored.distance = stored_day_total.distance;
+		cling.activity.day_stored.calories = stored_day_total.calories;
+		
+		// Last, update local day since time zone is changed
+		cling.time.local_day = cling.time.local.day;
 }
 
 static void _create_one_pkt_from_msg()
