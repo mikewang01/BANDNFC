@@ -1321,6 +1321,7 @@ static void _middle_row_horizontal(I8U mode)
 	I8U *p4, *p5, *p6;
 	I8U string[128];
 	I8U len=0, ptr, margin;
+	I8U dis_len=0;
 	WEATHER_CTX weather;
 	I32U stat;
 	I16U integer, fractional;
@@ -1377,8 +1378,13 @@ static void _middle_row_horizontal(I8U mode)
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_INCOMING_CALL) {
 		len = NOTIFIC_get_callerID((char *)string);
-		string[16] = 0;
-		FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 128, TRUE);
+		dis_len = FONT_get_string_display_len((char *)string);
+		if (dis_len > 104) {
+			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 104, FALSE);
+		} else {
+			offset = (104 - dis_len) >> 1;
+			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
+		}
 		len = 0;
 		b_position = POSITION_LEFT;
 	} else if (mode == UI_MIDDLE_MODE_OTA) {
@@ -1404,10 +1410,12 @@ static void _middle_row_horizontal(I8U mode)
 		N_SPRINTF("[UI] Incoming message: %d", cling.ui.app_notific_index);
 		cling.ui.app_notific_index = 0;
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);	
-		if(FONT_get_string_display_len((char *)string) > 128) {
+		dis_len = FONT_get_string_display_len((char *)string);
+		if (dis_len > 104) {
 			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 104, FALSE);
 		} else {
-			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 128, TRUE);
+			offset = (104 - dis_len) >> 1;
+			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
 		}
 		len = 0;
 		b_more = TRUE;
@@ -1415,12 +1423,12 @@ static void _middle_row_horizontal(I8U mode)
 	} else if (mode == UI_MIDDLE_MODE_APP_NOTIF) {
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 		N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
-		if (FONT_get_string_display_len((char *)string) > 112) {
-			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 95, FALSE);
-		} else if (FONT_get_string_display_len((char *)string) >= 96){
-			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 119, FALSE);
+		dis_len = FONT_get_string_display_len((char *)string);
+		if (dis_len > 112) {
+			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 80, FALSE);
 		} else {
-			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 119, TRUE);
+			offset = (112 - dis_len) >> 1;
+			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 112, FALSE);
 		}
 		len = 0;
 		b_more = TRUE;
@@ -1430,7 +1438,7 @@ static void _middle_row_horizontal(I8U mode)
 		if (cling.ui.notif_detail_index) {
 		  string_pos = cling.ui.string_pos_buf[cling.ui.notif_detail_index - 1];
 		}
-    FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, 119, FALSE);		
+    FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, 112, FALSE);		
 		N_SPRINTF("[UI] message detail: %d %d %s", cling.ui.app_notific_index, cling.ui.notif_detail_index, (char *)string);
 		b_more = TRUE;
 		len = 0;
