@@ -510,6 +510,8 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 			} else {
 				u->frame_index = p_matrix[u->frame_index];
 			}
+			
+			u->b_detail_page = FALSE;
 		} else {
 			u->frame_index = p_matrix[u->frame_index];
 		}
