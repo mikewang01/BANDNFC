@@ -1379,11 +1379,10 @@ static void _middle_row_horizontal(I8U mode)
 	} else if (mode == UI_MIDDLE_MODE_INCOMING_CALL) {
 		len = NOTIFIC_get_callerID((char *)string);
 		dis_len = FONT_get_string_display_len((char *)string);
-		if (dis_len > 104) {
-			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 104, FALSE);
+		if (dis_len > 128) {
+			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 80, FALSE);
 		} else {
-			offset = (104 - dis_len) >> 1;
-			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
+			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 128, TRUE);
 		}
 		len = 0;
 		b_position = POSITION_LEFT;
@@ -1411,11 +1410,10 @@ static void _middle_row_horizontal(I8U mode)
 		cling.ui.app_notific_index = 0;
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);	
 		dis_len = FONT_get_string_display_len((char *)string);
-		if (dis_len > 104) {
-			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 104, FALSE);
+		if (dis_len > 128) {
+			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 80, FALSE);
 		} else {
-			offset = (104 - dis_len) >> 1;
-			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
+			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 128, TRUE);
 		}
 		len = 0;
 		b_more = TRUE;
@@ -1424,11 +1422,13 @@ static void _middle_row_horizontal(I8U mode)
 		len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 		N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
 		dis_len = FONT_get_string_display_len((char *)string);
-		if (dis_len > 112) {
+		if (dis_len > 104) {
 			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 80, FALSE);
+		} else if (dis_len > 80) {
+			offset = 104 - dis_len;
+			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
 		} else {
-			offset = (112 - dis_len) >> 1;
-			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 112, FALSE);
+			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 80, TRUE);			
 		}
 		len = 0;
 		b_more = TRUE;
@@ -2780,7 +2780,7 @@ static void _display_frame_smart(I8U index, BOOLEAN b_render)
 			_core_display_horizontal(UI_TOP_MODE_INCOMING_CALL, UI_MIDDLE_MODE_INCOMING_CALL, UI_BOTTOM_MODE_OK, b_render);
 			break;
 		case UI_DISPLAY_SMART_INCOMING_MESSAGE:
-			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_INCOMING_MESSAGE, UI_BOTTOM_MODE_NONE, b_render);
+			_core_display_horizontal(UI_TOP_MODE_RETURN, UI_MIDDLE_MODE_INCOMING_MESSAGE, UI_BOTTOM_MODE_OK, b_render);
 			break;
 		default:
 			break;
