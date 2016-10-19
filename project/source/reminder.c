@@ -290,6 +290,9 @@ I8U REMINDER_get_time_at_index(I8U index)
 	I8U *data;
 	I8U alarm[64];
 	I8U *palarm;
+	
+	if (cling.reminder.ui_alarm_on)
+		return 0;
 		
 	// In case that no reminder is configure, go return
 	cling.reminder.ui_hh = 0xff;
