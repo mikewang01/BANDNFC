@@ -211,6 +211,8 @@ static void _seek_cross_point(I16S instSample)
   				h->m_pre_zero_point  = t_curr;
   				h->m_pre_pulse_width = t_peak_diff;
 					h->heart_rate_ready  = TRUE;
+					h->b_closing_to_skin = TRUE;
+					h->b_start_detect_skin_touch = FALSE;
 					h->first_hr_measurement_in_sec = cling.time.system_clock_in_sec;
 					// The time of latest heart rate measured
   				_reset_heart_rate_calculator();
@@ -259,12 +261,12 @@ void PPG_closing_to_skin_detect_init()
 {
 	HEARTRATE_CTX *h = &cling.hr;
 
-	h->b_closing_to_skin = TRUE;
+	h->b_start_detect_skin_touch = TRUE;
   h->m_closing_to_skin_detection_timer = CLK_get_system_time();
 	h->approximation_decision_ts = CLK_get_system_time();
 	h->m_sample_cnt = 0;
 	h->m_sample_sum = 0;
-	Y_SPRINTF("[PPG] start approximation at %d ----", h->approximation_decision_ts);
+	N_SPRINTF("[PPG] start approximation at %d ----", h->approximation_decision_ts);
 }
 
 static void _skin_touch_detect(I16S sample)
@@ -296,10 +298,11 @@ static void _skin_touch_detect(I16S sample)
 	
 	t_diff = t_curr - h->m_closing_to_skin_detection_timer;
 	if (t_diff > 500) {
+		h->b_start_detect_skin_touch = FALSE;
     h->b_closing_to_skin = FALSE;    
 		h->heart_rate_ready  = FALSE;
 		h->approximation_decision_ts = t_curr;
-		Y_SPRINTF("[PPG] ppg is detached at %d ---- %d", h->approximation_decision_ts, t_diff);
+		N_SPRINTF("[PPG] ppg is detached at %d ---- %d", h->approximation_decision_ts, t_diff);
 	}
 }
 static I16S _get_light_strength_register()
@@ -458,6 +461,7 @@ void PPG_disable_sensor()
 	ppg_write_reg(REGS_ALS_RATE,  0);
 	ppg_write_reg(REGS_PS_RATE,   0);
 	
+	h->b_start_detect_skin_touch = FALSE;
 }
 
 static void _configure_sensor()
@@ -509,11 +513,14 @@ void PPG_init()
 
 BOOLEAN _is_user_viewing_heart_rate()
 {
+	HEARTRATE_CTX *h = &cling.hr;
 	if (UI_is_idle()) {
 
-		if (!cling.activity.b_workout_active)
+		if (!cling.activity.b_workout_active) {
+			if (cling.hr.heart_rate_ready) {
 			cling.hr.heart_rate_ready  = FALSE;
-
+			}
+		}
 		return FALSE;
 	}
 	
@@ -588,7 +595,7 @@ void PPG_state_machine()
 				}
 			}
 
-			if (!h->b_closing_to_skin) {
+			if ((!h->b_closing_to_skin) && (!h->b_start_detect_skin_touch)) {
 				Y_SPRINTF("[PPG] not closing to skin.");				
 				PPG_disable_sensor();
 				h->state = PPG_STAT_DUTY_OFF;
@@ -608,7 +615,9 @@ void PPG_state_machine()
 				break;
 			}
 			
-  		if ((_is_user_viewing_heart_rate() || cling.activity.b_workout_active)  && cling.hr.b_closing_to_skin ) {
+  		if ((_is_user_viewing_heart_rate() || cling.activity.b_workout_active)  && 
+					(cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch)) 
+			{
 				t_threshold = PPG_MEASURING_PERIOD_FOREGROUND;
 				if ( t_diff > t_threshold ) {
 					h->state = PPG_STAT_DUTY_ON;

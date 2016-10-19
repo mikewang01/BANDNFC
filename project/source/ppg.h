@@ -244,6 +244,7 @@ typedef struct tagHEARTRATE_CTX{
 	I8U  m_sample_cnt;
 	I32U m_closing_to_skin_detection_timer;
 	BOOLEAN b_closing_to_skin;
+	BOOLEAN b_start_detect_skin_touch;
 	I32U approximation_decision_ts;
 	
 	// Heart rate calculation variables

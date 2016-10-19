@@ -286,6 +286,7 @@ static void _update_notific_detail_index(UI_ANIMATION_CTX *u, BOOLEAN b_left)
 static void _perform_ui_with_a_swipe(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	const I8U *p_matrix = NULL;
+	HEARTRATE_CTX *h = &cling.hr;
 
 	// Erase "more" icon
 	u->b_detail_page = FALSE;
@@ -1259,8 +1260,7 @@ static void _fill_vertical_heart_rate()
 	}
 	
 	// Second, render heart rate 
-	if (cling.hr.b_closing_to_skin) {
-			//cling.hr.heart_rate_ready = 0;
+	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 			if (cling.hr.heart_rate_ready) {
 				
 				stat = PPG_minute_hr_calibrate();
@@ -1476,10 +1476,9 @@ static void _middle_row_horizontal(I8U mode)
 		}
 		b_more = TRUE;
 	} else if (mode == UI_MIDDLE_MODE_HEART_RATE) {
-		if (cling.hr.b_closing_to_skin) {
+		if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 
 			len = 0;
-			//cling.hr.heart_rate_ready = 0;
 			if (cling.hr.heart_rate_ready) {
 				len = sprintf((char *)string, "%d", PPG_minute_hr_calibrate());
 			} else {
@@ -2699,12 +2698,9 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 		}
 		case UI_DISPLAY_STOPWATCH_HEARTRATE:
 		{
-			
-
-			if (cling.hr.b_closing_to_skin) {
+			if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 				
 				len1 = 0;
-				//cling.hr.heart_rate_ready = 0;
 				if (cling.hr.heart_rate_ready) {
 					len1 = sprintf((char *)string1, "%d", PPG_minute_hr_calibrate());
 				} else {
@@ -3625,7 +3621,7 @@ void UI_state_machine()
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second
 				t_threshold *= 1000; // second -> milli-second
 
-				if (!cling.hr.b_closing_to_skin) {
+				if ((!cling.hr.b_closing_to_skin) && (!cling.hr.b_start_detect_skin_touch)) {
 					// if detection is done over 3 seconds, time out screen display
 					if (t_curr > (cling.hr.approximation_decision_ts + 3000)) {
 						t_threshold  = 1000;

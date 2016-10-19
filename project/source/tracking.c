@@ -661,6 +661,7 @@ void _update_minute_base(MINUTE_DELTA_TRACKING_CTX diff)
 
 static void _logging_per_minute()
 {
+	HEARTRATE_CTX *h = &cling.hr;
 	MINUTE_DELTA_TRACKING_CTX diff;
 	TRACKING_CTX *a = &cling.activity;
 	I32U tracking_minute[4];
@@ -676,6 +677,7 @@ static void _logging_per_minute()
 	if (minute.heart_rate > 165) {
 		if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
+			cling.hr.b_closing_to_skin = TRUE;
 			cling.hr.heart_rate_ready = TRUE;
 			Y_SPRINTF("[TRACKING] HR alerting ...");
 			NOTIFIC_start_HR_alert();
