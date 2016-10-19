@@ -479,7 +479,6 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 				} else {
 					_set_animation(ANIMATION_IRIS, TRANSITION_DIR_NONE);
 				}
-				p_matrix = ui_matrix_finger_right;
 				_update_vertical_index(u, TRUE);
 				
 				_update_notific_detail_index(u, TRUE);
@@ -826,14 +825,14 @@ static I16U _render_middle_section_large(I8U len, I8U *string, I8U margin, I8U m
 	return offset;
 }
 
-static void _render_icon_more(I16U offset)
+static void _render_icon_more(I8U *pin_in)
 {
 	I16U j;
 	I8U *p0;
 	const I8U *pin;
 	I8U char_len;
 	
-	p0 = cling.ui.p_oled_up+128+128+128+offset;
+	p0 = pin_in;
 
 	// "More" icon
 	pin = asset_content+ICON_TOP_MORE;
@@ -852,7 +851,7 @@ static void _render_icon_switch(I16U offset)
 	
 	p0 = cling.ui.p_oled_up+128+128+128+offset;
 
-	// "More" icon
+	// "Switch" icon
 	pin = asset_content+ICON_TOP_ROTATE;
 	char_len = ICON_TOP_ROTATE_LEN;
 	
@@ -1644,7 +1643,7 @@ static void _middle_row_horizontal(I8U mode)
 	
 	if (b_more & cling.ui.b_detail_page) {
 
-			_render_icon_more(115);
+		_render_icon_more(cling.ui.p_oled_up+384+115);
 	}
 	
 	// Add progress bar at the bottome
@@ -2025,6 +2024,23 @@ static void _render_clock(SYSTIME_CTX time)
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 
+static void _render_icon_vertical_switch(I8U offset)
+{
+	I8U buf1[32];
+	const I8U *pin;
+	I8U line_len = 0;
+	I8U j;
+	
+	memset(buf1, 0, 32);
+	// "Switch" icon
+	pin = asset_content+ICON_TOP_ROTATE;
+	line_len = ICON_TOP_ROTATE_LEN;
+	for (j = 0; j < line_len; j++) {
+			buf1[j] = (*pin++);
+	}
+
+	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
+}
 
 static void _render_icon_vertical_more(I8U offset)
 {
@@ -2110,7 +2126,7 @@ static void _render_vertical_clock(BOOLEAN b_extended_more)
 		_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
 			
 		if (cling.ui.b_detail_page && b_extended_more) {
-			_render_icon_vertical_more(120);
+			_render_icon_more(cling.ui.p_oled_up+128+128+120);
 		}
 }
 
@@ -2123,7 +2139,7 @@ static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more)
 		_render_vertical_clock(b_extended_more);
 			
 		if (cling.ui.b_detail_page && b_extended_more) {
-			_render_icon_vertical_more(120);
+			_render_icon_more(cling.ui.p_oled_up+128+128+120);
 		}
 	} else if (mode == UI_BOTTOM_MODE_CALENDAR) {
 		_render_calendar_rotation(cling.time.local, 120, FALSE);
@@ -2134,7 +2150,7 @@ static void _right_row_vertical_270_render(I8U mode, BOOLEAN b_extended_more)
 		
 		RTC_get_delta_clock_backward(&delta, cling.ui.vertical_index);
 		_render_calendar_rotation(delta, 110, FALSE);
-		_render_icon_vertical_more(120);
+		_render_icon_more(cling.ui.p_oled_up+128+128+120);
 	} else {
 		_right_row_horizontal_render(mode);
 	}
@@ -2171,7 +2187,10 @@ static void _clock_face_switching(I8U mode)
 				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
 			}
 			N_SPRINTF("[UI] clean up space for detail icon");
-			_render_icon_switch(110);
+			if (cling.ui.clock_orientation == 1)
+			  _render_icon_switch(110);
+			else
+				_render_icon_vertical_switch(110);
 		}
 	}
 }
