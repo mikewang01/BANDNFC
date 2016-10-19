@@ -859,6 +859,7 @@ static void _render_icon_switch(I16U offset)
 			*p0++ = (*pin++);
 	}
 }
+
 static void _display_dynamic(I8U *pIn, I8U len2, I8U *string2)
 {
 	I8U *p, *pin;
