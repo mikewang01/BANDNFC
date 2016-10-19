@@ -18,6 +18,7 @@
 
 #define NOTIFIC_ON_SHORT_TIME_IN_MS 40
 #define NOTIFIC_ON_LONG_TIME_IN_MS 100
+#define NOTIFIC_ON_VERY_LONG_TIME_IN_MS 140
 #define NOTIFIC_OFF_TIME_IN_MS 400
 #define NOTIFIC_VIBRATION_REPEAT_TIME 3
 #define NOTIFIC_VIBRATION_SHORT_TIME  2
@@ -38,6 +39,7 @@ void NOTIFIC_stop_notifying()
 #define NOTIFIC_MULTI_REMINDER_OTHERS        1
 #define NOTIFIC_MULTI_REMINDER_IDLE_ALERT    3
 #define NOTIFIC_MULTI_REMINDER_HR            2
+#define NOTIFIC_MULTI_REMINDER_10KS          3
 
 void NOTIFIC_start_notifying(I8U cat_id)
 {		
@@ -96,9 +98,9 @@ void NOTIFIC_start_10KStep_alert()
 {
 	cling.notific.vibrate_time = 0;
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
-	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
+	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_10KS;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
-	cling.notific.vibrate_on_time = NOTIFIC_ON_LONG_TIME_IN_MS;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
 	cling.ui.notif_type = NOTIFICATION_TYPE_10KSTEP;
 	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
 	
