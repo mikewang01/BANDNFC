@@ -860,7 +860,6 @@ static void _render_icon_switch(I16U offset)
 			*p0++ = (*pin++);
 	}
 }
-
 static void _display_dynamic(I8U *pIn, I8U len2, I8U *string2)
 {
 	I8U *p, *pin;
@@ -1457,7 +1456,7 @@ static void _middle_row_horizontal(I8U mode)
 		if (cling.reminder.total>0) { 
 
 			if (cling.reminder.ui_alarm_on) {
-				len = sprintf((char *)string, "%02d:%02d", cling.reminder.ui_hh, cling.reminder.ui_mm);
+				len = sprintf((char *)string, "%02d:%02d", cling.time.local.hour, cling.time.local.minute);
 			} else {
 				
 				if (cling.reminder.ui_hh >= 24 || cling.reminder.ui_mm >= 60) {
