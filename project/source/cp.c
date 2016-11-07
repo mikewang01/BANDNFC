@@ -827,13 +827,15 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_LOAD_DEVICE_INFO: {
+					if (HOST_TYPE_NONE != p->msg[1]) {
             cling.gcp.host_type = p->msg[1];
-            Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
+					}
+					Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
 
-            HAL_disconnect_for_fast_connection(SWITCH_SPEED_FOR_DATA_SYNC);
-            _create_dev_info_msg();
-            BTLE_reset_streaming();  // Reset streaming as the App is trying to figure whether it is an authorized device
-            break;
+					HAL_disconnect_for_fast_connection(SWITCH_SPEED_FOR_DATA_SYNC);
+					_create_dev_info_msg();
+					BTLE_reset_streaming();  // Reset streaming as the App is trying to figure whether it is an authorized device
+					break;
         }
         case CP_MSG_TYPE_LOAD_DAILY_ACTIVITY: {
             Y_SPRINTF("[CP] load daily activity stat");
