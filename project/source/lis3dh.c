@@ -161,6 +161,9 @@ EN_STATUSCODE LIS3DH_inertial_wake_up_init()
 	
 	/* Clear interrupt */
 	_get_reg(INT_SRC1);
+	
+	// Latency is necessary to make sure ACC runs in motion detection 
+	BASE_delay_msec(5);
 #endif
 	return STATUSCODE_SUCCESS;
 }
