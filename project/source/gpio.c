@@ -338,6 +338,11 @@ void GPIO_vibrator_on_block(I8U latency)
 		t_diff -= t_curr;
 		if (t_diff > latency)
 			break;
+		
+		// Maximum 150 ms vibration
+		if (t_diff > 150) {
+			break;
+		}
 	}
 	
 	_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);
