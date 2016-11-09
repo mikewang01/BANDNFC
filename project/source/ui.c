@@ -3635,14 +3635,7 @@ void UI_state_machine()
 			// If we don't see any gesture in 4 seconds, dark out screen
 			if (t_curr > (u->touch_time_stamp+t_threshold)) {
 				N_SPRINTF("[UI] gesture monitor time out - %d at %d", t_threshold, t_curr);
-				if (BATT_is_charging()) {
-					if (t_curr > (u->touch_time_stamp+10000)) {
-						u->state = UI_STATE_DARK;
-						TRACKING_enter_low_power_mode();
-					}
-				} else {
-					u->state = UI_STATE_DARK;
-				}
+				u->state = UI_STATE_DARK;
 			}
 #endif
 			break;
