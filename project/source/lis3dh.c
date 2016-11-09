@@ -114,13 +114,10 @@ EN_STATUSCODE LIS3DH_normal_FIFO()
 	// 0: Interrupt active HIGH, 1: Interrupt active LOW
 	_set_reg(CTRL_REG6, 0x00);
 	
+	// Latency is necessary to make sure ACC runs in motion detection 
+	BASE_delay_msec(10);
+	
 	return STATUSCODE_SUCCESS;
-}
-
-EN_STATUSCODE LIS3DH_init()
-{	
-
-	return LIS3DH_normal_FIFO();
 }
 
 EN_STATUSCODE LIS3DH_inertial_wake_up_init()
@@ -163,17 +160,8 @@ EN_STATUSCODE LIS3DH_inertial_wake_up_init()
 	_get_reg(INT_SRC1);
 	
 	// Latency is necessary to make sure ACC runs in motion detection 
-	BASE_delay_msec(5);
+	BASE_delay_msec(10);
 #endif
-	return STATUSCODE_SUCCESS;
-}
-
-EN_STATUSCODE LIS3DH_close()
-{
-	/* CTRL_REG1 */
-	// Low power mode, X/Y/Z all enabled, 50 Hz
-	_set_reg(CTRL_REG1, 0x08);
-
 	return STATUSCODE_SUCCESS;
 }
 

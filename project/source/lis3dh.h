@@ -161,7 +161,6 @@ typedef struct tagACC_AXIS {
     I16S z;
 } ACC_AXIS;
 
-EN_STATUSCODE LIS3DH_init(void);
 EN_STATUSCODE LIS3DH_normal_FIFO(void);
 BOOLEAN LIS3DH_is_data_ready(ACC_AXIS *xyz);
 I8U LIS3DH_who_am_i(void);

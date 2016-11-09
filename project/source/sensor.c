@@ -415,7 +415,7 @@ void SENSOR_init()
 	BASE_delay_msec(10);
 	
 	// Initialize accelerometer.
-	LIS3DH_init();
+	LIS3DH_normal_FIFO();
 	
 	cling.whoami.accelerometer = LIS3DH_who_am_i();
 #endif	
