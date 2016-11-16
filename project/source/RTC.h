@@ -64,6 +64,7 @@ void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset);
 
 void RTC_get_regular_time(I32U epoch, SYSTIME_CTX *t);
 I32U RTC_get_epoch_day_start(I32U past_days);
+I32U RTC_get_last_minute_epoch(void);
 
 #endif /* _RTC_H_ */
 

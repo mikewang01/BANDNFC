@@ -316,4 +316,16 @@ I32U RTC_get_epoch_day_start(I32U past_days)
 
     return current_epoch;
 }
+
+I32U RTC_get_last_minute_epoch()
+{
+    I32U current_epoch = cling.time.time_since_1970;
+    I32U offset = cling.time.local.second;
+
+    offset += 60;
+    current_epoch -= offset;
+
+    return current_epoch;
+}
+
 /* @} */

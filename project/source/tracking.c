@@ -496,7 +496,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 {
 	I32U t_curr;
-	I8U touch_total_time;
 	
 	t_curr = cling.time.system_clock_in_sec - cling.activity.step_detect_ts;
 
@@ -539,7 +538,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	
 	// Get activity minute granularity
 	// Note here, we have minute offset to UTC time.
-	pminute->epoch = cling.time.time_since_1970-60; // Backwards 60 seconds as all the activties happen in the past minute
+	pminute->epoch = RTC_get_last_minute_epoch(); // Backwards 60 seconds as all the activties happen in the past minute
 	pminute->skin_temperature = vital.skin_temperature;
 	pminute->walking = diff->walking;
 	pminute->running = diff->running;
@@ -661,7 +660,6 @@ void _update_minute_base(MINUTE_DELTA_TRACKING_CTX diff)
 
 static void _logging_per_minute()
 {
-	HEARTRATE_CTX *h = &cling.hr;
 	MINUTE_DELTA_TRACKING_CTX diff;
 	TRACKING_CTX *a = &cling.activity;
 	I32U tracking_minute[4];
