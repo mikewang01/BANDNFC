@@ -672,7 +672,7 @@ static void _logging_per_minute()
 	TRACKING_get_whole_minute_delta(&minute, &diff);
 
 	// alert user if heart rate is approaching the limit
-	if (minute.heart_rate > 165) {
+	if ((minute.heart_rate > 165) && (diff.running > 180)) {
 		if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 			cling.hr.b_closing_to_skin = TRUE;
