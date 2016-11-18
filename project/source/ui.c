@@ -2182,7 +2182,7 @@ static void _clock_face_switching(I8U mode)
 				sprintf((char *)string, "切换");
 				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
 			} else {
-				sprintf((char *)string, "切换");
+				sprintf((char *)string, "切換");
 				FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
 			}
 			N_SPRINTF("[UI] clean up space for detail icon");

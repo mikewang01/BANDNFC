@@ -800,7 +800,7 @@ static MOTION_TYPE _WALKING_RUNNING_classify(CLASSIFIER_STAT *c, I32S win_siz)
         // 2. High APU magnitude
         //    Running: > 2 steps per second
         //    Walking: otherwise
-        if (c->apu_pace < 25) {
+        if (c->apu_pace < 22) {
             motion = MOTION_RUNNING;
         } else {
             motion  = MOTION_WALKING;
