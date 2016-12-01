@@ -15,6 +15,8 @@
 #include "ui_matrix.h"
 #endif
 
+#pragma diag_suppress 870
+
 #define RENDERING_MAX_FRAMES     11
 
 void UI_init()
@@ -286,7 +288,6 @@ static void _update_notific_detail_index(UI_ANIMATION_CTX *u, BOOLEAN b_left)
 static void _perform_ui_with_a_swipe(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	const I8U *p_matrix = NULL;
-	HEARTRATE_CTX *h = &cling.hr;
 
 	// Erase "more" icon
 	u->b_detail_page = FALSE;
@@ -1103,7 +1104,7 @@ static void _fill_vertical_calories()
 	if (stat > 999) {
 		b_24_size = 16;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KC");
+			len = sprintf((char *)string, "KCAL");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
 			len = sprintf((char *)string, "千卡");
 		} else {
@@ -1114,7 +1115,7 @@ static void _fill_vertical_calories()
 		b_24_size = 16;
 		
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "Cal");
+			len = sprintf((char *)string, "CAL");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
 			len = sprintf((char *)string, "卡 ");
 		} else {
@@ -1229,7 +1230,7 @@ static void _fill_vertical_steps()
 	} else {
 		b_24_size = 16;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "S");
+			len = sprintf((char *)string, "STEP");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
 			len = sprintf((char *)string, "步 ");
 		} else {
@@ -1734,7 +1735,7 @@ static void _render_firmware_ver()
 	len = sprintf((char *)string, "VER:%d.%d(%d)", major, minor,cling.whoami.touch_ver[2]);
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
-
+#if 0
 static void _render_1_indicator(I8U len, const I8U *in, I8U offset)
 {
 	I8U *p0, *p1, *pin;
@@ -1749,6 +1750,7 @@ static void _render_1_indicator(I8U len, const I8U *in, I8U offset)
 		*p1++ = (*pin++);
 	}
 }
+#endif
 
 static void _render_indicator(I8U len1, const I8U *in1, I8U offset)
 {
@@ -2040,7 +2042,7 @@ static void _render_icon_vertical_switch(I8U offset)
 
 	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
 }
-
+#if 0
 static void _render_icon_vertical_more(I8U offset)
 {
 	I8U buf1[32];
@@ -2060,6 +2062,7 @@ static void _render_icon_vertical_more(I8U offset)
 	_vertical_centerize(buf1, buf2, buf3, line_len);
 	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
 }
+#endif
 
 static void _right_row_horizontal_render(I8U mode)
 {	
