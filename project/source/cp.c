@@ -21,7 +21,6 @@
 static void _sync_time_proc(I8U *data)
 {
     DAY_TRACKING_CTX stored_day_total;
-    BOOLEAN b_activity_consistency = TRUE;//
 		I32U previous_time_zone;
 
     // Record time difference

@@ -693,12 +693,12 @@ void UICO_init()
 {
     I8U  buf[128];
     I16S i = 0;
-    I8U total_sensor_cnt, column_sensor_cnt;
-    I32S resolution_x = 0;
-    I32S resolution_y = 0;
+//    I8U total_sensor_cnt, column_sensor_cnt;
+//    I32S resolution_x = 0;
+//    I32S resolution_y = 0;
     I32S screen_size_code = 0;
     I32S refresh_rate = 0;
-    I8S touch_num_supported = 0;
+//    I8S touch_num_supported = 0;
 
     // Initialize static valables
     for (i = 0; i < 5; i++) {
@@ -745,10 +745,10 @@ void UICO_init()
     // Write Stop Acknowledge (0x20, 0x01)
     _write_stop_acknowledge();
 
-    resolution_x = (buf[13] << 8) + buf[14];
-    resolution_y = (buf[15] << 8) + buf[16];
-
-    touch_num_supported = buf[7];
+//    resolution_x = (buf[13] << 8) + buf[14];
+//    resolution_y = (buf[15] << 8) + buf[16];
+//
+//    touch_num_supported = buf[7];
     screen_size_code    = buf[6];
 
     N_SPRINTF("[UICO]: %d %d %d %d", resolution_x, resolution_y, touch_num_supported, screen_size_code);
@@ -781,8 +781,8 @@ void UICO_init()
                 break;
         }
     }
-    total_sensor_cnt = buf[4];
-    column_sensor_cnt = buf[5];
+//    total_sensor_cnt = buf[4];
+//    column_sensor_cnt = buf[5];
     N_SPRINTF("[UICO]: Total Sensor Count: %d Column Sensor Count: %d", total_sensor_cnt, column_sensor_cnt);
     N_SPRINTF("[UICO]: Product Screen Size Code: %x", screen_size_code);
     N_SPRINTF("[UICO]: Number of Touches Supported: %d", touch_num_supported);

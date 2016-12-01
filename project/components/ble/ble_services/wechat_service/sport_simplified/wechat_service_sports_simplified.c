@@ -93,7 +93,7 @@ static void tx_buffer_process(ble_wechat_sports_t * p_bas);
 static ble_wechat_sports_t * p_bas_local = NULL;
 static void tx_send(ble_wechat_sports_t * p_ble_nus_c, uint16_t handle, uint8_t *str , uint16_t len);
 int transfer_data_to_uico_touch(uint8_t *buffer_p, uint16_t tx_lenth, uint16_t *rx_lenth_p);
-static int (*ble_recievd_callback)(uint8_t *, uint16_t) = NULL;
+//static int (*ble_recievd_callback)(uint8_t *, uint16_t) = NULL;
 static uint16_t value_steps_char_update(ble_wechat_sports_t * p_bas, ble_gatts_char_handles_t handle, uint32_t steps, ...);
 
 static bool seam_buffer = false;
@@ -172,7 +172,7 @@ int wechat_ble_notify_data_to_pc(ble_wechat_sports_t * p_bas, ble_gatts_char_han
 int ble_uico_recieve_data_from_pc_register(int (*p)(uint8_t *, uint16_t))
 {
     if(p != NULL) {
-        ble_recievd_callback = p;
+//        ble_recievd_callback = p;
     }
 
     return true;
@@ -670,11 +670,11 @@ uint16_t  wechat_sports_update_deamon()
  *
 * @return  TRUE sucessfully FALSE:FAILED
  */
-static uint16_t (*app_layer_upload_stream_call_back)(uint16_t order) = NULL;
+//static uint16_t (*app_layer_upload_stream_call_back)(uint16_t order) = NULL;
 uint16_t register_upload_stream_callback(uint16_t (*p)(uint16_t))
 {
     if(p == NULL) {
-        app_layer_upload_stream_call_back = p;
+//        app_layer_upload_stream_call_back = p;
 
     }
     return TRUE;
@@ -689,11 +689,11 @@ uint16_t register_upload_stream_callback(uint16_t (*p)(uint16_t))
  *
 * @return  TRUE sucessfully FALSE:FAILED
  */
-static uint16_t (*app_layer_obtain_system_data_call_back)(uint16_t order) = NULL;
+//static uint16_t (*app_layer_obtain_system_data_call_back)(uint16_t order) = NULL;
 uint16_t register_obtain_system_data_call_back_callback_function(uint16_t (*p)(uint16_t))
 {
     if(p == NULL) {
-        app_layer_obtain_system_data_call_back = p;
+//        app_layer_obtain_system_data_call_back = p;
     }
     return TRUE;
 }

@@ -513,7 +513,6 @@ void PPG_init()
 
 BOOLEAN _is_user_viewing_heart_rate()
 {
-	HEARTRATE_CTX *h = &cling.hr;
 	if (UI_is_idle()) {
 
 		if (!cling.activity.b_workout_active) {
