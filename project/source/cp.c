@@ -938,7 +938,7 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_SET_USER_PROFILE: {
-            USER_setup_profile(p->msg + 1);
+            USER_setup_profile(p->msg + 1, cling.user_data.profile_len -1);
             break;
         }
         case CP_MSG_TYPE_ANDROID_NOTIFY: {
@@ -962,7 +962,6 @@ static void _pending_process()
 #endif
     p->b_touched = FALSE; // Indicate that we have something pending
     N_SPRINTF("[CP] set b_touched to FALSE");
-
 }
 
 static void _filling_msg_tx_buf()
@@ -1884,6 +1883,10 @@ void _store_rx_msg(CP_RX_CTX *r, I8U *data, I32U pos)
             cling.user_data.setting_len = r->msg_len;
             N_SPRINTF("DEVICE SETTING: %d", cling.user_data.setting_len);
         }
+				if (p->task_id == CP_MSG_TYPE_SET_USER_PROFILE) {
+					cling.user_data.profile_len = r->msg_len;
+				}
+				
         p->pending_len = offset;
 
         memcpy(p->msg, r->msg, FAT_SECTOR_SIZE);

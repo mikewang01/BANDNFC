@@ -36,8 +36,12 @@ void USER_data_init()
 
 	// Initialize stride length and weight for distance calculation
 	u->profile.stride_in_cm = 75; // In center meters
+	u->profile.stride_running_in_cm = 105;
+	u->profile.stride_treadmill_in_cm = 100;
 	u->profile.weight_in_kg = 70; // in KG
 	u->profile.height_in_cm = 170; // in center meters
+	u->profile.sex = FALSE;
+	u->profile.age = 17;
 
 	// default distance
 	u->profile.metric_distance = FALSE;
@@ -152,28 +156,96 @@ void USER_store_device_param(I8U *data)
 	Y_SPRINTF("[USER] critical store device param: %d", setting_length);
 }
 
-void USER_setup_profile(I8U *data)
+void USER_setup_profile(I8U *data, I8U len)
 {
-	USER_DATA *u = &cling.user_data;
-	I16U height_in_cm, weight_in_kg, stride_in_cm;
+	USER_PROFILE_CTX *p = &cling.user_data.profile;
+	I16U user_info;
 	I8U *pdata = data;
+	I8U total_len = len;
 
-	height_in_cm = *pdata++; // height
-	height_in_cm |= (*pdata++)<<8; // 
-	
-	weight_in_kg = *pdata++; // weight
-	weight_in_kg |= (*pdata++)<<8; // 
-	
-	stride_in_cm = *pdata++; // stride
-	stride_in_cm |= (*pdata++)<<8; // 
-	
-	Y_SPRINTF("[USER] %d, %d, %d", height_in_cm, weight_in_kg, stride_in_cm);
-	
 	// Initialize stride length and weight for distance calculation
-	u->profile.stride_in_cm = stride_in_cm; // In center meters
-	u->profile.weight_in_kg = weight_in_kg; // in KG
-	u->profile.height_in_cm = height_in_cm; // in center meters
+	user_info = *pdata++; // height
+	user_info |= (*pdata++)<<8; // 
+	p->height_in_cm = user_info; // in center meters
+	total_len -= 2;
+	
+	user_info = *pdata++; // weight
+	user_info |= (*pdata++)<<8; // 
+	p->weight_in_kg = user_info; // in KG
+	total_len -= 2;
+	
+	user_info = *pdata++; // stride
+	user_info |= (*pdata++)<<8; // 
+	p->stride_in_cm = user_info; // In center meters
+	total_len -= 2;
+	
+	Y_SPRINTF("[USER] PROFILE1:%d, %d, %d", p->height_in_cm, p->weight_in_kg, p->stride_in_cm);
+	
+	if (total_len >= 4) {
+		user_info = *pdata++; // stride for running
+		user_info |= (*pdata++)<<8; // 
+		p->stride_running_in_cm = user_info;
+		
+		p->metric_distance = *pdata++; // Metric unit for distance
+		p->name_len = *pdata++; // the length of user name
+		total_len -= 4;
+	}
+	
+	if (total_len >= p->name_len) {
+		memset(p->name, 0, 24);
+		memcpy(p->name, pdata, p->name_len); // user name
+		pdata += p->name_len;
+		total_len -= p->name_len;
+	}
+	
+  Y_SPRINTF("[USER] PROFILE2: %d, %d, %d, %s", p->stride_running_in_cm, p->metric_distance, p->name_len, p->name);
 
+	if (total_len >= 6) {
+		p->clock_face = *pdata++; // Clock face orientation
+		
+		// Wake up and bed time
+		p->sleep_dow = *pdata++;
+		p->bed_hh = *pdata++;
+		p->bed_mm = *pdata++;
+		p->wakeup_hh = *pdata++;
+		p->wakeup_mm = *pdata++;
+		Y_SPRINTF("[USER] PROFILE3: %d, %d, %d, %d, %d, %d", p->clock_face, 
+			p->sleep_dow,
+			p->bed_hh,
+			p->bed_mm,
+			p->wakeup_hh,
+			p->wakeup_mm);
+		total_len -= 6;
+	}
+
+	if (total_len >= 5) {
+		p->regular_page_display = *pdata++; // Regular page display options
+		
+		p->touch_vibration = *pdata++; // touch key vibration
+		
+		p->mileage_limit = *pdata++; // the mileage limit
+		
+		p->running_page_display = *pdata++;  // Running page display options
+		
+		p->age = *pdata++;  // Running page display options
+		
+		total_len -= 5;
+		Y_SPRINTF("[USER] PROFILE4: %d, %d, %d, %d, %d", p->regular_page_display, 
+			p->touch_vibration,
+			p->mileage_limit,
+			p->running_page_display,
+			p->age);
+	}
+	
+	if (total_len >= 4) {
+		p->sex = *pdata++;
+		user_info = *pdata++; // stride for running
+		user_info |= (*pdata++)<<8; // 
+		p->stride_treadmill_in_cm = user_info;
+		p->max_hr_alert = *pdata++;
+		total_len -= 4;
+		Y_SPRINTF("[USER] PROFILE5: %d, %d, %d", p->sex, p->stride_treadmill_in_cm, p->max_hr_alert);
+	}
 }
 
 void USER_setup_device(I8U *data, I8U setting_length)

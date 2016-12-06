@@ -99,7 +99,9 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 }
 
-static I8U _get_stride_length()
+static I32U steps_time_stamp[8];
+
+static I8U _get_stride_length(BOOLEAN b_running)
 {
 	// Calculate stride factor based on the pace
 	// From a research paper, linear regression is used to model the 
@@ -124,40 +126,63 @@ static I8U _get_stride_length()
 	// s = 43.89*p - 7.68
 	//
 	// where s is the stride length, and p is the pace (steps per second)
-	TRACKING_CTX *a = &cling.activity;
-	I32U total_steps, walking, running;
 	double pace,stride, ratio;
-	walking = a->day.walking - a->day_stored.walking;
-	running = a->day.running - a->day_stored.running;
-	total_steps = walking+running;
+	I8U i;
+	for (i = 1; i < 8; i++) {
+		steps_time_stamp[i-1] = steps_time_stamp[i];
+	}
+	steps_time_stamp[7] = CLK_get_system_time();
 	
-	pace = total_steps / cling.time.local.second;
-	if (pace < 1.6)
-		pace = 1.6;
-	if (pace > 4)
-		pace = 4;
-	stride = 43.89*pace-7.68;
-	
-	// Get user defined stride length and perform a calibration
-	ratio = cling.user_data.profile.stride_in_cm;
-	ratio /= 75;
-	if (ratio > 2)
-		ratio = 2;
-	else if (ratio < 0.5)
-		ratio = 0.5;
-	stride *= ratio;
-	
-	// Check whether it is a indoor running, ratio down by 1.3
-	if (cling.activity.b_workout_active) {
-		if (cling.activity.workout_place == WORKOUT_PLACE_INDOOR) {
-			if (pace > 2.5) {
-				if (cling.activity.workout_type == WORKOUT_RUN) {
-					stride /= 1.3;
-				}
-			}
-		}
+	if (steps_time_stamp[0] > 0) {
+		pace = 7000.0;
+		pace /= (double)(steps_time_stamp[7] - steps_time_stamp[0]);
+		N_SPRINTF("[TRACKING] current pace: %d, %d, %d", (I8U)(pace*10), steps_time_stamp[7], steps_time_stamp[0]);
+		
+		if (pace > 3.5) 
+			pace = 3.5;
+		if (pace < 2)
+			pace = 2;
+	} else {
+		pace = 2.5;
+		N_SPRINTF("[TRACKING] fixed pace: %d", (I8U)(pace*10));
 	}
 	
+	// Calculate
+	if (b_running) {
+		stride = 37.6*pace-7.68; // 2.86 steps per minute -> stride: 100 cm
+		// Get user defined stride length and perform a calibration
+
+		ratio = cling.user_data.profile.stride_running_in_cm;
+		if (cling.activity.b_workout_active) {
+			if (cling.activity.workout_place == WORKOUT_PLACE_INDOOR) {
+				ratio = cling.user_data.profile.stride_treadmill_in_cm;
+			} 
+		}
+				
+		ratio /= 100; // Standard 105 cm per step for running
+		if (ratio > 2)
+			ratio = 2;
+		else if (ratio < 0.5)
+			ratio = 0.5;
+		N_SPRINTF("[TRACKING] running stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+	} else {		
+		stride = 43.89*pace - 7.68;
+		// Get user defined stride length and perform a calibration
+		ratio = cling.user_data.profile.stride_in_cm;
+	
+		ratio /= 75; // Standard 75 cm (30 inches) per step for walking
+		if (ratio > 2)
+			ratio = 2;
+		else if (ratio < 0.5)
+			ratio = 0.5;
+		N_SPRINTF("[TRACKING] walking stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+	}
+	
+	
+	// Normalization
+	stride *= ratio;
+	N_SPRINTF("[TRACKING] adjusted stride: %f", stride);
+
 	// Do normalization to 16 m
 	stride *= 16;
 	stride /= 100;
@@ -212,7 +237,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			// mileage = distance / (63360 * 100)
 			// 
 			cling.activity.day.walking ++;
-			cling.activity.day.distance += _get_stride_length(); // 0.75 meters
+			cling.activity.day.distance += _get_stride_length(FALSE); // 0.75 meters
 			cling.activity.step_detect_ts = cling.time.system_clock_in_sec;
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
@@ -223,7 +248,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			}
 		} else if (act_motion == MOTION_RUNNING) {
 			cling.activity.day.running ++;
-			cling.activity.day.distance += _get_stride_length(); // 1.41 meters
+			cling.activity.day.distance += _get_stride_length(TRUE); // 1.41 meters
 			cling.activity.step_detect_ts = cling.time.system_clock_in_sec;
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
@@ -664,15 +689,29 @@ static void _logging_per_minute()
 	TRACKING_CTX *a = &cling.activity;
 	I32U tracking_minute[4];
 	MINUTE_TRACKING_CTX minute;
+	I16U max_heart_rate;
 
 	// Backup critical system information
 	SYSTEM_backup_critical();
 
 	// Update the activity minute granularity
 	TRACKING_get_whole_minute_delta(&minute, &diff);
+	
+	max_heart_rate = 165;
+	if (cling.user_data.profile.age > 18) {
+		if (cling.user_data.profile.sex == SEX_MALE) {
+			max_heart_rate = 220 - cling.user_data.profile.age;
+		} else {
+			max_heart_rate = 226 - cling.user_data.profile.age;
+		}
+		max_heart_rate *= cling.user_data.profile.max_hr_alert;
+		max_heart_rate /= 100;
+		
+		Y_SPRINTF("[TRACKING] Max heart rate: %d", max_heart_rate);
+	}
 
 	// alert user if heart rate is approaching the limit
-	if ((minute.heart_rate > 165) && (diff.running > 180)) {
+	if ((minute.heart_rate > max_heart_rate) && (diff.running > 172)) {
 		if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 			cling.hr.b_closing_to_skin = TRUE;

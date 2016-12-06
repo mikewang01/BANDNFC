@@ -13,16 +13,37 @@ enum {
 	IDLE_ALERT_STATE_COUNT_DOWN,
 	IDLE_ALERT_STATE_NOTIFY,
 };
+
+enum {
+	SEX_MALE,
+	SEX_FEMALE
+};
 			
 typedef struct tagUSER_PROFILE_CTX {
-#if 0
-	I8U name[32]; // Limit user name length to 32 bytes
+	I8U name[24]; // Limit user name length to 32 bytes
 	I8U name_len;
-#endif
 	I16U weight_in_kg;
 	I16U height_in_cm;
   I16U stride_in_cm;
 	BOOLEAN metric_distance;
+	I16U stride_running_in_cm;
+	I16U stride_treadmill_in_cm;
+	I8U sleep_dow;
+	// bed & wake up time
+	I8U wakeup_hh;
+	I8U wakeup_mm;
+	I8U bed_hh;
+	I8U bed_mm;
+	I8U regular_page_display;
+	I8U running_page_display;
+	I8U touch_vibration;
+	// Mileage limit for stigama tracking
+	I8U mileage_limit;
+	I8U age;
+	I8U clock_face;
+	I8U sex;
+	I8U max_hr_alert;
+	
 } USER_PROFILE_CTX;
 
 typedef struct tagUSER_DATA {
@@ -38,6 +59,7 @@ typedef struct tagUSER_DATA {
 	
 	// device length
 	I8U setting_len;
+	I8U profile_len;
 	// User dynamic data 
 	I16U calories_factor;
 	
@@ -75,6 +97,6 @@ void USER_profile_update(void);
 void USER_setup_device(I8U *data, I8U setting_length);
 void USER_state_machine(void);
 void USER_store_device_param(I8U *data);
-void USER_setup_profile(I8U *data);
+void USER_setup_profile(I8U *data, I8U len);
 
 #endif  // __USER_HEADER__
