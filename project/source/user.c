@@ -179,6 +179,30 @@ void USER_setup_profile(I8U *data, I8U len)
 	p->stride_in_cm = user_info; // In center meters
 	total_len -= 2;
 	
+	// If it cannot pass sanity check, go return
+	if ((p->height_in_cm > 250) ||
+		  (p->weight_in_kg > 250) || 
+	    (p->stride_in_cm > 500))
+	{
+		p->height_in_cm = 170;
+		p->weight_in_kg = 70;
+		p->stride_in_cm = 75;
+		p->stride_running_in_cm = 105;
+		p->stride_treadmill_in_cm = 100;
+		p->metric_distance = 0;
+		p->name_len = 0;
+		cling.ui.clock_orientation = 0;
+		p->sleep_dow = 0;
+		p->regular_page_display = 0xff;
+		p->running_page_display = 0xff;
+		p->touch_vibration = FALSE;
+		p->mileage_limit = 3;
+		p->sex = FALSE;
+		p->age = 17;
+		Y_SPRINTF("[USER] default setup:%d, %d,%d, %d, %d", p->age, p->sex, p->stride_running_in_cm, p->stride_treadmill_in_cm, p->stride_in_cm);
+		return;
+	}
+	
 	Y_SPRINTF("[USER] PROFILE1:%d, %d, %d", p->height_in_cm, p->weight_in_kg, p->stride_in_cm);
 	
 	if (total_len >= 4) {
@@ -414,7 +438,6 @@ void USER_setup_device(I8U *data, I8U setting_length)
 		}
 		Y_SPRINTF("\n Pedo Sensitivity: %d\n", u->m_pedo_sensitivity);
 	}
-	
 }
 
 void USER_state_machine()
@@ -461,5 +484,41 @@ void USER_state_machine()
 			u->idle_state = IDLE_ALERT_STATE_IDLE;
 			break;
   }
+}
+
+void USER_device_specifics_init()
+{
+	I8U buf[128];
+	I8U *pbuf;
+	
+	pbuf = (I8U *)buf;
+	FLASH_Read_App(SYSTEM_USER_DEVICE_SPACE_START, pbuf, 128);
+
+	// Setup profile detail
+	USER_setup_profile(pbuf, 64);
+
+}
+
+void USER_device_specifics_setup(I8U *data, BOOLEAN b_profile, I8U len)
+{
+	I8U buf[128];
+	I8U *p_profile_buf;
+	
+	if (b_profile) {
+		FLASH_erase_App(SYSTEM_USER_DEVICE_SPACE_START);
+	} else {
+		return;
+	}
+	
+	if (b_profile) {
+		p_profile_buf = buf;
+		memcpy(p_profile_buf, data, 64);
+		USER_setup_profile(p_profile_buf, len);
+	}
+	
+	BASE_delay_msec(10);
+	
+	// First 
+	FLASH_Write_App(SYSTEM_USER_DEVICE_SPACE_START, buf, 128);
 }
 

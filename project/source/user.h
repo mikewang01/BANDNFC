@@ -92,11 +92,13 @@ typedef struct tagUSER_DATA {
 
 } USER_DATA;
 
+void USER_device_specifics_init(void);
 void USER_data_init(void);
 void USER_profile_update(void);
 void USER_setup_device(I8U *data, I8U setting_length);
 void USER_state_machine(void);
 void USER_store_device_param(I8U *data);
 void USER_setup_profile(I8U *data, I8U len);
+void USER_device_specifics_setup(I8U *data, BOOLEAN b_profile, I8U len);
 
 #endif  // __USER_HEADER__

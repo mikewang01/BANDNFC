@@ -262,7 +262,7 @@ static BOOLEAN _critical_info_restored()
 	// add 30 seconds to correct bias of time when system rebooting..
 	t->time_since_1970 += 30;
 
-	// Bytes: 5 - 49: device related parameters,
+	// Bytes: 5 - 43: device related parameters,
 	// length: p_byte_addr[4]
 	//
 	if ((p_byte_addr[4] >= 22) && (p_byte_addr[4] <= 39)) {
@@ -475,6 +475,10 @@ void SYSTEM_init(void)
 #endif
 	// Start first battery measurement
 	BATT_start_first_measure();
+	
+	// Device specifics restoration
+	// Initialize user profile (name, weight, height, stride length)
+	USER_device_specifics_init();
 }
 
 

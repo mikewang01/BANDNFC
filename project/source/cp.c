@@ -938,7 +938,7 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_SET_USER_PROFILE: {
-            USER_setup_profile(p->msg + 1, cling.user_data.profile_len -1);
+						USER_device_specifics_setup(p->msg + 1, TRUE, cling.user_data.profile_len -1);
             break;
         }
         case CP_MSG_TYPE_ANDROID_NOTIFY: {
