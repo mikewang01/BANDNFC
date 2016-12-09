@@ -792,8 +792,13 @@ static I16U _render_middle_section_large(I8U len, I8U *string, I8U margin, I8U m
 				if ((mode == UI_MIDDLE_MODE_CLOCK) || (mode == UI_MIDDLE_MODE_REMINDER)) {
 					if (i > 2) { // Three characters: HH and a ':'
 						// Using "light" font
-						pin = asset_content+asset_pos[512+string[i]+152];
-						char_len = asset_len[512+string[i]+152];
+						if (string[i] != '-') {
+							pin = asset_content+asset_pos[512+string[i]+152];
+							char_len = asset_len[512+string[i]+152];
+						} else {
+							pin = asset_content+asset_pos[512+string[i]];
+							char_len = asset_len[512+string[i]];
+						}
 					} else {
 						pin = asset_content+asset_pos[512+string[i]];
 						char_len = asset_len[512+string[i]];

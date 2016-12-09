@@ -263,7 +263,6 @@ static void _high_power_process_FIFO()
 		return;
 #endif
 	jitter_counts = 0;
-	cling.activity.z_mean = 0;
 	
 	// Reset the accumulator
 	G.x = 0;
@@ -287,9 +286,6 @@ static void _high_power_process_FIFO()
 		A.y = (I32S)(xyz.y>>2);
 		A.z = (I32S)(xyz.z>>2);
 		
-		// Calculate Z mean
-		cling.activity.z_mean += A.z;
-
 		N_SPRINTF("[SENSOR] data: %d,%d,%d,", A.x, A.y, A.z);
 		
 		x = BASE_abs(A.x);

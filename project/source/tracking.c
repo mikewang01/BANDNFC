@@ -133,22 +133,22 @@ static I8U _get_stride_length(BOOLEAN b_running)
 	}
 	steps_time_stamp[7] = CLK_get_system_time();
 	
-	if (steps_time_stamp[0] > 0) {
-		pace = 7000.0;
-		pace /= (double)(steps_time_stamp[7] - steps_time_stamp[0]);
-		N_SPRINTF("[TRACKING] current pace: %d, %d, %d", (I8U)(pace*10), steps_time_stamp[7], steps_time_stamp[0]);
-		
-		if (pace > 3.5) 
-			pace = 3.5;
-		if (pace < 2)
-			pace = 2;
-	} else {
-		pace = 2.5;
-		N_SPRINTF("[TRACKING] fixed pace: %d", (I8U)(pace*10));
-	}
-	
-	// Calculate
+	// Calculate pace
 	if (b_running) {
+		// Running pace is calculated based on real-time steps
+		if (steps_time_stamp[0] > 0) {
+			pace = 7000.0;
+			pace /= (double)(steps_time_stamp[7] - steps_time_stamp[0]);
+			Y_SPRINTF("[TRACKING] running pace: %d, %d, %d", (I8U)(pace*10), steps_time_stamp[7], steps_time_stamp[0]);
+			
+			if (pace > 3.5) 
+				pace = 3.5;
+			if (pace < 2)
+				pace = 2;
+		} else {
+			pace = 2;
+			Y_SPRINTF("[TRACKING] running fixed pace: %d", (I8U)(pace*10));
+		}
 		stride = 37.6*pace-7.68; // 2.86 steps per minute -> stride: 100 cm
 		// Get user defined stride length and perform a calibration
 
@@ -164,8 +164,16 @@ static I8U _get_stride_length(BOOLEAN b_running)
 			ratio = 2;
 		else if (ratio < 0.5)
 			ratio = 0.5;
-		N_SPRINTF("[TRACKING] running stride: %f, ratio: %d", stride, (I16U)(ratio*100));
-	} else {		
+		Y_SPRINTF("[TRACKING] running stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+	} else {
+		// Walking pace is calculated based on the steps we took in last minute
+		pace = (double)(cling.activity.walk_per_60_second+cling.activity.run_per_60_second);
+		pace /= 60.0;
+		if (pace > 3.5) 
+			pace = 3.5;
+		if (pace < 1.88)
+			pace = 1.88;
+		Y_SPRINTF("[TRACKING] walking  pace: %d", (I8U)(pace*10));
 		stride = 43.89*pace - 7.68;
 		// Get user defined stride length and perform a calibration
 		ratio = cling.user_data.profile.stride_in_cm;
@@ -175,7 +183,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 			ratio = 2;
 		else if (ratio < 0.5)
 			ratio = 0.5;
-		N_SPRINTF("[TRACKING] walking stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+		Y_SPRINTF("[TRACKING] walking stride: %f, ratio: %d", stride, (I16U)(ratio*100));
 	}
 	
 	
@@ -608,27 +616,21 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	adj = 0;
 	// Adjust heart rate in case of intense activity
 	if (cling.hr.b_closing_to_skin) {	
-		// If heart rate is not updated for 2 minutes, interpolate heart rate during intensive exercise period
-		//
-		// Not sure why we have heart rate measuring time threshold setup here
-		//
-		//if (t_diff > 60000) 
-		{
 			if (pminute->running > 150) {
 				adj = pminute->running-150;
 				if (adj > 45) {
-					pminute->heart_rate = 148+(adj>>1);
+					pminute->heart_rate = 145+(adj>>1);
 				} else {
-					pminute->heart_rate = 134+adj;
+					pminute->heart_rate = 129+adj;
 				}
 			} else if (pminute->running > 80) {
 				adj = pminute->running - 80;
 				if (adj > 45) adj >>= 1;
-				pminute->heart_rate = 125+adj;
+				pminute->heart_rate = 115+adj;
 			} else if ((pminute->running + pminute->walking) > 120) {
 				adj = pminute->running + pminute->walking - 120;
 				if (adj > 35) adj >>= 1;
-				pminute->heart_rate = 111+adj;
+				pminute->heart_rate = 108+adj;
 			} else if ((pminute->running + pminute->walking) > 100) {
 				pminute->heart_rate = 102+(pminute->running + pminute->walking - 100);
 			} else if ((pminute->running + pminute->walking) > 80) {
@@ -636,7 +638,6 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 			} else if ((pminute->running + pminute->walking) > 60) {
 				pminute->heart_rate = 83+(pminute->running + pminute->walking - 60);
 			}
-		}
 	}
 	
 	if ((pminute->running + pminute->walking) > 4) {
@@ -667,20 +668,23 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 		pminute->uv_and_activity_type);
 }
 
-void _update_minute_base(MINUTE_DELTA_TRACKING_CTX diff)
+static void _update_minute_base(MINUTE_DELTA_TRACKING_CTX *diff)
 {
 	TRACKING_CTX *a = &cling.activity;
 	I32U denormalized_stat;
 
 	// Update stored total
-	a->day_stored.walking += diff.walking;
-	a->day_stored.running += diff.running;
-	denormalized_stat = diff.distance;
+	a->day_stored.walking += diff->walking;
+	a->day_stored.running += diff->running;
+	denormalized_stat = diff->distance;
 	denormalized_stat <<= 4;
 	a->day_stored.distance += denormalized_stat;
-	denormalized_stat = diff.calories;
+	denormalized_stat = diff->calories;
 	denormalized_stat <<= 4;
 	a->day_stored.calories += denormalized_stat;
+	// Update speed
+	a->walk_per_60_second = diff->walking;
+	a->run_per_60_second = diff->running;
 }
 
 static void _logging_per_minute()
@@ -740,7 +744,7 @@ static void _logging_per_minute()
 	memcpy(tracking_minute, &minute, 16);
 
 	// Update the differential of activities
-	_update_minute_base(diff);
+	_update_minute_base(&diff);
 
 	// Put it into NOR scrach pad
 	FLASH_Write_App(a->tracking_flash_offset + SYSTEM_TRACKING_SPACE_START, (I8U *)tracking_minute, 16);
