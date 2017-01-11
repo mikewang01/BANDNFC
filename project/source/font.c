@@ -124,14 +124,12 @@ I8U FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len
   // At present,can only display 128 bytes size string.		
 	while(pos < 128)
 	{
-		if(string[pos] == '\0') {
+		if ((string[pos] == ' ') && (string[pos+1] == '\0')) {
 			// Remove last space (' ') character
-			if ((string[pos-1] == ' ') && pos) {
-				if (height == 8)
-					line_len -= 6;
-				else if (height == 16)
-					line_len -= 8;
-			}
+			break;
+		}
+		
+		if (string[pos] == '\0') {
 		  break;
 		}
 		

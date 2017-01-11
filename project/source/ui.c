@@ -512,7 +512,7 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 				u->frame_index = p_matrix[u->frame_index];
 			}
 			
-			u->b_detail_page = FALSE;
+			//u->b_detail_page = FALSE;
 		} else {
 			u->frame_index = p_matrix[u->frame_index];
 		}
@@ -866,33 +866,31 @@ static void _render_icon_switch(I16U offset)
 			*p0++ = (*pin++);
 	}
 }
-static void _display_dynamic(I8U *pIn, I8U len2, I8U *string2)
+
+static void _display_dynamic(I8U *pIn, I8U len, I8U *string2)
 {
 	I8U *p, *pin;
 	I8U *p6;
-	I8U i, j, ptr, offset2, char_len;
+	I8U i, j, ptr, offset, char_len;
 
 	// indicator
 	p = pIn;
-	offset2 = 0;
-	for (i = 0; i < len2; i++) {
+	offset = 0;
+	for (i = 0; i < len; i++) {
 		pin = (I8U *)(asset_content+asset_pos[string2[i]]);
 		char_len = asset_len[string2[i]];
 		for (j = 0; j < char_len; j++) {
 				*p++ = (*pin++);
 		}
 	
-		offset2 += char_len;
-		if (i < len2) {
-			offset2 += 3;
-		}
-		
+		offset += char_len;
 		p += 5;
-		
+		if (i != (len -1))
+			offset += 5;	
 	}
 
 	// Center it in the middle
-	ptr = (128 - offset2)>>1;
+	ptr = (128 - offset)>>1;
 	p = pIn;
 	if (ptr > 0) {
 		p += 127; p6 = p - ptr;
@@ -1062,72 +1060,80 @@ static void _fill_vertical_distance()
 static void _fill_vertical_calories()
 {
 	I32U stat;
-	I8U len, margin;
+	I8U len1=0, len2=0, margin;
 	I8U b_24_size = 24;
 	I32U v_10000, v_1000, v_100;
-	char string[128];
-
+	char string1[128];
+	char string2[128];
+	
 	v_10000 = 0;
 	v_1000 = 0;
 	v_100 = 0;
 	
 	margin = 2;
 
-	string[0] = ICON_MIDDLE_CALORIES;
-	len = 1;
-	_render_vertical_character((I8U *)string, 0, margin, len, b_24_size, FALSE);
+	string1[0] = ICON_MIDDLE_CALORIES;
+	len1 = 1;
+	_render_vertical_character((I8U *)string1, 0, margin, len1, b_24_size, FALSE);
 	
 	TRACKING_get_activity(cling.ui.vertical_index, TRACKING_CALORIES, &stat);
 	
 	if (stat > 99999) {
 		v_10000 = 9;
 		v_1000 = 9;
-		len = sprintf((char *)string, "%d%d", v_10000, v_1000);
+		len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
 	} else if (stat > 9999) {
 		v_10000 = stat / 10000;
 		v_1000 = stat - (v_10000 * 10000);
 		v_1000 /= 1000;
-		len = sprintf((char *)string, "%d%d", v_10000, v_1000);
+		len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
 	} else if (stat > 999) {
 		v_1000 = stat / 1000;
 		v_100 = stat - (v_1000 * 1000);
 		v_100 /= 100;
-		len = sprintf((char *)string, "%d.%d", v_1000, v_100);
+		len1 = sprintf((char *)string1, "%d.%d", v_1000, v_100);
 		margin = 1;
 	} else if (stat > 99) {
-		len = sprintf((char *)string, "%d", stat);
+		len1 = sprintf((char *)string1, "%d", stat);
 		b_24_size = 16;
 	} else {
-		len = sprintf((char *)string, "%d", stat);
+		len1 = sprintf((char *)string1, "%d", stat);
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
+		_render_vertical_character((I8U *)string1, 42, margin, len1, b_24_size, FALSE);
 	else
-		_render_vertical_character((I8U *)string, 46, margin, len, b_24_size, FALSE);
-		
+		_render_vertical_character((I8U *)string1, 46, margin, len1, b_24_size, FALSE);
+
+	b_24_size = 16;	
+	
 	if (stat > 999) {
-		b_24_size = 16;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KCAL");
+			len1 = sprintf((char *)string1, "K");
+			len2 = sprintf((char *)string2, "CAL");			
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "千卡");
+			len1 = sprintf((char *)string1, "千 ");
+			len2 = sprintf((char *)string2, "大卡");			
 		} else {
-			len = sprintf((char *)string, "千卡");
+			len1 = sprintf((char *)string1, "千 ");
+			len2 = sprintf((char *)string2, "大卡");		
 		}
-		_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
 	} else {
-		b_24_size = 16;
-		
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "CAL");
+			len1 = sprintf((char *)string1, "CAL");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "卡 ");
+			len1 = sprintf((char *)string1, "大卡");
 		} else {
-			len = sprintf((char *)string, "卡 ");
+			len1 = sprintf((char *)string1, "大卡");
 		}
 	}
-	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
+	
+	if (len2) {
+	  _render_vertical_character((I8U *)string1, 75, margin, len1, b_24_size, TRUE);
+    _render_vertical_character((I8U *)string2, 95, margin, len2, b_24_size, TRUE);		
+	} else {
+	  _render_vertical_character((I8U *)string1, 80, margin, len1, b_24_size, TRUE);
+	}
 }
 
 static void _fill_vertical_skin_temp()
@@ -1158,20 +1164,21 @@ static void _fill_vertical_skin_temp()
 static void _fill_vertical_steps()
 {
 	I32U stat;
-	I8U len, margin;
+	I8U len1=0, len2=0, margin;
 	I8U b_24_size = 24;
 	I32U v_10000, v_1000, v_100;
-	char string[128];
-
+	char string1[128];
+	char string2[128];
+	
 	v_10000 = 0;
 	v_1000 = 0;
 	v_100 = 0;
 	
 	margin = 2;
 
-	string[0] = ICON_MIDDLE_STEPS;
-	len = 1;
-	_render_vertical_character((I8U *)string, 0, margin, len, b_24_size, FALSE);
+	string1[0] = ICON_MIDDLE_STEPS;
+	len1 = 1;
+	_render_vertical_character((I8U *)string1, 0, margin, len1, b_24_size, FALSE);
 	
 	TRACKING_get_activity(cling.ui.vertical_index, TRACKING_STEPS, &stat);
 	
@@ -1181,9 +1188,9 @@ static void _fill_vertical_steps()
 		v_10000 = 9;
 		v_1000 = 9;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "%d%d", v_10000, v_1000);
+			len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
 		} else {
-			len = sprintf((char *)string, "%d.%d", v_10000, v_1000);
+			len1 = sprintf((char *)string1, "%d.%d", v_10000, v_1000);
 		}
 		margin = 1;
 	} else if (stat > 9999) {
@@ -1191,58 +1198,65 @@ static void _fill_vertical_steps()
 		v_1000 = stat - (v_10000 * 10000);
 		v_1000 /= 1000;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "%d%d", v_10000, v_1000);
+			len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
 		} else {
-			len = sprintf((char *)string, "%d.%d", v_10000, v_1000);
+			len1 = sprintf((char *)string1, "%d.%d", v_10000, v_1000);
 		}
 		margin = 1;
 	} else if (stat > 999) {
 		v_1000 = stat / 1000;
 		v_100 = stat - (v_1000 * 1000);
 		v_100 /= 100;
-		len = sprintf((char *)string, "%d.%d", v_1000, v_100);
+		len1 = sprintf((char *)string1, "%d.%d", v_1000, v_100);
 		margin = 1;
 	} else if (stat > 99) {
-		len = sprintf((char *)string, "%d", stat);
+		len1 = sprintf((char *)string1, "%d", stat);
 		b_24_size = 16;
 	} else {
-		len = sprintf((char *)string, "%d", stat);
+		len1 = sprintf((char *)string1, "%d", stat);
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
+		_render_vertical_character((I8U *)string1, 42, margin, len1, b_24_size, FALSE);
 	else
-		_render_vertical_character((I8U *)string, 46, margin, len, b_24_size, FALSE);
+		_render_vertical_character((I8U *)string1, 46, margin, len1, b_24_size, FALSE);
+
+	b_24_size = 16;
 	
 	if (stat > 9999) {
-		b_24_size = 16;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KS");
+			len1 = sprintf((char *)string1, "K");
+			len2 = sprintf((char *)string2, "STEP");		
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "万步");
+			len1 = sprintf((char *)string1, "万步");
 		} else {
-			len = sprintf((char *)string, "萬步");
+			len1 = sprintf((char *)string1, "萬步");
 		}
 	} else if (stat > 999) {
-		b_24_size = 16;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KS");
+			len1 = sprintf((char *)string1, "K");
+			len2 = sprintf((char *)string2, "STEP");		
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "千步");
+			len1 = sprintf((char *)string1, "千步");
 		} else {
-			len = sprintf((char *)string, "千步");
+			len1 = sprintf((char *)string1, "千步");
 		}
 	} else {
-		b_24_size = 16;
 		if (cling.ui.fonts_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "STEP");
+			len1 = sprintf((char *)string1, "STEP");
 		} else if (cling.ui.fonts_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "步 ");
+			len1 = sprintf((char *)string1, "步 ");
 		} else {
-			len = sprintf((char *)string, "步 ");
+			len1 = sprintf((char *)string1, "步 ");
 		}
 	}
-	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, TRUE);
+
+	if (len2) {
+	  _render_vertical_character((I8U *)string1, 75, margin, len1, b_24_size, TRUE);
+		_render_vertical_character((I8U *)string2, 95, margin, len2, b_24_size, TRUE);
+	} else {
+		_render_vertical_character((I8U *)string1, 80, margin, len1, b_24_size, TRUE);
+	}
 }
 		
 static void _fill_vertical_heart_rate()

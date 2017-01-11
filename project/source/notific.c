@@ -246,7 +246,6 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 
 I8U NOTIFIC_get_message_total(void)
 {
-
 #ifdef _NOTIFIC_TESTING_
 	return 5;
 #endif
@@ -311,8 +310,8 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 {
 	I8U  title_len;
 #ifdef _ENABLE_ANCS_	
-	I8U  mes_len;	
-	I8U  mes_offset;
+	I8U  msg_len;	
+	I8U  msg_offset;
 	I32U addr_in;
 	I32U tmpBuf_1[32];
 	I32U tmpBuf_2[32];
@@ -338,7 +337,7 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	else 
 		mes_len = sprintf(string, "n/a");
 	
-	return mes_len;
+	return msg_len;
 #endif
 	
 	if (index > (cling.ancs.message_total-1)) {
@@ -355,29 +354,29 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	FLASH_Read_App(addr_in, pdata_1, 128);	
 
   title_len = pdata_1[0];
-  mes_len   = pdata_1[1];	
+  msg_len   = pdata_1[1];	
 	
-	mes_offset = 1+1+title_len;
+	msg_offset = 1+1+title_len;
 	
 	//Currently only support 128 byte	
-	if(mes_len >= 127)
-	 mes_len=127;
+	if(msg_len >= 127)
+	 msg_len=127;
 	
 	// if the overall length of message and title is less than 128 bytes
-	if (mes_len <= (128-mes_offset)) {
-		memcpy(string, pdata_1+mes_offset, mes_len);
-		string[mes_len] = 0;
+	if (msg_len <= (128-msg_offset)) {
+		memcpy(string, pdata_1+msg_offset, msg_len);
+		string[msg_len] = 0;
 	} else {
 		addr_in+=128;
 		FLASH_Read_App(addr_in, pdata_2, 128);	
 		
 		// if the overall length of message and title is greater than 128 bytes
-		memcpy(string, pdata_1+mes_offset, 128-mes_offset);
-		memcpy(string+(128-mes_offset), pdata_2, mes_len-(128-mes_offset));
-		string[mes_len] = 0;
+		memcpy(string, pdata_1+msg_offset, 128-msg_offset);
+		memcpy(string+(128-msg_offset), pdata_2, msg_len-(128-msg_offset));
+		string[msg_len] = 0;
 	}
 	
-	return mes_len;
+	return msg_len;
 #else
 
 	title_len = sprintf(string, "No message!");
