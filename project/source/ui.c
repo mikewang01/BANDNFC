@@ -1342,7 +1342,7 @@ static void _middle_row_horizontal(I8U mode)
 	I8U *p4, *p5, *p6;
 	I8U string[128];
 	I8U len=0, ptr, margin;
-	I8U dis_len=0;
+	I16U dis_len=0;
 	WEATHER_CTX weather;
 	I32U stat;
 	I16U integer, fractional;
@@ -1445,9 +1445,9 @@ static void _middle_row_horizontal(I8U mode)
 		dis_len = FONT_get_string_display_len((char *)string);
 		if (dis_len > 104) {
 			FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 80, FALSE);
-		} else if (dis_len > 80) {
+		} else if ((dis_len >= 80) && (dis_len <= 104)) {
 			offset = 104 - dis_len;
-			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
+			FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 128, FALSE);
 		} else {
 			FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 80, TRUE);			
 		}
@@ -3776,5 +3776,4 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	
 	return b_panel_on;
 }
-
 

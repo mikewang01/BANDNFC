@@ -292,7 +292,7 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	// Get the incoming message
 	memcpy(app_name,pdata+2,title_len);	
 	
-	app_name[title_len] = 0;		
+	app_name[title_len] = '\0';		
 
 	N_SPRINTF("[NOTIFIC] get ancs title len :%d",title_len );	
 	
@@ -373,7 +373,7 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 		// if the overall length of message and title is greater than 128 bytes
 		memcpy(string, pdata_1+msg_offset, 128-msg_offset);
 		memcpy(string+(128-msg_offset), pdata_2, msg_len-(128-msg_offset));
-		string[msg_len] = 0;
+		string[msg_len] = '\0';	
 	}
 	
 	return msg_len;
@@ -405,7 +405,7 @@ I8U NOTIFIC_get_callerID(char *string)
 		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
 
 	memcpy(string, pdata+2, title_len);		
-	string[title_len] = 0;
+	string[title_len] = '\0';	
 
 	N_SPRINTF("[NOTIFIC] get notf callerID string is :%s",string );
 	
