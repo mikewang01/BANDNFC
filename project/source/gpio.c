@@ -71,11 +71,17 @@ static __INLINE void _gpio_cfg_connect_input(uint32_t pin_number, nrf_gpio_pin_s
 
 void GPIO_system_powerup()
 {
-#ifndef _CLING_PC_SIMULATION_	
-	_gpio_cfg_output(GPIO_CHARGER_SD      , TRUE );   // Charger Shut down pin, pull UP to power up system
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
+	// I2C: power up Charger (power management IC) 3.1 volts output
+	BATT_charging_init();
+#endif
+
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
+  // Charger Shut down pin, pull UP to power up system	
+	_gpio_cfg_output(GPIO_CHARGER_SD      , TRUE );   
+#endif
 	
 	cling.system.b_powered_up = TRUE;
-#endif	
 }
 
 void GPIO_system_powerdown()
@@ -155,7 +161,7 @@ void GPIO_init()
 	_gpio_cfg_output(GPIO_CHARGER_EN       , TRUE );  // Charge enable, drive HIGH
 
 	// 20 .. 24
-	_gpio_cfg_connect_input(GPIO_HOMEKEY, NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);
+	_gpio_cfg_connect_input(GPIO_TOUCH_HOMEKEY_INT, NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);
 	_gpio_cfg_output(GPIO_SPI_0_CS_NFLASH  , TRUE );  // SPI CS (NOR FLASH), drive HIGH
 	_gpio_cfg_disconnect_input(GPIO_NFC_RESET     );  // NFC reset pin
 
@@ -191,8 +197,8 @@ void GPIO_twi_init(I8U twi_master_instance)
 		const nrf_drv_twi_t p_twi0_instance = NRF_DRV_TWI_INSTANCE(0);
 		
 		twi_config.frequency = NRF_TWI_FREQ_400K;
-		twi_config.scl = 15;
-		twi_config.sda = 16;
+		twi_config.scl = GPIO_TWI0_CLK;
+		twi_config.sda = GPIO_TWI0_DATA;
 		twi_config.interrupt_priority = APP_IRQ_PRIORITY_LOW;
 		N_SPRINTF("[GPIO] twi 0 initialization: %d, %d", error_code, TWI_COUNT);
 #endif
@@ -293,6 +299,7 @@ void GPIO_vbat_adc_disable()
 #endif
 }
 
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 void GPIO_therm_power_on()
 {
 #ifndef _CLING_PC_SIMULATION_	
@@ -321,6 +328,7 @@ void GPIO_therm_adc_config(void)
 	nrf_adc_configure( (nrf_adc_config_t *)&nrf_adc_config);
 #endif
 }
+#endif
 
 void GPIO_vibrator_on_block(I8U latency)
 {
@@ -339,12 +347,9 @@ void GPIO_vibrator_on_block(I8U latency)
 		if (t_diff > latency)
 			break;
 		
-		// Maximum 150 ms vibration
-		if (t_diff > 150) {
+		if (t_diff > 150)
 			break;
-		}
 	}
-	
 	_gpio_cfg_output(GPIO_VIBRATOR_EN, FALSE);
 #endif
 }
@@ -361,21 +366,26 @@ void GPIO_vibrator_set(BOOLEAN b_on)
 
 void GPIO_charger_reset()
 {
-#ifndef _CLING_PC_SIMULATION_
-
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 	_gpio_cfg_output(GPIO_CHARGER_EN     , FALSE);      // Charge enable, drive LOW
 	BASE_delay_msec(100);
 	_gpio_cfg_output(GPIO_CHARGER_EN      , TRUE);      // Charge enable, drive HIGH
-
+#else
+	// To do ... Pace and Lemon2_pay
 #endif
 }
 
 void GPIO_interrupt_handle()
 {
-#ifndef _CLING_PC_SIMULATION_	
+#ifndef _CLINGBAND_2_PAY_MODEL_	
 	// detect a possible state change
-	HOMEKEY_check_on_hook_change();
+	HOMEKEY_check_on_hook_change();	
+#endif
 	
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
+	BATT_interrupt_process(FALSE);
+#endif	
+
 	// No need to check touch controller as system is powered off
 	if (!cling.system.b_powered_up)
 		return;
@@ -383,6 +393,40 @@ void GPIO_interrupt_handle()
 #ifdef _ENABLE_TOUCH_
 	// Touch panel gesture check
 	TOUCH_gesture_check();
-#endif
 #endif	
 }
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+void GPIO_7816_POWER_ON(BOOLEAN b_on)
+{
+#ifndef _CLING_PC_SIMULATION_	
+	if (b_on) {
+		_gpio_cfg_output(GPIO_7816_PWR_ON, TRUE);
+	} else {
+		_gpio_cfg_output(GPIO_7816_PWR_ON, FALSE);
+	}
+#endif	
+}
+
+void GPIO_7816_RST_Pin_Set(BOOLEAN b_on)
+{
+#ifndef _CLING_PC_SIMULATION_	
+	if (b_on) {
+		_gpio_cfg_output(GPIO_7816_RST, TRUE);
+	} else {
+		_gpio_cfg_output(GPIO_7816_RST, FALSE);
+	}
+#endif
+}
+
+void GPIO_7816_Data_Pin_Set(BOOLEAN b_on)
+{
+#ifndef _CLING_PC_SIMULATION_	
+	if (b_on) {
+		_gpio_cfg_output(GPIO_7816_DATA, TRUE);
+	} else {
+		_gpio_cfg_output(GPIO_7816_DATA, FALSE);
+	}
+#endif
+}
+#endif

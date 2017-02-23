@@ -8,7 +8,9 @@
  *
  ******************************************************************************/
 #include "main.h"
+#ifndef _CLINGBAND_PACE_MODEL_
 #include "uicoTouch.h"
+#endif
 
 void DEBUG_create_dbg_msg(I8U *msg, I8U len)
 {
@@ -72,7 +74,7 @@ enum {
 
 #if defined(_ENABLE_BLE_DEBUG_) || defined(_ENABLE_UART_)
 
-
+#ifndef _CLINGBAND_PACE_MODEL_
 void DBG_event_processing()
 {
 	I8U i, len;
@@ -91,7 +93,7 @@ void DBG_event_processing()
 	if (cling.dbg.b_write) {
 		cling.dbg.b_write = FALSE;
 		
-		UICO_dbg_write_read(buf, cling.dbg.len, cling.dbg.buf);
+		//UICO_dbg_write_read(buf, cling.dbg.len, cling.dbg.buf);
 		
 		len = 0;
 		for(i = 0; i < cling.dbg.len; i++)
@@ -99,5 +101,6 @@ void DBG_event_processing()
 		B_SPRINTF("[DBG] %s", displayBuf);
 	}
 }
+#endif
 
 #endif

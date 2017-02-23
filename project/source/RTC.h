@@ -39,6 +39,15 @@ typedef struct tagSYSTIME_CTX
   I8U second;
 } SYSTIME_CTX;
 
+typedef struct tagREALTIME_CTX {
+	I8U second;
+	I8U minute;
+	I8U hour;
+	I8U day;
+	I8U month;
+	I8U year;
+} REALTIME_CTX;
+
 /***************************************************************************//**
  * @brief Initializes RTC Interface
  * @details This function initializes the real-time clock interface.
@@ -51,7 +60,6 @@ typedef struct tagSYSTIME_CTX
  * @retval STATUSCODE__FAILURE Function failed
  ******************************************************************************/
 EN_STATUSCODE RTC_Init( void );
-
 EN_STATUSCODE RTC_Start( void );
 void RTC_start_operation_clk(void);
 void RTC_stop_operation_clk( void );
@@ -65,6 +73,16 @@ void RTC_get_delta_clock_backward(SYSTIME_CTX *delta, I8U offset);
 void RTC_get_regular_time(I32U epoch, SYSTIME_CTX *t);
 I32U RTC_get_epoch_day_start(I32U past_days);
 I32U RTC_get_last_minute_epoch(void);
+
+void RTC_timer_handler( void * p_context );
+
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
+void RTC_hw_init(void);
+I32U RTC_get_current_epoch(REALTIME_CTX *p_rt);
+void RTC_set_current_epoch(I32U time_since_1970);
+void RTC_minute_int_service(void);
+BOOLEAN RTC_get_current_rtc(REALTIME_CTX *p_rt);
+#endif
 
 #endif /* _RTC_H_ */
 

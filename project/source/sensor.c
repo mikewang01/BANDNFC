@@ -11,7 +11,10 @@
 
 
 #include "main.h"
-
+#include  "wrist_detect.h"
+#ifdef __WIRST_DETECT_ENABLE__
+static 	CLASS(wrist_detect) *p_wrist_obj = NULL;
+#endif
 void _low_power_process_hw(I8U int_source)
 {
 	I32U t_diff_ms = CLK_get_system_time();
@@ -37,6 +40,7 @@ void _low_power_process_hw(I8U int_source)
 
 static void _navigation_wrist_shaking(I8U jitter_counts)
 {
+#ifdef _ENABLE_TOUCH_
 	if (jitter_counts > 1) {
 		N_SPRINTF(" +++ jitter: %d +++\n", jitter_counts);
 		if (!UI_is_idle()) {
@@ -50,8 +54,9 @@ static void _navigation_wrist_shaking(I8U jitter_counts)
 			}
 		}
 	}
+#endif
 }
-
+#ifndef __WIRST_DETECT_ENABLE__
 static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U t_curr, BOOLEAN b_motion)
 {
 	I8U i;
@@ -140,6 +145,7 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 		}
 	}
 }
+#endif
 #define STATIONARY_ENG_TH  48 /* 0.023 g */
 
 #ifndef _USE_HW_MOTION_DETECTION_
@@ -246,7 +252,10 @@ static void _high_power_process_FIFO()
 	ACCELEROMETER_3D G;
 	I32U x, y, t_curr;
 	BOOLEAN b_motion = FALSE;
-	
+#ifdef __WIRST_DETECT_ENABLE__
+	UNUSED_VARIABLE(b_motion);
+	UNUSED_VARIABLE(t_curr);
+#endif
 	// Get current ms
 	t_curr = CLK_get_system_time();
 	
@@ -263,6 +272,7 @@ static void _high_power_process_FIFO()
 		return;
 #endif
 	jitter_counts = 0;
+	cling.activity.z_mean = 0;
 	
 	// Reset the accumulator
 	G.x = 0;
@@ -286,6 +296,9 @@ static void _high_power_process_FIFO()
 		A.y = (I32S)(xyz.y>>2);
 		A.z = (I32S)(xyz.z>>2);
 		
+		// Calculate Z mean
+		cling.activity.z_mean += A.z;
+
 		N_SPRINTF("[SENSOR] data: %d,%d,%d,", A.x, A.y, A.z);
 		
 		x = BASE_abs(A.x);
@@ -313,6 +326,13 @@ static void _high_power_process_FIFO()
 		
 		// Sleep monitoring module
 		SLEEP_algorithms_proc(&xyz);
+#ifdef __WIRST_DETECT_ENABLE__
+		if(cling.user_data.b_screen_wrist_flip){
+			/*wrist detetction moudule*/
+			p_wrist_obj->gravity_obtain(p_wrist_obj, A.x, A.y, A.z,  CLK_get_system_time());
+		}
+#endif
+		 
 	}
 	
 	// See if user purposely shakes device to navigate
@@ -320,41 +340,11 @@ static void _high_power_process_FIFO()
 	if (cling.user_data.b_navigation_wrist_shake) {
 		_navigation_wrist_shaking(jitter_counts);
 	}
-	
+#ifndef __WIRST_DETECT_ENABLE__
 	if (cling.user_data.b_screen_wrist_flip) {
 		_screen_activiation_wrist_flip(G, accCnt, t_curr, b_motion);
 	}
-}
-
-static void _tapping_screen_activation(I32U t_curr)
-{
-	I32U t_diff;
-	I8U int_source;
-
-	int_source = LIS3DH_get_tap();
-	#if 0
-	if (int_source) {
-		N_SPRINTF("[SENSOR] ++++ TAP EVENT: %02x ++++", int_source);
-	}
-	#endif
-	if ((int_source & 0x04) != 0x04) {
-		return;
-	}
-	
-	t_diff = t_curr - cling.activity.tap_ts;
-		
-	if (t_diff < 1000) {
-		N_SPRINTF("[SENSOR] ++++ SINGLE TAP EVENT (TWICE): %02x ++++", int_source);
-		cling.activity.tap_ts = 0; // Reset timing
-	} else {
-		cling.activity.tap_ts = t_curr; // Refresh tapping time stamp
-		
-		return;
-	}
-
-	if (LINK_is_authorized()) {
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 30);
-	}
+#endif
 }
 
 void SENSOR_accel_processing()
@@ -362,10 +352,8 @@ void SENSOR_accel_processing()
 	I8U int_pin;
 	I8U int_source;
 	ACC_AXIS xyz;
-	I32U t_curr;
 	
 	memset(&xyz, 0, sizeof(ACC_AXIS));
-	t_curr = CLK_get_system_time();
 	
 	if (cling.lps.b_low_power_mode) {
 #ifdef _USE_HW_MOTION_DETECTION_
@@ -396,13 +384,17 @@ void SENSOR_accel_processing()
 	{
 		// INT2 (accelerometer data ready),
 		_high_power_process_FIFO();
-		
-		if (cling.user_data.b_screen_tapping) {
-			_tapping_screen_activation(t_curr);
-		}
 	}
 	
 }
+
+#ifdef __WIRST_DETECT_ENABLE__
+int wake_up_screen()
+{
+	UI_turn_on_display(UI_STATE_IDLE, 0);
+	return TRUE;
+}
+#endif
 
 void SENSOR_init()
 {
@@ -417,5 +409,10 @@ void SENSOR_init()
 #endif	
 	// Initialize sleep monitoring module.
 	SLEEP_init();
+#ifdef __WIRST_DETECT_ENABLE__
+	/*get wrist detection instance*/
+	p_wrist_obj = wrist_detect_get_instance();
+	p_wrist_obj->screen_wakeup_callback_register(p_wrist_obj, wake_up_screen);
+#endif
 }
 

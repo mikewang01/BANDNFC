@@ -18,7 +18,7 @@ void HOMEKEY_click_init()
 	I8U stat = ON_CLICK;
 	HOMEKEY_CLICK_STAT *k = &cling.key;
 
-	b_pin = nrf_gpio_pin_read(GPIO_HOMEKEY);	
+	b_pin = nrf_gpio_pin_read(GPIO_TOUCH_HOMEKEY_INT);	
 
 	// button released
 	if (b_pin) stat = OFF_CLICK;
@@ -38,7 +38,7 @@ void HOMEKEY_check_on_hook_change()
 	I8U stat = ON_CLICK;
 	
 	// Get a temporarily BUTTON status
-	b_pin = nrf_gpio_pin_read(GPIO_HOMEKEY);	
+	b_pin = nrf_gpio_pin_read(GPIO_TOUCH_HOMEKEY_INT);	
 
 	if (b_pin) {
 		stat = OFF_CLICK;
@@ -51,17 +51,20 @@ void HOMEKEY_check_on_hook_change()
 		// update the click time stamp
 		k->temp_st = stat;
 		k->ticks[stat] = t_curr;
-		N_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
+		Y_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
 		if (k->temp_st == ON_CLICK) {
 		
 			// Make sure OLED display panel is faced up.
 			if (LINK_is_authorized()) {
 					
-				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
+				Y_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
+
+				if (UI_is_idle()) {
+					cling.ui.b_touch_light_up_screen = TRUE;
+				}
 				
 				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
-
 			} else {
 				RTC_start_operation_clk();
 			}

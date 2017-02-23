@@ -791,11 +791,11 @@ static MOTION_TYPE _WALKING_RUNNING_classify(CLASSIFIER_STAT *c, I32S win_siz)
     if (c->apu_pace < 20) {
         // 1. High pace
         //    Running: Faster than 2.5 steps per second (and P2P is less the pure walking threshold
-		votes += (CLASSIFIER_WRC_1_TH - CLASSIFIER_WRC_PURE_WALK_TH);
-		if (votes < 0)
-			motion = MOTION_WALKING;
-		else
-			motion = MOTION_RUNNING;
+				votes += (CLASSIFIER_WRC_1_TH - CLASSIFIER_WRC_PURE_WALK_TH);
+				if (votes < 0)
+					motion = MOTION_WALKING;
+				else
+					motion = MOTION_RUNNING;
     } else if (votes > 0) {
         // 2. High APU magnitude
         //    Running: > 2 steps per second
@@ -1019,8 +1019,13 @@ static I8S _if_a_step_to_classify(CLASSIFIER_STAT *c)
 	if (i<0) { // No step to classify
 		return (-1);
 	}
+	
+	// If user is in a workout active mode, go start classification.
+	if (cling.activity.b_workout_active) {
+		return (i);
+	}
 
-    // If the step is approaching the time latency, start classification right away
+  // If the step is approaching the time latency, start classification right away
 	if ((c->step_ts[i]) < gPDM.global_time) {
 		return (i);
 	}
@@ -1659,9 +1664,11 @@ I16U PEDO_main(ACCELEROMETER_3D in)
 	// Time tick, every 20 ms (50 Hz)
 	gPDM.global_time ++;
 	
-	// Restart unintentional cheating detection if non-step period is longer than 10 seconds
-	_clean_up_random_steps();
-
+	if (!cling.activity.b_workout_active) {
+		// Restart unintentional cheating detection if non-step period is longer than 10 seconds
+		_clean_up_random_steps();
+	}
+	
 	// Low pass filtering input 3-D accelerometer A, mainly used for step detection
   gPDM.A = _lpf(in, (LP_FILTER *)&lpf_coeff[MAIN_LPF_8HZ], &gPDM.main_lpf);
 	

@@ -47,31 +47,6 @@ I8U LIS3DH_who_am_i()
 
 EN_STATUSCODE LIS3DH_normal_FIFO()
 {
-	if (cling.user_data.b_screen_tapping) 
-	{
-		// Tap detection
-		// Tap configuration: enable interrupt doble tap-tap on X/Y/Z axis
-		_set_reg(TAP_CFG, 0x3F);
-		
-		// Tap src ... (status check)
-		
-		// Tap threshold
-		// 0x29 - 0.03125*48 = 1.5 g
-		_set_reg(TAP_THS, 0x30);
-		
-		// Tap time limit
-		// 320 ms - 16 x 20 ms (50 Hz)
-		_set_reg(TAP_TIME_LIMIT, 0x10);
-		
-		// Tap time latency
-		// 200 ms - 10 x 20 ms (50 Hz)
-		_set_reg(TAP_TIME_LATENCY, 0x0A);
-		
-		// Tap time window
-		// 640 ms - 32 x 20 ms (50 Hz)
-		_set_reg(TAP_TIME_WINDOW, 0x20);
-	}
-
 	/* INT1_THS */
 	_set_reg(INT_THS1, 0x00);
 
@@ -85,17 +60,12 @@ EN_STATUSCODE LIS3DH_normal_FIFO()
 	/* CTRL_REG2 */
 	// default
 	_set_reg(CTRL_REG2, 0x00);
-	
-	if (cling.user_data.b_screen_tapping) {
-		N_SPRINTF("[LIS3DH] tapping interrupt: 0x84");
 
-		/* CTRL_REG3 */
-		// Disable data ready pin, enable FIFO watermak interrupt
-		_set_reg(CTRL_REG3, 0x84);
-	} else {
-		N_SPRINTF("[LIS3DH] tapping interrupt: 0x04");
-		_set_reg(CTRL_REG3, 0x04);
-	}
+	/* CTRL_REG3 */
+	// Disable data ready pin, enable FIFO watermak interrupt
+
+	N_SPRINTF("[LIS3DH] tapping interrupt: 0x04");
+	_set_reg(CTRL_REG3, 0x04);
 
 	/* CTRL_REG4 */
 	// LSB @ lower address, Full scale selection at +/- 4G, High resolution enabled

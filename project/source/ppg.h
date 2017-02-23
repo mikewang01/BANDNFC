@@ -4,6 +4,7 @@
 
 #include "standards.h"
 #include "butterworth.h"
+
 #define _ENABLE_PPG_
 
 #define ppg_I2C_ADDR    		(0xB4)            // 0x5A
@@ -180,11 +181,10 @@ void ppg_PS_ALS_Auto             (void);
 #define PPG_MEASURING_PERIOD_FOREGROUND                             1    // real time measuring
 #define PPG_MEASURING_PERIOD_BACKGROUND_DAY                       600    // real time measuring
 #define PPG_MEASURING_PERIOD_BACKGROUND_NIGHT                    1800    // real time measuring
-#define PPG_SAMPLE_PROCESSING_PERIOD                                1
-#define PPG_HR_MEASURING_TIMEOUT                                   25
+#define PPG_SAMPLE_PROCESSING_PERIOD                             1000
+#define PPG_HR_MEASURING_TIMEOUT                                25000
 #define PPG_NEXT_CHECK_LATENCY                                    180
 
-#define PPG_WEARING_DETECTION_OVERALL_INTERVAL                 180000     // 180 seconds
 #define PPG_WEARING_DETECTION_LPS_INTERVAL                       5000     //   5 seconds
 #define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 3600000     // background idle for 300 seconds
 
@@ -223,13 +223,14 @@ typedef enum {
 } PPG_STATES;
 
 typedef struct tagHEARTRATE_CTX{
-	I32U m_measuring_timer_in_s;
+	I32U first_hr_measurement_in_ms;
+	I32U m_measuring_timer_in_sec;
+	I32U m_duty_on_time_in_ms;
 	I32U m_zero_point_timer;
 	I32U alert_ts;
 	
 	BOOLEAN sample_ready;
 	BOOLEAN heart_rate_ready;
-	I32U first_hr_measurement_in_sec;
 
 	// PPG state machine
 	PPG_STATES state;

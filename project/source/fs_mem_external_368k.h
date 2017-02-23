@@ -31,6 +31,7 @@
 	// Tracking space: 32 KB
 	// Reminder space: 4 KB
 	// Message notification space: 4 KB
+	// User profile space: 4 KB
 	//
 	// Overall: 4+4+4+4+32+4+4 = 56 KB
 	//
@@ -68,7 +69,7 @@
 
 	// Message space
 	//
-	#define SYSTEM_NOTIFICATION_SPACE_START	    (SYSTEM_REMINDER_SPACE_START+SYSTEM_NOTIFICATION_SPACE_SIZE)		// System reminder space
+	#define SYSTEM_NOTIFICATION_SPACE_START	    (SYSTEM_REMINDER_SPACE_START+SYSTEM_REMINDER_SPACE_SIZE)		// Message notification space
 	#define SYSTEM_NOTIFICATION_PAGE_SIZE       1
 	#define SYSTEM_NOTIFICATION_SPACE_SIZE		  (4096)
 

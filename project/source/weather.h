@@ -8,7 +8,7 @@
 #ifndef __WEATHER_HEADER__
 #define __WEATHER_HEADER__
 
-#define MAX_WEATHER_DAYS 5
+#define MAX_WEATHER_DAYS  5
 
 typedef struct tagWEATHER_CTX {
 	I8U month;

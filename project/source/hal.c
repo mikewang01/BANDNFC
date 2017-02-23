@@ -69,34 +69,36 @@
 //
 #if 1
 const I16U conn_param_active[4] = {
-    MSEC_TO_UNITS(20, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(20, UNIT_1_25_MS),          /**< Minimum acceptable connection interval (40 milli-seconds). */
     MSEC_TO_UNITS(40, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
-    4,                                          /**< Slave latency. */
+    4,                                        /**< Slave latency. */
     MSEC_TO_UNITS(2000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #else
 const I16U conn_param_active[4] = {
-    MSEC_TO_UNITS(380, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(400, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
-    4,                                          /**< Slave latency. */
+    MSEC_TO_UNITS(380, UNIT_1_25_MS),         /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(400, UNIT_1_25_MS),         /**< Maximum acceptable connection interval (1 second). */
+    4,                                        /**< Slave latency. */
     MSEC_TO_UNITS(6000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #endif
+
 #if 1
 const I16U conn_param_idle[4] = {
-    MSEC_TO_UNITS(250, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(400, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
-    4,                                          /**< Slave latency. */
+    MSEC_TO_UNITS(250, UNIT_1_25_MS),         /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(400, UNIT_1_25_MS),         /**< Maximum acceptable connection interval (1 second). */
+    4,                                        /**< Slave latency. */
     MSEC_TO_UNITS(6000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #else
 const I16U conn_param_idle[4] = {
-    MSEC_TO_UNITS(40, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(250, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
-    4,                                          /**< Slave latency. */
+    MSEC_TO_UNITS(40, UNIT_1_25_MS),          /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(250, UNIT_1_25_MS),         /**< Maximum acceptable connection interval (1 second). */
+    4,                                        /**< Slave latency. */
     MSEC_TO_UNITS(6000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #endif
+
 static dm_application_instance_t             m_app_handle;                              /**< Application identifier allocated by device manager */
 
 static ble_gap_adv_params_t                  m_adv_params;                              /**< Parameters to be passed to the stack when starting advertising. */
@@ -270,7 +272,7 @@ void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
 #endif
 	cling.system.conn_params_update_ts = t_curr;
 
-	N_SPRINTF("[HAL] disconnect BLE for a fast connection");
+	Y_SPRINTF("[HAL] disconnect BLE for a fast connection");
 	r->adv_mode = BLE_FAST_ADV;
 
 #if 1
@@ -292,7 +294,7 @@ void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
     params.conn_sup_timeout = conn_param_active[3];
     //current_params = params;
     if(ble_conn_params_com_conn_params(params, true) == true) {
-        N_SPRINTF("[HAL] STILL IN fast connection");
+        Y_SPRINTF("[HAL] STILL IN fast connection");
         return ;
     }
     uint32_t err_code = ble_conn_params_change_conn_params(&params, swith_purpose);
@@ -334,7 +336,7 @@ BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose)
 
 	/*ckeck connection parameter*/
 	if(ble_conn_params_com_conn_params(params, false) == true) {
-		N_SPRINTF("[HAL] still in slow connection");
+		Y_SPRINTF("[HAL] still in slow connection");
 		return TRUE;
 	}
 
@@ -355,7 +357,7 @@ BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose)
 		r->b_conn_params_updated = TRUE;
 		Y_SPRINTF("[HAL] connection params updated -- SLOW --");
 		sd_ble_tx_buffer_count_get(&r->tx_buf_available);
-	}
+	} 
 #endif
 	
 	return TRUE;
@@ -583,7 +585,7 @@ void HAL_advertising_start(void)
 {
 #ifndef _CLING_PC_SIMULATION_
 	uint32_t err_code;
-
+		
 #if 0
 	ble_gap_whitelist_t  whitelist;
 
@@ -675,6 +677,11 @@ static void _ble_evt_dispatch(ble_evt_t * p_ble_evt)
 	N_SPRINTF("[HAL] ble evt dispatch: event: %d", p_ble_evt->header.evt_id);
 
 	dm_ble_evt_handler(p_ble_evt);
+
+#ifdef __PLAYER_CONTROLLER_ENABLE__
+	CLASS(PlayerController)* media_player_obj_p = PlayerController_get_instance();
+	media_player_obj_p->on_ble(media_player_obj_p, p_ble_evt);
+#endif
 	
 #ifdef _ENABLE_ANCS_
 	if (!OTA_if_enabled()) {
@@ -695,8 +702,16 @@ static void _ble_evt_dispatch(ble_evt_t * p_ble_evt)
 #endif
 	
 	BTLE_on_ble_evt(p_ble_evt);
-	
+
+#ifdef __WECHAT_SUPPORTED__		
 	wechat_ble_evt_dispatch(p_ble_evt);
+#endif
+	
+#if __CLING_PAY_SUPPORTED__
+	 extern void ble_pay_on_ble_evt(ble_evt_t * p_ble_evt);
+   ble_pay_on_ble_evt(p_ble_evt);
+#endif	
+//ble_pay_on_ble_evt(p_ble_evt);        // TBD: this routine seems causing device unable to bouding issue.
 }
 #endif
 
@@ -743,9 +758,14 @@ static void _ble_stack_init(void)
 	uint32_t err_code;
 
 	// Initialize the SoftDevice handler module.
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)			
+	// using 20 ppm RTC
+	SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, NULL);
+#else
 	// 8000 ms to calibrate the time (also minize power consumption)
 	SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_RC_250_PPM_8000MS_CALIBRATION, NULL);
-
+#endif
+	
 	ble_enable_params_t ble_enable_params;
 	memset(&ble_enable_params, 0, sizeof(ble_enable_params));
 
@@ -836,10 +856,19 @@ static void _ble_init()
 #endif
 	
   _services_init();
+	
+#ifdef __PLAYER_CONTROLLER_ENABLE__
+	PlayerController_get_instance();
+#endif
 
 #ifdef __WECHAT_SUPPORTED__
   wechat_init();
 #endif
+
+#if __CLING_PAY_SUPPORTED__
+    cling_pay_app_get_instance();
+#endif
+
   _conn_params_init();
 #endif
 }
@@ -905,17 +934,26 @@ void HAL_init(void)
 	// Power measurement init
 	BATT_init();
 
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 	// Initialize thermistor module
 	THERMISTOR_init();
+#endif
 
+#ifndef _CLINGBAND_2_PAY_MODEL_
 	// Keypad init
 	HOMEKEY_click_init();
+#endif
 
 #ifdef _ENABLE_TOUCH_
 	BASE_delay_msec(600);
 	// Touch controller init
 	TOUCH_init();
 #endif
+
+#if defined(_CLINGBAND_PACE_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)	
+  // TBD: workaround for GPIO_CHARGER_INT issue..
+  GPIO_init();        
+#endif	
 }
 
 /**

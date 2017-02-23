@@ -20,7 +20,8 @@
 #define REMINDER_SECOND_REMINDER_LATENCY 2000
 
 #define REMINDER_VIBRATION_REPEAT_TIME 2
-#define SECOND_REMINDER_TIME 8
+#define SECOND_REMINDER_NORMAL_TIME 3
+#define SECOND_REMINDER_SLEEP_TIME 8
 
 void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 {
@@ -74,7 +75,7 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 					cling.reminder.ui_mm = b;
 				}
 			}
-			N_SPRINTF("[CP] reminder setup(%d, %d), %d:%d(%02x)", i, cling.reminder.total, a, b, c);
+			Y_SPRINTF("[CP] reminder setup(%d, %d), %d:%d(%02x)", i, cling.reminder.total, a, b, c);
 		}
 		pdata = (I8U *)data;
 		FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 128); // Maximum 32 entries
@@ -151,6 +152,7 @@ void REMINDER_set_next_reminder()
 			}
 		}
 	}
+	
 
 	if (b_found) {
 		cling.reminder.b_valid = TRUE;
@@ -186,9 +188,61 @@ static BOOLEAN _check_reminder()
 	}
 }
 
+void REMINDER_set_sleep_reminder()
+{
+	I8U week, day;
+	
+	cling.reminder.b_sleep_total = FALSE;
+	cling.reminder.b_sleep_valid = FALSE;
+	cling.reminder.b_wakeup_valid = FALSE;
+
+	if (cling.user_data.profile.sleep_dow & 0x80) {
+		week = cling.user_data.profile.sleep_dow & 0x7f;
+		day = 1 << cling.time.local.dow;
+		
+		if (week & day) {
+			cling.reminder.b_sleep_valid = TRUE;
+			cling.reminder.b_wakeup_valid = TRUE;
+      cling.reminder.b_sleep_total = TRUE;
+		}
+	}
+}
+
+static BOOLEAN _check_sleep_reminder()
+{	
+	// Add sleep bed & wakeup time
+	if (cling.reminder.b_sleep_valid) {
+			if ((cling.time.local.hour == cling.user_data.profile.bed_hh) && 
+					(cling.time.local.minute == cling.user_data.profile.bed_mm))
+			{
+				cling.reminder.alarm_type = SLEEP_ALARM_CLOCK;
+				cling.reminder.b_sleep_valid = FALSE;
+				cling.ui.ui_alarm_hh = cling.user_data.profile.bed_hh;
+				cling.ui.ui_alarm_mm = cling.user_data.profile.bed_mm;		
+				return TRUE;
+			}
+	}
+
+	// Add wakeup wakeup time
+	if (cling.reminder.b_wakeup_valid) {
+			if ((cling.time.local.hour == cling.user_data.profile.wakeup_hh) && 
+					(cling.time.local.minute == cling.user_data.profile.wakeup_mm))
+			{
+				cling.reminder.alarm_type = WAKEUP_ALARM_CLOCK;
+				cling.reminder.b_wakeup_valid = FALSE;
+				cling.ui.ui_alarm_hh = cling.user_data.profile.wakeup_hh;
+				cling.ui.ui_alarm_mm = cling.user_data.profile.wakeup_mm;						
+				return TRUE;
+			}
+	}
+	
+	return FALSE;
+}
+
 void REMINDER_state_machine()
 {
 	I32U t_curr = CLK_get_system_time();
+	I8U reminder_frame_index;
 	
 	if (OTA_if_enabled())
 		return;
@@ -201,16 +255,30 @@ void REMINDER_state_machine()
 	switch (cling.reminder.state) {
 		case REMINDER_STATE_IDLE:
 		{
-			if (_check_reminder()) {
-				N_SPRINTF("[REMINDER] reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+			if (_check_sleep_reminder()) {
+				// First setup alarm type
+				N_SPRINTF("[REMINDER] Sleep reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 				cling.reminder.state = REMINDER_STATE_ON;
 				// Reset vibration times
 				cling.reminder.vibrate_time = 0;
 				cling.reminder.second_vibrate_time = 0;
 				cling.reminder.ui_alarm_on = TRUE;
-				cling.ui.notif_type = NOTIFICATION_TYPE_REMINDER;
-				UI_turn_on_display(UI_STATE_NOTIFICATIONS, 1000);
-
+				cling.reminder.repeat_time = SECOND_REMINDER_SLEEP_TIME;
+				reminder_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;
+				UI_start_notifying(reminder_frame_index, NOTIFICATION_TYPE_REMINDER);
+			} else if (_check_reminder()) {
+				N_SPRINTF("[REMINDER] Work reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+				cling.reminder.state = REMINDER_STATE_ON;
+				// Reset vibration times
+				cling.reminder.vibrate_time = 0;
+				cling.reminder.second_vibrate_time = 0;
+				cling.reminder.ui_alarm_on = TRUE;
+				cling.reminder.alarm_type = NORMAL_ALARM_CLOCK;
+				cling.reminder.repeat_time = SECOND_REMINDER_NORMAL_TIME;
+				cling.ui.ui_alarm_hh = cling.reminder.hour;
+				cling.ui.ui_alarm_mm = cling.reminder.minute;				
+				reminder_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;
+				UI_start_notifying(reminder_frame_index, NOTIFICATION_TYPE_REMINDER);
 			} else {
 				if (cling.notific.state == NOTIFIC_STATE_IDLE) {
 					GPIO_vibrator_set(FALSE);
@@ -254,7 +322,7 @@ void REMINDER_state_machine()
 		case REMINDER_STATE_SECOND_REMINDER:
 		{
 			if (t_curr > (cling.reminder.ts + REMINDER_SECOND_REMINDER_LATENCY)) {
-				if (cling.reminder.second_vibrate_time >= SECOND_REMINDER_TIME) {
+				if (cling.reminder.second_vibrate_time >= cling.reminder.repeat_time) {
 					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 					N_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
 				} else {
@@ -346,6 +414,9 @@ I8U REMINDER_get_time_at_index(I8U index)
 
 	cling.reminder.ui_hh = hh;
 	cling.reminder.ui_mm = mm;
+	
+	cling.ui.ui_alarm_hh = cling.reminder.ui_hh;
+	cling.ui.ui_alarm_mm = cling.reminder.ui_mm;				
 	
 	N_SPRINTF("[REMINDER] ui display: %d:%d", hh, mm);
 		

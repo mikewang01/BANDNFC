@@ -621,6 +621,7 @@ static BOOLEAN _ancs_supported_is_enable()
 	return FALSE;
 }
 
+#ifndef _CLINGBAND_PACE_MODEL_
 void ANCS_nflash_store_one_message(I8U *data)
 {
   // Use message 4k space from nflash
@@ -636,9 +637,44 @@ void ANCS_nflash_store_one_message(I8U *data)
 	
   FLASH_Write_App(addr, data+128, 128);	
 }
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_
+void ANCS_store_one_message(I8U *data)
+{
+	I8U title_len, msg_len;
+	I8U offset=0;
+	
+	title_len = data[0];
+	msg_len   = data[1];
+
+	if (title_len > ANCS_SUPPORT_MAX_TITLE_LEN)
+		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+
+	if(msg_len >= ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN)
+	  msg_len = ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN;
+	
+	// Store the length.
+	cling.ancs.buf[0] = title_len;
+	cling.ancs.buf[1] = msg_len;
+	
+	offset = 2;
+	// Store the notification name.
+  memcpy(cling.ancs.buf+offset, data+offset, title_len);
+	
+	offset += title_len;
+	// Store the notification detail message.
+  memcpy(cling.ancs.buf+offset, data+offset, msg_len);
+}
+#endif
 
 static void _ancs_store_attrs_pro(void)
 {
+#ifdef _CLINGBAND_PACE_MODEL_
+	if(_ancs_supported_is_enable()) {
+		NOTIFIC_start_notifying(ancs_notif.category_id);	
+	}			
+#else
 	I8U *p;
 	I8U len;
 	
@@ -672,6 +708,7 @@ static void _ancs_store_attrs_pro(void)
 	memset(p,0,len);
 	
 	ANCS_nflash_store_one_message(cling.ancs.buf);	 	 	
+#endif	
 }
 
 void ANCS_on_event_handling(ble_ancs_evt_type evt_type)

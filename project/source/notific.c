@@ -35,16 +35,20 @@ void NOTIFIC_stop_notifying()
 	GPIO_vibrator_set(FALSE);
 }
 
-#define NOTIFIC_MULTI_REMINDER_INCOMING_CALL 3
-#define NOTIFIC_MULTI_REMINDER_OTHERS        1
-#define NOTIFIC_MULTI_REMINDER_IDLE_ALERT    3
-#define NOTIFIC_MULTI_REMINDER_HR            2
-#define NOTIFIC_MULTI_REMINDER_10KS          3
+#define NOTIFIC_MULTI_REMINDER_INCOMING_CALL   3
+#define NOTIFIC_MULTI_REMINDER_OTHERS          1
+#define NOTIFIC_MULTI_REMINDER_IDLE_ALERT      3
+#define NOTIFIC_MULTI_REMINDER_HR              2
+#define NOTIFIC_MULTI_REMINDER_10KS            3
+#define NOTIFIC_MULTI_REMINDER_TRAINING_PACE   3
+#define NOTIFIC_MULTI_REMINDER_TRAINING_HR     3
 
 void NOTIFIC_start_notifying(I8U cat_id)
 {		
 #ifndef _CLING_PC_SIMULATION_
 #ifdef _ENABLE_ANCS_
+	I8U notif_frame_index;
+	
 	// Do not notify user if unit is in sleep state
 	if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
 		return;
@@ -52,58 +56,90 @@ void NOTIFIC_start_notifying(I8U cat_id)
 	// Reset vibration times
 	cling.notific.vibrate_time = 0;
 	// The maximum vibration time
-	if (cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)
+	if (cat_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL) {
 		cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_INCOMING_CALL;
-	else
+		notif_frame_index = UI_DISPLAY_SMART_INCOMING_CALL;	
+	} else {
 		cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_OTHERS;
+		notif_frame_index = UI_DISPLAY_SMART_INCOMING_MESSAGE;	
+	}
 	cling.notific.cat_id = cat_id;
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
-	N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
-	cling.ui.notif_type = NOTIFICATION_TYPE_MESSAGE;
-	// Also, turn on screen
-	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
+	Y_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
+  UI_start_notifying(notif_frame_index, NOTIFICATION_TYPE_MESSAGE);
 #endif	
 #endif
 }
 
 void NOTIFIC_start_idle_alert()
 {
+  I8U notif_frame_index;
+	
 	cling.notific.vibrate_time = 0;
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
-	cling.ui.notif_type = NOTIFICATION_TYPE_IDLE_ALERT;
-	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
-	
+	notif_frame_index = UI_DISPLAY_SMART_IDLE_ALERT;
+  UI_start_notifying(notif_frame_index, NOTIFICATION_TYPE_IDLE_ALERT);	
 	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 }
 
 void NOTIFIC_start_HR_alert()
 {
+  I8U notif_frame_index;
+	
 	cling.notific.vibrate_time = 0;
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
-	cling.ui.notif_type = NOTIFICATION_TYPE_HR;
-	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
-	
+	notif_frame_index = UI_DISPLAY_SMART_HEART_RATE_ALERT;
+  UI_start_notifying(notif_frame_index, NOTIFICATION_TYPE_HR);		
 	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 }
 
 void NOTIFIC_start_10KStep_alert()
 {
+  I8U notif_frame_index;
+	
 	cling.notific.vibrate_time = 0;
 	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
 	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_10KS;
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
-	cling.ui.notif_type = NOTIFICATION_TYPE_10KSTEP;
-	UI_turn_on_display(UI_STATE_NOTIFICATIONS, 3000);
+	notif_frame_index = UI_DISPLAY_SMART_STEP_10K_ALERT;
+  UI_start_notifying(notif_frame_index, NOTIFICATION_TYPE_10KSTEP);			
+	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+}
+
+void NOTIFIC_start_training_pace_alert()
+{
+  I8U notif_frame_index;
 	
+	cling.notific.vibrate_time = 0;
+	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
+	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_TRAINING_PACE;
+	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
+	notif_frame_index = UI_DISPLAY_TRAINING_STAT_PACE;
+  UI_start_notifying(notif_frame_index, NOTIFICATION_TYPE_RUNNING_ALERT);			
+	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+}
+
+void NOTIFIC_start_training_hr_alert()
+{
+  I8U notif_frame_index;
+	
+	cling.notific.vibrate_time = 0;
+	cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
+	cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_TRAINING_HR;
+	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
+	cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
+	notif_frame_index = UI_DISPLAY_TRAINING_STAT_HEART_RATE;
+  UI_start_notifying(notif_frame_index, NOTIFICATION_TYPE_RUNNING_ALERT);			
 	Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 }
 
@@ -207,13 +243,14 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 	
 	title_len = data[2];
 	msg_len = data[3];
-	
-	if ((title_len + msg_len) > 120)
+  
+	if ((title_len > ANCS_SUPPORT_MAX_TITLE_LEN) || (msg_len > ANCS_SUPPORT_MAX_MESSAGE_LEN))
 		return;
 	
 	data[4+title_len+msg_len] = 0;
-	
+
 	if (mode == NOTIFIC_SMART_PHONE_NEW) {
+#ifndef _CLINGBAND_PACE_MODEL_			
 		 if(cling.ancs.message_total >= 16) {
 				
 			 FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
@@ -227,12 +264,16 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 		 }
 		 
 		cling.ancs.message_total++;		
-		
+#endif		
 		Y_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
 	 
 		// title len, message len, ....
-		ANCS_nflash_store_one_message(data+2);
-		
+#ifdef _CLINGBAND_PACE_MODEL_			 
+		ANCS_store_one_message(data+2);
+#else 
+    ANCS_nflash_store_one_message(data+2);	 
+#endif
+		 
 		// Inform NOTIFIC state machine to notify user
 		NOTIFIC_start_notifying(id);
 		
@@ -260,16 +301,26 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 {
 	I8U  title_len;
 #ifdef _ENABLE_ANCS_		
-	I32U addr_in;
-	I32U tmpBuf[32];
+#ifdef _CLINGBAND_PACE_MODEL_
+	I8U *pdata = cling.ancs.buf;
 	
+	title_len = pdata[0];
+	if (title_len > ANCS_SUPPORT_MAX_TITLE_LEN)
+		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+	
+	// Get the incoming message
+	memcpy(app_name, pdata+2 ,title_len);	
+	
+	app_name[title_len] = 0;		
+#else	
+	I32U addr_in;
+	I32U tmpBuf[32];	
 	I8U  *pdata = (I8U *)tmpBuf;
 	
 	if (cling.ancs.message_total == 0) {
 		title_len = sprintf(app_name, "No message!");
 		return title_len;
 	}
-	
 	
 	if (index > (cling.ancs.message_total-1)) {
 		title_len = sprintf(app_name, "No message!");
@@ -292,12 +343,12 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	// Get the incoming message
 	memcpy(app_name,pdata+2,title_len);	
 	
-	app_name[title_len] = '\0';		
+	app_name[title_len] = 0;		
 
 	N_SPRINTF("[NOTIFIC] get ancs title len :%d",title_len );	
 	
 	N_SPRINTF("[NOTIFIC] get ancs title string :%s",app_name );		
-	
+#endif	
 	return title_len;
 #else
 	
@@ -311,13 +362,27 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	I8U  title_len;
 #ifdef _ENABLE_ANCS_	
 	I8U  msg_len;	
+#ifdef _CLINGBAND_PACE_MODEL_
+	I8U  *pdata = cling.ancs.buf;
+
+	title_len = pdata[0];
+	if (title_len > ANCS_SUPPORT_MAX_TITLE_LEN)
+		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+	
+	msg_len =  pdata[1];
+	if(msg_len >= ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN)
+	  msg_len = ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN;
+	
+	memcpy(string, pdata + title_len +2, msg_len);
+	string[msg_len] = 0;
+#else	
 	I8U  msg_offset;
 	I32U addr_in;
 	I32U tmpBuf_1[32];
 	I32U tmpBuf_2[32];
 	I8U  *pdata_1 = (I8U *)tmpBuf_1;
   I8U  *pdata_2 = (I8U *)tmpBuf_2;
-
+	
 	if (cling.ancs.message_total == 0) {
 		title_len = sprintf(string, "No message!");
 		return title_len;
@@ -359,8 +424,8 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	msg_offset = 1+1+title_len;
 	
 	//Currently only support 128 byte	
-	if(msg_len >= 127)
-	 msg_len=127;
+	if(msg_len >= ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN)
+		msg_len = ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN;
 	
 	// if the overall length of message and title is less than 128 bytes
 	if (msg_len <= (128-msg_offset)) {
@@ -373,9 +438,9 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 		// if the overall length of message and title is greater than 128 bytes
 		memcpy(string, pdata_1+msg_offset, 128-msg_offset);
 		memcpy(string+(128-msg_offset), pdata_2, msg_len-(128-msg_offset));
-		string[msg_len] = '\0';	
+		string[msg_len] = 0;
 	}
-	
+#endif	
 	return msg_len;
 #else
 
@@ -389,10 +454,20 @@ I8U NOTIFIC_get_callerID(char *string)
 {
 	I8U  title_len = 0;
 #ifdef _ENABLE_ANCS_		
-	// ....
-	I32U addr_in;
-	I32U tmpBuf[32];
+#ifdef _CLINGBAND_PACE_MODEL_
+	I8U *pdata = cling.ancs.buf;
 	
+	title_len = pdata[0];
+	if (title_len > ANCS_SUPPORT_MAX_TITLE_LEN)
+		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
+	
+	// Get the incoming message
+	memcpy(string, pdata+2 ,title_len);	
+	
+	string[title_len] = 0;		
+#else	
+	I32U addr_in;
+	I32U tmpBuf[32];	
 	I8U  *pdata = (I8U *)tmpBuf;
 
 	addr_in=((cling.ancs.message_total-1)*256+SYSTEM_NOTIFICATION_SPACE_START);
@@ -405,8 +480,8 @@ I8U NOTIFIC_get_callerID(char *string)
 		title_len = ANCS_SUPPORT_MAX_TITLE_LEN;
 
 	memcpy(string, pdata+2, title_len);		
-	string[title_len] = '\0';	
-
+	string[title_len] = 0;
+#endif
 	N_SPRINTF("[NOTIFIC] get notf callerID string is :%s",string );
 	
 	return title_len;	
@@ -419,9 +494,11 @@ I8U NOTIFIC_get_callerID(char *string)
 
 BOOLEAN NOTIFIC_is_user_viewing_message()
 {
+#if 0	
 	// 1. see if device is receiving a notification message
 	if (cling.ui.state == UI_STATE_NOTIFICATIONS)
 		return TRUE;
+#endif
 	
 	// 1. see if device is in a active display state
 	if (UI_is_idle()) {

@@ -52,7 +52,6 @@
 #include "sensor.h"
 #include "ui.h"
 #include "oled.h"
-#include "thermistor.h"
 #include "release_number.h"
 #include "sysclk.h"
 #include "uart.h"
@@ -60,12 +59,8 @@
 #include "gpio.h"
 #include "spi_master_api.h"
 #include "batt.h"
-#ifndef _CLING_PC_SIMULATION_
 #include "nrf_drv_twi.h"
 #include "nrf_adc.h"
-#include "uv_calib.h"
-#endif
-#include "uv.h"
 #include "touch.h"
 #include "butterworth.h"
 #include "ppg.h"
@@ -77,6 +72,20 @@
 #include "ancs.h"
 #include "homekey.h"
 #include "ppg.h"
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
+#include "thermistor.h"
+#endif
+#ifdef _CLINGBAND_UV_MODEL_
+#include "uv.h"
+#include "uv_calib.h"
+#endif
+#ifdef _CLINGBAND_2_PAY_MODEL_
+#include "nrf_gpiote.h"
+#include "nrf_drv_gpiote.h"
+#include "FM1280.h"
+#include "sys_power_mgr.h"
+#include "ble_pay_app.h"
+#endif
 
 #define TWI_MASTER_UV       1
 #define TWI_MASTER_UICO     1
@@ -163,6 +172,7 @@ typedef struct tagCLING_MAIN_CTX {
 	
 	// weather context (5 days)
 	WEATHER_CTX weather[MAX_WEATHER_DAYS];
+	I16U pm2p5;
 
 	// System diagonostic variables
 	WHOAMI_CTX whoami; 
@@ -172,6 +182,12 @@ typedef struct tagCLING_MAIN_CTX {
 
 	// Activity information including all daily total/minute, and on-going activity status.
 	TRACKING_CTX activity;
+
+	// Running track
+	RUNNING_TRACK_CTX run_stat;
+
+	// Training track
+	TRAINING_TRACK_CTX train_stat;
 
 	// Timing info
 	CLING_TIME_CTX time;
@@ -193,15 +209,19 @@ typedef struct tagCLING_MAIN_CTX {
 	// Pairing and authentication
 	LINK_CTX link;
 
+#ifdef _ENABLE_TOUCH_
 	// Touch panel context
 	TOUCH_CTX touch;
-	
+#endif
+
 	// Radio BKE state
 	BLE_CTX ble;
+	
 #ifdef _ENABLE_ANCS_
 	// ANCS (apple notification center service)
 	ANCS_CONTEXT ancs;
 #endif
+
 	// UI state
 	UI_ANIMATION_CTX ui;
 	
@@ -213,10 +233,12 @@ typedef struct tagCLING_MAIN_CTX {
 
   // HEART RATE state machine
   HEARTRATE_CTX hr;
-	
+
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 	// Thermistor state context
 	THERMISTOR_CTX therm;
-	
+#endif
+
 	// Sleep monitoring state context
 	SLEEP_CTX sleep;	
 	
@@ -225,12 +247,20 @@ typedef struct tagCLING_MAIN_CTX {
 
 	// Notific 
 	NOTIFIC_CTX notific;
-	
+
+#ifndef _CLINGBAND_2_PAY_MODEL_
 	// Homekey state
 	HOMEKEY_CLICK_STAT key;
+#endif
+
 #ifdef _CLINGBAND_UV_MODEL_
 	// uv index
 	UV_CTX uv;
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+  // ISO7816 context
+	ISO7816_CTX iso7816;
 #endif
 
 } CLING_MAIN_CTX;

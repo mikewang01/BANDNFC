@@ -31,7 +31,7 @@ EN_STATUSCODE Watchdog_Init(void)
 	nrf_drv_wdt_enable();
 
 #endif
-	Y_SPRINTF("[WDG] Watchdog init");
+	N_SPRINTF("[WDG] Watchdog init");
   return STATUSCODE_SUCCESS;
 }
 

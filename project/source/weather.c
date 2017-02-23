@@ -17,22 +17,35 @@
 void WEATHER_set_weather(I8U *data)
 {
 	WEATHER_CTX *w = cling.weather;
-	
-	memcpy(&w[0], data, 5*sizeof(WEATHER_CTX));
-	
+	I8U *pPM2P5;
+
+  memcpy(&w[0], data, 5*sizeof(WEATHER_CTX));
+
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[0].month, w[0].day, w[0].type, w[0].low_temperature, w[0].high_temperature);
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[1].month, w[1].day, w[1].type, w[1].low_temperature, w[1].high_temperature);
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[2].month, w[2].day, w[2].type, w[2].low_temperature, w[2].high_temperature);
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[3].month, w[3].day, w[3].type, w[3].low_temperature, w[3].high_temperature);
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[4].month, w[4].day, w[4].type, w[4].low_temperature, w[4].high_temperature);
+
+	// Load PM2.5 read
+	pPM2P5 = data + 5*sizeof(WEATHER_CTX);
+	
+	cling.pm2p5 = pPM2P5[0];
+	cling.pm2p5 <<= 8;
+	cling.pm2p5 |= pPM2P5[1];
 }
 
 BOOLEAN WEATHER_get_weather(I8U index, WEATHER_CTX *wo)
 {
 	WEATHER_CTX *wi = cling.weather;
-	SYSTIME_CTX new_time;
-	BOOLEAN b_available = FALSE;
+
+#ifdef _CLINGBAND_PACE_MODEL_
+	memcpy(wo, &wi[0], sizeof(WEATHER_CTX));
+	return TRUE;
+#else
 	I8U i;
+	BOOLEAN b_available = FALSE;
+	SYSTIME_CTX new_time;
 	
 	RTC_get_delta_clock_forward(&new_time, index);
 	
@@ -58,5 +71,6 @@ BOOLEAN WEATHER_get_weather(I8U index, WEATHER_CTX *wo)
 		wo->type = 0;
 		return FALSE;
 	}
+#endif
 }
 

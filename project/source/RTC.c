@@ -20,6 +20,309 @@ APP_TIMER_DEF(m_operation_timer_id); /**< 1 sec based timer. >**/
 
 const I8U DAYS_IN_EACH_MONTH[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
+I8U const month_leap_in_days[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+I8U const month_normal_in_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
+
+#define EPOCH_BASE 946684800 // Epoch time at 2000/1/1 0:0:0 (time zone: 0)
+
+// RTC IC I2C address: 0x51 (in 7-bit mode)
+#define RTC_I2C_ADDR 0xA2 
+
+static EN_STATUSCODE RTC_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
+{
+#ifndef _CLING_PC_SIMULATION_
+
+	I32U err_code;
+	const nrf_drv_twi_t twi = NRF_DRV_TWI_INSTANCE(1);
+	
+	if (pRegVal==NULL) return STATUSCODE_NULL_POINTER;
+	
+	if (!cling.system.b_twi_1_ON) {
+		GPIO_twi_enable(1);
+	}
+	
+	err_code = nrf_drv_twi_tx(&twi, (RTC_I2C_ADDR>>1), &cmdID, 1, true);
+	if (err_code == NRF_SUCCESS) {
+		N_SPRINTF("RTC: Read TX PASS: ");
+	} else {
+		N_SPRINTF("RTC: Read TX FAIL - %d", err_code);
+		APP_ERROR_CHECK(err_code);
+		return STATUSCODE_FAILURE;
+	}
+	err_code = nrf_drv_twi_rx(&twi, (RTC_I2C_ADDR>>1), pRegVal, bytes, false);
+	if (err_code == NRF_SUCCESS) {
+		N_SPRINTF("RTC: Read RX PASS: ");
+		return STATUSCODE_SUCCESS;
+	} else {
+		N_SPRINTF("RTC: Read RX FAIL: %d", err_code);
+		APP_ERROR_CHECK(err_code);
+		return STATUSCODE_FAILURE;
+	}
+#else
+	return STATUSCODE_SUCCESS;
+#endif
+}
+
+static BOOLEAN RTC_write_reg(I8U* reg_val, I8U number_of_bytes)
+{
+#ifndef _CLING_PC_SIMULATION_
+
+	I32U err_code;
+	const nrf_drv_twi_t twi = NRF_DRV_TWI_INSTANCE(1);
+	
+	if (!cling.system.b_twi_1_ON) {
+		GPIO_twi_enable(1);
+	}
+	
+	err_code = nrf_drv_twi_tx(&twi, (RTC_I2C_ADDR>>1), reg_val, number_of_bytes, false);
+	if (err_code == NRF_SUCCESS) {
+		//Y_SPRINTF("BATT: Write PASS: 0x%02x  0x%02x", cmdID, regVal);
+		return STATUSCODE_SUCCESS;
+	} else {
+		//Y_SPRINTF("BATT: Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
+		APP_ERROR_CHECK(err_code);
+		return STATUSCODE_FAILURE;
+	}
+#else
+	return STATUSCODE_SUCCESS;
+#endif
+}
+
+void RTC_hw_init()
+{
+	I8U data[10];
+	I32U epoch, t_diff;
+	REALTIME_CTX rt;
+	
+	// Charging setup: 
+
+	// capacitor selection: 12.5 pf	
+	data[0] = 0x00;
+	data[1] = 0x59;	
+	RTC_write_reg(data, 2);	
+	
+	// Minute interrupt: enabled
+	// CLKOUT frequency selection: 32768Hz	
+	data[0] = 0x01;
+	data[1] = 0x20;
+	RTC_write_reg(data, 2);
+	
+	epoch = RTC_get_current_epoch(&rt);
+	
+	// Make sure we have RTC running correctly (no power-on reset)
+	if (epoch > cling.time.time_since_1970) {
+		cling.time.time_since_1970 = epoch;
+	} else {
+		
+		t_diff = cling.time.time_since_1970 - epoch;
+		
+		// If Epoch from RTC chip is far different from software Epoch, then, go ahead to use software Epoch
+		if (t_diff > 3600) 
+			RTC_set_current_epoch(cling.time.time_since_1970);
+	}
+	
+	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
+
+	// Get current local minute
+	cling.time.local_day = cling.time.local.day;
+	cling.time.local_minute = cling.time.local.minute;
+
+}
+
+void RTC_minute_int_service()
+{
+	I8U b_pin = nrf_gpio_pin_read(GPIO_RTC_INT);	
+	
+	if (!b_pin) {
+		Y_SPRINTF("RTC INT --");
+		RTC_timer_handler(0);
+		//cling.time.time_since_1970 = RTC_get_current_epoch();
+		//RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
+	}
+}
+
+BOOLEAN RTC_get_current_rtc(REALTIME_CTX *p_rt)
+{
+	I8U time_ctx[8];
+	I16U integer, fractional;
+	I8U second, minute, hour, day, month, year;
+	
+	RTC_read_reg(0x04, 7, time_ctx);
+	
+	Y_SPRINTF("RTC READ(%d): %02x, %02x, %02x, %02x, %02x, %02x, %02x", cling.time.time_zone,
+		time_ctx[6], time_ctx[5], time_ctx[4], time_ctx[3], time_ctx[2], time_ctx[1], time_ctx[0]);
+	
+	// Detect whether there is a power-on reset
+	if ((time_ctx[6] == 0) && (time_ctx[5] == 1) && (time_ctx[3] == 1)) {
+		return FALSE;
+	}
+	
+	// Calculate Epoch
+	
+	// Second
+	fractional = time_ctx[0] & 0x0f;
+	integer = time_ctx[0] & 0x70;
+	integer >>= 4;
+	second = fractional + integer * 10;
+	
+	// Minute
+	fractional = time_ctx[1] & 0x0f;
+	integer = time_ctx[1] & 0x70;
+	integer >>= 4;
+	minute = fractional + integer * 10;
+	
+	// hour
+	fractional = time_ctx[2] & 0x0f;
+	integer = time_ctx[2] & 0x30;
+	integer >>= 4;
+	hour = fractional + integer * 10;
+	
+	// day
+	fractional = time_ctx[3] & 0x0f;
+	integer = time_ctx[3] & 0x30;
+	integer >>= 4;
+	day = fractional + integer * 10;
+	
+	// month
+	fractional = time_ctx[5] & 0x0f;
+	integer = time_ctx[5] & 0x10;
+	integer >>= 4;
+	month = fractional + integer * 10;
+	
+	// year
+	fractional = time_ctx[6] & 0x0f;
+	integer = time_ctx[6] & 0xf0;
+	integer >>= 4;
+	year = fractional + integer * 10;
+	
+	p_rt->second = second;
+	p_rt->minute = minute;
+	p_rt->hour = hour;
+	p_rt->day = day;
+	p_rt->month = month;
+	p_rt->year = year;
+	
+	return TRUE;
+}
+
+I32U RTC_get_current_epoch(REALTIME_CTX *p_rt)
+{
+	I32U time_since_1970 = 0;
+	I16U value;
+	I8U i;
+	I16S time_diff_in_minute = cling.time.time_zone;
+	time_diff_in_minute *= TIMEZONE_DIFF_UNIT_IN_SECONDS;
+
+	// Detect whether there is a power-on reset
+	if (!RTC_get_current_rtc(p_rt)) {
+		return time_since_1970;
+	}
+	
+	// Accumulate epoch in year
+	time_since_1970 = EPOCH_BASE; // Epoch time at 2000/1/1 0:0:0 (Time zone: 0)
+	if (p_rt->year) {
+		for (i = 0; i < p_rt->year; i++) {
+			if (i & 0x03) {
+				time_since_1970 += 31536000;
+			} else {
+				time_since_1970 += 31622400;
+			}
+		}
+	}
+	
+	// Accumulate epoch in month
+	value = 0;
+	if (p_rt->year & 0x03) {
+		for (i = 0; i < (p_rt->month-1); i++) {
+			value += month_normal_in_days[i];
+		}
+	} else {
+		for (i = 0; i < (p_rt->month-1); i++) {
+			value += month_leap_in_days[i];
+		}
+	}
+	time_since_1970 += value * 24 * 60 * 60;
+	
+	// Accumulate epoch in days, hour, minute, second
+	time_since_1970 += (((p_rt->day-1)*24+p_rt->hour)*60+p_rt->minute)*60+p_rt->second;
+
+	// Minute the time zone offset
+	time_since_1970 -= time_diff_in_minute;
+	
+	N_SPRINTF("TIME EPOCH: %d(%d, %d, %d, %d, %d, %d)", time_since_1970, year, month, day, hour, minute, second);
+
+	return time_since_1970;
+}
+
+void RTC_set_current_epoch(I32U time_since_1970)
+{
+	I8U time_reg[8];
+	I8U integer, fractional, value;
+	
+	RTC_get_local_clock(time_since_1970, &cling.time.local);
+
+	time_reg[0] = 0x04; // Address 0x04
+	
+	// Get second
+	integer = cling.time.local.second/10;
+	fractional = cling.time.local.second - integer * 10;
+	time_reg[1] = fractional;
+	integer <<= 4;
+	time_reg[1] |= integer;
+	
+	// Get minute
+	integer = cling.time.local.minute/10;
+	fractional = cling.time.local.minute - integer * 10;
+	time_reg[2] = fractional;
+	integer <<= 4;
+	time_reg[2] |= integer;
+	
+	// Get hour
+	integer = cling.time.local.hour/10;
+	fractional = cling.time.local.hour - integer * 10;
+	time_reg[3] = fractional;
+	integer <<= 4;
+	time_reg[3] |= integer;
+	
+	// Get day
+	integer = cling.time.local.day/10;
+	fractional = cling.time.local.day - integer * 10;
+	time_reg[4] = fractional;
+	integer <<= 4;
+	time_reg[4] |= integer;
+	
+	// Get week
+	integer = cling.time.local.dow+1;
+	if (integer == 7) {
+		integer = 0;
+	}	
+	time_reg[5] = integer;
+	
+	// Get month
+	integer = cling.time.local.month/10;
+	fractional = cling.time.local.month - integer * 10;
+	time_reg[6] = fractional;
+	integer <<= 4;
+	time_reg[6] |= integer;
+	
+	// Get year
+	value = cling.time.local.year%100;
+	integer = value / 10;
+	fractional = value - integer * 10;
+	time_reg[7] = fractional;
+	integer <<= 4;
+	time_reg[7] |= integer;
+	
+	RTC_write_reg(time_reg, 8);
+
+	Y_SPRINTF("RTC WRITE: %02x, %02x, %02x, %02x, %02x, %02x, %02x", 
+	time_reg[7], time_reg[6], time_reg[5], time_reg[4], time_reg[3], time_reg[2], time_reg[1]);
+
+}
+#endif
+
 void OPERATION_timer_handler( void * p_context )
 {
     N_SPRINTF("[RTC] OPERATION 50ms timer handler func");
@@ -57,12 +360,18 @@ void RTC_timer_handler( void * p_context )
 	// update radio duty cycling
 	cling.time.system_clock_in_sec += tick_in_s;
 	cling.time.time_since_1970 += tick_in_s;
-	if (cling.batt.state_switching_duration < 128)
+	
+	// Set to 3 minutes duraton of screen lock
+	if (cling.batt.state_switching_duration < 180) {
 		cling.batt.state_switching_duration += tick_in_s;
+	} else {
+		cling.batt.b_toggle_lock = FALSE;
+	}
+	
 	if (cling.batt.shut_down_time < BATTERY_SYSTEM_UNAUTH_POWER_DOWN) {
 		cling.batt.shut_down_time += tick_in_s;
 	}
-	
+#ifdef _ENABLE_TOUCH_
 	// Accumulate skin touch time
 	if (TOUCH_is_skin_touched()) {
 		if (cling.touch.skin_touch_time_per_minute < 60) {
@@ -70,6 +379,7 @@ void RTC_timer_handler( void * p_context )
 			N_SPRINTF("[RTC] skint touch time per min: %d", cling.touch.skin_touch_time_per_minute);
 		}
 	}	
+#endif
 #ifdef USING_VIRTUAL_ACTIVITY_SIM
 	 if (OTA_if_enabled()) {
 		 cling.ota.percent ++;
@@ -82,12 +392,6 @@ void RTC_timer_handler( void * p_context )
 	// Indicates a second-based RTC interrupt
 	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 	 
-	// see if a second is hit
-#ifdef _ENABLE_UART_
-	if (tick_in_s) {
-		N_SPRINTF("[RTC] second is hit");
-	}
-#endif
 	// Check if we have minute passed by, or 
 	if (cling.time.local.minute != cling.time.local_minute) {
 		cling.time.local_minute_updated = TRUE;
@@ -100,12 +404,24 @@ void RTC_timer_handler( void * p_context )
     {
 			cling.user_data.idle_minutes_countdown --;
 		}
-		N_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
-		
+		Y_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
+
+#if 0		
 		tick_diff = CLK_get_system_time() - cling.ui.touch_time_stamp;
 		
 		if (tick_diff > 300000) {
 			UI_reset_index();
+		}
+#endif
+		
+		// Once a minute, refresh reminder
+		REMINDER_set_sleep_reminder();
+
+		// Once a minute, send a workout active message to App
+		if (BTLE_is_connected()) {
+			if (cling.activity.b_workout_active) {
+				CP_create_workout_run_msg();
+			}
 		}
 	}	
 	
@@ -115,7 +431,7 @@ void RTC_timer_handler( void * p_context )
 		
 		// Reset reminder
 		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-
+		
 		Y_SPRINTF("[RTC] local day updated");
 	}
 
@@ -242,9 +558,6 @@ void RTC_get_local_clock(I32U epoch_start, SYSTIME_CTX *local)
     RTC_get_regular_time(epoch, local);
 
 }
-
-I8U const month_leap_in_days[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-I8U const month_normal_in_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 void RTC_get_regular_time(I32U epoch, SYSTIME_CTX *t)
 {

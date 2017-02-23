@@ -28,6 +28,7 @@ static void _sync_time_proc(I8U *data)
     cling.time.time_zone = data[0];
 
     cling.time.time_since_1970 = data[1];
+
     cling.time.time_since_1970 <<= 8;
     cling.time.time_since_1970 |= data[2];
     cling.time.time_since_1970 <<= 8;
@@ -35,8 +36,11 @@ static void _sync_time_proc(I8U *data)
     cling.time.time_since_1970 <<= 8;
     cling.time.time_since_1970 |= data[4];
 
-
-    RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
+		RTC_set_current_epoch(cling.time.time_since_1970);
+#else
+    RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);	
+#endif
 
     // Reset minute streaming amount;
     BTLE_reset_streaming();
@@ -44,7 +48,11 @@ static void _sync_time_proc(I8U *data)
 		// Reset alarm
 		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
 	
+		if (previous_time_zone == cling.time.time_zone)
+			return;
+			
 		// Make sure the minute file has correct offset	
+		// Update running statistics as well
 #ifdef _ENABLE_UART_
 		{
 			I32U minute_flash_offset;
@@ -57,14 +65,12 @@ static void _sync_time_proc(I8U *data)
 		TRACKING_get_daily_total(&stored_day_total);
 #endif
 		
-		if (previous_time_zone == cling.time.time_zone)
-			return;
-			
 		// Update stored total
 		cling.activity.day.walking = stored_day_total.walking;
 		cling.activity.day.running = stored_day_total.running;
 		cling.activity.day.distance = stored_day_total.distance;
 		cling.activity.day.calories = stored_day_total.calories;
+		cling.activity.day.active_time = stored_day_total.active_time;
 	
 		cling.activity.day_stored.walking = stored_day_total.walking;
 		cling.activity.day_stored.running = stored_day_total.running;
@@ -288,7 +294,7 @@ static void _create_dev_info_msg()
     if (file_available < 0)
         file_available = 0;
 
-    Y_SPRINTF("[CP] @@@@ file available: %d, mem: %d", file_available, free);
+    N_SPRINTF("[CP] @@@@ file available: %d, mem: %d", file_available, free);
 
     // Creat a new message
     t->msg_id ++;
@@ -402,6 +408,7 @@ static void _create_dev_info_msg()
     t->msg[t->msg_filling_offset++] = '2';
     t->msg[t->msg_filling_offset++] = '3';
 #endif
+
 #ifdef _CLINGBAND_UV_MODEL_
     // Add model number (Clingband UV fixed model number: AU0703)
     t->msg[t->msg_filling_offset++] = 'A';
@@ -409,6 +416,28 @@ static void _create_dev_info_msg()
     t->msg[t->msg_filling_offset++] = '0';
     t->msg[t->msg_filling_offset++] = '7';
     t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '3';
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_
+    // Add model number (Clingband NFC fixed model number: AU0923)
+		// Created on August, 31, 2016
+    t->msg[t->msg_filling_offset++] = 'A';
+    t->msg[t->msg_filling_offset++] = 'P';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '8';
+    t->msg[t->msg_filling_offset++] = '3';
+    t->msg[t->msg_filling_offset++] = '1';
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+    // Add model number (Clingband 2 Pay fixed model number: AI0913)
+		// Created on Semptem 13, 2016
+    t->msg[t->msg_filling_offset++] = 'A';
+    t->msg[t->msg_filling_offset++] = 'I';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '9';
+    t->msg[t->msg_filling_offset++] = '1';
     t->msg[t->msg_filling_offset++] = '3';
 #endif
 
@@ -813,7 +842,7 @@ static void _pending_process()
 
     switch (p->task_id) {
         case CP_MSG_TYPE_REGISTER_WRITE: {
-            Y_SPRINTF("[CP] write reg");
+            N_SPRINTF("[CP] write reg");
             _proc_pending_ctrl_wr();
             break;
         }
@@ -934,11 +963,12 @@ static void _pending_process()
         case CP_MSG_TYPE_SET_LANGUAGE: {
             Y_SPRINTF("[CP] SET LANGUAGE");
             // Display fonts type.
-            cling.ui.fonts_type = p->msg[1];
+            cling.ui.language_type = p->msg[1];
             break;
         }
         case CP_MSG_TYPE_SET_USER_PROFILE: {
-						USER_device_specifics_setup(p->msg + 1, TRUE, cling.user_data.profile_len -1);
+            Y_SPRINTF("[CP] SET PROFILE");
+						USER_device_specifics_setup(p->msg+1, TRUE, FALSE);
             break;
         }
         case CP_MSG_TYPE_ANDROID_NOTIFY: {
@@ -949,11 +979,7 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_DEVICE_SETTING: {
-            USER_setup_device(p->msg + 1, cling.user_data.setting_len - 1);
-#ifndef _USE_HW_MOTION_DETECTION_
-            // Configure accelerometer with the latest change
-            LIS3DH_normal_FIFO();
-#endif
+						USER_device_specifics_setup(p->msg+1, FALSE, TRUE);
             break;
         }
         default:
@@ -962,6 +988,7 @@ static void _pending_process()
 #endif
     p->b_touched = FALSE; // Indicate that we have something pending
     N_SPRINTF("[CP] set b_touched to FALSE");
+
 }
 
 static void _filling_msg_tx_buf()
@@ -1237,6 +1264,39 @@ void CP_create_sos_msg()
 
 }
 
+void CP_create_workout_run_msg()
+{
+    CP_CTX *g = &cling.gcp;
+    CP_TX_CTX *t = &g->tx;
+
+    // Creat a new message
+    t->msg_id ++;
+
+    // Get message length
+    t->msg_len = CP_PAYLOAD_SIZE;
+
+    // Single packet messagef
+    t->pkt.uuid[0] = (UUID_TX_SP >> 8) & 0xff;
+    t->pkt.uuid[1] = UUID_TX_SP & 0xff;
+
+    // Filling up the message buffer
+    t->msg_filling_offset = 0;
+    t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_WORKOUT_RUN_MESSAGE;
+    t->msg[t->msg_filling_offset++] = (cling.run_stat.session_id>>24)&0x0ff;
+    t->msg[t->msg_filling_offset++] = (cling.run_stat.session_id>>16)&0x0ff;
+    t->msg[t->msg_filling_offset++] = (cling.run_stat.session_id>>8)&0x0ff;
+    t->msg[t->msg_filling_offset++] = cling.run_stat.session_id&0x0ff;
+    t->msg[t->msg_filling_offset++] = WORKOUT_RUN_OUTDOOR;
+
+    // Create packet payload
+    // Pending message delivery
+    t->msg_type = CP_MSG_TYPE_WORKOUT_RUN_MESSAGE;
+    t->state = CP_TX_PACKET_PENDING_SEND;
+    g->state = CP_MCU_STAT_TX_COMPLETE;
+
+    memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
+}
+
 void CP_create_phone_finder_msg()
 {
     CP_CTX *g = &cling.gcp;
@@ -1305,6 +1365,7 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
     // Filling up the single packet message
     SYSTIME_CTX local;
     I8U filling_offset = 0;
+		I16U denormalized_distance;
     I32U pkt_index = cling.ble.streaming_minute_file_index;
 
     pkt_index <<= 8; // Each file contains 256 entries;
@@ -1376,8 +1437,19 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
     pkt[filling_offset++] = pminute->calories;
 
     // distance (1B)
-    pkt[filling_offset++] = pminute->distance;
-
+		// If App support distance normalization, send normalized distance to the App
+		// If not, denormalize distance before sending it over
+		if (cling.user_data.profile.app_setting & APP_DISTANCE_NORMALIZATION) {
+			pkt[filling_offset++] = pminute->distance;
+		} else {
+			denormalized_distance = pminute->distance;
+			denormalized_distance <<= 1;
+			if (denormalized_distance >255)
+				pkt[filling_offset++] = 255;
+			else
+				pkt[filling_offset++] = denormalized_distance;
+		}
+		
     // sleep seconds (1B)
     pkt[filling_offset++] = pminute->sleep_state;
 
@@ -1755,8 +1827,13 @@ void CP_create_streaming_daily_msg( void )
     pkt[filling_offset++] = (steps & 0xff);
 
     // skin temperature (2B)
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)		
     pkt[filling_offset++] = (cling.therm.current_temperature >> 8) & 0xff;
     pkt[filling_offset++] = (cling.therm.current_temperature & 0xff);
+#else 
+    pkt[filling_offset++] = 0;
+    pkt[filling_offset++] = 0;
+#endif
 
     // Calories (2B)
     calories = cling.activity.day.calories >> 4;
@@ -1771,8 +1848,13 @@ void CP_create_streaming_daily_msg( void )
     // heart rate (1B)
     pkt[filling_offset++] = cling.hr.current_rate;
 
+#ifdef _ENABLE_TOUCH_
     // skin touch (1B)
     pkt[filling_offset++] = TOUCH_is_skin_touched();
+#else 
+   pkt[filling_offset++] = 0;
+#endif
+
 #ifdef _CLINGBAND_UV_MODEL_
     // UV index
     pkt[filling_offset++] = (cling.uv.max_uv + 5) / 10;
@@ -1883,10 +1965,6 @@ void _store_rx_msg(CP_RX_CTX *r, I8U *data, I32U pos)
             cling.user_data.setting_len = r->msg_len;
             N_SPRINTF("DEVICE SETTING: %d", cling.user_data.setting_len);
         }
-				if (p->task_id == CP_MSG_TYPE_SET_USER_PROFILE) {
-					cling.user_data.profile_len = r->msg_len;
-				}
-				
         p->pending_len = offset;
 
         memcpy(p->msg, r->msg, FAT_SECTOR_SIZE);

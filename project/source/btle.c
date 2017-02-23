@@ -326,7 +326,7 @@ static void _on_write(ble_evt_t * p_ble_evt)
 void BTLE_execute_adv(BOOLEAN b_fast)
 {
 	BLE_CTX *r = &cling.ble;
-	
+#if 0
 	if (!BATT_is_charging()) {
 		if (BATT_is_low_battery() && LINK_is_authorized()) {
 				Y_SPRINTF("[BTLE] BLE low power");
@@ -334,7 +334,7 @@ void BTLE_execute_adv(BOOLEAN b_fast)
 				return;
 		}
 	}
-	
+#endif
 	if (!cling.system.b_powered_up)
 		return;
 	
@@ -385,11 +385,12 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
 			if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISING)
 			{ 
 				if (r->btle_State == BTLE_STATE_ADVERTISING) {
-					if (r->adv_mode == BLE_ADV_SLEEP) {
+					if ((r->adv_mode == BLE_ADV_SLEEP) || (!cling.system.b_powered_up)) {
 						r->btle_State = BTLE_STATE_IDLE;
+						Y_SPRINTF("[BTLE] Advertising timeout, go idle");
 					} else {
 						BTLE_execute_adv(FALSE);
-						Y_SPRINTF("[BTLE] Advertising timeout ");
+						Y_SPRINTF("[BTLE] Advertising timeout, repeat advertising");
 					}
 				} 
 			}
@@ -663,9 +664,12 @@ static void _disconnect_clean_up()
 	// Factory reset
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FACTORY_RESET) {
 		Y_SPRINTF("[BTLE] disconn event: factory reset");
-		
-		// Clear bond information
-		HAL_device_manager_init(TRUE);		
+
+    // Have to conflict with Music control.		
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_PACE_MODEL_)			
+	  // Clear bond information
+	  HAL_device_manager_init(TRUE);		
+#endif
 		
 		// De-authorize
 		LINK_deauthorize();

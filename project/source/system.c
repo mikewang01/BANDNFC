@@ -100,12 +100,20 @@ I8U SYSTEM_get_ble_device_name(I8U *device_name)
 	I8U len;
 	SYSTEM_get_dev_id(dev_id);
 	
+#ifdef _CLINGBAND_PACE_MODEL_
+	len = sprintf((char *)device_name, "PBAND ");
+#endif
+
 #ifdef _CLINGBAND_NFC_MODEL_
 	len = sprintf((char *)device_name, "NBAND ");
 #endif
 	
 #ifdef _CLINGBAND_UV_MODEL_
 	len = sprintf((char *)device_name, "CBAND ");
+#endif
+	
+#ifdef _CLINGBAND_2_PAY_MODEL_ 
+	len = sprintf((char *)device_name, "MBAND "); // Mobile payment
 #endif
 	
 	device_name[len++] = dev_id[16];
@@ -132,6 +140,7 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 	twentyCharDevID[0] = 'H'; // Hi
 	twentyCharDevID[1] = 'I'; // Hi
 	twentyCharDevID[2] = 'C'; // Cling
+	
 #ifdef _CLINGBAND_NFC_MODEL_
 	twentyCharDevID[3] = 'N'; // NFC Band
 #endif
@@ -139,7 +148,15 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 #ifdef _CLINGBAND_UV_MODEL_
 	twentyCharDevID[3] = 'B'; // UV Band
 #endif
-	
+
+#ifdef _CLINGBAND_PACE_MODEL_
+	twentyCharDevID[3] = 'P'; // Pace Band
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+	twentyCharDevID[3] = 'M'; // M Band (mobile payment)
+#endif
+
 	for (i = 0; i < 8; i++) {
 		v8 = (dev_data[i]>>4)&0x0f;
 		v8 += (v8>9)? 'A' - 0x0a : '0';
@@ -150,8 +167,9 @@ void SYSTEM_get_dev_id(I8U *twentyCharDevID) {
 		twentyCharDevID[(((i)<<1)+1)+4] = v8;
 	}
 }
-#ifdef _ENABLE_ANCS_
 
+#ifndef _CLINGBAND_PACE_MODEL_
+#ifdef _ENABLE_ANCS_
 static void _notification_msg_init()
 {
 	I32U dw_buf[16];
@@ -203,19 +221,30 @@ static void _notification_msg_init()
 
 }
 #endif
+#endif
 
-static BOOLEAN _critical_info_restored()
+static void _activity_info_restored(BOOLEAN b_reset)
 {
-	// We should add system restoration for critical info
-	CLING_TIME_CTX *t = &cling.time;
 	TRACKING_CTX *a = &cling.activity;
-	I32U dw_buf[16];
-	I8U *p_byte_addr;
-	I32U offset = 0;
 	
-	// If this device is unauthorized, wipe out everything in the critical info section
-	if (!LINK_is_authorized()) {
+	if (b_reset) {
+		// Make sure the minute file has correct offset
+		a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
+		
+		Y_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
 
+		// Update stored total
+		a->day_stored.walking = a->day.walking;
+		a->day_stored.running = a->day.running;
+		a->day_stored.distance = a->day.distance;
+		a->day_stored.calories = a->day.calories;
+		Y_SPRINTF("[SYSTEM] activity: %d, %d, %d, %d", a->day.walking, a->day.running, a->day.distance, a->day.calories);
+		
+		// Get sleep seconds by noon
+		a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
+		a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
+			
+	} else {
 		// Make sure the minute file has correct offset
 		a->tracking_flash_offset = 0;
 		a->day_stored.calories = a->day.calories;
@@ -226,6 +255,22 @@ static BOOLEAN _critical_info_restored()
 		// Get sleep by noon from flash
 		a->sleep_by_noon = 0;
 		a->sleep_stored_by_noon = 0;
+		
+	}
+}
+
+static BOOLEAN _critical_info_restored()
+{
+	// We should add system restoration for critical info
+	CLING_TIME_CTX *t = &cling.time;
+	I32U dw_buf[16];
+	I8U *p_byte_addr;
+	I32U offset = 0;
+	
+	// If this device is unauthorized, wipe out everything in the critical info section
+	if (!LINK_is_authorized()) {
+		USER_default_setup();
+		
 		return FALSE;
 	}
 	
@@ -262,13 +307,18 @@ static BOOLEAN _critical_info_restored()
 	// add 30 seconds to correct bias of time when system rebooting..
 	t->time_since_1970 += 30;
 
-	// Bytes: 5 - 43: device related parameters,
-	// length: p_byte_addr[4]
-	//
-	if ((p_byte_addr[4] >= 22) && (p_byte_addr[4] <= 39)) {
-		Y_SPRINTF("[SYSTEM] critical restored device info: %d", p_byte_addr[4]);
-		USER_setup_device(p_byte_addr+5, p_byte_addr[4]);
-	}
+	// Bytes: 4 - 38: reserved
+
+	// Pm2.5
+	cling.pm2p5 = p_byte_addr[39];
+	cling.pm2p5 = (cling.pm2p5 << 8) | p_byte_addr[40];
+
+	// Running seconds
+	cling.run_stat.time_sec = p_byte_addr[41];
+	
+	// 42,43: HR skin attachment 
+	cling.hr.b_closing_to_skin = p_byte_addr[42];
+	cling.hr.current_rate = p_byte_addr[43];
 	
 	// Restore weather info
 	cling.weather[0].day = p_byte_addr[44];
@@ -279,32 +329,7 @@ static BOOLEAN _critical_info_restored()
 
 	// Restoring the time zone info
 	t->time_zone = p_byte_addr[49];
-	
-	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
 
-	// Get current local minute
-	cling.time.local_day = cling.time.local.day;
-	cling.time.local_minute = cling.time.local.minute;
-
-	// Make sure the minute file has correct offset
-	a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
-	
-	Y_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
-
-	// Update stored total
-	a->day_stored.walking = a->day.walking;
-	a->day_stored.running = a->day.running;
-	a->day_stored.distance = a->day.distance;
-	a->day_stored.calories = a->day.calories;
-	
-	// Get sleep seconds by noon
-	a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
-	a->sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
-    
-	// 50: HR skin attachment 
-	cling.hr.current_rate = p_byte_addr[43];
-	cling.hr.b_closing_to_skin = p_byte_addr[50];
-	
 	// Restoring amount of reminders
 	cling.reminder.total = p_byte_addr[51];
 #ifdef _ENABLE_ANCS_
@@ -314,8 +339,10 @@ static BOOLEAN _critical_info_restored()
 	
 	Y_SPRINTF("[SYSTEM] restored ANCS categories: %04x", cling.ancs.supported_categories);
 #endif
+#ifdef _ENABLE_TOUCH_
 	// Restore Skin touch
 	cling.touch.b_skin_touch = p_byte_addr[54];
+#endif
 
 	// 55: clock orientation.
 	cling.ui.clock_orientation = p_byte_addr[55];
@@ -334,7 +361,7 @@ static BOOLEAN _critical_info_restored()
 	cling.batt.non_charging_accumulated_steps = p_byte_addr[58];
 	Y_SPRINTF("[SYSTEM] restore charging param: %d, %d", p_byte_addr[57], p_byte_addr[58]);
 
-	cling.ui.fonts_type = p_byte_addr[59];
+	cling.ui.language_type = p_byte_addr[59];
 	cling.gcp.host_type = p_byte_addr[60];
 	
 	// Restore sleep state
@@ -405,6 +432,8 @@ static void _startup_logging()
 
 void SYSTEM_init(void)
 {
+	BOOLEAN b_valid_info;
+	
 #if 0 // Enable it if wiping off everything on the Flash
 	FLASH_erase_all(TRUE);
 #endif
@@ -453,17 +482,24 @@ void SYSTEM_init(void)
 	// Init the file system
 	FILE_init();
 
-	// Initialize user profile (name, weight, height, stride length)
-	USER_data_init();
-	
 	// Restore critical system information, rtc and others
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
-	_critical_info_restored();
+	b_valid_info = _critical_info_restored();
 	
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
+	// RTC hardware init with restored time zone info
+	RTC_hw_init();
+#endif
+	
+	// Restore activity info
+	_activity_info_restored(b_valid_info);
+
+#ifndef _CLINGBAND_PACE_MODEL_
 #ifdef _ENABLE_ANCS_
 	// Initialize smart notification messages
 	_notification_msg_init();
+#endif	
 #endif
 	
 	// Over-the-air update check
@@ -527,12 +563,22 @@ BOOLEAN SYSTEM_backup_critical()
 
 	// Reset critical buffer
 	memset(critical, 0, 64);
+
+	// Bytes: 4 - 38: reserved
 	
 	// Store time
 	cbuf[0] = t->time_since_1970;
 
-	// Backup device parameters
-	USER_store_device_param(critical+4);
+	// Pm2.5
+	critical[39] = (I8U)((cling.pm2p5>>8) & 0xFF);
+	critical[40] = (I8U)(cling.pm2p5 & 0xFF);
+
+	// Running
+	critical[41] = cling.run_stat.time_sec;
+	
+	// 42, 43: HR skin attachment
+	critical[42] = cling.hr.b_closing_to_skin;
+	critical[43] = cling.hr.current_rate;
 	
 	// Store weather info
 	critical[44] = cling.weather[0].day;
@@ -544,10 +590,6 @@ BOOLEAN SYSTEM_backup_critical()
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
 
-	// 50: HR skin attachment
-	critical[43] = cling.hr.current_rate;
-	critical[50] = cling.hr.b_closing_to_skin;
-	
 	// Store total reminders
 	critical[51] = cling.reminder.total;
 #ifdef _ENABLE_ANCS_
@@ -555,10 +597,10 @@ BOOLEAN SYSTEM_backup_critical()
 	critical[52] = (I8U)((cling.ancs.supported_categories>>8) & 0xFF);
 	critical[53] = (I8U)(cling.ancs.supported_categories & 0xFF);
 #endif
-	
+#ifdef _ENABLE_TOUCH_	
 	// Store skin touch type
 	critical[54] = cling.touch.b_skin_touch;
-
+#endif
 	// 55: Clock orientation
 	critical[55] = cling.ui.clock_orientation;
 	
@@ -572,7 +614,7 @@ BOOLEAN SYSTEM_backup_critical()
 	
 	critical[57] = cling.batt.non_charging_accumulated_active_sec;
 	critical[58] = cling.batt.non_charging_accumulated_steps;
-	critical[59] = cling.ui.fonts_type;
+	critical[59] = cling.ui.language_type;
 	N_SPRINTF("[SYSTEM] Backup charging param: %d, %d", cling.batt.non_charging_accumulated_active_sec, 
 		cling.batt.non_charging_accumulated_steps);
 
@@ -625,7 +667,7 @@ void SYSTEM_reboot()
 {
 	BLE_CTX *r = &cling.ble;
 	
-	N_SPRINTF("[SYSTEM] rebooting ...");
+	Y_SPRINTF("[SYSTEM] rebooting ...");
 	
 	if (BTLE_is_connected()) {
 		// Disconnect BLE service
@@ -637,10 +679,8 @@ void SYSTEM_reboot()
 		return;
 	}
 	
-
 	// Jumpt to reset vector
 	SYSTEM_restart_from_reset_vector();
-
 }
 
 void SYSTEM_format_disk(BOOLEAN b_erase_data)
@@ -677,7 +717,6 @@ void SYSTEM_restart_from_reset_vector()
 	sd_nvic_SystemReset();
 #endif
 }
-
 
 void SYSTEM_release_mutex(I8U value)
 {

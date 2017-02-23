@@ -12,8 +12,6 @@
 
 #define _ENABLE_ANCS_
 
-#ifndef _CLING_PC_SIMULATION_
-
 /**@brief Category IDs for iOS notifications. */
 typedef enum
 {
@@ -40,7 +38,8 @@ typedef enum
 #define ANCS_FILTERING_OLD_MSG_DELAY_TIME            10000   /*10s*/ 
 #define ANCS_DISCOVERY_FAIL_DISCONNECT_DELAY_TIME    60000   /*60s*/  
 #define ANCS_SUPPORT_MAX_TITLE_LEN                   64      /*64 byte*/
-#define ANCS_SUPPORT_MAX_MESSAGE_LEN                 192     /*192 byte*/
+#define ANCS_SUPPORT_MAX_MESSAGE_LEN                 128     /*128 byte*/
+#define ANCS_SUPPORT_MAX_MESSAGE_REALITY_LEN         126     /*126 byte*/
 #define ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT           15000   /*15s*/
 
 #define ANCS_BOND_STATE_NUKNOW_FLAG                  0x01   
@@ -119,12 +118,13 @@ typedef struct tagANCS_CONTEXT {
 void  ANCS_on_ble_evt(const ble_evt_t * p_ble_evt);
 void  ANCS_on_event_handling(ble_ancs_evt_type evt_type);
 void  ANCS_service_add(void);
-void  ANCS_nflash_store_one_message(I8U *data);
 void  ANCS_state_machine(void);
+#ifdef _CLINGBAND_PACE_MODEL_
+void  ANCS_store_one_message(I8U *data);
+#else
+void  ANCS_nflash_store_one_message(I8U *data);
 #endif
-
 #endif
-
 #endif // _ANCS_H__
 
 /** @} */

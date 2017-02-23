@@ -26,14 +26,13 @@ void TRACKING_enter_low_power_mode()
 	cling.lps.b_low_power_mode = TRUE;
 	cling.lps.ts = CLK_get_system_time();
 	cling.lps.int_count = 0;
-
+#ifdef _ENABLE_TOUCH_
 	if (UI_is_idle()) {
 		// Set Touch IC power mode accordingly
 		TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);
 	}
+#endif
 	Y_SPRINTF("[ACTIVITY] ENTER -- low power mode (stop timer) -- ");
-	
-	N_SPRINTF("[ACTIVITY] - ENTER low power - ");
 }
 
 void TRACKING_exit_low_power_mode(BOOLEAN b_force)
@@ -62,15 +61,15 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 	cling.lps.b_low_power_mode = FALSE;
 	
 	Y_SPRINTF("[ACTIVITY] EXIT -- low power mode (force: %d)-- ", b_force);
-	N_SPRINTF("[ACTIVITY] - EXIT low power - ");
-
+#ifdef _ENABLE_TOUCH_
 	// Set Touch IC power mode accordingly
 	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
-	
+#endif
 	// Turn on display if device is in a charging state
 	if (BATT_is_charging()) {
-		if (!NOTIFIC_is_user_viewing_message())
-			UI_turn_on_display(UI_STATE_CHARGING, 0);
+		if (!NOTIFIC_is_user_viewing_message()) {
+			UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+		}
 	}
 #ifndef _CLING_PC_SIMULATION_
 
@@ -81,7 +80,6 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 #ifdef _USE_HW_MOTION_DETECTION_
 	LIS3DH_normal_FIFO();
-
 #endif
 	TRACKING_initialization();
 	
@@ -126,7 +124,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 	// s = 43.89*p - 7.68
 	//
 	// where s is the stride length, and p is the pace (steps per second)
-	double pace,stride, ratio;
+	double pace,stride, ratio, ref_rate;
 	I8U i;
 	for (i = 1; i < 8; i++) {
 		steps_time_stamp[i-1] = steps_time_stamp[i];
@@ -137,37 +135,39 @@ static I8U _get_stride_length(BOOLEAN b_running)
 	if (b_running) {
 		// Running pace is calculated based on real-time steps
 		if (steps_time_stamp[0] > 0) {
+			// Average time for past 7 steps
 			pace = 7000.0;
 			pace /= (double)(steps_time_stamp[7] - steps_time_stamp[0]);
 			Y_SPRINTF("[TRACKING] running pace: %d, %d, %d", (I8U)(pace*10), steps_time_stamp[7], steps_time_stamp[0]);
 			
-			if (pace > 3.5) 
-				pace = 3.5;
+			if (pace > 3.8) 
+				pace = 3.8;
 			if (pace < 2)
 				pace = 2;
 		} else {
 			pace = 2;
 			Y_SPRINTF("[TRACKING] running fixed pace: %d", (I8U)(pace*10));
 		}
-		stride = 37.6*pace-7.68; // 2.86 steps per minute -> stride: 100 cm
-		// Get user defined stride length and perform a calibration
-
-		ratio = cling.user_data.profile.stride_running_in_cm;
+		// Get reference rate
+		ref_rate = cling.user_data.profile.running_rate;
+		ref_rate /= 60;
+		
+		stride = cling.user_data.profile.stride_running_in_cm;
 		if (cling.activity.b_workout_active) {
-			if (cling.activity.workout_place == WORKOUT_PLACE_INDOOR) {
-				ratio = cling.user_data.profile.stride_treadmill_in_cm;
+			if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
+				stride = cling.user_data.profile.stride_treadmill_in_cm;
 			} 
 		}
 				
-		ratio /= 100; // Standard 105 cm per step for running
-		if (ratio > 2)
-			ratio = 2;
-		else if (ratio < 0.5)
-			ratio = 0.5;
-		Y_SPRINTF("[TRACKING] running stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+		if (pace > ref_rate) {
+			stride += (pace-ref_rate)*37.6;
+		} else {
+			stride -= (ref_rate-pace)*37.6;
+		}
+		Y_SPRINTF("[TRACKING] running stride: %f, pace: %f", stride, pace);
 	} else {
 		// Walking pace is calculated based on the steps we took in last minute
-		pace = (double)(cling.activity.walk_per_60_second+cling.activity.run_per_60_second);
+		pace = (double)(cling.run_stat.walk_per_60_second+cling.run_stat.run_per_60_second);
 		pace /= 60.0;
 		if (pace > 3.5) 
 			pace = 3.5;
@@ -184,11 +184,11 @@ static I8U _get_stride_length(BOOLEAN b_running)
 		else if (ratio < 0.5)
 			ratio = 0.5;
 		Y_SPRINTF("[TRACKING] walking stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+		// Normalization
+		stride *= ratio;
 	}
 	
 	
-	// Normalization
-	stride *= ratio;
 	N_SPRINTF("[TRACKING] adjusted stride: %f", stride);
 
 	// Do normalization to 16 m
@@ -204,6 +204,8 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 	I16U pdm_stat;
 	I32U curr_time = CLK_get_system_time();
 	I8U act_motion;
+	I8U distance_per_step;
+//	REALTIME_CTX rt;
 	
 	// Go skip algorithms processing if device is not authorized
 	if (!LINK_is_authorized())
@@ -245,25 +247,54 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			// mileage = distance / (63360 * 100)
 			// 
 			cling.activity.day.walking ++;
-			cling.activity.day.distance += _get_stride_length(FALSE); // 0.75 meters
-			cling.activity.step_detect_ts = cling.time.system_clock_in_sec;
+			distance_per_step = _get_stride_length(FALSE); // 0.75 meters
+			cling.activity.day.distance += distance_per_step;
+			if (cling.activity.b_workout_active) {
+				cling.run_stat.last_10sec_distance += distance_per_step;
+			}
+			cling.activity.step_detect_t_sec = cling.time.system_clock_in_sec;
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
 				cling.user_data.idle_step_countdown --;
 			} else {
 				cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
-				Y_SPRINTF("[USER] reset idle alert due to walking");
+				N_SPRINTF("[USER] reset idle alert due to walking");
 			}
 		} else if (act_motion == MOTION_RUNNING) {
 			cling.activity.day.running ++;
-			cling.activity.day.distance += _get_stride_length(TRUE); // 1.41 meters
-			cling.activity.step_detect_ts = cling.time.system_clock_in_sec;
+			
+			if (cling.activity.b_workout_active) {
+		
+				if (UI_is_idle() && cling.user_data.b_running_alwayson) {
+					UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
+				}
+				// Turn on PPG
+				if (cling.hr.state == PPG_STAT_DUTY_OFF) {
+					PPG_closing_to_skin_detect_init();
+				}
+				
+				// Update running sec
+				{
+					I32U t_diff;
+					t_diff = CLK_get_system_time() - cling.train_stat.time_start_in_ms;
+					t_diff /= 1000;
+					t_diff %= 60;
+					cling.run_stat.time_sec = t_diff;
+				}
+			}
+			
+			distance_per_step = _get_stride_length(TRUE); // 1.41 meters
+			cling.activity.day.distance += distance_per_step;
+			if (cling.activity.b_workout_active) {
+				cling.run_stat.last_10sec_distance += distance_per_step;
+			}
+			cling.activity.step_detect_t_sec = cling.time.system_clock_in_sec;
 			BATT_charging_update_steps(1);
 			if (cling.user_data.idle_step_countdown > 0) {
 				cling.user_data.idle_step_countdown --;
 			} else {
 				cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
-				Y_SPRINTF("[USER] reset idle alert due to running");
+				N_SPRINTF("[USER] reset idle alert due to running");
 			}
 		}
 	}
@@ -287,12 +318,22 @@ static void _day_stat_reset()
 	cling.activity.day.running = 0;
 	cling.activity.day.calories = 0;
 	cling.activity.day.distance = 0;
+	cling.activity.day.active_time = 0;
 
 	// Reset stored activity data buffer that is used for minute-based activity calculation
 	cling.activity.day_stored.walking = 0;
 	cling.activity.day_stored.running = 0;
 	cling.activity.day_stored.distance = 0;
 	cling.activity.day_stored.calories = 0;
+	cling.activity.day_stored.active_time = 0;
+	
+	// Reset running statistics as well
+	cling.run_stat.calories = 0;
+	cling.run_stat.distance = 0;
+	cling.run_stat.steps = 0;
+	cling.run_stat.time_min = 0;
+	cling.run_stat.time_sec = 0;
+	cling.run_stat.accu_heart_rate = 0;
 }
 
 void TRACKING_total_data_load_file()
@@ -330,7 +371,7 @@ static void _minute_data_flush_file(I32U flash_offset)
 	FLASH_Read_App(pos, pbuf, 16);
 	
 	if (pminute->epoch == 0xffffffff) {
-		Y_SPRINTF("[TRACKING] empty sector, no need to erase");
+		N_SPRINTF("[TRACKING] empty sector, no need to erase");
 		return;
 	}
 	// If the space is used, check if there is any valid entry
@@ -385,7 +426,7 @@ static void _minute_data_flush_file(I32U flash_offset)
 		FILE_fclose(f.fc);
 	}
 	
-	Y_SPRINTF("[TRACKING] file %s generated, erasing at %d", name_buf, flash_offset);
+	N_SPRINTF("[TRACKING] file %s generated, erasing at %d", name_buf, flash_offset);
 
 	// Finally, we should erase this block
 	FLASH_erase_App(flash_offset);
@@ -395,19 +436,19 @@ static I8U _get_calories_per_minute(I8U type)
 {
 	I8U cal_per_minute;
 	switch (type) {
-		case WORKOUT_WALK:
+		case WORKOUT_TREADMILL_INDOOR:
 			cal_per_minute = 108;
 			break;
-		case WORKOUT_RUN:
+		case WORKOUT_RUN_OUTDOOR:
 			cal_per_minute = 208;
 			break;
-		case WORKOUT_CYCLING:
+		case WORKOUT_CYCLING_INDOOR:
 			cal_per_minute = 158;
 			break;
-		case WORKOUT_ELLIPTICAL:
+		case WORKOUT_ELLIPTICAL_INDOOR:
 			cal_per_minute = 118;
 			break;
-		case WORKOUT_STAIRS:
+		case WORKOUT_STAIRS_INDOOR:
 			cal_per_minute = 121;
 			break;
 		case WORKOUT_AEROBIC:
@@ -468,8 +509,16 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		// Update the activity minute granularity
 		diff->walking = a->day.walking - a->day_stored.walking;
 		diff->running = a->day.running - a->day_stored.running;
-		diff->distance = (a->day.distance - a->day_stored.distance) >> 4; // meters, normalized by 16
+		// in 2 meters, normalized by 32
+		// Theoretical maximum distance in 1 minute is 255*2 = 510 meters
+		// Pace is about 1'57"
+		//
+		diff->distance = (a->day.distance - a->day_stored.distance) >> 5; 
 		diff->sleep_state = cling.sleep.state;
+		
+		if ((diff->walking+diff->running) >= 40) {
+			a->day.active_time++;
+		}
 
 		N_SPRINTF("[tracking] diff: %d, %d, %d", diff->walking, a->day.walking, a->day_stored.walking);
 
@@ -497,7 +546,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 					calories_diff = 58;
 				} else {
 					calories_diff = 33;
-					
 				}
 			} else {
 				calories_diff = _get_calories_per_minute(cling.activity.workout_type);
@@ -528,33 +576,33 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 
 static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 {
-	I32U t_curr;
+	I32U t_curr_sec;
 	
-	t_curr = cling.time.system_clock_in_sec - cling.activity.step_detect_ts;
+	t_curr_sec = cling.time.system_clock_in_sec - cling.activity.step_detect_t_sec;
 
 		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
 		
-		vital->skin_temperature = cling.therm.current_temperature;
+		vital->skin_temperature = 0;
 		vital->skin_touch_pads = 1;
+
+	if (!cling.hr.b_closing_to_skin) {
+		// if sensor is detached from skin, set both vital signals to 0
+			vital->heart_rate = 0;
+			vital->skin_temperature = 0;
+			return;
+	} 
 	
-		if (!cling.hr.b_closing_to_skin) {
-			// if sensor is detached from skin, set both vital signals to 0
-				vital->heart_rate = 0;
-				vital->skin_temperature = 0;
-				return;
-		} 
-		
-		vital->heart_rate = cling.hr.current_rate;
-		
-		if (t_curr > 300) {
-			// If no steps for over 5 minutes (300 seconds), filter out the heart rate that is greater than 95
-			if (vital->heart_rate >= 95) {
-				vital->heart_rate = 95 - (cling.hr.current_rate >> 3);
+	vital->heart_rate = cling.hr.current_rate;
+	
+	if (t_curr_sec > 300) {
+		// If no steps for over 5 minutes (300 seconds), filter out the heart rate that is greater than 95
+		if (vital->heart_rate >= 95) {
+			vital->heart_rate = 95 - (cling.hr.current_rate >> 3);
 
-				N_SPRINTF("[TRACKING] heart rate: %d, original: %d", vital->heart_rate, cling.hr.current_rate);
+			N_SPRINTF("[TRACKING] heart rate: %d, original: %d", vital->heart_rate, cling.hr.current_rate);
 
-			}
 		}
+	}
 }
 
 void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_TRACKING_CTX *diff)
@@ -576,7 +624,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->walking = diff->walking;
 	pminute->running = diff->running;
 	pminute->calories = diff->calories;
-	pminute->distance = diff->distance;
+	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m)
 	pminute->sleep_state = diff->sleep_state;
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
@@ -668,23 +716,123 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 		pminute->uv_and_activity_type);
 }
 
-static void _update_minute_base(MINUTE_DELTA_TRACKING_CTX *diff)
+/*----------------------------------------------------------------------------------
+*  Function:	_check_training_pace_and_hr_alert(I16U minute_distance)
+*
+*  Description: Check pace and hate rate when user in running mode.
+*
+*----------------------------------------------------------------------------------*/
+void _check_training_pace_and_hr_alert(I16U minute_distance)
+{
+	UI_ANIMATION_CTX *u = &cling.ui;	
+	I16U pace_range_up = 0;
+	I8U hr_range_down = 0;
+	BOOLEAN b_pace_range_alert = FALSE;
+	BOOLEAN b_hr_range_alert = FALSE;
+	I32U input_pace_min, hr, hr_perc;
+	
+  if (!cling.activity.b_workout_active)
+		return;
+	
+	if (cling.user_data.profile.training_alert & 0x80) {
+		if (minute_distance) {
+			// Get Pace in minute
+			input_pace_min = 100000;
+			input_pace_min /= minute_distance;
+			input_pace_min /= 100;
+		} else {
+			input_pace_min = 0;
+		}
+
+	  pace_range_up = (cling.user_data.profile.training_alert & 0x7f);
+
+		if (input_pace_min > 2)
+			b_pace_range_alert = TRUE;
+		else
+			b_pace_range_alert = FALSE;
+	} else {
+		hr = PPG_minute_hr_calibrate();
+
+		hr_perc = (hr * 100);
+		hr_perc /= (220-cling.user_data.profile.age);	
+		if (hr_perc > 98)
+			hr_perc = 98;
+		
+	  hr_range_down = cling.user_data.profile.max_hr_alert;
+    b_hr_range_alert = TRUE;
+	}	
+
+	if (b_pace_range_alert) {
+		if (input_pace_min < pace_range_up) {
+			if (!u->b_training_alert) {
+				u->b_training_alert = TRUE;
+				NOTIFIC_start_training_pace_alert();					
+			}
+		} else {
+			u->b_training_alert = FALSE;
+		}
+  } 
+	
+	if (b_hr_range_alert) {
+		if (hr_perc >= hr_range_down) {
+			if (!u->b_training_alert) {
+				u->b_training_alert = TRUE;
+	      NOTIFIC_start_training_hr_alert();				
+			}
+		} else {
+			u->b_training_alert = FALSE;
+		}		
+	}
+}
+
+void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 {
 	TRACKING_CTX *a = &cling.activity;
 	I32U denormalized_stat;
+	I16U denormalized_distance;
+	RUNNING_TRACK_CTX *r = &cling.run_stat;
+	TRAINING_TRACK_CTX *t = &cling.train_stat;
 
 	// Update stored total
-	a->day_stored.walking += diff->walking;
-	a->day_stored.running += diff->running;
-	denormalized_stat = diff->distance;
-	denormalized_stat <<= 4;
+	a->day_stored.walking += minute->walking;
+	a->day_stored.running += minute->running;
+	denormalized_stat = minute->distance;
+	denormalized_stat <<= 5;
 	a->day_stored.distance += denormalized_stat;
-	denormalized_stat = diff->calories;
+	denormalized_stat = minute->calories;
 	denormalized_stat <<= 4;
 	a->day_stored.calories += denormalized_stat;
+
+	// Distance in meter
+	denormalized_distance = minute->distance;
+	denormalized_distance <<= 1;
+	
+	// Update running statistics
+	if (cling.activity.b_workout_active) {
+		// Update training stats
+		t->distance += denormalized_distance;
+			
+		if (minute->running > 99) {
+			r->time_min ++;
+			r->accu_heart_rate += minute->heart_rate;
+			r->time_sec = 0;
+			r->calories += minute->calories;
+			r->steps += minute->walking + minute->running;
+			r->distance += denormalized_distance;
+			// Turn on PPG
+			if (cling.hr.state == PPG_STAT_DUTY_OFF) {
+				PPG_closing_to_skin_detect_init();
+			}
+		}
+	}
+	
 	// Update speed
-	a->walk_per_60_second = diff->walking;
-	a->run_per_60_second = diff->running;
+	r->walk_per_60_second = minute->walking;
+	r->run_per_60_second = minute->running;
+	r->last_minute_distance = denormalized_distance;;
+	
+	// If pace is falling ... start alerting
+	_check_training_pace_and_hr_alert(r->last_minute_distance);
 }
 
 static void _logging_per_minute()
@@ -700,7 +848,7 @@ static void _logging_per_minute()
 
 	// Update the activity minute granularity
 	TRACKING_get_whole_minute_delta(&minute, &diff);
-	
+
 	max_heart_rate = 165;
 	if (cling.user_data.profile.age > 18) {
 		if (cling.user_data.profile.sex == SEX_MALE) {
@@ -715,12 +863,12 @@ static void _logging_per_minute()
 	}
 
 	// alert user if heart rate is approaching the limit
-	if ((minute.heart_rate > max_heart_rate) && (diff.running > 172)) {
+	if ((minute.heart_rate > max_heart_rate) && (diff.running > 172) && !cling.ui.display_layer) {
 		if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 			cling.hr.b_closing_to_skin = TRUE;
 			cling.hr.heart_rate_ready = TRUE;
-			Y_SPRINTF("[TRACKING] HR alerting ...");
+			N_SPRINTF("[TRACKING] HR alerting ...");
 			NOTIFIC_start_HR_alert();
 		}
 	}
@@ -738,13 +886,13 @@ static void _logging_per_minute()
 	SLEEP_minute_proc();
 	
 	N_SPRINTF("[LOGGING2] %08x %08x %08x %08x", tracking_minute[0], tracking_minute[1], tracking_minute[2], tracking_minute[3]);
-	Y_SPRINTF("-- logging ---: %d, %d", a->tracking_flash_offset, minute.epoch);
+	N_SPRINTF("-- logging ---: %d, %d", a->tracking_flash_offset, minute.epoch);
 
 	minute.epoch |= 0x80000000;  // Set un-read flag
 	memcpy(tracking_minute, &minute, 16);
 
 	// Update the differential of activities
-	_update_minute_base(&diff);
+	_update_minute_base(&minute);
 
 	// Put it into NOR scrach pad
 	FLASH_Write_App(a->tracking_flash_offset + SYSTEM_TRACKING_SPACE_START, (I8U *)tracking_minute, 16);
@@ -757,13 +905,13 @@ static void _logging_per_minute()
 		a->b_pending_erase = TRUE;
 		a->flash_block_1st_to_erase = a->tracking_flash_offset;
 		a->flash_block_2nd_to_erase = a->tracking_flash_offset + FLASH_ERASE_BLK_SIZE;
-		Y_SPRINTF("[TRACKING] need to erase next block - %d", a->tracking_flash_offset);
+		N_SPRINTF("[TRACKING] need to erase next block - %d", a->tracking_flash_offset);
 	}
 
 	// Make sure next storing block does not go beyond boundary
 	if (a->tracking_flash_offset >= SYSTEM_TRACKING_SPACE_SIZE) {
 		a->tracking_flash_offset = 0;
-		Y_SPRINTF("-- tracking offset (wrapped around) ---: %d", a->tracking_flash_offset);
+		N_SPRINTF("-- tracking offset (wrapped around) ---: %d", a->tracking_flash_offset);
 	}
 	if (a->flash_block_1st_to_erase >= SYSTEM_TRACKING_SPACE_SIZE) {
 		a->flash_block_1st_to_erase = 0;
@@ -791,7 +939,7 @@ static void _logging_per_minute()
 		a->b_pending_erase = FALSE;
 	
 		SYSTEM_release_mutex(MUTEX_MCU_LOCK_VALUE);
-		Y_SPRINTF("[TRACKING] Erase two blocks: %d, %d", a->flash_block_1st_to_erase, a->flash_block_2nd_to_erase);
+		N_SPRINTF("[TRACKING] Erase two blocks: %d, %d", a->flash_block_1st_to_erase, a->flash_block_2nd_to_erase);
 	}
 
 }
@@ -805,7 +953,7 @@ static void _logging_midnight_local()
 	I16U pos=0;
 	SYSTIME_CTX previous_day;
 
-	N_SPRINTF("[ACTIVITY] midnight local flush");
+	N_SPRINTF("[ACTIVITY] !!!! midnight local flush !!!!");
 
 	RTC_get_delta_clock_backward(&previous_day, 1);
 	
@@ -821,6 +969,7 @@ static void _logging_midnight_local()
 	dw_buf[2] = cling.activity.day_stored.walking+cling.activity.day_stored.running;
 	dw_buf[3] = cling.activity.day_stored.distance>>4;
 	dw_buf[4] = cling.activity.day_stored.calories>>4;
+	dw_buf[5] = cling.activity.day_stored.active_time;
 
 	// Put it into DAYSTAT space
 	pbuf = (I8U *)buf2;
@@ -870,13 +1019,77 @@ static void _logging_midnight_local()
 	_day_stat_reset();	
 }
 
+static void _update_running_pace()
+{
+	I32U t_curr, t_diff, min, sec;
+//	I32U t_backup;
+	I32U pace, sum_d, sum_t;
+	I16U d, t;
+	I8U i;
+	
+	t_curr = CLK_get_system_time();
+	t_diff = t_curr - cling.run_stat.pace_calc_ts;
+	
+	// Calculate pace on a basis of 10 seconds
+	if (t_diff < 10000)
+		return;
+	
+	// Take the average as a low pass filter
+	if (cling.run_stat.pace_buf_idx >= PACE_BUF_LENGTH) {
+		cling.run_stat.pace_buf_idx = 0;
+	}
+	if (cling.run_stat.last_10sec_distance) {
+		cling.run_stat.last_d_buf[cling.run_stat.pace_buf_idx] = cling.run_stat.last_10sec_distance>>4;
+		cling.run_stat.last_t_buf[cling.run_stat.pace_buf_idx] = t_diff;
+	} else {
+		cling.run_stat.last_d_buf[cling.run_stat.pace_buf_idx] = 0xffff;
+		cling.run_stat.last_t_buf[cling.run_stat.pace_buf_idx] = 0xffff;
+	}
+	cling.run_stat.pace_buf_idx ++;
+	sum_d = 0;
+	sum_t = 0;
+	for (i = 0; i < PACE_BUF_LENGTH; i++) {
+		d = cling.run_stat.last_d_buf[i];
+		t = cling.run_stat.last_t_buf[i];
+		if (d && t) {
+			if ((d != 0xffff) && (t != 0xffff)) {
+				sum_d += d;
+				sum_t += t;
+			}
+		}
+	}
+	
+	pace = sum_t * 100;
+	pace /= 60;
+	pace /= sum_d;
+	
+	min = pace / 100;
+	sec = pace - min * 100;
+	sec *= 60;
+	sec /= 100;
+	
+	// The slowest pace is 24'00"
+	if (min >= 24) {
+		min = 0;
+		sec = 0;
+	}
+	
+	cling.run_stat.last_10sec_pace_min = min;
+	cling.run_stat.last_10sec_pace_sec = sec;
+	
+	Y_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_distance);
+	
+	cling.run_stat.pace_calc_ts = t_curr;
+	cling.run_stat.last_10sec_distance = 0;
+}
+
 void TRACKING_data_logging()
 {
 	// Activity update only for a device that is authenticated
 	if (!LINK_is_authorized()) {
-                cling.time.local_minute_updated = FALSE;
-                cling.time.local_day_updated = FALSE;
-                cling.time.local_noon_updated = FALSE;
+		cling.time.local_minute_updated = FALSE;
+		cling.time.local_day_updated = FALSE;
+		cling.time.local_noon_updated = FALSE;
 		return;
 	}
 	
@@ -904,6 +1117,11 @@ void TRACKING_data_logging()
 
 		// Remove sleep initialization as it interrupt sleep
 //		SLEEP_init();
+	}
+	
+	if (cling.activity.b_workout_active) 
+	{
+		_update_running_pace();
 	}
 }
 
@@ -983,6 +1201,8 @@ void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 			case TRACKING_DISTANCE:
 				*value = (t->day.distance >> 4);
 				break;
+			case TRACKING_ACTIVE_TIME:
+				*value = t->day.active_time;
 			default:
 				break;
 		}
@@ -1031,6 +1251,10 @@ void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 					break;
 				case TRACKING_DISTANCE:
 					*value = buf[3];
+					N_SPRINTF("[TRACKING] %x, %x,%x, %x,", pbuf[12], pbuf[13], pbuf[14], pbuf[16]);
+					break;
+				case TRACKING_ACTIVE_TIME:
+					*value = buf[5];
 					N_SPRINTF("[TRACKING] %x, %x,%x, %x,", pbuf[12], pbuf[13], pbuf[14], pbuf[16]);
 					break;
 				default:
@@ -1123,6 +1347,7 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 	I32U epoch_start = RTC_get_epoch_day_start(0);
 	I32U offset = 0;
 	I32U dw_buf[4];
+	I16U denormalized_distance;
 	BOOLEAN b_init_offset = FALSE;
 	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
 	I8U *pbuf = (I8U *)dw_buf;
@@ -1170,7 +1395,9 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 			day_streaming->steps += steps_in_a_minute;
 			
 			// 2. Accumulating distance
-			day_streaming->distance += minute->distance;
+			denormalized_distance = minute->distance;
+			denormalized_distance <<= 1;
+			day_streaming->distance += denormalized_distance;
 
 			// 3. Accumulating calories (for exercise and idel)
 			if (steps_in_a_minute > 0) {
@@ -1264,12 +1491,21 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	BOOLEAN b_init_offset = FALSE;
 	MINUTE_TRACKING_CTX *minute = (MINUTE_TRACKING_CTX *)dw_buf;
 	I8U *pbuf = (I8U *)dw_buf;
+	RUNNING_TRACK_CTX *r = &cling.run_stat;
 	N_SPRINTF("[TRACKING] total epoch start: %d", epoch_start);
+	
+	// Adding running statistics
+	r->calories = 0;
+	r->distance = 0;
+	r->steps = 0;
+	r->time_min = 0;
+	r->accu_heart_rate = 0;
 
 	day_total->walking = 0;
 	day_total->running = 0;
 	day_total->calories = 0;
 	day_total->distance = 0;
+	day_total->active_time = 0;
 	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
 		FLASH_Read_App(offset + SYSTEM_TRACKING_SPACE_START, pbuf, 16);
 		
@@ -1279,7 +1515,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 				empty_offset = offset;
 				b_init_offset = TRUE;
 				
-				Y_SPRINTF("[TRACKING] get first empty offset: %d", empty_offset);
+				N_SPRINTF("[TRACKING] get first empty offset: %d", empty_offset);
 			}
 			offset += 16;
       continue;
@@ -1292,26 +1528,42 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 			// if epoch appears invalid, go look for next valid entry
 			if (minute->epoch != 0x7fffffff) {
 				
+				
 				day_total->walking += minute->walking;
 				day_total->running += minute->running;
-				day_total->distance += minute->distance;
+				day_total->distance += minute->distance;// Denormalize distance as it is in unit of 2 meters
 				day_total->calories += minute->calories;
+				if ((minute->walking+minute->running) >= 40) {
+					day_total->active_time ++;
+				}
 #if 0
 				{
 					SYSTIME_CTX local;
 
 					RTC_get_local_clock(minute->epoch, &local);
 
-					Y_SPRINTF("Activity total(%d, %d): %d, %d (%d:%d)", offset, minute->epoch, day_total->walking, day_total->running, local.hour, local.minute);
+					N_SPRINTF("Activity total(%d, %d): %d, %d (%d:%d)", offset, minute->epoch, day_total->walking, day_total->running, local.hour, local.minute);
 				}
 #endif
+				// Make sure we have activity work out type enabled
+				if (minute->uv_and_activity_type) { 
+					if (minute->running > 99) {
+						r->time_min ++;
+						r->accu_heart_rate += minute->heart_rate;
+						r->calories += minute->calories;
+						r->steps += minute->walking + minute->running;
+						r->distance += minute->distance;
+					}
+				}
 			}
 		}
 		
 	}
 
-	day_total->distance <<= 4;
+	day_total->distance <<= 5; // denormalize distance as it is in unit of 2 meters
 	day_total->calories <<= 4;
+	r->distance <<= 1; // Denormalize distance as it is in unit of 2 meters
+	
 	
 	N_SPRINTF("Totals: %d, %d, %d, %d",  day_total->walking, day_total->running, day_total->calories>>4, day_total->distance>>4);
 

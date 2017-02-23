@@ -184,6 +184,8 @@ void OLED_state_machine(void)
 #ifndef _CLING_PC_SIMULATION_
 	I32U t_curr;
 	CLING_OLED_CTX *o = &cling.oled;
+//	I8U ui_frame_index;
+	
 	#if 0
 	if (oledstate != o->state) {
 		oledstate = o->state;
@@ -239,21 +241,22 @@ void OLED_state_machine(void)
 				
 				// Reset blinking state
 				cling.ui.clock_sec_blinking = TRUE;
-				{
-					// If screen is turned, dismiss the secondary reminder vibration 
-					if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
-						cling.ui.notif_type = NOTIFICATION_TYPE_REMINDER;
-						UI_switch_state(UI_STATE_NOTIFICATIONS, 0);
-						cling.reminder.ui_hh = cling.time.local.hour;
-						cling.reminder.ui_mm = cling.time.local.minute;
-						cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
-						Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
-					}
-				
-					if (cling.notific.state != NOTIFIC_STATE_IDLE) {
-						UI_switch_state(UI_STATE_NOTIFICATIONS, 0);
-					}						
+			  cling.ui.heart_rate_sec_blinking = TRUE;
+	
+#if 0
+				// If screen is turned, dismiss the secondary reminder vibration 
+				if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
+					cling.reminder.ui_hh = cling.time.local.hour;
+					cling.reminder.ui_mm = cling.time.local.minute;
+					cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
+				  cling.ui.ui_alarm_hh = cling.reminder.ui_hh;
+				  cling.ui.ui_alarm_mm = cling.reminder.ui_mm;							
+					ui_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;
+					UI_start_notifying(ui_frame_index, NOTIFICATION_TYPE_REMINDER);
+					Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
 				}
+#endif
+			
 				o->state = OLED_STATE_ON;
 			break;
 		}

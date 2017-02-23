@@ -268,7 +268,7 @@ I8U FONT_get_string_display_depth(char *string)
 		if ((string[pos] == ' ') && (string[pos+1] == '\0')) {
 			// Remove last space (' ') character
 			break;
-		}
+		}		
 		
 		if(string[pos] == '\0')
 		  break;

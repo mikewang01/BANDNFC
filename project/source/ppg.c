@@ -213,7 +213,7 @@ static void _seek_cross_point(I16S instSample)
 					h->heart_rate_ready  = TRUE;
 					h->b_closing_to_skin = TRUE;
 					h->b_start_detect_skin_touch = FALSE;
-					h->first_hr_measurement_in_sec = cling.time.system_clock_in_sec;
+					h->first_hr_measurement_in_ms = CLK_get_system_time();
 					// The time of latest heart rate measured
   				_reset_heart_rate_calculator();
   				_calc_heart_rate();
@@ -326,10 +326,10 @@ static void _ppg_sample_proc()
 	double low_pass_filter_val  = 0.0;
 	I16S sample = 0;	
 	I16S filt_sample = 0;
-	I32U t_sec = cling.time.system_clock_in_sec;
-	I32U t_diff;
+	I32U t_curr_ms = CLK_get_system_time();
+	I32U t_ms_diff;
 	
-	t_diff = t_sec - h->m_measuring_timer_in_s;
+	t_ms_diff = t_curr_ms - h->m_duty_on_time_in_ms;
 
 	sample = _get_light_strength_register();
 
@@ -339,7 +339,7 @@ static void _ppg_sample_proc()
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
 	filt_sample = (I16S)low_pass_filter_val;
 	
-  if (t_diff> 6) {
+  if (t_ms_diff > 6000) {
 //if (TRUE) {
 		N_SPRINTF("%d  %d", filt_sample, sample);
 		N_SPRINTF("%d",      sample);
@@ -513,11 +513,12 @@ void PPG_init()
 
 BOOLEAN _is_user_viewing_heart_rate()
 {
+#if 1	
 	if (UI_is_idle()) {
 
 		if (!cling.activity.b_workout_active) {
 			if (cling.hr.heart_rate_ready) {
-			cling.hr.heart_rate_ready  = FALSE;
+				cling.hr.heart_rate_ready  = FALSE;
 			}
 		}
 		return FALSE;
@@ -528,18 +529,39 @@ BOOLEAN _is_user_viewing_heart_rate()
 	}
 
 	return TRUE;
+#endif
+
+#if 0	
+	if (cling.activity.b_workout_active)
+		return TRUE;
+
+	if (UI_is_idle()) {
+		cling.hr.heart_rate_ready  = FALSE;
+		return FALSE;
+	}	
+	
+	if (cling.ui.frame_index != UI_DISPLAY_VITAL_HEART_RATE)  {
+		cling.hr.heart_rate_ready  = FALSE;		
+		return FALSE;
+	}
+	
+	return TRUE;
+#endif	
 }
 
 void PPG_state_machine()
 {
 	HEARTRATE_CTX *h = &cling.hr;
-	I32U t_curr, t_diff, t_step_diff, t_threshold, t_sec, t_measuring_diff;
+	I32U t_step_diff_sec, t_threshold;
+	I32U t_curr_ms, t_curr_sec;
+	I32U t_ms_diff, t_sec_diff, t_measuring_ms_diff;
 	
 	if (OTA_if_enabled()) {
 		return;
 	}
 	
-	t_sec = cling.time.system_clock_in_sec;
+	t_curr_ms = CLK_get_system_time();
+	t_curr_sec = cling.time.system_clock_in_sec;
 	
 	// PPG measuring main state machine
 	switch (h->state) {
@@ -551,8 +573,9 @@ void PPG_state_machine()
 		case PPG_STAT_DUTY_ON:
 		{
 			// Update time stamp to start measuring right away
-			h->m_measuring_timer_in_s = t_sec;
-			h->first_hr_measurement_in_sec = cling.time.system_clock_in_sec;
+			h->m_measuring_timer_in_sec = t_curr_sec;
+			h->m_duty_on_time_in_ms = t_curr_ms;
+			h->first_hr_measurement_in_ms = t_curr_ms; // Assuming we don't have a HR read yet
 			h->state = PPG_STAT_SAMPLE_READY;
 			N_SPRINTF("[PPG] duty on: %d", h->m_measuring_timer_in_s);
   	  _configure_sensor();			// initialize the PPG module
@@ -567,12 +590,12 @@ void PPG_state_machine()
 				N_SPRINTF("[PPG] wearing confirmed, %d, %d", t_sec, h->m_measuring_timer_in_s);
 				
 				// Check if measuring is timed up
-				t_diff = t_sec - h->m_measuring_timer_in_s;
-				if (t_diff > PPG_SAMPLE_PROCESSING_PERIOD) {
+				t_ms_diff = t_curr_ms - h->m_duty_on_time_in_ms;
+				if (t_ms_diff > PPG_SAMPLE_PROCESSING_PERIOD) {
 					if (h->heart_rate_ready) {
 						// If heart rate is ready, we should just keep measuring for no more than 5 sec
-						t_measuring_diff = t_sec - h->first_hr_measurement_in_sec;
-						if (t_measuring_diff > 5) {
+						t_measuring_ms_diff = t_curr_ms - h->first_hr_measurement_in_ms;
+						if (t_measuring_ms_diff > 5000) {
 							// If user is not viewing HR page, exit measuring state
 							// otherwise, simply just stop updating
 							if (!_is_user_viewing_heart_rate()) {
@@ -587,7 +610,7 @@ void PPG_state_machine()
 					}
         }
 
-  			if (t_diff > PPG_HR_MEASURING_TIMEOUT && !_is_user_viewing_heart_rate() ) {
+  			if ((t_ms_diff > PPG_HR_MEASURING_TIMEOUT) && !_is_user_viewing_heart_rate() ) {
           PPG_disable_sensor();					       // Turn off ppg sensor module
           h->state = PPG_STAT_DUTY_OFF;
           N_SPRINTF("[PPG] PPG (TIME OUT) State off, %d, %d", t_diff, cling.ui.state);
@@ -604,8 +627,8 @@ void PPG_state_machine()
 
 		case PPG_STAT_DUTY_OFF:
 		{		
-			t_diff = t_sec - h->m_measuring_timer_in_s;
-			t_step_diff = t_sec - cling.activity.step_detect_ts;
+			t_sec_diff = t_curr_sec - h->m_measuring_timer_in_sec;
+			t_step_diff_sec = t_curr_sec - cling.activity.step_detect_t_sec;
 
 			// If device is in a charging state, do not perform PPG detection
 			if (BATT_is_charging()) {
@@ -614,23 +637,27 @@ void PPG_state_machine()
 				break;
 			}
 			
-  		if ((_is_user_viewing_heart_rate() || cling.activity.b_workout_active)  && 
-					(cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch)) 
-			{
-				t_threshold = PPG_MEASURING_PERIOD_FOREGROUND;
-				if ( t_diff > t_threshold ) {
+			if (cling.activity.b_workout_active) {
+				// Start PPG detection right away if the device is in motion
+				if (!cling.lps.b_low_power_mode) {
 					h->state = PPG_STAT_DUTY_ON;
+					// We need initialize skin touch detection routine
+					PPG_closing_to_skin_detect_init();
 					Y_SPRINTF("[PPG] PPG State on (force)");
 				}
+			} else if (_is_user_viewing_heart_rate() && (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch)) 
+			{
+				h->state = PPG_STAT_DUTY_ON;
+				Y_SPRINTF("[PPG] PPG State on (force)");
 			} else {
-				if (t_step_diff < PPG_MEASURING_PERIOD_BACKGROUND_NIGHT) {
+				if (t_step_diff_sec < PPG_MEASURING_PERIOD_BACKGROUND_NIGHT) {
 					t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_DAY;
 				} else {
 					t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_NIGHT;
 				}
 
 				// Normal background heart detection requires low power stationary mode
-				if (t_diff < t_threshold) {
+				if (t_sec_diff < t_threshold) {
 					break;
 				}
 
@@ -640,13 +667,12 @@ void PPG_state_machine()
 				}
 
 				// State in low power stationary for more than 5 seconds
-				t_curr = CLK_get_system_time();
-				if (t_curr < (cling.lps.ts + PPG_WEARING_DETECTION_LPS_INTERVAL)) {
+				if (t_curr_ms < (cling.lps.ts + PPG_WEARING_DETECTION_LPS_INTERVAL)) {
 					break;
 				}
 				
 				// If device stays in background LPS for more than 60 minutes, no heart rate detection detection needed
-				if (t_curr > (cling.lps.ts + PPG_WEARING_DETECTION_BG_IDLE_INTERVAL)) {
+				if (t_curr_ms > (cling.lps.ts + PPG_WEARING_DETECTION_BG_IDLE_INTERVAL)) {
 					break;
 				}
 
@@ -665,7 +691,6 @@ void PPG_state_machine()
 			break;
 	}
 }
-
 
 I8U PPG_minute_hr_calibrate()
 {

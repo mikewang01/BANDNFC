@@ -332,12 +332,14 @@ void SLEEP_minute_proc()
 	}
 
 	slp->pre_state = slp->state;
-	
+#ifdef _ENABLE_TOUCH_
 	// monitoring whether device has been correctly worn
 	if (TOUCH_is_skin_touched()) {
 		slp->m_successive_no_skin_touch_mins = 0;
 		slp->b_valid_worn_in_entering_sleep_state = TRUE;
-	} else {
+	} else 
+#endif
+	{
 		slp->m_successive_no_skin_touch_mins++;
 	}
 
@@ -470,7 +472,6 @@ void SLEEP_init()
 
 	slp->b_sudden_wake_from_sleep = FALSE;
 
-//slp->m_sensitive_mode = SLEEP_SENSITIVE_MEDIUM;
 	slp->m_sensitive_mode = SLEEP_SENSITIVE_LOW;
 	
 	slp->m_successive_no_skin_touch_mins = 0;

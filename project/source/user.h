@@ -13,11 +13,13 @@ enum {
 	IDLE_ALERT_STATE_COUNT_DOWN,
 	IDLE_ALERT_STATE_NOTIFY,
 };
-
+			
 enum {
 	SEX_MALE,
 	SEX_FEMALE
 };
+
+#define APP_DISTANCE_NORMALIZATION  0x01
 			
 typedef struct tagUSER_PROFILE_CTX {
 	I8U name[24]; // Limit user name length to 32 bytes
@@ -25,22 +27,25 @@ typedef struct tagUSER_PROFILE_CTX {
 	I16U weight_in_kg;
 	I16U height_in_cm;
   I16U stride_in_cm;
-	BOOLEAN metric_distance;
 	I16U stride_running_in_cm;
 	I16U stride_treadmill_in_cm;
+	BOOLEAN metric_distance;
 	I8U sleep_dow;
 	// bed & wake up time
 	I8U wakeup_hh;
 	I8U wakeup_mm;
 	I8U bed_hh;
 	I8U bed_mm;
-	I8U regular_page_display;
+	I8U regular_page_display_1;
+	I8U regular_page_display_2;
+	I8U training_alert;		
+	I8U app_setting;
+	I8U running_rate;
 	I8U running_page_display;
 	I8U touch_vibration;
 	// Mileage limit for stigama tracking
 	I8U mileage_limit;
 	I8U age;
-	I8U clock_face;
 	I8U sex;
 	I8U max_hr_alert;
 	
@@ -59,7 +64,6 @@ typedef struct tagUSER_DATA {
 	
 	// device length
 	I8U setting_len;
-	I8U profile_len;
 	// User dynamic data 
 	I16U calories_factor;
 	
@@ -67,7 +71,7 @@ typedef struct tagUSER_DATA {
 	BOOLEAN b_screen_wrist_flip;
 	BOOLEAN b_screen_press_hold_1;
 	BOOLEAN b_screen_press_hold_3;
-	BOOLEAN b_screen_tapping;
+	BOOLEAN b_running_alwayson;
 	
 	BOOLEAN b_navigation_tapping;
 	BOOLEAN b_navigation_wrist_shake;
@@ -89,16 +93,15 @@ typedef struct tagUSER_DATA {
 	
 	// Pedometer sensitivity mode
 	I8U m_pedo_sensitivity;
-
+	
 } USER_DATA;
 
 void USER_device_specifics_init(void);
-void USER_data_init(void);
-void USER_profile_update(void);
-void USER_setup_device(I8U *data, I8U setting_length);
+void USER_device_specifics_setup(I8U *data, BOOLEAN b_profile, BOOLEAN b_device);
 void USER_state_machine(void);
-void USER_store_device_param(I8U *data);
-void USER_setup_profile(I8U *data, I8U len);
-void USER_device_specifics_setup(I8U *data, BOOLEAN b_profile, I8U len);
+void USER_setup_profile(I8U *data);
+void USER_setup_device(I8U *data);
+void USER_device_get_name(I8U *string);
+void USER_default_setup(void);
 
 #endif  // __USER_HEADER__

@@ -93,6 +93,7 @@ enum {
 	CP_MSG_TYPE_SET_USER_PROFILE, 
 	CP_MSG_TYPE_PHONE_FINDER_MESSAGE,
 	CP_MSG_TYPE_DAILY_ALARM,
+	CP_MSG_TYPE_WORKOUT_RUN_MESSAGE,
 };
 
 typedef struct tagCP_PACKET {
@@ -199,6 +200,7 @@ void CP_create_register_rd_msg(void);
 void CP_create_auth_stat_msg(void);
 void CP_create_sos_msg(void);
 void CP_create_phone_finder_msg(void);
+void CP_create_workout_run_msg(void);
 
 #endif // __CP_API_HEADER__
 /** @} */

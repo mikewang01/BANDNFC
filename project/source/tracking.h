@@ -18,7 +18,7 @@
 #define CALORIE_NORM_FACTOR 60000 // 60 seconds x 1000 (the cadence calorie factor 1000)
 #define ADJUSTED_STRIDE_LENGTH_DIFF 3 // 2.64 inches // 4.64 inches (30 - 25.36)
 
-#define TRACKING_DAY_STAT_SIZE 20 // Curently, we have 20 bytes information about daily statistics
+#define TRACKING_DAY_STAT_SIZE 24 // Curently, we have 20 bytes information about daily statistics
 #define TRACKING_DAY_STAT_MAX  64 // 64 bytes space reserved for future extension.
 
 #define MINUTE_STREAMING_FILE_SIZE 4096
@@ -31,7 +31,7 @@ enum {
 	TRACKING_RUN,
 	TRACKING_STAIRS,
 	TRACKING_STEPS,
-	TRACKING_ACTIVITY_SEC,
+	TRACKING_ACTIVE_TIME,
 	TRACKING_DISTANCE,
 	TRACKING_CALORIES,
 	TRACKING_TIME,
@@ -50,15 +50,16 @@ enum {
 
 enum {
 	WORKOUT_NONE,
-	WORKOUT_WALK,
-	WORKOUT_RUN,
-	WORKOUT_CYCLING,
-	WORKOUT_ELLIPTICAL,
-	WORKOUT_STAIRS,
+	WORKOUT_TREADMILL_INDOOR,  // Running indoor on treadmill
+	WORKOUT_RUN_OUTDOOR,       // Running outdoor
+	WORKOUT_CYCLING_INDOOR,    // Biking indoor
+	WORKOUT_ELLIPTICAL_INDOOR,
+	WORKOUT_STAIRS_INDOOR,
 	WORKOUT_AEROBIC,
 	WORKOUT_ROWING,
 	WORKOUT_PILOXING,
-	WORKOUT_OTHER
+	WORKOUT_OTHER,
+	WORKOUT_CYCLING_OUTDOOR     // Cycling outdoor
 };
 
 typedef struct tagMINUTE_TRACKING_CTX {
@@ -89,7 +90,35 @@ typedef struct tagDAY_TRACKING_CTX {
 	I32U running;
 	I32U distance;
 	I32U calories;
+	I32U active_time;
 } DAY_TRACKING_CTX;
+
+#define PACE_BUF_LENGTH 4
+
+typedef struct tagRUNNING_TRACK_CTX {
+	I32U steps;
+	I32U distance;
+	I32U calories;
+	I32U accu_heart_rate;
+	I16U time_min;
+	I8U time_sec;
+	I8U walk_per_60_second;
+	I8U run_per_60_second;
+	I16U last_minute_distance;
+	I16U last_10sec_distance;
+	I16U last_d_buf[PACE_BUF_LENGTH];
+	I16U last_t_buf[PACE_BUF_LENGTH];
+	I8U pace_buf_idx;
+	I8U last_10sec_pace_min;
+	I8U last_10sec_pace_sec;
+	I32U pace_calc_ts;
+	I32U session_id;
+} RUNNING_TRACK_CTX;
+
+typedef struct tagTRAINING_TRACK_CTX {
+	I32U distance;
+	I32U time_start_in_ms;
+} TRAINING_TRACK_CTX;
 
 typedef struct tagDAY_STREAMING_CTX {
 	I32U steps;
@@ -133,14 +162,13 @@ typedef struct tagTRACKING_CTX {
 	I32U motion_ts;
 	
 	// Step time stamp
-	I32U step_detect_ts;
+	I32U step_detect_t_sec;
 	
 	// Device direction
-	I16U walk_per_60_second;
-	I16U run_per_60_second;
+	I32S z_mean;
 	
 	// Device tap timing
-	I32U tap_ts;
+	I32U tap_ts_ms;
 	
 	// Overall length of activity for the day
 	I32U tracking_flash_offset;
@@ -175,5 +203,6 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day);
 void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_enter_low_power_mode(void);
+void TRACKING_get_daily_running(RUNNING_TRACK_CTX *run_stat);
 
 #endif  // __TRACKING_HEADER__

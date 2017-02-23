@@ -45,13 +45,19 @@ typedef struct tagBATT_CTX {
 	I8U state_switching_duration;
 	I8U toggling_number;
 	I8U battery_measured_perc;
+	BOOLEAN b_toggle_lock;
 	BOOLEAN b_initial_measuring;
 	BOOLEAN b_no_batt_restored;
 	
 	// charging detection
 	I8U non_charging_accumulated_active_sec;
 	I8U non_charging_accumulated_steps;
-	
+
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)			
+	// Charging status
+	BOOLEAN charging_connected;
+#endif
+
 } BATT_CTX;
 
 I8U BATT_get_level(void);
@@ -65,5 +71,11 @@ void BATT_exit_charging_state(I8U sec);
 void BATT_update_charging_time(I8U tick_in_s);
 BOOLEAN BATT_charging_det_for_sleep(void);
 BOOLEAN BATT_device_unauthorized_shut_down(void);
+
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
+void BATT_charging_init(void);
+void BATT_charging_deinit(void);
+void BATT_interrupt_process(BOOLEAN b_init);
+#endif
 
 #endif // __BATT_HEADER__

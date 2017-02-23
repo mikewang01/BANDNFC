@@ -2,7 +2,7 @@
 /**
  * File: main.c
  *
- * Description: Main Application for Lemon Band
+ * Description: Main Application for Lemon NFC Band
  *
  * Created on Mar 25, 2015
  *
@@ -14,8 +14,11 @@
 #include <string.h>
 
 #include "main.h"
-#include "uicoTouch.h"
 #include "wechat_port.h"
+#ifdef _ENABLE_TOUCH_
+#include "uicoTouch.h"
+#endif
+
 //#define _POWER_TEST_
 //#define _NOR_FLASH_SPI_TEST_
 
@@ -268,6 +271,7 @@ static void _cling_global_init()
     cling.system.mcu_reg[REGISTER_MCU_REVH] |= (BUILD_MINOR_RELEASE_NUMBER >> 8) & 0x0f;
     cling.system.mcu_reg[REGISTER_MCU_REVL] = (I8U)(BUILD_MINOR_RELEASE_NUMBER & 0xff); // SW VER (LO)
 
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
     // Restoring the time zone info
     // Shanghai: UTC +8 hours (units in 15 minutes) -> 8*(60/15) = 32 minutes
     cling.time.time_zone = 32;
@@ -277,6 +281,7 @@ static void _cling_global_init()
     // Get current local minute
     cling.time.local_day = cling.time.local.day;
     cling.time.local_minute = cling.time.local.minute;
+#endif
 
     // Cling reminder state machine
     cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
@@ -319,8 +324,11 @@ static void _system_startup()
 
     // UI init
     UI_init();
+		
+#ifdef _ENABLE_TOUCH_
     // Configure power mode:
     TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
+#endif
 }
 
 static void _system_module_poweroff()
@@ -328,7 +336,9 @@ static void _system_module_poweroff()
     NRF_SPI0->ENABLE = 0;//0x1;
     NRF_TWI0->ENABLE = 0;//0x1;
     NRF_SPI1->ENABLE = 0;//0x1;
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
     NRF_TWI1->ENABLE = 0;//0x1;
+#endif
     NRF_SPIS1->ENABLE = 0;//0x1;
     NRF_ADC->ENABLE = 0;//0x1;
 
@@ -349,9 +359,6 @@ static void _system_module_poweroff()
  */
 int main(void)
 {
-
-
-
     // Initialize Wristband firmware gloal structure
     _cling_global_init();
 
@@ -380,7 +387,7 @@ int main(void)
     // Start up system
     //
     _system_startup();
-
+		
     //Y_SPRINTF("[MAIN] Entering main loop stack top = 0x%08x sp = 0x%08x", HEAP_TOP, __get_MSP());
 
     // Enter main loop.
@@ -388,9 +395,11 @@ int main(void)
         // Feed watchdog every 4 seconds upon RTC interrupt
         Watchdog_Feed();
 
-        // Home key event detection
-        HOMEKEY_click_check();
-
+#ifndef _CLINGBAND_2_PAY_MODEL_
+				// Home key event detection
+				HOMEKEY_click_check();
+#endif
+			
         if (cling.system.b_powered_up) {
 
             // Main power management process
@@ -402,24 +411,37 @@ int main(void)
 
         } else {
             // Turn off all system modules
+					  // To-Do: need to figure out why TWI doesn't get to work once running "system power off"
             _system_module_poweroff();
 
             // Main power management process
             _power_manager_process();
 
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)								
+				    // if a reset key is pressed, go restart the system
+						BATT_interrupt_process(FALSE);
+#endif
+					
             // If device is plugged into power, go restart the system.
             if (BATT_is_charging()) {
                 SYSTEM_restart_from_reset_vector();
             }
 
+#ifndef _CLINGBAND_2_PAY_MODEL_
             // detect a possible state change
             HOMEKEY_check_on_hook_change();
-
+#endif
+						
             N_SPRINTF("[MAIN] shut down event");
 
             continue;
         }
-
+			
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)					
+				// RTC minute event service
+				RTC_minute_int_service();
+#endif
+				
         // Battery charging state machine
         BATT_monitor_state_machine();
 
@@ -472,9 +494,6 @@ int main(void)
 					cling.reminder.state = REMINDER_STATE_IDLE;
 				}
         //get_max_used_stack_size();
-#if 0
-        HOMEKEY_sim();
-#endif
 
 #ifdef _ENABLE_PPG_
         // Heart rate measurement state machine
@@ -486,11 +505,17 @@ int main(void)
         UV_state_machine();
 #endif
 
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
         THERMISTOR_state_machine();
-	
+#endif	
 				// Wechat fitness routine
 #ifdef __WECHAT_SUPPORTED__
         wechat_sports_main_process();
+#endif
+				
+#if  __CLING_PAY_SUPPORTED__
+        CLASS(cling_pay_app)*p =cling_pay_app_get_instance();
+        p->core_process(p, NULL);
 #endif
     }
 }

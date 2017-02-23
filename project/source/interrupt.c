@@ -37,4 +37,3 @@ void GPIOTE_IRQHandler(void)
 		NRF_GPIOTE->EVENTS_PORT = 0;
 	}
 }
-
