@@ -246,10 +246,6 @@ static void _on_disconnect()
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FAST_CONNECT)
 		return;
 	
-	if (!r->disconnect_evt) {
-//		NOTIFIC_start_idle_alert();
-	}
-
 	if (OTA_if_enabled()) {
 		
 		N_SPRINTF("[BTLE] reboot if BLE disconnected in middle of OTA! ");

@@ -444,7 +444,7 @@ void USER_state_machine()
 			break;
 
 		case IDLE_ALERT_STATE_NOTIFY:
-			NOTIFIC_start_idle_alert();
+			NOTIFIC_start_notifying(NOTIFICATION_TYPE_IDLE_ALERT, 0);
 			u->idle_state = IDLE_ALERT_STATE_IDLE;
 			break;
 			

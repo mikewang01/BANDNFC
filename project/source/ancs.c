@@ -672,7 +672,7 @@ static void _ancs_store_attrs_pro(void)
 {
 #ifdef _CLINGBAND_PACE_MODEL_
 	if(_ancs_supported_is_enable()) {
-		NOTIFIC_start_notifying(ancs_notif.category_id);	
+		NOTIFIC_start_notifying(NOTIFICATION_TYPE_MESSAGE, ancs_notif.category_id);	
 	}			
 #else
 	I8U *p;
@@ -683,7 +683,7 @@ static void _ancs_store_attrs_pro(void)
   // when a new notification message arrives, start notification state machine
   // Do not notify user if not set supported
   if(_ancs_supported_is_enable())
-    NOTIFIC_start_notifying(ancs_notif.category_id);
+    NOTIFIC_start_notifying(NOTIFICATION_TYPE_MESSAGE, ancs_notif.category_id);
 						
   if(cling.ancs.message_total >= 16) {
 		

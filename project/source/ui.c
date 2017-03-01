@@ -342,498 +342,154 @@ static void _restore_perv_frame_index()
 	}
 }
 
-/*------------------------------------------------------------------------------------------
-*  Function:	_regular_page_verify(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U curr, I16U next)
+/*-------------------------------------------------------------------------------
+*  Function:	_get_regular_page_enable_index(I8U frame_index)
 *
-*  Description: filtering regular page(Users can customize the page).
+*  Description: Get regular page enable index.
 *
-*------------------------------------------------------------------------------------------*/
-static __INLINE BOOLEAN _regular_page_verify(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U curr, I16U next)
+*-------------------------------------------------------------------------------*/
+static I16U _get_regular_page_enable_index(I8U frame_index)
 {
-	I16U page_filtering = 0;
-
-	page_filtering = cling.user_data.profile.regular_page_display_2;
-	page_filtering <<= 8;
-	page_filtering |= cling.user_data.profile.regular_page_display_1;
-	
+	if (frame_index == UI_DISPLAY_HOME)
+		return UI_FRAME_ENABLE_HOME;
+	else if (frame_index == UI_DISPLAY_TRACKER_STEP)
+		return UI_FRAME_ENABLE_STEP;		
+	else if (frame_index == UI_DISPLAY_TRACKER_DISTANCE)
+		return UI_FRAME_ENABLE_DISTANCE;		
+	else if (frame_index == UI_DISPLAY_TRACKER_CALORIES)
+		return UI_FRAME_ENABLE_CALORIES;			
+	else if (frame_index == UI_DISPLAY_TRACKER_ACTIVE_TIME)
+		return UI_FRAME_ENABLE_ACTIVE_TIME;		
+	else if (frame_index == UI_FRAME_ENABLE_HEART_RATE)
+		return UI_FRAME_ENABLE_HEART_RATE;			
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
+	else if (frame_index == UI_DISPLAY_VITAL_SKIN_TEMP)
+		return UI_FRAME_ENABLE_SKIN_TEMP;		
+#endif	
+#ifdef _CLINGBAND_UV_MODEL_	
+	else if (frame_index == UI_DISPLAY_TRACKER_UV_IDX)
+		return UI_FRAME_ENABLE_UV_INDEX;	
+#endif	
 #ifdef _CLINGBAND_PACE_MODEL_			
-	page_filtering |= 0x8200; // Allways open home page and run analysis page.
+	else if (frame_index == UI_DISPLAY_SMART_WEATHER)
+		return UI_FRAME_ENABLE_WEATHER;			
+	else if (frame_index == UI_DISPLAY_SMART_PM2P5)
+		return UI_FRAME_ENABLE_PM2P5;		
+	else if (frame_index == UI_DISPLAY_TRAINING_STAT_RUN_START)
+		return UI_FRAME_ENABLE_START_RUN;				
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS)
+		return UI_FRAME_ENABLE_RUN_ANALYSIS;			
+#endif	
+	else 
+		return 0xffff;
+}
+
+/*-------------------------------------------------------------------------------
+*  Function:	_get_running_analysis_page_enable_index(I8U frame_index)
+*
+*  Description: Get running analysis page enable index.
+*
+*-------------------------------------------------------------------------------*/
+static I8U _get_running_analysis_page_enable_index(I8U frame_index)
+{
+	if (frame_index == UI_DISPLAY_RUNNING_STAT_DISTANCE)
+		return UI_FRAME_ENABLE_RUNNING_DISTANCE;
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_TIME)
+		return UI_FRAME_ENABLE_RUNNING_TIME;		
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_PACE)
+		return UI_FRAME_ENABLE_RUNNING_PACE;		
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_STRIDE)
+		return UI_FRAME_ENABLE_RUNNING_STRIDE;			
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_CADENCE)
+		return UI_FRAME_ENABLE_RUNNING_CADENCE;		
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_HEART_RATE)
+		return UI_FRAME_ENABLE_RUNNING_HEART_RATE;			
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_CALORIES)
+		return UI_FRAME_ENABLE_RUNNING_CALORIES;				
+#ifdef _CLINGBAND_PACE_MODEL_					
+	else if (frame_index == UI_DISPLAY_RUNNING_STAT_STOP_ANALYSIS)
+		return UI_FRAME_ENABLE_RUNNING_STOP_ANALYSIS;			
+#endif	
+	else 
+		return 0xff;
+}
+
+/*-------------------------------------------------------------------------------
+*  Function:	_update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
+*
+*  Description: Page filtering.
+*
+*-------------------------------------------------------------------------------*/
+static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
+{
+	I16U regular_page_filtering = 0;	
+	I16U regular_page_enable = 0;
+	I8U run_analysis_page_filtering = 0;
+	I8U run_analysis_page_enable = 0;	
+	I8U i = 0;
+	
+	if (_is_regular_page(u->frame_index)) {
+		
+		regular_page_filtering = cling.user_data.profile.regular_page_display_2;
+		regular_page_filtering <<= 8;
+		regular_page_filtering |= cling.user_data.profile.regular_page_display_1;
+		
+#ifdef _CLINGBAND_PACE_MODEL_			
+		// Allways open home page and run analysis page.
+	  regular_page_filtering |= 0x8200; 
 #else
-	page_filtering |= 0x8000; // Allways open home page. 
-	page_filtering = 0xffff;
+		// Allways open home page. 
+	  regular_page_filtering |= 0x8000; 
+	  regular_page_filtering = 0xffff;
 #endif
-	
-	if (u->frame_index == curr) {
-		u->frame_index = p_matrix[u->frame_index];
-		u->frame_next_idx = u->frame_index;
-		if (page_filtering & next) {
-			return TRUE;
-		}
-	}
-	
-	return FALSE;
-}
 
-/*------------------------------------------------------------------------------------------
-*  Function:	_running_page_verify(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U curr, I8U next)
-*
-*  Description: filtering running analysis page(Users can customize the page).
-*
-*------------------------------------------------------------------------------------------*/
-static __INLINE BOOLEAN _running_page_verify(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U curr, I8U next)
-{
-	I8U page_filtering = 0;	
-	
-	page_filtering = cling.user_data.profile.running_page_display;
+		u->frame_index = p_matrix[u->frame_index];
+		regular_page_enable = _get_regular_page_enable_index(u->frame_index);
+
+		for (i=0;i<10;i++) {
+		  if (regular_page_enable & regular_page_filtering) 
+				break;
+			u->frame_index = p_matrix[u->frame_index];		
+		}
+		
+		u->frame_next_idx = u->frame_index;
+	} else if (_is_running_analysis_page(u->frame_index)) {
+		
+	  run_analysis_page_filtering = cling.user_data.profile.running_page_display;
 
 #ifdef _CLINGBAND_PACE_MODEL_			
-	page_filtering |= 0x81;	// Allways open Running distance page and stop analysis page.
+		// Allways open Running distance page and stop analysis page.
+	  run_analysis_page_filtering |= 0x81;	
 #else 
-	page_filtering |= 0x01;	// Allways open Running distance page. 	
+		// Allways open Running distance page.
+	  run_analysis_page_filtering |= 0x01;	 	
 #endif
-	
-	if (u->frame_index == curr) {
+		
+		u->frame_index = p_matrix[u->frame_index];
+		run_analysis_page_enable = _get_running_analysis_page_enable_index(u->frame_index);
+		
+		for (i=0;i<10;i++) {
+		  if (run_analysis_page_enable & run_analysis_page_filtering) 
+				break;
+			u->frame_index = p_matrix[u->frame_index];		
+		}		
+		
+	  u->frame_next_idx = u->frame_index;
+	} else {
+		
 		u->frame_index = p_matrix[u->frame_index];
 		u->frame_next_idx = u->frame_index;
-		if (page_filtering & next) {
-			return TRUE;
-		}
 	}
-	
-	return FALSE;
 }
 
 /*------------------------------------------------------------------------------------------
-*  Function:	_filtering_pace_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix)
-*
-*  Description: Cling Pace regular page filtering.
-*
-*------------------------------------------------------------------------------------------*/
-#ifdef _CLINGBAND_PACE_MODEL_
-static BOOLEAN _filtering_pace_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix)
-{
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_STEP))
-		return TRUE;
-	
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_DISTANCE))
-		return TRUE;
-	
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_CALORIES))
-		return TRUE;
-	
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_ACTIVE_TIME))
-		return TRUE;
-
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_HEART_RATE))
-		return TRUE;
-	
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_WEATHER))
-		return TRUE;
-
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_SMART_WEATHER, UI_FRAME_ENABLE_PM2P5))
-		return TRUE;
-	
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_SMART_PM2P5, UI_FRAME_ENABLE_START_RUN))
-		return TRUE;	
-
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRAINING_STAT_RUN_START, UI_FRAME_ENABLE_RUN_ANALYSIS))
-		return TRUE;	
-	
-	if (_regular_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS, UI_FRAME_ENABLE_HOME))
-		return TRUE;
-	
-	if (u->frame_index == UI_DISPLAY_HOME)
-		return TRUE;
-	else
-		return FALSE;
-}
-#endif
-
-/*------------------------------------------------------------------------------------------
-*  Function:	_filtering_uv_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-*
-*  Description: UV Band regular page filtering.
-*
-*------------------------------------------------------------------------------------------*/
-#ifdef _CLINGBAND_UV_MODEL_
-static BOOLEAN _filtering_uv_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-{
-  if (gesture == TOUCH_SWIPE_LEFT) {	
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_SKIN_TEMP))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_SKIN_TEMP, UI_FRAME_ENABLE_UV_INDEX))
-			return TRUE;	
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_UV_IDX, UI_FRAME_ENABLE_HOME))
-			return TRUE;	
-		
-  } else if (gesture == TOUCH_SWIPE_RIGHT) {
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_UV_INDEX))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_HOME))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_SKIN_TEMP, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;	
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_UV_IDX, UI_FRAME_ENABLE_SKIN_TEMP))
-			return TRUE;	
-		
-	} else {
-		
-		return FALSE;
-	}
-	
-	if (u->frame_index == UI_DISPLAY_HOME)
-		return TRUE;
-	else
-		return FALSE;
-}
-#endif
-
-/*------------------------------------------------------------------------------------------
-*  Function:	_filtering_nfc_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-*
-*  Description: NFC Band regular page filtering.
-*
-*------------------------------------------------------------------------------------------*/
-#ifdef _CLINGBAND_NFC_MODEL_
-static BOOLEAN _filtering_nfc_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-{
-  if (gesture == TOUCH_SWIPE_LEFT) {	
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_SKIN_TEMP))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_SKIN_TEMP, UI_FRAME_ENABLE_HOME))
-			return TRUE;	
-		
-  } else if (gesture == TOUCH_SWIPE_RIGHT) {
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_SKIN_TEMP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_HOME))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_SKIN_TEMP, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;	
-
-	} else {
-		
-		return FALSE;
-	}
-	
-	if (u->frame_index == UI_DISPLAY_HOME)
-		return TRUE;
-	else
-		return FALSE;
-}
-#endif
-
-/*------------------------------------------------------------------------------------------
-*  Function:	_filtering_voc_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-*
-*  Description: VOC Band regular page filtering.
-*
-*------------------------------------------------------------------------------------------*/
-#ifdef _CLINGBAND_VOC_MODEL_
-static BOOLEAN _filtering_voc_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-{
-  if (gesture == TOUCH_SWIPE_LEFT) {	
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_SKIN_TEMP))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_SKIN_TEMP, UI_FRAME_ENABLE_HOME))
-			return TRUE;	
-		
-  } else if (gesture == TOUCH_SWIPE_RIGHT) {
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_SKIN_TEMP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_HOME))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_SKIN_TEMP, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;	
-
-	} else {
-		
-		return FALSE;
-	}
-	
-	if (u->frame_index == UI_DISPLAY_HOME)
-		return TRUE;
-	else
-		return FALSE;
-}
-#endif
-
-/*----------------------------------------------------------------------------------------------------
-*  Function:	_filtering_lemon2_pay_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-*
-*  Description: Lemon 2 pay regular page filtering.
-*
-*-----------------------------------------------------------------------------------------------------*/
-#ifdef _CLINGBAND_2_PAY_MODEL_
-static BOOLEAN _filtering_lemon2_pay_regular_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-{
-  if (gesture == TOUCH_SWIPE_LEFT) {	
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_HOME))
-			return TRUE;
-		
-  } else if (gesture == TOUCH_SWIPE_RIGHT) {
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_HOME, UI_FRAME_ENABLE_HEART_RATE))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_STEP, UI_FRAME_ENABLE_HOME))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_DISTANCE, UI_FRAME_ENABLE_STEP))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_CALORIES, UI_FRAME_ENABLE_DISTANCE))
-			return TRUE;
-
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_TRACKER_ACTIVE_TIME, UI_FRAME_ENABLE_CALORIES))
-			return TRUE;
-		
-		if (_regular_page_verify(u, p_matrix, UI_DISPLAY_VITAL_HEART_RATE, UI_FRAME_ENABLE_ACTIVE_TIME))
-			return TRUE;
-
-	} else {
-		
-		return FALSE;
-	}
-	
-	if (u->frame_index == UI_DISPLAY_HOME)
-		return TRUE;
-	else
-		return FALSE;
-}
-#endif
-
-/*----------------------------------------------------------------------------------------------------
-*  Function:	_filtering_pace_running_analysis_page(UI_ANIMATION_CTX *u, const I8U *p_matrix)
-*
-*  Description: Cling Pace running analysis page filtering.
-*
-*-----------------------------------------------------------------------------------------------------*/
-#ifdef _CLINGBAND_PACE_MODEL_
-static BOOLEAN _filtering_pace_running_analysis_page(UI_ANIMATION_CTX *u, const I8U *p_matrix)
-{	
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_DISTANCE, UI_FRAME_ENABLE_RUNNING_TIME))
-		return TRUE;
-	
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_TIME, UI_FRAME_ENABLE_RUNNING_PACE))
-		return TRUE;
-	
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_PACE, UI_FRAME_ENABLE_RUNNING_STRIDE))
-		return TRUE;
-	
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_STRIDE, UI_FRAME_ENABLE_RUNNING_CADENCE))
-		return TRUE;
-
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_CADENCE, UI_FRAME_ENABLE_RUNNING_HEART_RATE))
-		return TRUE;
-	
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_HEART_RATE, UI_FRAME_ENABLE_RUNNING_CALORIES))
-		return TRUE;
-
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_CALORIES, UI_FRAME_ENABLE_RUNNING_STOP_ANALYSIS))
-		return TRUE;
-
-	if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_STOP_ANALYSIS, UI_FRAME_ENABLE_RUNNING_DISTANCE))
-		return TRUE;
-
-	if (u->frame_index == UI_DISPLAY_RUNNING_STAT_DISTANCE)
-		return TRUE;	
-	else
-		return FALSE;
-}
-#endif
-
-/*-------------------------------------------------------------------------------------------------------
-*  Function:	_filtering_band_running_analysis_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-*
-*  Description: Running analysis page filtering(Include UV Band + NFC Band + VOC Band + Lemon2 Pay Band).
-*
-*-------------------------------------------------------------------------------------------------------*/
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	|| defined(_CLINGBAND_2_PAY_MODEL_)
-static BOOLEAN _filtering_band_running_analysis_page(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
-{	
-  if (gesture == TOUCH_SWIPE_LEFT) {	
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_DISTANCE, UI_FRAME_ENABLE_RUNNING_TIME))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_TIME, UI_FRAME_ENABLE_RUNNING_PACE))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_PACE, UI_FRAME_ENABLE_RUNNING_STRIDE))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_STRIDE, UI_FRAME_ENABLE_RUNNING_CADENCE))
-			return TRUE;
-
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_CADENCE, UI_FRAME_ENABLE_RUNNING_HEART_RATE))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_HEART_RATE, UI_FRAME_ENABLE_RUNNING_CALORIES))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_CALORIES, UI_FRAME_ENABLE_RUNNING_DISTANCE))
-			return TRUE;
-		
-  } else if (gesture == TOUCH_SWIPE_RIGHT) {	
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_DISTANCE, UI_FRAME_ENABLE_RUNNING_CALORIES))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_TIME, UI_FRAME_ENABLE_RUNNING_DISTANCE))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_PACE, UI_FRAME_ENABLE_RUNNING_TIME))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_STRIDE, UI_FRAME_ENABLE_RUNNING_PACE))
-			return TRUE;
-
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_CADENCE, UI_FRAME_ENABLE_RUNNING_STRIDE))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_HEART_RATE, UI_FRAME_ENABLE_RUNNING_CADENCE))
-			return TRUE;
-		
-		if (_running_page_verify(u, p_matrix, UI_DISPLAY_RUNNING_STAT_CALORIES, UI_FRAME_ENABLE_RUNNING_HEART_RATE))
-			return TRUE;		
-
-	} else {
-		
-		return FALSE;
-	}
-	
-	if (u->frame_index == UI_DISPLAY_RUNNING_STAT_DISTANCE)
-		return TRUE;	
-	else
-		return FALSE;
-}
-#endif
-
-/*------------------------------------------------------------------------------------------
-*  Function:	_update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
+*  Function:	_update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 *
 *  Description: Switch to next display frame. 
 *
 *------------------------------------------------------------------------------------------*/
-static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
+static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 {
-	BOOLEAN b_page_filtering_swtich = TRUE;
-	
 	if (u->frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE) {				
 		if (!u->b_detail_page) {
 			u->frame_next_idx = u->frame_index;					
@@ -841,43 +497,8 @@ static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U ge
 		}
 	}
 	
-#ifdef _CLINGBAND_PACE_MODEL_
-	if (_is_regular_page(u->frame_index)) {
-    _filtering_pace_regular_page(u, p_matrix);	
-	}  else if (_is_running_analysis_page(u->frame_index)) {
-		_filtering_pace_running_analysis_page(u, p_matrix);
-	} else {
-    b_page_filtering_swtich = FALSE;
-	}
-#endif
-	
-#ifndef _CLINGBAND_PACE_MODEL_	
-	if ((gesture == TOUCH_SWIPE_LEFT) || (gesture == TOUCH_SWIPE_RIGHT)) {	
-		if (_is_regular_page(u->frame_index)) {	
-#ifdef _CLINGBAND_UV_MODEL_			
-			_filtering_uv_regular_page(u, p_matrix, gesture);		
-#elif defined _CLINGBAND_NFC_MODEL_			
-			_filtering_nfc_regular_page(u, p_matrix, gesture);		
-#elif defined _CLINGBAND_VOC_MODEL_			
-			_filtering_voc_regular_page(u, p_matrix, gesture);		
-#elif defined _CLINGBAND_2_PAY_MODEL_			
-			_filtering_lemon2_pay_regular_page(u, p_matrix, gesture);		
-#endif			
-		} else if (_is_running_analysis_page(u->frame_index)) {
-			_filtering_band_running_analysis_page(u, p_matrix, gesture);		
-		} else {
-			b_page_filtering_swtich = FALSE;
-		}		
-	} else {
-		b_page_filtering_swtich = FALSE;
-	}
-#endif
+	_update_page_filtering_pro(u, p_matrix);
 
-	if (!b_page_filtering_swtich) {
-		u->frame_index = p_matrix[u->frame_index];
-		u->frame_next_idx = u->frame_index;		
-	}	
-		
 	// Display running analysis page only user has actual running distance. 
 #ifdef _CLINGBAND_PACE_MODEL_	
 	if (u->frame_index == UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS) {
@@ -1547,7 +1168,7 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
 {
 	// 1. Update next frame index.		
-	_update_frame_index(u, p_matrix, gesture);
+	_update_frame_index(u, p_matrix);
 	
 	// 2. Switch display layer (0: regular display, 1: running stats)
 	_update_frame_layer_switch(u);	
@@ -1968,6 +1589,27 @@ void UI_init()
 	cling.ui.true_display = TRUE;
 }
 
+static void _update_frame_display_parameter()
+{
+	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
+	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
+	
+	if (cling.user_data.profile.metric_distance)
+		cling.user_data.profile.metric_distance = 1;
+	
+	if (cling.ui.clock_sec_blinking) {
+		cling.ui.clock_sec_blinking = FALSE;
+	} else {
+		cling.ui.clock_sec_blinking = TRUE;
+	}
+		
+	if (cling.ui.heart_rate_sec_blinking) {
+		cling.ui.heart_rate_sec_blinking = FALSE;
+	} else {
+		cling.ui.heart_rate_sec_blinking = TRUE;
+	}
+	
+}
 /*------------------------------------------------------------------------------------------
 *  Function:	UI_state_machine()
 *
@@ -2153,6 +1795,8 @@ void UI_state_machine()
       if (u->frame_index == UI_DISPLAY_PREVIOUS) {		
 			  _restore_perv_frame_index();
 			}
+			
+			_update_frame_display_parameter();
 			
 			UI_frame_display_appear(u->frame_index, TRUE);
 											

@@ -156,41 +156,32 @@ static void _left_render_horizontal_calories()
 
 static void _left_render_horizontal_pm2p5()
 {
-	I8U *in = cling.ui.p_oled_up;
-	I8U string[32];
-	char **air_level;
-	char *air_en[] = {"Good", "Moderate", "Unhealthy", "Poor", "hazardous"};
-	char *air_s_cn[] = {"优质", "良好", "差 ", "很差", "极差"};
-	char *air_t_cn[] = {"優質", "良好", "差 ", "很差", "极差"};
-	
-	_render_one_icon_16(ICON16_PM2P5_LEN, in, asset_content+ICON16_PM2P5_POS);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-		air_level = air_en;
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		air_level = air_s_cn;
-	} else {
-		air_level = air_t_cn;
-	}
+	char *air_display[3][6] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "hazardous"},
+	                       {"--","优质", "良好", "差 ", "很差", "极差"},
+												 {"--","優質", "良好", "差 ", "很差", "极差"}};
 
+	I8U level_idx;
+	I8U language_type = cling.ui.language_type;
+
+  //  First render pm2.5 icon.	
+	_render_one_icon_16(ICON16_PM2P5_LEN, cling.ui.p_oled_up, asset_content+ICON16_PM2P5_POS);
+	
 	if (cling.pm2p5 == 0xffff) {
 		// AQI value Not available
-		sprintf((char *)string, "--");		
+		level_idx = 0;
 	} else if (cling.pm2p5 < 50) {
-		sprintf((char *)string, "%s", air_level[0]);
+		level_idx = 1;
 	} else if (cling.pm2p5 < 150) {
-		sprintf((char *)string, "%s", air_level[1]);
+		level_idx = 2;
 	} else if (cling.pm2p5 < 300) {
-		sprintf((char *)string, "%s", air_level[2]);
+		level_idx = 3;
 	} else if (cling.pm2p5 < 500) {
-		sprintf((char *)string, "%s", air_level[3]);
+		level_idx = 4;
 	} else {
-		sprintf((char *)string, "%s", air_level[4]);
+		level_idx = 5;
 	}
 	
-	N_SPRINTF("AQI: %d, %s", cling.pm2p5, string);
-	
-	FONT_load_characters(cling.ui.p_oled_up+256, (char *)string, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+256, air_display[language_type][level_idx], 16, 128, FALSE);
 }
 
 static void _left_render_horizontal_weather()
@@ -206,12 +197,8 @@ static void _left_render_horizontal_heart_rate()
 {
 	I8U *in = cling.ui.p_oled_up;
 
-	if (cling.ui.heart_rate_sec_blinking) {
-		cling.ui.heart_rate_sec_blinking = FALSE;
+	if (cling.ui.heart_rate_sec_blinking) 
 		_render_one_icon_16(ICON16_HEART_RATE_LEN, in, asset_content+ICON16_HEART_RATE_POS);
-	} else {
-		cling.ui.heart_rate_sec_blinking = TRUE;
-	}
 }
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
@@ -220,15 +207,6 @@ static void _left_render_horizontal_skin_temp()
 	I8U *in = cling.ui.p_oled_up;
 
 	_render_one_icon_16(ICON16_SKIN_TEMP_LEN, in, asset_content+ICON16_SKIN_TEMP_POS);
-}
-#endif
-
-#if 0
-static void _left_render_horizontal_setting()
-{
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_SETTING_LEN, in, asset_content+ICON16_SETTING_POS);
 }
 #endif
 
@@ -283,7 +261,15 @@ static void _left_render_horizontal_running_distance_16()
 {
 	I8U *in = cling.ui.p_oled_up;
 	
-	_render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, in, asset_content+ICON16_RUNNING_DISTANCE_POS);
+	_render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, in, asset_content+ICON16_RUNNING_DISTANCE_POS);	
+}
+
+static void _left_render_horizontal_training_distance()
+{
+	I8U *in = cling.ui.p_oled_up;
+	
+	if (cling.ui.clock_sec_blinking) 
+	  _render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, in, asset_content+ICON16_RUNNING_DISTANCE_POS);	
 }
 
 static void _left_render_horizontal_running_distance_24()
@@ -296,8 +282,16 @@ static void _left_render_horizontal_running_distance_24()
 static void _left_render_horizontal_running_time()
 {
 	I8U *in = cling.ui.p_oled_up;
-	
+
 	_render_one_icon_16(ICON16_RUNNING_TIME_LEN, in, asset_content+ICON16_RUNNING_TIME_POS);
+}
+
+static void _left_render_horizontal_training_time()
+{
+	I8U *in = cling.ui.p_oled_up;
+
+	if (cling.ui.clock_sec_blinking) 
+	  _render_one_icon_16(ICON16_RUNNING_TIME_LEN, in, asset_content+ICON16_RUNNING_TIME_POS);
 }
 
 static void _left_render_horizontal_running_pace()
@@ -342,53 +336,20 @@ static void _left_render_horizontal_training_ready()
 	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, in, asset_content+ICON24_RUNNING_DISTANCE_POS);
 }
 
-static void _left_render_horizontal_training_time()
-{
-	I8U *in = cling.ui.p_oled_up;
-  I32U t_curr = CLK_get_system_time();	
-
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;;
-		_render_one_icon_16(ICON16_RUNNING_TIME_LEN, in, asset_content+ICON16_RUNNING_TIME_POS);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;
-	}
-}
-
-static void _left_render_horizontal_training_distance()
-{
-	I8U *in = cling.ui.p_oled_up;
-	
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
-	  _render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, in, asset_content+ICON16_RUNNING_DISTANCE_POS);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;
-	}
-}
-
 static void _left_render_horizontal_training_pace()
 {
 	I8U *in = cling.ui.p_oled_up;
 
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
+	if (cling.ui.clock_sec_blinking) 
 	  _render_one_icon_16(ICON16_RUNNING_PACE_LEN, in, asset_content+ICON16_RUNNING_PACE_POS);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;
-	}		
 }
 
 static void _left_render_horizontal_training_hr()
 {
 	I8U *in = cling.ui.p_oled_up;
 	
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
+	if (cling.ui.clock_sec_blinking) 
 	  _render_one_icon_16(ICON16_RUNNING_HR_LEN, in, asset_content+ICON16_RUNNING_HR_POS);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;
-	}			
 }
 
 static void _left_render_horizontal_running_stop()
@@ -428,36 +389,20 @@ static void _left_render_horizontal_cycling_outdoor_speed()
 }
 #endif
 
-static I16U _middle_horizontal_alignment(I8U *p_oled_start, I16U offset, BOOLEAN b_unit_km, I8U alignment_type)
+static void _middle_horizontal_alignment_center(I16U offset)
 {
 	I8U *p0, *p1, *p2;
 	I8U *p4, *p5, *p6;
 	I8U ptr;
 	I16U i;
 
-  if (alignment_type == ALIGNMENT_TYPE_CENTER) {
-		p0 = p_oled_start;
-		p1 = p0+128;
-		p2 = p1+128;
-		ptr = (128 - offset)>>1;
+	p0 = cling.ui.p_oled_up+128;
+	p1 = p0+128;
+	p2 = p1+128;
+	ptr = (128 - offset)>>1;
 
-		// Update new offset and clean up the rest area
-		offset = 128 - ptr;
-		// Special process for distance
-		if (b_unit_km) {
-				if (ptr > 12) {
-					offset -= 12;
-					ptr -= 12;
-			}
-		}
-	} else if (alignment_type == ALIGNMENT_TYPE_RIGHT) {
-		p0 = cling.ui.p_oled_up+128;
-	  p1 = p0+128;
-	  p2 = p1+128;
-	  ptr = 128 - offset;
-	} else if (alignment_type == ALIGNMENT_TYPE_LEFT) {
-		// ...
-	}
+	// Update new offset and clean up the rest area
+	offset = 128 - ptr;
 	
 	if (ptr > 0) {
 		p0 += 127; p4 = p0 - ptr;
@@ -474,11 +419,9 @@ static I16U _middle_horizontal_alignment(I8U *p_oled_start, I16U offset, BOOLEAN
 			*p2-- = 0;
 		}
 	}
-	
-	return offset;
 }
 
-static I16U _render_middle_stat_section(I8U len, I8U *string, I8U margin, I16U offset, BOOLEAN b_all_hold)
+static I16U _render_middle_section_core(I8U len, I8U *string, I8U margin, I16U offset, I8U light_num)
 {
 	I16U i, j;
 	I8U *p0, *p1, *p2;
@@ -486,28 +429,30 @@ static I16U _render_middle_stat_section(I8U len, I8U *string, I8U margin, I16U o
 	I8U char_len;
 		
 	for (i = 0; i < len; i++) {
-		p0 = cling.ui.p_oled_up+offset+128;
+		p0 = cling.ui.p_oled_up+128+offset;
 		p1 = p0+128;
 		p2 = p1+128;
 		
 		if (string[i] == ' ') {
 			// This is "space" character
 			char_len = 4;
-		} else if (b_all_hold) {
-			pin = asset_content+asset_pos[512+string[i]];
-			char_len = asset_len[512+string[i]];			
 		} else {
-			// Digits in large fonts
-			if ((string[i] >= '0') && (string[i] <= '9')) {
-				// Using "light" font for all other statistics except for clock
-				pin = asset_content+asset_pos[512+string[i]+152];
-				char_len = asset_len[512+string[i]+152];
-			} else {
-				// For punctuation, just show what it is
-				pin = asset_content+asset_pos[512+string[i]];
-				char_len = asset_len[512+string[i]];
-			}
-		}
+				// Digits in large fonts
+				if (i < light_num) { 
+					// Using "light" font
+					pin = asset_content+asset_pos[512+string[i]];
+					char_len = asset_len[512+string[i]];
+				} else {
+					if ((string[i] >= '0') && (string[i] <= '9')) {
+						pin = asset_content+asset_pos[512+string[i]+152];
+						char_len = asset_len[512+string[i]+152];
+					} else {
+						// For punctuation, just show what it is
+						pin = asset_content+asset_pos[512+string[i]];
+						char_len = asset_len[512+string[i]];
+					}
+				}
+		}	
 		
 		for (j = 0; j < char_len; j++) {
 			*p0++ = (*pin++);
@@ -524,114 +469,43 @@ static I16U _render_middle_stat_section(I8U len, I8U *string, I8U margin, I16U o
 	return offset;
 }
 
-static I16U _render_middle_clock_section(I8U *p_oled_start, I8U len, I8U *string, I8U margin, I16U offset, I8U light_num)
+static void _horizontal_display_dynamic(I8U *string, I8U len, BOOLEAN b_in_center)
 {
-	I16U i, j;
 	I8U *p0, *p1, *p2;
 	const I8U *pin;
-	I8U char_len;
-		
-	for (i = 0; i < len; i++) {
-		p0 = p_oled_start+offset;
-		p1 = p0+128;
-		p2 = p1+128;
-	
-		if (string[i] == 32) {
-			// This is "space" character
-			char_len = 4;
-		} else {
-				// Digits in large fonts
-				if (i > light_num) { // Three characters: HH and a ':'
-					// Using "light" font
-					pin = asset_content+asset_pos[512+string[i]+152];
-					char_len = asset_len[512+string[i]+152];
-				} else {
-					pin = asset_content+asset_pos[512+string[i]];
-					char_len = asset_len[512+string[i]];
-				}
-
-				for (j = 0; j < char_len; j++) {
-						*p0++ = (*pin++);
-						*p1++ = (*pin++);
-						*p2++ = (*pin++);
-				}
-		}
-		if (i != (len-1))
-			offset += char_len + margin;
-		else
-			offset += char_len;
-	}
-
-	return offset;
-}
-
-static I16U _render_middle_ble_code_section(I8U len, I8U *string, I8U margin, I16U offset)
-{
-	I16U i, j;
-	I8U *p0, *p1, *p2;
-	const I8U *pin;
-	I8U char_len;
-		
-	for (i = 0; i < len; i++) {
-		p0 = cling.ui.p_oled_up+offset+128;
-		p1 = p0+128;
-		p2 = p1+128;
-	
-		
-		if (string[i] == 32) {
-			// This is "space" character
-			char_len = 4;
-		} else {
-				pin = asset_content+asset_pos[512+string[i]];
-				char_len = asset_len[512+string[i]];
-
-				for (j = 0; j < char_len; j++) {
-						*p0++ = (*pin++);
-						*p1++ = (*pin++);
-						*p2++ = (*pin++);
-				}
-		}
-		if (i != (len-1))
-			offset += char_len + margin;
-		else
-			offset += char_len;
-	}
-
-	return offset;
-}
-
-static void _horizontal_display_dynamic(I8U *p_oled_in, I8U len, I8U *string)
-{
-	I8U *p, *pin;
-	I8U *p6;
-	I8U i, j, ptr, offset, char_len;
+	I8U i, j, ptr, offset=0, char_len;
 
 	// indicator
-	p = p_oled_in;
-	offset = 0;
+	if (b_in_center)
+	  p0 = cling.ui.p_oled_up+256;
+	else 
+	  p0 = cling.ui.p_oled_up+384;
+	
+	p0 = p1;
+
 	for (i = 0; i < len; i++) {
-		pin = (I8U *)(asset_content+asset_pos[string[i]]);
+		pin = asset_content+asset_pos[string[i]];
 		char_len = asset_len[string[i]];
 		for (j = 0; j < char_len; j++) {
-				*p++ = (*pin++);
+				*p0++ = (*pin++);
 		}
 	
 		offset += char_len;
-		p += 5;
+		p0 += 5;
 		if (i != (len -1))
 			offset += 5;
 	}
 
 	// Center it in the middle
 	ptr = (128 - offset)>>1;
-	p = p_oled_in;
+
 	if (ptr > 0) {
-		p += 127; p6 = p - ptr;
+		p1 += 127; p2 = p1 - ptr;
 		for (i = 0; i < 128-ptr; i++) {
-			*p-- = *p6--;
+			*p1-- = *p2--;
 		}
 		for (; i < 128; i++) {
-			*p-- = 0;
+			*p1-- = 0;
 		}
 	}
 }
@@ -639,59 +513,21 @@ static void _horizontal_display_dynamic(I8U *p_oled_in, I8U len, I8U *string)
 static void _middle_render_horizontal_system_restart()
 {
 	I8U string1[128];
-
-#ifdef _CLINGBAND_PACE_MODEL_		
 	I8U string2[16];
 	I8U string3[16];
 	I16U len;
 	I16U major;
 	I16U minor;
-
+	
 	USER_device_get_name(string1);
 	FONT_load_characters(cling.ui.p_oled_up, (char *)string1, 16, 128, TRUE);
-	
 	memset(cling.ui.p_oled_up+256, 0, 256);
 	
 	major = cling.system.mcu_reg[REGISTER_MCU_REVH]>>4;
 	minor = cling.system.mcu_reg[REGISTER_MCU_REVH]&0x0f;
 	minor <<= 8;
 	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
-	
-	len = sprintf((char *)string2, "VER:%d.%d", major, minor);
-	FONT_load_characters(cling.ui.p_oled_up+384+64, (char *)string2, 8, 128, FALSE);
 
-	len = sprintf((char *)string3, "ID:");
-	SYSTEM_get_ble_code(string3+len);	
-	string3[len+4] = 0;	
-	FONT_load_characters(cling.ui.p_oled_up+384+12, (char *)string3, 8, 128, FALSE);
-#else 
-
-	USER_device_get_name(string1);
-	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string1, 16, 128, TRUE);
-#endif
-}
-
-#ifndef _CLINGBAND_PACE_MODEL_		
-static void _middle_render_horizontal_setting()
-{
-	I8U string1[128];
-
-	USER_device_get_name(string1);
-	FONT_load_characters(cling.ui.p_oled_up, (char *)string1, 16, 128, TRUE);
-	
-	I8U string2[16];
-	I8U string3[16];
-	I16U len;
-	I16U major;
-	I16U minor;
-
-	memset(cling.ui.p_oled_up+256, 0, 256);
-	
-	major = cling.system.mcu_reg[REGISTER_MCU_REVH]>>4;
-	minor = cling.system.mcu_reg[REGISTER_MCU_REVH]&0x0f;
-	minor <<= 8;
-	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
-	
 	len = sprintf((char *)string2, "VER:%d.%d", major, minor);
 	FONT_load_characters(cling.ui.p_oled_up+384+64, (char *)string2, 8, 128, FALSE);
 
@@ -700,7 +536,6 @@ static void _middle_render_horizontal_setting()
 	string3[len+4] = 0;	
 	FONT_load_characters(cling.ui.p_oled_up+384+12, (char *)string3, 8, 128, FALSE);
 }
-#endif
 
 static void _middle_render_horizontal_clock()
 {
@@ -710,14 +545,12 @@ static void _middle_render_horizontal_clock()
 	I8U len;
 
 	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
 		len = sprintf((char *)string, "%02d:%02d", cling.time.local.hour, cling.time.local.minute);
 	} else {
-		cling.ui.clock_sec_blinking = TRUE;
 		len = sprintf((char *)string, "%02d %02d", cling.time.local.hour, cling.time.local.minute);
 	}
 	
-	_render_middle_clock_section(cling.ui.p_oled_up+128, len, string, margin, offset, 2);
+	_render_middle_section_core(len, string, margin, offset, len);
 }
 
 static void _middle_render_horizontal_ota()
@@ -789,56 +622,43 @@ static void _middle_render_horizontal_system_charging()
 static void _middle_render_horizontal_ble_code()
 {
 	I8U string[32];
-	I8U len = 4;
-	I16U offset = 0;
-	I8U margin = 3;
 
 	SYSTEM_get_ble_code(string);
-	offset = _render_middle_ble_code_section(len, string, margin, offset);
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	
+	FONT_load_characters(cling.ui.p_oled_up+256, (char *)string, 16, 128, TRUE);
 }
 
 static void _middle_render_horizontal_linking()
 {
 	I16U offset = 0;
 	
-  cling.ui.linking_wave_index++;
-	if (cling.ui.linking_wave_index > 3)
+	if (cling.ui.linking_wave_index > 2)
 		 cling.ui.linking_wave_index=0;
 
-	if (cling.ui.linking_wave_index == 3) {
-	  _render_one_icon_16(ICON16_AUTH_PROGRESS_0_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_0_POS);
+	for (I8U i=0;i<cling.ui.linking_wave_index;i++) {
+		_render_one_icon_16(ICON16_AUTH_PROGRESS_LEFT_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_LEFT_POS);
+		offset += ICON16_AUTH_PROGRESS_LEFT_LEN;	
+		offset += 5;		
 	}
-	offset += ICON16_AUTH_PROGRESS_0_LEN;
+
+	_render_one_icon_16(ICON16_AUTH_PROGRESS_MIDDLE_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_MIDDLE_POS);
+	offset += ICON16_AUTH_PROGRESS_MIDDLE_LEN;		
 	offset += 5;
 	
-	if (cling.ui.linking_wave_index >= 2) {	
-	  _render_one_icon_16(ICON16_AUTH_PROGRESS_1_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_1_POS);
+	for (I8U i=0;i<cling.ui.linking_wave_index;i++) {
+		_render_one_icon_16(ICON16_AUTH_PROGRESS_RIGHT_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_RIGHT_POS);
+		offset += ICON16_AUTH_PROGRESS_RIGHT_LEN;			
+    offset += 5;			
 	}
-	offset += ICON16_AUTH_PROGRESS_1_LEN;
-	offset += 5;
+
+	_middle_horizontal_alignment_center(offset);
 	
-	_render_one_icon_16(ICON16_AUTH_PROGRESS_2_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_2_POS);
-	offset += ICON16_AUTH_PROGRESS_2_LEN;
-	offset += 5;
-
-	if (cling.ui.linking_wave_index >= 2) {
-	  _render_one_icon_16(ICON16_AUTH_PROGRESS_3_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_3_POS);
-	}
-	offset += ICON16_AUTH_PROGRESS_3_LEN;
-	offset += 5;
-
-	if (cling.ui.linking_wave_index == 3) {
-	  _render_one_icon_16(ICON16_AUTH_PROGRESS_4_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_4_POS);
-	}
-	offset += ICON16_AUTH_PROGRESS_4_LEN;
-
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	cling.ui.linking_wave_index++;
 }
 
 static void _middle_render_horizontal_steps()
 {
-	I8U string[32];
+	I8U string[16];
 	I8U len = 0;
 	I16U offset = 0;
 	I8U margin = 3;
@@ -861,19 +681,22 @@ static void _middle_render_horizontal_steps()
 		len = sprintf((char *)string, "%d", stat);
 	}
 
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
 static void _middle_render_horizontal_distance()
 {
+	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 0;
 	I8U margin = 3;
 	I32U stat;
 	I16U integer, fractional;
+	I8U language_type = cling.ui.language_type;
+	I8U metric = cling.user_data.profile.metric_distance;
 
 #ifdef _CLINGBAND_PACE_MODEL_	
 	TRACKING_get_activity(0, TRACKING_DISTANCE, &stat);
@@ -899,33 +722,11 @@ static void _middle_render_horizontal_distance()
 		len = sprintf((char *)string, "%d.%02d", integer, fractional);
 	}
 
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	offset = 	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, TRUE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 	
-	if (cling.user_data.profile.metric_distance) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-			sprintf((char *)string, "ML");
-			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
-		}	else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-			sprintf((char *)string, "英里");
-			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
-		} else {
-			sprintf((char *)string, "英裏");
-			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
-		}
-	} else {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-			sprintf((char *)string, "KM");
-			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
-		}	else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-			sprintf((char *)string, "公里");
-			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
-		} else {
-			sprintf((char *)string, "公裏");
-			FONT_load_characters(cling.ui.p_oled_up+256+offset+4, (char *)string, 16, 128, FALSE);
-		}
-	}
+	FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)unit_distance_display[language_type][metric], 16, 128, FALSE);
 }
 
 static void _middle_render_horizontal_calories()
@@ -951,18 +752,20 @@ static void _middle_render_horizontal_calories()
 		len = sprintf((char *)string, "%d", stat);
 	}
 	
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
 static void _middle_render_horizontal_active_time()
 {
+	const char *active_time_name[] = {"MIN","分钟","分鍾"};		
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 0;
 	I8U margin = 3;
 	I32U stat;
+	I8U language_type = cling.ui.language_type;
 
 #ifdef _CLINGBAND_PACE_MODEL_		
 	TRACKING_get_activity(0, TRACKING_ACTIVE_TIME, &stat);
@@ -972,20 +775,11 @@ static void _middle_render_horizontal_active_time()
 	
 	len = sprintf((char *)string, "%d", stat);
 
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	offset = 	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, TRUE, ALIGNMENT_TYPE_CENTER);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-		sprintf((char *)string, "MIN");
-		FONT_load_characters(cling.ui.p_oled_up+256+offset+10, (char *)string, 16, 128, FALSE);
-	}	else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "分钟");
-		FONT_load_characters(cling.ui.p_oled_up+256+offset+10, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "分鍾");
-		FONT_load_characters(cling.ui.p_oled_up+256+offset+10, (char *)string, 16, 128, FALSE);
-	}
+	_middle_horizontal_alignment_center(offset);
+
+	FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)active_time_name[language_type], 16, 128, FALSE);
 }
 
 #ifdef _CLINGBAND_UV_MODEL_		
@@ -1000,56 +794,39 @@ static void _middle_render_horizontal_uv_index()
 	integer = cling.uv.max_UI_uv;
 	len = sprintf((char *)string, "%d.%d", (integer/10), (integer%10));
 
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 #endif
 
 static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 {
+	const char *heart_rate_wave_indicator[] = {
+		"-,,,,,,,",
+		",-,,,,,,", 
+		",,-,,,,,", 
+		",,,-,,,,", 
+		",,,,-,,,", 
+		",,,,,-,,", 
+		",,,,,,-,", 
+		",,,,,,,-"};	
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 0;
 	I8U margin = 3;
 	I8U hr_result = 0;
-	BOOLEAN b_all_hold = FALSE;
 	
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
 		  hr_result = PPG_minute_hr_calibrate();
 			len = sprintf((char *)string, "%d", hr_result);			
-			if (b_training_mode) {
-				b_all_hold = TRUE;
-			}
 		} else {
 			if (cling.ui.heart_rate_wave_index > 5) {
 				cling.ui.heart_rate_wave_index = 0;
 			}
-			switch (cling.ui.heart_rate_wave_index) {
-				case 0:
-					len = sprintf((char *)string, "-,,,,,");
-					break;
-				case 1:
-					len = sprintf((char *)string, ",-,,,,");
-					break;
-				case 2:
-					len = sprintf((char *)string, ",,-,,,");
-					break;
-				case 3:
-					len = sprintf((char *)string, ",,,-,,");
-					break;
-				case 4:
-					len = sprintf((char *)string, ",,,,-,");
-					break;
-				case 5:
-					len = sprintf((char *)string, ",,,,,-");
-					break;
-				default:
-					break;
-			}
-			
-			_horizontal_display_dynamic(cling.ui.p_oled_up+256, len, string);
+			len = sprintf((char *)string, "%s", heart_rate_wave_indicator[cling.ui.heart_rate_wave_index]);
+			_horizontal_display_dynamic(string, len, TRUE);
 			cling.ui.heart_rate_wave_index ++;
 			return 0;
 		}
@@ -1059,9 +836,12 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;			
 	}
 
-	offset = _render_middle_stat_section(len, string, margin, offset, b_all_hold);
+	if (b_training_mode)
+	  offset = _render_middle_section_core(len, string, margin, offset, len);
+	else 
+		offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);		
+	_middle_horizontal_alignment_center(offset);		
 	
 	return hr_result;
 }
@@ -1085,9 +865,9 @@ static void _middle_render_horizontal_skin_temp()
 	len = sprintf((char *)string, "%d.%d", integer, fractional);
 	string[len++] = ICON24_CELCIUS_IDX;
 	
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 #endif
 
@@ -1113,10 +893,10 @@ static void _middle_render_horizontal_weather()
 		string[len++] = ICON24_CELCIUS_IDX;
 	}
 	
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_		
@@ -1133,30 +913,40 @@ static void _middle_render_horizontal_message()
 	len = sprintf((char *)string, "0");
 #endif	
 	
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
 static void _middle_render_horizontal_app_notif()
 {
 	I8U len;
 	I8U dis_len;
-	I8U string[32];
-	I8U offset=0;
-
+	I8U string[128];
+	I16U offset = 0;
+	I8U max_dis_len = 0;
+  BOOLEAN b_display_center = FALSE;
+	
 	len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 	N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
+	
 	dis_len = FONT_get_string_display_len((char *)string);
+	
 	if (dis_len > 104) {
-		FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 80, FALSE);
+		offset = 24;
+		max_dis_len = 80;
 	} else if (dis_len > 80) {
 		offset = 104 - dis_len;
-		FONT_load_characters(cling.ui.p_oled_up+128+128+offset, (char *)string, 16, 104, FALSE);
+		offset += 256;
+		max_dis_len = 104;		
 	} else {
-		FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 80, TRUE);			
+		offset = 256;
+		max_dis_len = 80;		
+		b_display_center = TRUE;
 	}
 
+  FONT_load_characters(cling.ui.p_oled_up+offset, (char *)string, 16, max_dis_len, b_display_center);		
+		
 	len = sprintf((char *)string, "%02d", cling.ui.app_notific_index);
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);			
 }
@@ -1177,8 +967,8 @@ static void _middle_render_horizontal_pm2p5()
 		
 	offset = 80;
 	
-	offset = _render_middle_stat_section(len, string, margin, offset, FALSE);
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
+	_middle_horizontal_alignment_center(offset);
 }
 
 static void _middle_render_horizontal_reminder()
@@ -1205,41 +995,34 @@ static void _middle_render_horizontal_reminder()
 		return;
 	} 
 		
-	offset = _render_middle_clock_section(cling.ui.p_oled_up+128, len, string, margin, offset, 2);
+	offset = _render_middle_section_core(len, string, margin, offset, 2);
 	// Shift all the display to the middle
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
-static void _middle_render_horizontal_incoming_call()
+static void _middle_render_horizontal_incoming_call_or_message()
 {
 	I8U string[128];
 	I16U dis_len=0;
-	
-	NOTIFIC_get_callerID((char *)string);
-	dis_len = FONT_get_string_display_len((char *)string);
-	
-	if (dis_len > 88) {
-		FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 88, FALSE);
-	} else {
-		FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 88, TRUE);			
-	}
-}
+	I16U offset = 0;
+	I8U max_dis_len = 0;
+  BOOLEAN b_display_center = FALSE;
 
-static void _middle_render_horizontal_incoming_message()
-{
-	I8U string[128];
-	I16U dis_len=0;
-	
-	cling.ui.app_notific_index = 0;
-	NOTIFIC_get_app_name(cling.ui.app_notific_index,(char *)string);	
-	
+	cling.ui.app_notific_index = 0;	
+	NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 	dis_len = FONT_get_string_display_len((char *)string);
 
 	if (dis_len > 88) {
-		FONT_load_characters(cling.ui.p_oled_up+24, (char *)string, 16, 88, FALSE);
+		offset = 24;
+		max_dis_len = 88;
+
 	} else {
-		FONT_load_characters(cling.ui.p_oled_up+128+128, (char *)string, 16, 88, TRUE);			
+		offset = 256;
+		max_dis_len = 88;		
+		b_display_center = TRUE;	
 	}
+
+	FONT_load_characters(cling.ui.p_oled_up + offset, (char *)string, 16, max_dis_len, b_display_center);
 }
 
 static void _middle_render_horizontal_detail_notif()
@@ -1267,27 +1050,22 @@ static void _middle_render_horizontal_detail_notif()
 	if (cling.ui.notif_detail_index) {
 		string_pos = cling.ui.string_pos_buf[cling.ui.notif_detail_index - 1];
 	}
+	
 	FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, 112, FALSE);		
 }
 
 static void _middle_render_horizontal_idle_alert()
 {
-	I8U string[32];
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  //sprintf((char *)string1, "time for a move");
-		sprintf((char *)string, "time for move");		
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "该活动一下了");
-	} else {
-		sprintf((char *)string, "該活動一下了");
-	}
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  FONT_load_characters(cling.ui.p_oled_up+256+24, (char *)string, 16, 128, FALSE);
-	} else {
-		FONT_load_characters(cling.ui.p_oled_up+256+32, (char *)string, 16, 128, FALSE);
-	}
+	const	char *idle_alart_name[] = {"time for move", "该活动一下了", "該活動一下了"};
+	I8U offset = 0;
+	I8U language_type = cling.ui.language_type;	
+	
+	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) 
+	  offset = 24;
+	else 
+		offset = 32;
+	
+	FONT_load_characters(cling.ui.p_oled_up+256+offset, (char *)idle_alart_name[language_type], 16, 128, FALSE);
 }
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
@@ -1306,21 +1084,17 @@ static void _middle_render_horizontal_phone_finder()
 	_render_one_icon_24(ICON24_PHONE_FINDER_2_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_PHONE_FINDER_2_POS);
 	offset += ICON24_PHONE_FINDER_2_LEN;
 
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 #endif
 
 #ifndef _CLINGBAND_PACE_MODEL_			
 static void _middle_render_horizontal_workout_mode_switch()
 {
-	I8U string1[32];
-	I8U string2[32];
-	I8U len=0, workout_idx=0, frame_index=0;
-	
-	char *workout_en[] =   {"Run",     "Cycle", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"};
-	char *workout_s_cn[] = {"跑步机 ", "单车",  "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"};
-	char *workout_t_cn[] = {"跑步机 ", "單車",  "爬樓梯 ", "橢圓機 ",    "划船", "有氧操 ", "Piloxing", "其它"};
-	char *workout_indicator[] = {
+	const char *workout_name[3][8] = {{"Run",    "Cycle", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
+	                           {"跑步机 ", "单车",  "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"},
+	                           {"跑步机 ", "單車",  "爬樓梯 ", "橢圓機 ",    "划船", "有氧操 ", "Piloxing", "其它"}};
+	const char *workout_indicator[] = {
 		"-,,,,,,,",
 		",-,,,,,,", 
 		",,-,,,,,", 
@@ -1329,6 +1103,8 @@ static void _middle_render_horizontal_workout_mode_switch()
 		",,,,,-,,", 
 		",,,,,,-,", 
 		",,,,,,,-"};
+	I8U len=0, workout_idx=0, frame_index=0;	
+	I8U language_type = cling.ui.language_type;
 	
   frame_index = cling.ui.frame_index;
 	if ((frame_index < UI_DISPLAY_WORKOUT)	|| (frame_index > UI_DISPLAY_WORKOUT_OTHERS))
@@ -1336,18 +1112,9 @@ static void _middle_render_horizontal_workout_mode_switch()
 	
 	workout_idx = frame_index - UI_DISPLAY_WORKOUT_RUNNING;
 		
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-		sprintf((char *)string1, "%s", workout_en[workout_idx]);
-	}	else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string1, "%s", workout_s_cn[workout_idx]);
-	} else {
-		sprintf((char *)string1, "%s", workout_t_cn[workout_idx]);
-	}
-
-	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string1, 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)workout_name[language_type][workout_idx], 16, 128, TRUE);
 	
-	len = sprintf((char *)string2, "%s", workout_indicator[workout_idx]);
-	_horizontal_display_dynamic(cling.ui.p_oled_up+384, len, string2);
+	_horizontal_display_dynamic((I8U *)workout_indicator[workout_idx], len, FALSE);
 }
 #endif
 
@@ -1382,7 +1149,10 @@ static void _horizontal_core_run_distance(I32U stat, BOOLEAN b_all_hold)
 	else 
 	  offset = 22;
 	
-	_render_middle_stat_section(len, string, margin, offset, b_all_hold);
+	if (b_all_hold)
+	  _render_middle_section_core(len, string, margin, offset, len);
+	else 
+	  _render_middle_section_core(len, string, margin, offset, 0);
 }
 
 static void _middle_render_horizontal_running_distance()
@@ -1398,17 +1168,10 @@ static void _middle_render_horizontal_training_distance()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_running_analysis()
 {
-	I8U string[32];
+	const char *running_analysis_name[] = {"RUN DATA", "训练分析 ", "訓練分析 "};
+	I8U language_type = cling.ui.language_type;
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "RUN DATA");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "训练分析");
-	} else {
-		sprintf((char *)string, "訓練分析");
-	}
-	
-	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)string, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)running_analysis_name[language_type], 16, 128, FALSE);
 }
 #endif
 
@@ -1513,7 +1276,7 @@ static void _middle_render_horizontal_running_pace()
 	
 	// Render the pace
 	len = sprintf((char *)string, "%d/%02d*", min, sec);
-	_render_middle_stat_section(len, string, margin, offset, FALSE);
+	_render_middle_section_core(len, string, margin, offset, 0);
 }
 
 static void _middle_render_horizontal_running_cadence()
@@ -1531,7 +1294,7 @@ static void _middle_render_horizontal_running_cadence()
 	len = sprintf((char *)string, "%d", stat);
 	
 	offset = ((80 - len*13 - (len-1)*2)/2) + 16;
-	_render_middle_stat_section(len, string, margin, offset, FALSE);
+	_render_middle_section_core(len, string, margin, offset, 0);
 }
 
 static void _middle_render_horizontal_running_stride()
@@ -1557,7 +1320,7 @@ static void _middle_render_horizontal_running_stride()
 	
 	offset = ((80 - len*13 - (len-1)*2)/2) + 16;
 	
-	_render_middle_stat_section(len, string, margin, offset, FALSE);
+	_render_middle_section_core(len, string, margin, offset, 0);
 }
 
 static void _middle_render_horizontal_running_hr()
@@ -1578,7 +1341,7 @@ static void _middle_render_horizontal_running_hr()
 	
 	offset = ((80 - len*13 - (len-1)*2)/2) + 16;
 	
-	_render_middle_stat_section(len, string, margin, offset, FALSE);
+	_render_middle_section_core(len, string, margin, offset, 0);
 }
 
 static void _middle_render_horizontal_running_calories()
@@ -1595,47 +1358,36 @@ static void _middle_render_horizontal_running_calories()
 
 	offset = ((80 - len*13 - (len-1)*2)/2) + 16;
 	
-	_render_middle_stat_section(len, string, margin, offset, FALSE);
+	_render_middle_section_core(len, string, margin, offset, 0);
 }
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_running_stop_analysis()
 {
-	I8U string[32];
+	const char *analysis_end_name[] = {"INFO END", "结束分析 ", "結束分析 "};
+	I8U language_type = cling.ui.language_type;
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "INFO END");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "结束分析");
-	} else {
-		sprintf((char *)string, "結束分析");
-	}
-	
-	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)string, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)analysis_end_name[language_type], 16, 128, FALSE);
 }
 #endif
 
 static void _middle_render_horizontal_training_start_run()
 {
-	I8U string[32];
+	const char *run_start_name[] = {"RUN NOW", "开始跑步 ", "開始跑步 "};
+	I8U language_type = cling.ui.language_type;
+  I8U offset = 0;
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "RUN NOW");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "开始跑步 ");
-	} else {
-		sprintf((char *)string, "開始跑步 ");
-	}
-
 	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {		
 #ifdef _CLINGBAND_PACE_MODEL_		
-	  FONT_load_characters(cling.ui.p_oled_up+128+32, (char *)string, 16, 128, FALSE);
+	  offset = 32;
 #else
-	  FONT_load_characters(cling.ui.p_oled_up+128+34, (char *)string, 16, 128, FALSE);
+	  offset = 34;
 #endif	
 	} else {
-	  FONT_load_characters(cling.ui.p_oled_up+128+30, (char *)string, 16, 128, FALSE);		
+	  offset = 34;	
 	}
+	
+	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)run_start_name[language_type], 16, 128, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -1669,68 +1421,39 @@ static void _middle_render_horizontal_training_run_or_analysis()
 }
 #endif
 
-static BOOLEAN _middle_render_horizontal_core_ready(I8U *pin, BOOLEAN b_center)
+static BOOLEAN _middle_render_horizontal_run_ready_core()
 {
+	const char *ready_indicator_name[] = {"3","2","1","GO"};
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 0;
 	I8U margin = 0;
-	I8U *in;
   I32U t_curr = CLK_get_system_time();
-  BOOLEAN b_go_display = FALSE;
-	BOOLEAN b_ready_finished = FALSE;
 	
-  cling.ui.touch_time_stamp = CLK_get_system_time();
-	
-	if (cling.ui.run_ready_index == 0) {
-		if (t_curr > (cling.ui.running_time_stamp + 500)) {
-			cling.ui.run_ready_index = 1;
-		  cling.ui.running_time_stamp = t_curr;
-		}
-		len = sprintf((char *)string, "3");
-	} else if(cling.ui.run_ready_index == 1) {
-		if (t_curr > (cling.ui.running_time_stamp + 800)) {
-			cling.ui.run_ready_index = 2;
-		  cling.ui.running_time_stamp = t_curr;
-		}
-		len = sprintf((char *)string, "2");
-	} else if(cling.ui.run_ready_index == 2) {
-		if (t_curr > (cling.ui.running_time_stamp + 800)) {
-			cling.ui.run_ready_index = 3;
-		  cling.ui.running_time_stamp = t_curr;			
-		}	
-		len = sprintf((char *)string, "1");	
-	} else if(cling.ui.run_ready_index == 3) {	
-		if (t_curr > (cling.ui.running_time_stamp + 500)) {
-			cling.ui.run_ready_index = 0;
-			b_ready_finished = TRUE;
-		}
-		len = sprintf((char *)string, "G O");		
-		b_go_display = TRUE;
-	} else {
-		cling.ui.run_ready_index = 0;	
+	if (t_curr  > (cling.ui.running_time_stamp + 600)) {
+		cling.ui.running_time_stamp = t_curr;		
+		cling.ui.run_ready_index++;
 	}
+	
+	if (cling.ui.run_ready_index > 3) {
+		cling.ui.run_ready_index = 0;
+		return TRUE;
+	}
+	
+	len = sprintf((char *)string, "%s", ready_indicator_name[cling.ui.run_ready_index]);
+		
+  offset = _render_middle_section_core(len, string, margin, offset, len);
+	// Shift all the display to the middle
+  _middle_horizontal_alignment_center(offset);
 
-	if (b_center) {
-	  offset = _render_middle_clock_section(cling.ui.p_oled_up, len, string, margin, offset, 3);
-		// Shift all the display to the middle
-	  _middle_horizontal_alignment(cling.ui.p_oled_up, offset, FALSE, ALIGNMENT_TYPE_CENTER);
-	} else {
-		in = pin;
-		if (b_go_display) {
-			in = cling.ui.p_oled_up + 65;
-		}
-		_render_middle_clock_section(in, len, string, margin, offset, 3);
-	}
-	
-	return b_ready_finished;
+	return FALSE;
 }
 
 static void _middle_render_horizontal_training_ready()
 {
 	BOOLEAN b_ready_finished = FALSE;
 	
-  b_ready_finished = _middle_render_horizontal_core_ready(cling.ui.p_oled_up+70, FALSE);
+  b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
@@ -1790,7 +1513,7 @@ static void _middle_render_horizontal_training_pace()
 	// Render the pace
 	len = sprintf((char *)string, "%d/%02d*", min, sec);
 
-	_render_middle_stat_section(len, string, margin, offset, TRUE);
+	_render_middle_section_core(len, string, margin, offset, len);
 }
 
 static void _middle_render_horizontal_training_hr()
@@ -1811,25 +1534,14 @@ static void _middle_render_horizontal_training_hr()
 
 static void _middle_render_horizontal_training_run_stop()
 {
-	I8U string[32];
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "STOP RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-#ifdef _CLINGBAND_PACE_MODEL_				
-		sprintf((char *)string, "结束跑步");
-#else 
-		sprintf((char *)string, "结束运动");
-#endif		
-	} else {
-#ifdef _CLINGBAND_PACE_MODEL_				
-		sprintf((char *)string, "结束跑步");
-#else 
-		sprintf((char *)string, "結束運動");
-#endif				
-	}
-	
-	FONT_load_characters(cling.ui.p_oled_up+128+26, (char *)string, 16, 128, FALSE);
+#ifndef _CLINGBAND_PACE_MODEL_	
+	const char *run_stop_name[] = {"STOP RUN", "结束跑步 ", "结束跑步 "};
+#else	
+	const char *run_stop_name[] = {"STOP RUN", "结束运动 ", "結束運動 "};
+#endif	
+	I8U language_type = cling.ui.language_type;
+
+	FONT_load_characters(cling.ui.p_oled_up+128+26, (char *)run_stop_name[language_type], 16, 128, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -1837,7 +1549,7 @@ static void _middle_render_horizontal_workout_ready()
 {	
 	BOOLEAN b_ready_finished = FALSE;
 	
-  b_ready_finished = _middle_render_horizontal_core_ready(cling.ui.p_oled_up+57, TRUE);
+  b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_WORKOUT_RUN_TIME;
@@ -1847,28 +1559,24 @@ static void _middle_render_horizontal_workout_ready()
 
 static void _middle_render_horizontal_cycling_outdoor_run_start()
 {
-	I8U string[32];
-	
+	const char *cycling_start_name[] = {"RUN NOW", "开始骑行 ", "開始騎行 "};
+	I8U language_type = cling.ui.language_type;
+	I8U offset = 0;
+
 	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "RUN NOW");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "开始骑行 ");	
+		offset = 34;
 	} else {
-		sprintf((char *)string, "開始騎行 ");			
+		offset = 30;		
 	}
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  FONT_load_characters(cling.ui.p_oled_up+128+34, (char *)string, 16, 128, FALSE);
-	} else {
-		FONT_load_characters(cling.ui.p_oled_up+128+30, (char *)string, 16, 128, FALSE);
-	}
+	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)cycling_start_name[language_type], 16, 128, FALSE);
 }
 
 static void _middle_render_horizontal_cycling_outdoor_ready()
 {
 	BOOLEAN b_ready_finished = FALSE;
 	
-  b_ready_finished = _middle_render_horizontal_core_ready(cling.ui.p_oled_up+70, FALSE);
+  b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
@@ -1909,18 +1617,10 @@ static void _middle_render_horizontal_cycling_outdoor_speed()
 
 static void _middle_render_horizontal_cycling_outdoor_run_stop()
 {
-	I8U string[32];
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "STOP RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "结束骑行");
-	} else {
-		sprintf((char *)string, "結束騎行");			
-	}
-	
-	FONT_load_characters(cling.ui.p_oled_up+128+28, (char *)string, 16, 128, FALSE);
+	const char *cycling_stop_name[] = {"STOP RUN", "结束骑行 ", "結束騎行 "};
+	I8U language_type = cling.ui.language_type;
 
+	FONT_load_characters(cling.ui.p_oled_up+128+28, (char *)cycling_stop_name[language_type], 16, 128, FALSE);
 }
 #endif
 
@@ -1989,7 +1689,9 @@ static void _middle_render_horizontal_stopwatch_start()
 	I8U len = 0;
 	I32U t_diff = 0;
 	I8U hour = 0, min = 0, sec = 0, ms = 0;
-
+	I8U offset = 0;
+  BOOLEAN b_hour_hold = FALSE;
+	
   if (cling.ui.b_stopwatch_first_enter) {
 	  cling.ui.stopwatch_time_stamp = CLK_get_system_time();		
 		cling.ui.b_stopwatch_first_enter = FALSE;
@@ -2011,31 +1713,26 @@ static void _middle_render_horizontal_stopwatch_start()
 		// Render the time
 		if (hour > 9) hour = 9;
 		len = sprintf((char *)string, "%d:%02d:%02d", hour, min, sec);
-		_middle_render_horizontal_stopwatch_core(string, len, 28, TRUE);
+		b_hour_hold = TRUE;
+		offset = 28;
 	} else {
 	  // Render the time
 		len = sprintf((char *)string, "%d:%02d.%02d", min, sec, ms);
-		if (min > 9) {
-	    _middle_render_horizontal_stopwatch_core(string, len, 23, FALSE);					
-		} else {
-	    _middle_render_horizontal_stopwatch_core(string, len, 33, FALSE);			
-		}
+		if (min > 9) 
+			offset = 23;		
+	 else 
+	    offset = 33;		
 	}
+	
+	_middle_render_horizontal_stopwatch_core(string, len, offset, b_hour_hold);
 }
 
 static void _middle_render_horizontal_stopwatch_stop()
 {
-	I8U string[32];
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-	  sprintf((char *)string, "END");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "结束");
-	} else {
-		sprintf((char *)string, "結束");
-	}
-	
-	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
+	const char *stopwatch_stop_name[] = {"END", "结束 ", "結束 "};
+	I8U language_type = cling.ui.language_type;
+
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)stopwatch_stop_name[language_type], 16, 128, TRUE);
 }
 #endif
 
@@ -2055,7 +1752,7 @@ static void _middle_render_horizontal_music_play()
 	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, cling.ui.p_oled_up+128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
 	offset += ICON16_MUSIC_MORE_LEN;
 
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
 static void _middle_render_horizontal_music_track()
@@ -2073,7 +1770,7 @@ static void _middle_render_horizontal_music_track()
 	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, cling.ui.p_oled_up+128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
 	offset += ICON16_MUSIC_MORE_LEN;
 
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);
+	_middle_horizontal_alignment_center(offset);
 }
 
 static void _middle_render_horizontal_music_volume()
@@ -2091,7 +1788,7 @@ static void _middle_render_horizontal_music_volume()
 	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, cling.ui.p_oled_up+128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
 	offset += ICON16_MUSIC_MORE_LEN;
 
-	_middle_horizontal_alignment(cling.ui.p_oled_up+128, offset, FALSE, ALIGNMENT_TYPE_CENTER);	
+	_middle_horizontal_alignment_center(offset);	
 }
 #endif
 
@@ -2203,6 +1900,24 @@ static void _middle_render_horizontal_carousel_4()
 }
 #endif
 
+static void _right_render_horizontal_string_core(const char *string1, const char *string2)
+{
+	I16U string1_len = 0, string2_len = 0;
+	I8U offset1 = 0, offset2 = 0;
+	
+	string1_len = FONT_get_string_display_len((char *)string1);
+	if (string1_len > 128)
+	  return;
+	offset1 = 128 - string1_len;
+	FONT_load_characters(cling.ui.p_oled_up + offset1, (char *)string1, 16, 128, FALSE);
+	
+	string2_len = FONT_get_string_display_len((char *)string2);
+	if (string2_len > 128)
+	  return;
+	offset2 = 128 - string2_len;
+	FONT_load_characters(cling.ui.p_oled_up + 256 + offset2, (char *)string2, 16, 128, FALSE);
+}
+
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _right_render_horizontal_delta_data_backward()
 {
@@ -2215,58 +1930,57 @@ static void _right_render_horizontal_delta_data_backward()
 	len = sprintf((char *)string, "%d/%02d", delta.month, delta.day);
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
-
-static void _right_render_horizontal_ok()
-{
-	I8U *in = cling.ui.p_oled_up+110;
-
-	_render_one_icon_16(ICON16_OK_LEN, in, asset_content+ICON16_OK_POS);
-}
 #endif
 
-static void _right_render_horizontal_home()
+static void _get_home_frame_stiring_core(I8U *string1, I8U *string2)
 {
-	I8U string[32];
-	I8U len;
- 	BOOLEAN b_batt_charging = FALSE;
 
-	char *week_en[] = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
-	char *week_cn_s[] = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
-	char *week_cn_t[] = {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"};
+	const char *week_display[3][7] = {{"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"},
+	                                 {"周一", "周二", "周三", "周四", "周五", "周六", "周日"},
+	                                 {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"}};
+ 	BOOLEAN b_batt_charging = FALSE;	
+	I8U language_type = cling.ui.language_type;	
+	I8U dow_index = cling.time.local.dow;
 
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-		sprintf((char *)string, "%s", week_en[cling.time.local.dow]);
-		FONT_load_characters(cling.ui.p_oled_up+256+104, (char *)string, 16, 128, FALSE);
-	}	else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "%s", week_cn_s[cling.time.local.dow]);
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "%s", week_cn_t[cling.time.local.dow]);
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+  if (dow_index >= 6)	
+		dow_index = 6;
 	
 	if (BATT_is_charging()) 
 		b_batt_charging = TRUE;
  
  	if (b_batt_charging) {
-	  len = sprintf((char *)string, "%d %%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
-	  FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
+		if (cling.ui.clock_orientation == 1) {
+		  sprintf((char *)string1, "%d %%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);		
+		} else {
+			sprintf((char *)string1, "%d%%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);	
+		}
 	} else {
-	  len = sprintf((char *)string, "%d/%02d", cling.time.local.month, cling.time.local.day);
-	  FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
+	  sprintf((char *)string1, "%d/%02d", cling.time.local.month, cling.time.local.day);
 	}
+	
+	sprintf((char *)string2, "%s", week_display[language_type][dow_index]);
+}
+
+static void _right_render_horizontal_home()
+{
+	I8U string1[16];
+	I8U string2[16];					
+ 	
+	_get_home_frame_stiring_core(string1, string2);
+
+	FONT_load_characters(cling.ui.p_oled_up+(128 -  strlen((char *)string1)*6), (char *)string1, 8, 128, FALSE);
+	
+	FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string2, 16, 128, FALSE);	
 }
 
 static void _right_render_horizontal_small_clock()
 {
-	I8U string[32];
+	I8U string[16];
 	I8U len;
 
 	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
 		len = sprintf((char *)string, "%d:%02d",cling.time.local.hour, cling.time.local.minute);
 	} else {
-		cling.ui.clock_sec_blinking = TRUE;
 		len = sprintf((char *)string, "%d %02d",cling.time.local.hour, cling.time.local.minute);		
 	}
  
@@ -2276,19 +1990,12 @@ static void _right_render_horizontal_small_clock()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _right_render_horizontal_button_hold()
 {
-	I8U string[32];
+	const	char *hold_name[] = {"HOLD", "长按 ", "長按 "};
+	I8U language_type = cling.ui.language_type;	
 	I8U i;
 	I8U *p0, *p1;
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-	  sprintf((char *)string, "HOLD");
-  } else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "长按");
-	} else {
-	  sprintf((char *)string, "長按");
-	}
-	
-	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)string, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+96, (char *)hold_name[language_type], 16, 128, FALSE);	
 	
   p0 = cling.ui.p_oled_up+128+96,
 	p1 = p0+128;
@@ -2323,7 +2030,7 @@ static void _right_render_horizontal_tracker()
 
 static void _right_render_horizontal_app_notif()
 {
-	I8U string[32];
+	I8U string[16];
 	I8U len;
 	
 	len = sprintf((char *)string, "%02d", cling.ui.app_notific_index);
@@ -2352,7 +2059,7 @@ static void _right_render_horizontal_reminder()
 
 static void _right_render_horizontal_firmware_ver()
 {
-	I8U string[32];
+	I8U string[16];
 	I16U len;
 	I16U major;
 	I16U minor;
@@ -2362,248 +2069,87 @@ static void _right_render_horizontal_firmware_ver()
 	minor <<= 8;
 	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
 	
-#ifdef _ENABLE_TOUCH_
-	len = sprintf((char *)string, "VER:%d.%d(%d)", major, minor,cling.whoami.touch_ver[2]);
-#else  
+//#ifdef _ENABLE_TOUCH_
+//	len = sprintf((char *)string, "VER:%d.%d(%d)", major, minor,cling.whoami.touch_ver[2]);
+//#else  
 	len = sprintf((char *)string, "VER:%d.%d", major, minor);
-#endif	
+//#endif	
 
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 
 static void _right_render_horizontal_running_distance()
 {
-	I8U string[32];
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "RUN");
-		FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);	
-		if (cling.user_data.profile.metric_distance) {
-			sprintf((char *)string, "ML");
-		} else {
-			sprintf((char *)string, "KM");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+112, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "路跑");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		if (cling.user_data.profile.metric_distance) {
-			sprintf((char *)string, "英里");
-		} else {
-			sprintf((char *)string, "公里");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "路跑");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		if (cling.user_data.profile.metric_distance) {
-			sprintf((char *)string, "英裏");
-		} else {
-			sprintf((char *)string, "公裏");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};
+	const char *run_name[] = {"RUN", "路跑", "路跑"};	
+	I8U language_type = cling.ui.language_type;
+	I8U metric = cling.user_data.profile.metric_distance;
+	
+	_right_render_horizontal_string_core(run_name[language_type], unit_distance_display[language_type][metric]);
 }
 
 static void _right_render_horizontal_running_pace()
-{
-	I8U string[32];
+{	
+	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
+	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};
+	I8U language_type = cling.ui.language_type;	
 
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "AVG");
-		FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);	
-		sprintf((char *)string, "PACE");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "平均");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "配速 ");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "平均");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "配速 ");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	_right_render_horizontal_string_core(avg_name[language_type], pace_name[language_type]);
 }
 
 static void _right_render_horizontal_running_calories()
 {
-	I8U string[32];
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "BURN");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);	
-		sprintf((char *)string, "CALS");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "热量");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "大卡");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "熱量");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "大卡");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	const	char *cals_name[] = {"BURN", "热量", "熱量"};
+	const	char *cals_unit_name[] = {"CALS", "大卡", "大卡"};
+	I8U language_type = cling.ui.language_type;
+	
+	_right_render_horizontal_string_core(cals_name[language_type], cals_unit_name[language_type]);
 }
 
 static void _right_render_horizontal_running_cadence()
 {
-	I8U string[32];
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "RATE");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);	
-		sprintf((char *)string, "SPM");
-		FONT_load_characters(cling.ui.p_oled_up+256+104, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "步频");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "步分");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "步頻");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "步分");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	const	char *rate_name[] = {"RATE", "步频", "步頻"};
+	const	char *spm_name[] = {"SPM", "步分", "步分"};
+	I8U language_type = cling.ui.language_type;	
+	
+	_right_render_horizontal_string_core(rate_name[language_type], spm_name[language_type]);
 }
 
 static void _right_render_horizontal_running_stride()
 {
-	I8U string[32];
+	const	char *stride_name[] = {"STRIDE", "步幅", "步幅"};
+	const char *unit_stride_display[3][2] = {{"CM", "IN"},{"厘米", "英寸"},{"厘米", "英寸"}};	
+	I8U language_type = cling.ui.language_type;	
+	I8U metric = cling.user_data.profile.metric_distance;	
 
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "STRIDE");
-		FONT_load_characters(cling.ui.p_oled_up+80, (char *)string, 16, 128, FALSE);	
-		if (cling.user_data.profile.metric_distance) {
-		  sprintf((char *)string, "IN");			
-		} else {
-		  sprintf((char *)string, "CM");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+112, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "步幅");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		if (cling.user_data.profile.metric_distance) {
-		  sprintf((char *)string, "英寸");
-		} else {			
-		  sprintf((char *)string, "厘米");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "步幅");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		if (cling.user_data.profile.metric_distance) {
-		  sprintf((char *)string, "英寸");
-		} else {			
-		  sprintf((char *)string, "厘米");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	_right_render_horizontal_string_core(stride_name[language_type], unit_stride_display[language_type][metric]);
 }
 
 static void _right_render_horizontal_running_hr()
 {
-	I8U string[32];
+	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
+	const	char *hate_rate_name[] = {"HR", "心率 ", "心率 "};	
+	I8U language_type = cling.ui.language_type;
 
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "AVG");
-		FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);	
-		sprintf((char *)string, "BPM");
-		FONT_load_characters(cling.ui.p_oled_up+256+104, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "平均");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "心率");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "平均");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "心率");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	_right_render_horizontal_string_core(avg_name[language_type], hate_rate_name[language_type]);
 }
-
-#if 0
-static void _right_render_horizontal_running_time()
-{
-	I8U string[128];
-	
-	if (cling.run_stat.time_min > 59)
-		return;
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "TIME");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);	
-		sprintf((char *)string, "SEC");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "耗时");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "耗時");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-	}
-}
-#endif
 
 static void _right_render_horizontal_training_pace()
 {
-	I8U string[32];
+	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};
+	I8U language_type = cling.ui.language_type;
 
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "RT");
-		FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);	
-		sprintf((char *)string, "PACE");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "当前");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "配速 ");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "當前");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		sprintf((char *)string, "配速 ");
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	_right_render_horizontal_string_core(pace_name[language_type], NULL);
 }
 
 static void _right_render_horizontal_training_distance()
 {
-	I8U string[32];
+	const	char *distance_name[] = {"RUN", "里程", "裏程"};
+	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏" ,"英裏"}};	
+	I8U language_type = cling.ui.language_type;	
+	I8U metric = cling.user_data.profile.metric_distance;	
 
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "RUN");
-		FONT_load_characters(cling.ui.p_oled_up+104, (char *)string, 16, 128, FALSE);	
-		if (cling.user_data.profile.metric_distance) {
-			sprintf((char *)string, "ML");
-		} else {
-			sprintf((char *)string, "KM");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+112, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "里程");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		if (cling.user_data.profile.metric_distance) {
-			sprintf((char *)string, "英里");
-		} else {
-			sprintf((char *)string, "公里");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "裏程");
-		FONT_load_characters(cling.ui.p_oled_up+96, (char *)string, 16, 128, FALSE);
-		if (cling.user_data.profile.metric_distance) {
-			sprintf((char *)string, "英裏");
-		} else {
-			sprintf((char *)string, "公裏");
-		}
-		FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)string, 16, 128, FALSE);
-	}
+	_right_render_horizontal_string_core(distance_name[language_type], unit_distance_display[language_type][metric]);	
 }
 
 static void _right_render_horizontal_training_hr()
@@ -2611,125 +2157,105 @@ static void _right_render_horizontal_training_hr()
 	I8U string[32];
 	I8U len = 0;
 	I8U hr_perc = 0;
-	I8U *p0;
-  I8U j;
+	I8U *p0, *p1, *p2, *p3;
+  I8U i;
 	
-	p0 = cling.ui.p_oled_up+384+100;
 	if (cling.hr.heart_rate_ready)
     hr_perc = cling.ui.training_hr;
 
 	len = sprintf((char *)string, "%d%%", hr_perc);
 	FONT_load_characters(cling.ui.p_oled_up+128-(len*8), (char *)string, 16, 128, FALSE);
 	
-	if (hr_perc) {
-		for (j = 0; j < 5; j++) {
-			*p0++ = 0xff;
-		}
-		*p0++ = 0;	
-		*p0++ = 0;
-	} else {
-		*p0++ = 0xff;
-		for (j = 0; j < 4; j++) {
-			*p0++ = 0x81;
-		}
-		*p0++ = 0xff;
-		*p0++ = 0;		
-	}
+	p0 = cling.ui.p_oled_up+384+100;
+	p1 = p0 + 7;
+	p2 = p1 + 7;
+	p3 = p2 + 7;
 	
-	if (hr_perc > 25) {
-		for (j = 0; j < 5; j++) {
-			*p0++ = 0xff;
-		}
-		*p0++ = 0;	
-		*p0++ = 0;
-	} else {
-		*p0++ = 0xff;
-		for (j = 0; j < 4; j++) {
+	*p0++ = 0xff;
+	*p1++ = 0xff;
+	*p2++ = 0xff;
+	*p3++ = 0xff;
+	for (i = 1; i < 4; i++) {
+		if (!hr_perc) {
 			*p0++ = 0x81;
-		}
-		*p0++ = 0xff;
-		*p0++ = 0;		
-	} 
-
-	if (hr_perc > 50) {
-		for (j = 0; j < 5; j++) {
+			*p1++ = 0x81;
+			*p2++ = 0x81;
+			*p3++ = 0x81;			
+		} else if ((hr_perc) && (hr_perc <= 25)) {
 			*p0++ = 0xff;
-		}
-		*p0++ = 0;	
-		*p0++ = 0;
-	} else {
-		*p0++ = 0xff;
-		for (j = 0; j < 4; j++) {
-			*p0++ = 0x81;
-		}
-		*p0++ = 0xff;
-		*p0++ = 0x0;		
-	} 
-
-	if (hr_perc > 75) {
-		for (j = 0; j < 5; j++) {
+			*p1++ = 0x81;
+			*p2++ = 0x81;
+			*p3++ = 0x81;
+		} else if ((hr_perc > 25) && (hr_perc <= 50)) {
 			*p0++ = 0xff;
+			*p1++ = 0xff;
+			*p2++ = 0x81;
+			*p3++ = 0x81;
+		} else if ((hr_perc > 50) && (hr_perc <= 75)) {
+			*p0++ = 0xff;
+			*p1++ = 0xff;
+			*p2++ = 0xff;
+			*p3++ = 0x81;
+		} else {
+			*p0++ = 0xff;
+			*p1++ = 0xff;
+			*p2++ = 0xff;
+			*p3++ = 0xff;
 		}
-		*p0++ = 0;
-		*p0++ = 0;
-	} else {
-		*p0++ = 0xff;
-		for (j = 0; j < 4; j++) {
-			*p0++ = 0x81;
-		}
-		*p0++ = 0xff;
-		*p0++ = 0x0;		
-	} 	
+	}
+	*p0++ = 0xff;
+	*p1++ = 0xff;
+	*p2++ = 0xff;
+	*p3++ = 0xff;
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
-static void _right_render_horizontal_run_ok()
+static void _right_render_horizontal_invert_colors_core(I8U *string, I8U *p_in)
 {
 	I8U i;
-	I8U *p0, *p1;
-	I8U *in = cling.ui.p_oled_up+128+104;
+	I8U *p0, *p1, *p2, *p3;
+	I8U *in = p_in+104;
 	
-	memset(in, 0xff, 24);
-	memset(in+128, 0xff, 24);
+	memset(in, 0x00, 24);
+	memset(in+128, 0x00, 24);
 	
-	FONT_load_characters(cling.ui.p_oled_up+128+108, "OK", 16, 128, FALSE);
- 
-  p0 = cling.ui.p_oled_up+128+108,
+	FONT_load_characters(p_in+107, (char *)string, 16, 128, FALSE);
+	p0 = p_in+107+15,
+	p1 = p0+128;
+	p2 = p0 + 2;
+	p3 = p1 + 2;	
+	for (i=0;i<8;i++) {
+		*p2-- = *p0--;
+		*p3-- = *p1--;		
+	}
+	
+	*p2-- = 0x00;
+	*p2-- = 0x00;
+	*p3-- = 0x00;
+	*p3-- = 0x00;
+	
+  p0 = p_in+104,
 	p1 = p0+128;
 	
-	for (i=0;i<16;i++) {
+	for (i=0;i<24;i++) {
 	 *(p0+i) = ~(*(p0+i));
 	 *(p1+i) = ~(*(p1+i));	
-	}
+	}	
+}
+
+static void _right_render_horizontal_run_ok()
+{
+  _right_render_horizontal_invert_colors_core((I8U *)"OK", cling.ui.p_oled_up+128);
+}
+
+static void _right_render_horizontal_message_ok()
+{
+  _right_render_horizontal_invert_colors_core((I8U *)"OK", cling.ui.p_oled_up);
 }
 
 static void _right_render_horizontal_run_go()
 {
-	I8U i;
-	I8U *p0, *p1;
-	I8U *in = cling.ui.p_oled_up+128+104;
-	
-	memset(in, 0xff, 24);
-	memset(in+128, 0xff, 24);
-	
-	FONT_load_characters(cling.ui.p_oled_up+128+107, "G", 16, 128, FALSE);
- 	FONT_load_characters(cling.ui.p_oled_up+128+117, "O", 16, 128, FALSE);
-	
-  p0 = cling.ui.p_oled_up+128+107,
-	p1 = p0+128;
-	
-	for (i=0;i<8;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-  p0 = cling.ui.p_oled_up+128+117,
-	p1 = p0+128;
-	
-	for (i=0;i<8;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}	
+  _right_render_horizontal_invert_colors_core((I8U *)"GO", cling.ui.p_oled_up+128);
 }
 
 static void _right_render_horizontal_cycling_outdoor_distance()
@@ -2748,12 +2274,8 @@ static void _right_render_horizontal_cycling_outdoor_speed()
 {
 	I8U string[32];
 	I8U len;
-  BOOLEAN b_ble_connected = FALSE;
-	
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	if (b_ble_connected) {
+
+	if (BTLE_is_connected()) {
 	  len = sprintf((char *)string, "KM/H");
 	  FONT_load_characters(cling.ui.p_oled_up+384+(128-len*6), (char *)string, 8, 128, FALSE);	
 	} else {
@@ -2825,7 +2347,38 @@ static void _vertical_centerize(I8U *buf1, I8U *buf2, I8U *buf3, I8U len)
 	}
 }	
 
-static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U len, I8U b_24_size, BOOLEAN b_all_hold, BOOLEAN b_font_lib)
+static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I8U offset, BOOLEAN b_invert_colors)
+{
+	I8U buf_fonts[256];	
+	I8U *p0, *p1, *p2;
+	I8U line_len;
+	I8U i;
+
+	p0 = buf_fonts;
+	p1 = p0 + 128;
+	p2 = p1 + 32;
+	
+	memset(buf_fonts, 0, 256);
+	
+	line_len = FONT_load_characters(buf_fonts, (char *)string, height, 128, FALSE);
+
+  if (b_invert_colors) {
+		for (i=0;i<32;i++) {
+	    *(p0+i) = ~(*(p0+i));
+	    *(p1+i) = ~(*(p1+i));	
+	  }
+	}
+		
+	// Shift to the center
+	_vertical_centerize(p0, p1, p2, line_len);
+	
+	// do the rotation
+	_rotate_270_degree(p1, cling.ui.p_oled_up+384+offset);
+	if (height == 16)
+	  _rotate_270_degree(p2, cling.ui.p_oled_up+384+offset+8);
+}
+
+static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U len, I8U b_24_size, BOOLEAN b_all_hold)
 {
 	I8U *p0, *p1, *p2;
 	I8U char_len, i, j, line_len;
@@ -2839,22 +2392,14 @@ static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U 
 	buf2 = buf1 + 128;
 	buf3 = buf2 + 32;
 	
-	// Render the hour
 	memset(buf_fonts, 0, 256);
+	
 	p0 = buf1;
 	p1 = buf2;
 	p2 = buf3;
-	if (b_font_lib) {
-		line_len = FONT_load_characters(buf_fonts, (char *)string, 16, 128, FALSE);
-		// Shift to the center
-		_vertical_centerize(buf1, buf2, buf3, line_len);
-		
-		// do the rotation
-		_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
-		_rotate_270_degree(buf2, cling.ui.p_oled_up+384+offset+8);
-		return;
-	}
+
 	line_len = 0;
+	
 	for (i = 0; i < len; i++) {
 		// Digits in large fonts
 		if (b_24_size == 24) {
@@ -2920,7 +2465,7 @@ static void _render_vertical_icon(I8U icon_idx)
 	I8U b_24_size = 24;
 
 	string[len++] = icon_idx;
-	_render_vertical_character(string, 0, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 0, margin, len, b_24_size, FALSE);
 }
 
 static void _top_render_vertical_batt_ble()
@@ -2950,11 +2495,12 @@ static void _top_render_vertical_calories()
 	_render_vertical_icon(ICON24_CALORIES_IDX);
 }
 
+#ifdef _CLINGBAND_PACE_MODEL_
 static void _top_render_vertical_pm2p5()
 {
 	_render_vertical_icon(ICON24_PM2P5_IDX);
 }
-		
+
 static void _top_render_vertical_reminder()
 {
 	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK))
@@ -2962,23 +2508,6 @@ static void _top_render_vertical_reminder()
 	else 
     _render_vertical_icon(ICON24_NORMAL_ALARM_CLOCK_IDX);		
 }
-
-static void _top_render_vertical_heart_rate()
-{
-	if (cling.ui.heart_rate_sec_blinking) {
-		cling.ui.heart_rate_sec_blinking = FALSE;
-		_render_vertical_icon(ICON24_HEART_RATE_IDX);
-	} else {
-		cling.ui.heart_rate_sec_blinking = TRUE;
-	}
-}
-
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
-static void _top_render_vertical_skin_temp()
-{
-	_render_vertical_icon(ICON24_SKIN_TEMP_IDX);
-}
-#endif
 
 static void _top_render_vertical_weather()
 {
@@ -2991,8 +2520,24 @@ static void _top_render_vertical_weather()
 	WEATHER_get_weather(0, &weather);
 	
 	string[len++] = ICON24_WEATHER_IDX+weather.type;
-	_render_vertical_character(string, 0, margin, len, b_24_size, FALSE, FALSE);	
+	_render_vertical_character(string, 0, margin, len, b_24_size, FALSE);	
 }
+#endif
+
+static void _top_render_vertical_heart_rate()
+{
+	if (cling.ui.heart_rate_sec_blinking) 
+		_render_vertical_icon(ICON24_HEART_RATE_IDX);
+}
+
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
+static void _top_render_vertical_skin_temp()
+{
+	_render_vertical_icon(ICON24_SKIN_TEMP_IDX);
+}
+#endif
+
+
 
 static void _top_render_vertical_running_distance()
 {
@@ -3001,22 +2546,7 @@ static void _top_render_vertical_running_distance()
 
 static void _top_render_vertical_running_time()
 {
-	I8U string[32];
-	I8U len = 0;
-	I8U margin = 0;	
-	I8U b_24_size = 16;
-
 	_render_vertical_icon(ICON24_RUNNING_TIME_IDX);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "TIME");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "耗时");
-	} else {
-		len = sprintf((char *)string, "耗時");
-	}
-	
-	_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
 }
 
 static void _top_render_vertical_running_calories()
@@ -3055,31 +2585,6 @@ static void _top_render_vertical_uv_index()
 	_render_vertical_icon(ICON24_UV_INDEX_IDX);
 }
 #endif
-
-static void _top_render_vertical_training_time()
-{
-	I8U string[32];
-	I8U len = 0;
-	I8U margin = 2;	
-	I8U b_24_size = 16;
-  I32U t_curr = CLK_get_system_time();	
-
-	_render_vertical_icon(ICON24_RUNNING_TIME_IDX);
-	
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
-	  if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		  len = sprintf((char *)string, "TIME");
-	  } else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		  len = sprintf((char *)string, "耗时");
-	  } else {
-		  len = sprintf((char *)string, "耗時");
-	  }
-		_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
-  } else {
-		cling.ui.clock_sec_blinking = TRUE;
-	}
-}
 
 static void _top_render_vertical_running_stop()
 {
@@ -3183,12 +2688,9 @@ static void _middle_render_vertical_clock()
 	
 	// Render the clock sign
 	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
-		
 		// Render the minute
 		sprintf((char *)string, ":%02d", cling.time.local.minute);
 	} else {
-		cling.ui.clock_sec_blinking = TRUE;
 		// Render the minute
 		sprintf((char *)string, " %02d", cling.time.local.minute);
 	}
@@ -3198,14 +2700,16 @@ static void _middle_render_vertical_clock()
 
 static void _middle_render_vertical_steps()
 {
-	I8U string1[32];
-	I8U string2[32];	
+	const char *step_name[3][3] = {{"STEP", "K", "K"},{"步 ", "千步", "万步"},{"步 ", "千步", "萬步"}};
+	I8U string[32];
 	I32U stat = 0;
-	I8U len1=0, len2=0;
+	I8U len=0;
 	I8U margin = 2;
 	I8U b_24_size = 24;
 	I32U v_10000 = 0, v_1000 = 0, v_100 = 0;
-
+  I8U language_type = cling.ui.language_type;	
+	I8U step_unit_index = 0;
+	
 #ifdef _CLINGBAND_PACE_MODEL_	
 	TRACKING_get_activity(0, TRACKING_STEPS, &stat);
 #else  
@@ -3218,9 +2722,9 @@ static void _middle_render_vertical_steps()
 		v_10000 = 9;
 		v_1000 = 9;
 		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
+			len = sprintf((char *)string, "%d%d", v_10000, v_1000);
 		} else {
-			len1 = sprintf((char *)string1, "%d.%d", v_10000, v_1000);
+			len = sprintf((char *)string, "%d.%d", v_10000, v_1000);
 		}
 		margin = 1;
 	} else if (stat > 9999) {
@@ -3228,77 +2732,57 @@ static void _middle_render_vertical_steps()
 		v_1000 = stat - (v_10000 * 10000);
 		v_1000 /= 1000;
 		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
+			len = sprintf((char *)string, "%d%d", v_10000, v_1000);
 		} else {
-			len1 = sprintf((char *)string1, "%d.%d", v_10000, v_1000);
+			len = sprintf((char *)string, "%d.%d", v_10000, v_1000);
 		}
 		margin = 1;
 	} else if (stat > 999) {
 		v_1000 = stat / 1000;
 		v_100 = stat - (v_1000 * 1000);
 		v_100 /= 100;
-		len1 = sprintf((char *)string1, "%d.%d", v_1000, v_100);
+		len = sprintf((char *)string, "%d.%d", v_1000, v_100);
 		margin = 1;
 	} else if (stat > 99) {
-		len1 = sprintf((char *)string1, "%d", stat);
+		len = sprintf((char *)string, "%d", stat);
 		b_24_size = 16;
 	} else {
-		len1 = sprintf((char *)string1, "%d", stat);
+		len = sprintf((char *)string, "%d", stat);
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character(string1, 42, margin, len1, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string1, 46, margin, len1, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 46, margin, len, b_24_size, FALSE);
 
-	b_24_size = 16;
-	margin  = 0;
-	
 	if (stat > 9999) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "K");
-			len2 = sprintf((char *)string2, "STEP");			
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "万步");
-		} else {
-			len1 = sprintf((char *)string1, "萬步");
-		}
+		step_unit_index = 2;
 	} else if (stat > 999) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "K");
-			len2 = sprintf((char *)string2, "STEP");			
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "千步");
-		} else {
-			len1 = sprintf((char *)string1, "千步");
-		}
+		step_unit_index = 1;
 	} else {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "STEP");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "步 ");
-		} else {
-			len1 = sprintf((char *)string1, "步 ");
-		}
+		step_unit_index = 0;
 	}
 	
-	if (len2) {
-	  _render_vertical_character(string1, 75, margin, len1, b_24_size, FALSE, TRUE);
-		_render_vertical_character(string2, 95, margin, len2, b_24_size, FALSE, TRUE);
+	if ((step_unit_index) && (language_type == LANGUAGE_TYPE_ENGLISH)) {
+	  _render_vertical_fonts_lib_character_core((I8U *)step_name[0][1], 16, 75, FALSE);
+		_render_vertical_fonts_lib_character_core((I8U *)step_name[0][0], 16, 95, FALSE);
 	} else {
-		_render_vertical_character(string1, 80, margin, len1, b_24_size, FALSE, TRUE);
+		_render_vertical_fonts_lib_character_core((I8U *)step_name[language_type][step_unit_index], 16, 80, FALSE);
 	}
 }
 
 static void _middle_render_vertical_distance()
 {	
+	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U string[32];	
 	I32U stat = 0;
 	I8U len = 0;
 	I8U margin = 2;
 	I8U b_24_size = 24;
 	I32U v_1000 = 0, v_100 = 0;
-
+	I8U language_type = cling.ui.language_type;
+	I8U metric = cling.user_data.profile.metric_distance;	
+	
 #ifdef _CLINGBAND_PACE_MODEL_		
 	TRACKING_get_activity(0, TRACKING_DISTANCE, &stat);
 #else 
@@ -3329,42 +2813,23 @@ static void _middle_render_vertical_distance()
 		margin = 1;
 	}
 	
-	_render_vertical_character(string, 42, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);
 
-  b_24_size = 16;
-	margin = 0;
-	
-	if (cling.user_data.profile.metric_distance) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "MILE");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "英里");
-		} else {
-			len = sprintf((char *)string, "英裏");
-		}
-	} else {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KM");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "公里");
-		} else {
-			len = sprintf((char *)string, "公裏");
-		}
-	}
-	
-	_render_vertical_character(string, 80, margin, len, b_24_size, FALSE, TRUE);	
+	_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 80, FALSE);	
 }
 
 static void _middle_render_vertical_calories()
 {
-	I8U string1[32];
-	I8U string2[32];	
+	const char *unit_calories_display[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
+	I8U string[32];
 	I32U stat = 0;
-	I8U len1=0, len2=0;
+	I8U len1=0;
 	I8U margin = 2;
 	I8U b_24_size = 24;
 	I32U v_10000 = 0, v_1000 = 0, v_100 = 0;
-
+  I8U language_type = cling.ui.language_type;	
+	I8U calories_unit_index = 0;
+	
 #ifdef _CLINGBAND_PACE_MODEL_		
 	TRACKING_get_activity(0, TRACKING_CALORIES, &stat);
 #else
@@ -3374,70 +2839,53 @@ static void _middle_render_vertical_calories()
 	if (stat > 99999) {
 		v_10000 = 9;
 		v_1000 = 9;
-		len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
+		len1 = sprintf((char *)string, "%d%d", v_10000, v_1000);
 	} else if (stat > 9999) {
 		v_10000 = stat / 10000;
 		v_1000 = stat - (v_10000 * 10000);
 		v_1000 /= 1000;
-		len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
+		len1 = sprintf((char *)string, "%d%d", v_10000, v_1000);
 	} else if (stat > 999) {
 		v_1000 = stat / 1000;
 		v_100 = stat - (v_1000 * 1000);
 		v_100 /= 100;
-		len1 = sprintf((char *)string1, "%d.%d", v_1000, v_100);
+		len1 = sprintf((char *)string, "%d.%d", v_1000, v_100);
 		margin = 1;
 	} else if (stat > 99) {
-		len1 = sprintf((char *)string1, "%d", stat);
+		len1 = sprintf((char *)string, "%d", stat);
 		b_24_size = 16;
 	} else {
-		len1 = sprintf((char *)string1, "%d", stat);
+		len1 = sprintf((char *)string, "%d", stat);
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character(string1, 42, margin, len1, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 42, margin, len1, b_24_size, FALSE);
 	else
-		_render_vertical_character(string1, 46, margin, len1, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 46, margin, len1, b_24_size, FALSE);
 
-	b_24_size = 16;
-  margin = 0;
+	if (stat > 999) 
+		calories_unit_index = 1;
+	else 
+		calories_unit_index = 0;
 	
-	if (stat > 999) {
-	  if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "K");
-			len2 = sprintf((char *)string2, "CAL");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "千 ");
-			len2 = sprintf((char *)string2, "大卡");			
-		} else {
-			len1 = sprintf((char *)string1, "千 ");
-			len2 = sprintf((char *)string2, "大卡");	
-		}
+	if (calories_unit_index) {
+	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][1], 16, 75, FALSE);
+    _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 95, FALSE);				
 	} else {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "CAL");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "大卡");
-		} else {
-			len1 = sprintf((char *)string1, "大卡");
-		}
-	}
-	
-	if (len2) {
-	  _render_vertical_character(string1, 75, margin, len1, b_24_size, FALSE, TRUE);
-    _render_vertical_character(string2, 95, margin, len2, b_24_size, FALSE, TRUE);		
-	} else {
-	  _render_vertical_character(string1, 80, margin, len1, b_24_size, FALSE, TRUE);
+	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 80, FALSE);
 	}
 }
 
 static void _middle_render_vertical_active_time()
 {
+	const	char *minute_name[] = {"MIN", "分钟", "分鍾"};	
 	I8U string[32];	
 	I32U stat = 0;
 	I8U len = 0;
   I8U	margin = 2;
 	I8U b_24_size = 24;
-
+	I8U language_type = cling.ui.language_type;	
+	
 #ifdef _CLINGBAND_PACE_MODEL_			
 	TRACKING_get_activity(0, TRACKING_ACTIVE_TIME, &stat);
 #else
@@ -3453,22 +2901,11 @@ static void _middle_render_vertical_active_time()
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string, 46, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 46, margin, len, b_24_size, FALSE);
 
-	b_24_size = 16;
-	margin = 0;
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "MIN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "分钟");
-	} else {
-		len = sprintf((char *)string, "分鍾");
-	}
-	
-	_render_vertical_character(string, 80, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)minute_name[language_type], 16, 80, FALSE);
 }
 
 #ifdef _CLINGBAND_UV_MODEL_
@@ -3489,36 +2926,19 @@ static void _middle_render_vertical_uv_index()
 	  margin = 1;
 	}
 	
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE);
 }
 #endif
 
 static void _middle_render_vertical_training_run_start()
 {
-	I8U string[32];	
-	I8U len = 0;
-  I8U	margin = 0;	
-	I8U b_24_size = 16;
+	const	char *run_start_name_1[] = {"RUN", "开始 ", "開始 "};		
+	const	char *run_start_name_2[] = {"NOW", "跑步 ", "跑步 "};			
+	I8U language_type = cling.ui.language_type;		
+
+	_render_vertical_fonts_lib_character_core((I8U *)run_start_name_1[language_type], 16, 50, FALSE);
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "开始 ");
-	} else {
-		len = sprintf((char *)string, "開始 ");
-	}
-	
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, TRUE);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "NOW");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "跑步");
-	} else {
-		len = sprintf((char *)string, "跑步");
-	}
-	
-	_render_vertical_character(string, 70, margin, len, b_24_size, FALSE, TRUE);	
+	_render_vertical_fonts_lib_character_core((I8U *)run_start_name_2[language_type], 16, 70, FALSE);	
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -3570,45 +2990,29 @@ static void _middle_render_vertical_training_run_or_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_running_analysis()
 {
-	I8U string[32];	
-	I8U len = 0;
-  I8U	margin = 0;	
-	I8U b_24_size = 16;
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "训练");
-	} else {
-		len = sprintf((char *)string, "訓練");
-	}
+	const	char *running_analysis_name_1[] = {"RUN", "训练 ", "訓練 "};	
+	const	char *running_analysis_name_2[] = {"DATA", "分析 ", "分析 "};	
+	I8U language_type = cling.ui.language_type;		
 	
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)running_analysis_name_1[language_type], 16, 50, FALSE);
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "DATA");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "分析");
-	} else {
-		len = sprintf((char *)string, "分析");
-	}
-	
-	_render_vertical_character(string, 70, margin, len, b_24_size, FALSE, TRUE);	
+	_render_vertical_fonts_lib_character_core((I8U *)running_analysis_name_2[language_type], 16, 70, FALSE);	
 }
-#endif
 
 static void _middle_render_vertical_pm2p5()
 {
+	const char *air_display[3][6] = {{"--","GOOD", "GOOD", "POOR", "POOR", "POOR"},
+	                       {"--","优质", "良好", "差 ", "很差", "极差"},
+												 {"--","優質", "良好", "差 ", "很差", "极差"}};
+
+	I8U level_idx;						
 	I8U string[32];	
 	I32U stat = 0;
 	I8U len = 0;
   I8U	margin = 2;
 	I8U b_24_size = 24;
-	char **air_level;
-	char *air_en[] = {"GOOD", "GOOD", "POOR", "POOR", "POOR"};
-	char *air_s_cn[] = {"优质", "良好", "差 ", "很差", "极差"};
-	char *air_t_cn[] = {"優質", "良好", "差 ", "很差", "極差"};
-
+	I8U language_type = cling.ui.language_type;			
+												 
   stat = cling.pm2p5;
 	
 	if (stat == 0xffff) {
@@ -3625,40 +3029,31 @@ static void _middle_render_vertical_pm2p5()
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string, 46, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 46, margin, len, b_24_size, FALSE);
 	
-	b_24_size = 16;
-	margin = 0;
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {	
-		air_level = air_en;
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		air_level = air_s_cn;
-	} else {
-		air_level = air_t_cn;
-	}
-
 	if (cling.pm2p5 == 0xffff) {
-		len =	sprintf((char *)string, "--");
+		level_idx = 0;
 	} else if (cling.pm2p5 < 50) {
-		len = sprintf((char *)string, "%s", air_level[0]);
+		level_idx = 1;
 	} else if (cling.pm2p5 < 150) {
-		len = sprintf((char *)string, "%s", air_level[1]);
+		level_idx = 2;
 	} else if (cling.pm2p5 < 300) {
-		len = sprintf((char *)string, "%s", air_level[2]);
+		level_idx = 3;
 	} else if (cling.pm2p5 < 500) {
-		len = sprintf((char *)string, "%s", air_level[3]);
+		level_idx = 4;
 	} else {
-		len = sprintf((char *)string, "%s", air_level[4]);
+		level_idx = 5;
 	}
 	
-	_render_vertical_character(string, 84, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)air_display[language_type][level_idx], 16, 84, FALSE);
 }
+#endif
 
 static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 {
+	const char *heart_rate_wave_indicator[] = {" - , ,", " , - ,", " , , -" };		
 	I8U string[32];		
 	I8U len = 0;	
 	I8U margin = 2;
@@ -3681,30 +3076,18 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 			}
 			len = sprintf((char *)string, "%d", hr_result);		
 			if (b_24_size == 24) 
-				_render_vertical_character(string, offset, margin, len, b_24_size, b_all_hold, FALSE);
+				_render_vertical_character(string, offset, margin, len, b_24_size, b_all_hold);
 			else
-				_render_vertical_character(string, offset+5, margin, len, b_24_size, FALSE, FALSE);			
+				_render_vertical_character(string, offset+5, margin, len, b_24_size, FALSE);			
 		} else {
 			cling.ui.heart_rate_wave_index ++;
 			if (cling.ui.heart_rate_wave_index > 2) {
 				cling.ui.heart_rate_wave_index = 0;
 			}
-			switch (cling.ui.heart_rate_wave_index) {
-				case 0:
-					len = sprintf((char *)string, " - , ,");
-					break;
-				case 1:
-					len = sprintf((char *)string, " , - ,");
-					break;
-				case 2:
-					len = sprintf((char *)string, " , , -");
-					break;
-				default:
-					break;
-			}
+			len = sprintf((char *)string, "%s", heart_rate_wave_indicator[cling.ui.heart_rate_wave_index]);
 			b_24_size = 8;
 			margin = 3;
-			_render_vertical_character(string, offset+5, margin, len, b_24_size, FALSE, FALSE);
+			_render_vertical_character(string, offset+5, margin, len, b_24_size, FALSE);
 			hr_result = 0;
 			return hr_result;
 		}
@@ -3714,7 +3097,7 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 		margin = 0;
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-		_render_vertical_character(string, offset, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, offset, margin, len, b_24_size, FALSE);
 		hr_result = 0;
 	}
 	
@@ -3733,7 +3116,7 @@ static void _middle_render_vertical_heart_rate()
 	
 	if (hr_result) {
 		len = sprintf((char *)string, "BPM");
-		_render_vertical_character(string, 80, margin, len, b_24_size, FALSE, TRUE);
+		_render_vertical_character(string, 80, margin, len, b_24_size, FALSE);
 	}
 }
 
@@ -3750,16 +3133,17 @@ static void _middle_render_vertical_skin_temp()
 	
 	// Temperature value
 	len = sprintf((char *)string, "%d", integer);
-	_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character((I8U *)string, 42, margin, len, b_24_size, FALSE);
 	
 	// - Skin temperature unit - 
 	string[0] = ICON24_CELCIUS_IDX;
 	len = 1;
 	margin = 0;
-	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character((I8U *)string, 80, margin, len, b_24_size, FALSE);
 }
 #endif
 
+#ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_weather()
 {
 	I8U string[32];
@@ -3773,7 +3157,7 @@ static void _middle_render_vertical_weather()
 	// - Temperature Range - 
 	string[0] = ICON24_WEATHER_RANGE_IDX;
 	len = 1;
-	_render_vertical_character(string, 55, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 55, margin, len, b_24_size, FALSE);
 	
 	// - Low temperature -
 	len = sprintf((char *)string, "%d", weather.low_temperature);
@@ -3782,7 +3166,7 @@ static void _middle_render_vertical_weather()
 		margin = 1;
 	else
 		margin = 2;
-	_render_vertical_character(string, 32, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 32, margin, len, b_24_size, FALSE);
 		
 	// - High temperature;
 	if (weather.high_temperature < 0)
@@ -3790,12 +3174,12 @@ static void _middle_render_vertical_weather()
 	else
 		margin = 2;
 	len = sprintf((char *)string, "%d", weather.high_temperature);
-	_render_vertical_character(string, 74, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 74, margin, len, b_24_size, FALSE);
 	
 	// - Weather temperature unit - 
 	string[0] = ICON24_CELCIUS_IDX;
 	len = 1;
-	_render_vertical_character(string, 104, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 104, margin, len, b_24_size, FALSE);
 }
 
 static void _middle_render_vertical_reminder()
@@ -3822,7 +3206,7 @@ static void _middle_render_vertical_reminder()
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE, FALSE);		
+		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);		
 	} 
 	
 	if (b_invalid_alarm) {
@@ -3832,29 +3216,27 @@ static void _middle_render_vertical_reminder()
 		_render_vertical_time(string, 74, TRUE, FALSE);
 	}
 }
+#endif
 
 static void _vertical_core_run_distance(I32U stat)
 {
+	const char *run_distance_name[] = {"RUN", "路跑", "路跑" };
+	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U string[32];	
 	I8U len = 0;
 	I8U margin = 0;
 	I8U b_24_size = 16;
 	I32U v_1000 = 0, v_100 = 0;
-
+	I8U language_type = cling.ui.language_type;		
+	I8U metric = cling.user_data.profile.metric_distance;
+	
 	// Convert to miles
-	if (cling.user_data.profile.metric_distance) {
+	if (metric) {
 		stat *= 10;
 		stat >>= 4;
 	}
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "路跑");
-	} else {
-		len = sprintf((char *)string, "路跑");
-	}
-	_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)run_distance_name[language_type], 16, 28, FALSE);
 	
 	b_24_size = 24;
 	margin = 2;
@@ -3877,30 +3259,9 @@ static void _vertical_core_run_distance(I32U stat)
 		margin = 1;
 	}
 	
-	_render_vertical_character(string, 67, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 67, margin, len, b_24_size, FALSE);
 
-	b_24_size = 16;
-	margin = 0;
-	
-	if (cling.user_data.profile.metric_distance) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "MILE");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "英里");
-		} else {
-			len = sprintf((char *)string, "英裏");
-		}
-	} else {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KM");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "公里");
-		} else {
-			len = sprintf((char *)string, "公裏");
-		}
-	}
-	
-	_render_vertical_character(string, 112, margin, len, b_24_size, FALSE, TRUE);	
+	_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112, FALSE);	
 }
 
 static void _middle_render_vertical_running_distance()
@@ -3910,27 +3271,21 @@ static void _middle_render_vertical_running_distance()
 
 static void _middle_render_vertical_training_distance()
 {
+	const char *training_distance_name[] = {"RUN", "里程", "裏程" };	
+	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};		
 	I8U string[32];	
 	I8U len = 0;
 	I8U margin = 0;
 	I8U b_24_size = 16;
 	I32U v_1000 = 0, v_100 = 0;
 	I32U stat = 0;
-
+	I8U language_type = cling.ui.language_type;		
+	I8U metric = cling.user_data.profile.metric_distance;
+	
 	stat = cling.train_stat.distance;
 
 	if (cling.ui.clock_sec_blinking) {	
-		cling.ui.clock_sec_blinking = FALSE;
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "RUN");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "里程");
-		} else {
-			len = sprintf((char *)string, "裏程");
-		}
-		_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;
+		_render_vertical_fonts_lib_character_core((I8U *)training_distance_name[language_type], 16, 28, FALSE);
 	}
 
 	// Convert to miles
@@ -3960,36 +3315,19 @@ static void _middle_render_vertical_training_distance()
 		margin = 1;
 	}
 	
-	_render_vertical_character(string, 64, margin, len, b_24_size, TRUE, FALSE);
+	_render_vertical_character(string, 64, margin, len, b_24_size, TRUE);
 
-	b_24_size = 16;
-	margin = 0;
-	
-	if (cling.user_data.profile.metric_distance) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "MILE");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "英里");
-		} else {
-			len = sprintf((char *)string, "英裏");
-		}
-	} else {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "KM");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "公里");
-		} else {
-			len = sprintf((char *)string, "公裏");
-		}
-	}
-	
-	_render_vertical_character(string, 112, margin, len, b_24_size, FALSE, TRUE);		
+	_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112, FALSE);		
 }
 
 static void _middle_render_vertical_running_time()
 {
+	const	char *running_time_name[3] = {"TIME", "耗时", "耗時"};
 	I8U string[32];
-	I8U hour=0, min=0, sec=0;
+	I8U hour=0, min=0, sec=0;	
+	I8U language_type = cling.ui.language_type;
+
+	_render_vertical_fonts_lib_character_core((I8U *)running_time_name[language_type], 16, 28, FALSE);
 	
 	min = cling.run_stat.time_min;
 	sec = cling.run_stat.time_sec;
@@ -4012,11 +3350,17 @@ static void _middle_render_vertical_running_time()
 
 static void _middle_render_vertical_training_time()
 {
+ 	const	char *running_time_name[3] = {"TIME", "耗时", "耗時"};
 	I8U string[32];
 	I32U curr_ts_ms = CLK_get_system_time();
 	I32U diff_ts_ms, diff_ts_sec;
-	I8U hour, min, sec;
+	I8U hour, min, sec;	
+	I8U language_type = cling.ui.language_type;
 
+	if (cling.ui.clock_sec_blinking) {
+		_render_vertical_fonts_lib_character_core((I8U *)running_time_name[language_type], 16, 28, FALSE);
+	} 
+	
 	if (cling.ui.b_training_first_enter) {
 		hour = 0;
 		min = 0;
@@ -4060,12 +3404,16 @@ static void _middle_render_vertical_training_time()
 
 static void _middle_render_vertical_running_pace()
 {
+	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
+	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};		
 	I8U string[32];
-	I8U len = 0;
-	I8U margin = 0;
-	I8U b_24_size = 16;
 	I32U pace = cling.run_stat.time_min; // Rounding 
 	I32U min, sec;
+	I8U language_type = cling.ui.language_type;	
+
+	_render_vertical_fonts_lib_character_core((I8U *)avg_name[language_type], 16, 28, FALSE);
+	
+	_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 46, FALSE);
 	
 	if (cling.run_stat.distance) {
 		pace = cling.run_stat.time_min*60;
@@ -4096,35 +3444,18 @@ static void _middle_render_vertical_running_pace()
 	// Render the minute
 	sprintf((char *)string, "%02d*", sec);
 	_render_vertical_time(string, 104, FALSE, FALSE);
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "AVG");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "平均");
-	} else {
-		len = sprintf((char *)string, "平均");
-	}
-	
-	_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "PACE");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "配速 ");
-	} else {
-		len = sprintf((char *)string, "配速 ");
-	}
-	
-	_render_vertical_character(string, 46, margin, len, b_24_size, FALSE, TRUE);
 }
 
 static void _middle_render_vertical_running_hr()
 {
+	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
+	const	char *hate_rate_name[] = {"HR", "心率 ", "心率 "};	
 	I8U string[32];
 	I8U len = 0;
 	I8U margin = 0;
 	I8U b_24_size = 16;
 	I32U hr = cling.run_stat.accu_heart_rate;
+	I8U language_type = cling.ui.language_type;	
 	
 	if (cling.run_stat.time_min) {
 		hr /= cling.run_stat.time_min;
@@ -4144,50 +3475,29 @@ static void _middle_render_vertical_running_hr()
 	len = sprintf((char *)string, "%d", hr);
 				
 	if (b_24_size == 24) 
-		_render_vertical_character(string, 86, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 86, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string, 90, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 90, margin, len, b_24_size, FALSE);
 		
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "AVG");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "平均");
-	} else {
-		len = sprintf((char *)string, "平均");
-	}
+	_render_vertical_fonts_lib_character_core((I8U *)avg_name[language_type], 16, 28, FALSE);
 	
-	_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "HR");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "心率");
-	} else {
-		len = sprintf((char *)string, "心率");
-	}
-	
-	_render_vertical_character(string, 46, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)hate_rate_name[language_type], 16, 46, FALSE);
 }
 
 static void _middle_render_vertical_running_calories()
 {
-	I8U string1[32];
-	I8U string2[32];
-  I8U len1 = 0, len2 = 0;	
+	const	char *running_calories_name[] = {"BURN", "热量 ", "熱量 "};		
+	const char *unit_calories_display[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
+	I8U string[32];
+  I8U len = 0;	
 	I8U  margin = 0;
 	I8U b_24_size = 16;
 	I32U stat = 0;	
 	I32U v_10000 = 0, v_1000 = 0, v_100 = 0;
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len1 = sprintf((char *)string1, "BURN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len1 = sprintf((char *)string1, "热量");
-	} else {
-		len1 = sprintf((char *)string1, "熱量");
-	}
+	I8U language_type = cling.ui.language_type;	
+	I8U calories_unit_index = 0;
 	
-	_render_vertical_character(string1, 28, margin, len1, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)running_calories_name[language_type], 16, 28, FALSE);
 
   b_24_size = 24;	
 	margin = 2;
@@ -4196,80 +3506,56 @@ static void _middle_render_vertical_running_calories()
 	if (stat > 99999) {
 		v_10000 = 9;
 		v_1000 = 9;
-		len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
+		len = sprintf((char *)string, "%d%d", v_10000, v_1000);
 	} else if (stat > 9999) {
 		v_10000 = stat / 10000;
 		v_1000 = stat - (v_10000 * 10000);
 		v_1000 /= 1000;
-		len1 = sprintf((char *)string1, "%d%d", v_10000, v_1000);
+		len = sprintf((char *)string, "%d%d", v_10000, v_1000);
 	} else if (stat > 999) {
 		v_1000 = stat / 1000;
 		v_100 = stat - (v_1000 * 1000);
 		v_100 /= 100;
-		len1 = sprintf((char *)string1, "%d.%d", v_1000, v_100);
+		len = sprintf((char *)string, "%d.%d", v_1000, v_100);
 		margin = 1;
 	} else if (stat > 99) {
-		len1 = sprintf((char *)string1, "%d", stat);
+		len = sprintf((char *)string, "%d", stat);
 		b_24_size = 16;
 	} else {
-		len1 = sprintf((char *)string1, "%d", stat);
+		len = sprintf((char *)string, "%d", stat);
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_character(string1, 68, margin, len1, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 68, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string1, 72, margin, len1, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 72, margin, len, b_24_size, FALSE);
 
-	b_24_size = 16;
-	margin = 0;
-	
 	if (stat > 999) {
-		b_24_size = 16;
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "K");
-			len2 = sprintf((char *)string1, "CAL");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "千 ");
-			len2 = sprintf((char *)string2, "大卡");			
-		} else {
-			len1 = sprintf((char *)string1, "千 ");
-			len2 = sprintf((char *)string2, "大卡");			
-		}
+    calories_unit_index = 1;
 	} else {		
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "CAL");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "大卡");
-		} else {
-			len1 = sprintf((char *)string1, "大卡");
-		}
+    calories_unit_index = 0;
 	}
 	
-	if (len2) {
-	  _render_vertical_character(string1, 96, margin, len1, b_24_size, FALSE, TRUE);
-	  _render_vertical_character(string2, 112, margin, len2, b_24_size, FALSE, TRUE);		
+	if (calories_unit_index) {
+	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][1], 16, 96, FALSE);
+	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 112, FALSE);		
 	} else {
-	  _render_vertical_character(string1, 112, margin, len1, b_24_size, FALSE, TRUE);		
+	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 112, FALSE);		
 	}
 }
 
 static void _middle_render_vertical_running_cadence()
 {
+	const	char *rate_name[] = {"RATE", "步频 ", "步頻 "};			
+  const	char *spm_name[] = {"SPM", "步分 ", "步分 "};			
 	I8U string[32];	
 	I8U len = 0;
 	I8U margin = 0;
 	I8U b_24_size = 16;	
 	I32U stat = 0;
-
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RATE");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "步频");
-	} else {
-		len = sprintf((char *)string, "步頻");
-	}
+	I8U language_type = cling.ui.language_type;		
 	
-	_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)rate_name[language_type], 16, 28, FALSE);
 	
 	if (cling.run_stat.time_min)
 		stat = cling.run_stat.steps/cling.run_stat.time_min;
@@ -4288,38 +3574,28 @@ static void _middle_render_vertical_running_cadence()
 	len = sprintf((char *)string, "%d", stat);
 				
 	if (b_24_size == 24) 
-		_render_vertical_character(string, 68, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 68, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string, 72, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 72, margin, len, b_24_size, FALSE);
 	
 	b_24_size = 16;
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "SPM");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "步分");
-	} else {
-		len = sprintf((char *)string, "步分");
-	}
-	_render_vertical_character(string, 112, margin, len, b_24_size, FALSE, TRUE);
+  margin = 0;
+	_render_vertical_fonts_lib_character_core((I8U *)spm_name[language_type], 16, 112, FALSE);
 }
 
 static void _middle_render_vertical_running_stride()
 {
+	const	char *stride_name[] = {"STR.", "步幅 ", "步幅 "};		
+	const char *unit_stride_display[3][2] = {{"CM", "IN"},{"厘米", "英寸"},{"厘米", "英寸"}};		
 	I8U string[32];	
 	I8U len = 0;
 	I8U margin = 0;
 	I8U b_24_size = 16;	
 	I32U stat = 0;
+	I8U language_type = cling.ui.language_type;			
+	I8U metric = cling.user_data.profile.metric_distance;
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "STR.");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "步幅");
-	} else {
-		len = sprintf((char *)string, "步幅");
-	}
-	
-	_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)stride_name[language_type], 16, 28, FALSE);
 	
 	if (cling.run_stat.steps)
 		stat = (cling.run_stat.distance*100)/cling.run_stat.steps;
@@ -4344,107 +3620,47 @@ static void _middle_render_vertical_running_stride()
 	len = sprintf((char *)string, "%d", stat);
 				
 	if (b_24_size == 24) 
-		_render_vertical_character(string, 68, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 68, margin, len, b_24_size, FALSE);
 	else
-		_render_vertical_character(string, 72, margin, len, b_24_size, FALSE, FALSE);
+		_render_vertical_character(string, 72, margin, len, b_24_size, FALSE);
 	
-	b_24_size = 16;
-	margin = 0;
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		if (cling.user_data.profile.metric_distance) {
-			len = sprintf((char *)string, "IN");
-		} else {
-		  len = sprintf((char *)string, "CM");
-		}
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		if (cling.user_data.profile.metric_distance) {
-		  len = sprintf((char *)string, "英寸");			
-		} else {
-		  len = sprintf((char *)string, "厘米");			
-		}
-	} else {
-		if (cling.user_data.profile.metric_distance) {
-		  len = sprintf((char *)string, "英寸");			
-		} else {
-		  len = sprintf((char *)string, "厘米");			
-		}
-	}
-	
-	_render_vertical_character(string, 112, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)unit_stride_display[language_type][metric], 16, 112, FALSE);
 }
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_running_stop_analysis()
 {
-	I8U string[32];	
-	I8U len = 0;
-	I8U margin = 0;
-	I8U b_24_size = 16;	
+	const	char *stop_analysis_name_1[] = {"INFO", "结束 ", "結束 "};				
+	const	char *stop_analysis_name_2[] = {"END", "分析 ", "分析 "};				
+	I8U language_type = cling.ui.language_type;			
+
+	_render_vertical_fonts_lib_character_core((I8U *)stop_analysis_name_1[language_type], 16, 50, FALSE);
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "INFO");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "结束");
-	} else {
-		len = sprintf((char *)string, "結束");
-	}
-	
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, TRUE);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "END");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "分析");
-	} else {
-		len = sprintf((char *)string, "分析");
-	}
-	
-	_render_vertical_character(string, 70, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)stop_analysis_name_2[language_type], 16, 70, FALSE);
 }
 #endif
 
 static BOOLEAN _middle_render_vertical_core_ready()
 {
-	I8U string[32];	
+	const char *ready_indicator_name[] = {"3","2","1","GO"};
+	I8U string[32];
   I32U t_curr = CLK_get_system_time();
-  BOOLEAN b_ready_finished = FALSE;
 	
-	if (cling.ui.run_ready_index == 0) {
-		if (t_curr > (cling.ui.running_time_stamp + 500)) {
-			cling.ui.run_ready_index = 1;
-		  cling.ui.running_time_stamp = t_curr;
-			Y_SPRINTF("[UI] Ready go 3 :%d :%d",t_curr, cling.ui.running_time_stamp)
-		}
-		sprintf((char *)string, "3");
-	} else if(cling.ui.run_ready_index == 1) {
-		if (t_curr > (cling.ui.running_time_stamp + 800)) {
-			cling.ui.run_ready_index = 2;
-		  cling.ui.running_time_stamp = t_curr;	
-			Y_SPRINTF("[UI] Ready go 2 :%d :%d",t_curr, cling.ui.running_time_stamp)			
-		}
-		sprintf((char *)string, "2");
-	} else if(cling.ui.run_ready_index == 2) {
-		if (t_curr > (cling.ui.running_time_stamp + 800)) {
-			cling.ui.run_ready_index = 3;
-		  cling.ui.running_time_stamp = t_curr;	
-			Y_SPRINTF("[UI] Ready go 1 :%d :%d",t_curr, cling.ui.running_time_stamp)			
-		}	
-		sprintf((char *)string, "1");
-	} else if(cling.ui.run_ready_index == 3) {	
-		if (t_curr > (cling.ui.running_time_stamp + 500)) {
-			cling.ui.run_ready_index = 0;
-      b_ready_finished = TRUE;
-			Y_SPRINTF("[UI] Ready go start :%d :%d",t_curr, cling.ui.running_time_stamp)			
-		}
-		sprintf((char *)string, "G O");		
-	} else {
+	if (t_curr  > (cling.ui.running_time_stamp + 600)) {
+		cling.ui.running_time_stamp = t_curr;		
+		cling.ui.run_ready_index++;
+	}
+	
+	if (cling.ui.run_ready_index > 3) {
 		cling.ui.run_ready_index = 0;
+		return TRUE;
 	}
 
-	_render_vertical_time(string, 60, TRUE, TRUE);
+	sprintf((char *)string, "%s", ready_indicator_name[cling.ui.run_ready_index]);
 	
-	return b_ready_finished;	
+	_render_vertical_time(string, 60, TRUE, TRUE);
+
+	return FALSE;	
 }
 
 static void _middle_render_vertical_training_ready()
@@ -4475,11 +3691,10 @@ static void _middle_render_vertical_cycling_outdoor_ready()
 
 static void _middle_render_vertical_training_pace()
 {
+	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};			
 	I8U string[32];	
-	I8U len = 0;
-	I8U margin = 2;
-	I8U b_24_size = 24;	
 	I32U min, sec;
+	I8U language_type = cling.ui.language_type;		
 	
 	min = cling.run_stat.last_10sec_pace_min;
 	sec = cling.run_stat.last_10sec_pace_sec;
@@ -4494,48 +3709,24 @@ static void _middle_render_vertical_training_pace()
 	sprintf((char *)string, "%02d*", sec);
 	_render_vertical_time(string, 104, TRUE, FALSE);
 
-	b_24_size = 16;
-	margin = 0;
-	
 	if (cling.ui.clock_sec_blinking) {	
-		cling.ui.clock_sec_blinking = FALSE;	
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "PACE");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "配速 ");
-		} else {
-			len = sprintf((char *)string, "配速 ");
-		}
-		_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;			
+		_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 28, FALSE);
 	}
 }
 
 static void _middle_render_vertical_training_hr()
 {
+	const	char *hart_rate_name[] = {"HR", "心率 ", "心率 "};		
 	I8U string[32];	
-	I8U len = 0;		
-	I8U margin = 0;
-	I8U b_24_size = 16;
 	I8U hr_result = 0;
 	I8U i;		
 	I32U hr_perc = 0;
 	I8U *p0, *p1, *p2, *p3;
+	I8U language_type = cling.ui.language_type;		
 	
-	if (cling.ui.clock_sec_blinking) {	
-		cling.ui.clock_sec_blinking = FALSE;		
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len = sprintf((char *)string, "HR");
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len = sprintf((char *)string, "心率");
-		} else {
-			len = sprintf((char *)string, "心率");
-		}
-		_render_vertical_character(string, 28, margin, len, b_24_size, FALSE, TRUE);
-	} else {
-		cling.ui.clock_sec_blinking = TRUE;	
-	}
+	if (cling.ui.clock_sec_blinking) {		
+		_render_vertical_fonts_lib_character_core((I8U *)hart_rate_name[language_type], 16, 28, FALSE);
+	} 
 
 	hr_result = _render_middle_vertical_hr_core(60, TRUE);
 	
@@ -4544,10 +3735,8 @@ static void _middle_render_vertical_training_hr()
 	  if (hr_perc > 98)
 		  hr_perc = 98;
 		
-		b_24_size = 16;
-		margin = 2;
-	  len = sprintf((char *)string, "%d%%", hr_perc);
-	  _render_vertical_character(string, 94, margin, len, b_24_size, FALSE, TRUE);
+	  sprintf((char *)string, "%d%%", hr_perc);
+	  _render_vertical_fonts_lib_character_core(string, 16, 94, FALSE);
   }
 	
 	cling.ui.training_hr = (I8U)hr_perc;
@@ -4597,94 +3786,40 @@ static void _middle_render_vertical_training_hr()
 
 static void _middle_render_vertical_training_run_stop()
 {
-	I8U string[32];	
-	I8U len = 0;		
-	I8U margin = 0;
-	I8U b_24_size = 16;
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "结束");
-	} else {
-		len = sprintf((char *)string, "結束");
-	}
-	
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, TRUE);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "STOP");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-#ifdef _CLINGBAND_PACE_MODEL_		
-		len = sprintf((char *)string, "跑步");
-#else 		
-		len = sprintf((char *)string, "运动");
+	const	char *run_stop_name_1[] = {"RUN", "结束 ", "結束 "};	
+#ifdef _CLINGBAND_PACE_MODEL_			
+	const	char *run_stop_name_2[] = {"STOP", "跑步 ", "跑步 "};		
+#else
+	const	char *run_stop_name_2[] = {"STOP", "运动 ", "運動 "};			
 #endif		
-	} else {
-#ifdef _CLINGBAND_PACE_MODEL_		
-		len = sprintf((char *)string, "跑步");
-#else 		
-		len = sprintf((char *)string, "運動");
-#endif	
-	}
+	I8U language_type = cling.ui.language_type;		
+
+	_render_vertical_fonts_lib_character_core((I8U *)run_stop_name_1[language_type], 16, 50, FALSE);
 	
-	_render_vertical_character(string, 70, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)run_stop_name_2[language_type], 16, 70, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_cycling_outdoor_run_start()
 {
-	I8U string[32];	
-	I8U len = 0;		
-	I8U margin = 0;
-	I8U b_24_size = 16;
+	const	char *cycling_start_name_1[] = {"RUN", "开始 ", "開始 "};	
+	const	char *cycling_start_name_2[] = {"NOW", "骑行 ", "騎行 "};			
+	I8U language_type = cling.ui.language_type;		
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "开始 ");
-	} else {
-		len = sprintf((char *)string, "開始 ");
-	}
+	_render_vertical_fonts_lib_character_core((I8U *)cycling_start_name_1[language_type], 16, 50, FALSE);
 	
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, TRUE);
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "NOW");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "骑行");
-	} else {
-		len = sprintf((char *)string, "騎行");
-	}
-	
-	_render_vertical_character(string, 70, margin, len, b_24_size, FALSE, TRUE);	
+	_render_vertical_fonts_lib_character_core((I8U *)cycling_start_name_2[language_type], 16, 70, FALSE);	
 }
 
 static void _middle_render_vertical_cycling_outdoor_run_stop()
 {
-	I8U string[32];	
-	I8U len = 0;		
-	I8U margin = 0;
-	I8U b_24_size = 16;
+	const	char *cycling_stop_name_1[] = {"RUN", "结束", "結束"};	
+	const	char *cycling_stop_name_2[] = {"STOP", "骑行", "騎行"};		
+	I8U language_type = cling.ui.language_type;		
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "RUN");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "结束");
-	} else {
-		len = sprintf((char *)string, "結束");
-	}
-	_render_vertical_character(string, 50, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)cycling_stop_name_1[language_type], 16, 50, FALSE);
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		len = sprintf((char *)string, "STOP");
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		len = sprintf((char *)string, "骑行");
-	} else {
-		len = sprintf((char *)string, "騎行");
-	}
-	
-	_render_vertical_character(string, 70, margin, len, b_24_size, FALSE, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)cycling_stop_name_2[language_type], 16, 70, FALSE);
 }
 
 static void _middle_render_vertical_cycling_outdoor_distance()
@@ -4703,7 +3838,7 @@ static void _middle_render_vertical_cycling_outdoor_distance()
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE, FALSE);				
+		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);				
 	}
 }
 
@@ -4723,7 +3858,7 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE, FALSE);				
+		_render_vertical_character(string, 42, margin, len, b_24_size, FALSE);				
 	}
 }
 #endif
@@ -4738,15 +3873,15 @@ static void _middle_render_vertical_carousel_1()
 	
 	string[0] = ICON24_RUNNING_MODE_IDX;
 	len = 1;
-	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_CYCLING_OUTDOOR_MODE_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_WORKOUT_MODE_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE);
 }
 #endif
 
@@ -4760,15 +3895,15 @@ static void _middle_render_vertical_carousel_2()
 	
 	string[0] = ICON24_MUSIC_IDX;
 	len = 1;
-	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_STOPWATCH_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_MESSAGE_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE);
 }
 #endif
 
@@ -4782,15 +3917,15 @@ static void _middle_render_vertical_carousel_2()
 	
 	string[0] = ICON24_MESSAGE_IDX;
 	len = 1;
-	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_STOPWATCH_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_WEATHER_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE);
 }
 #endif
 
@@ -4804,15 +3939,15 @@ static void _middle_render_vertical_carousel_3()
 	
 	string[0] = ICON24_WEATHER_IDX;
 	len = 1;
-	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_PM2P5_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_NORMAL_ALARM_CLOCK_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE);
 }
 #endif
 
@@ -4826,15 +3961,15 @@ static void _middle_render_vertical_carousel_3()
 	
 	string[0] = ICON24_PM2P5_IDX;
 	len = 1;
-	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_NORMAL_ALARM_CLOCK_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_SETTING_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE);
 }
 #endif
 
@@ -4848,81 +3983,41 @@ static void _middle_render_vertical_carousel_4()
 	
 	string[0] = ICON24_BATT_POWER_IDX;
 	len = 1;
-	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, 4, margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_PHONE_FINDER_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+48), margin, len, b_24_size, FALSE);
 	
 	string[0] = ICON24_SETTING_IDX;
 	len = 1;
-	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE, FALSE);
+	_render_vertical_character(string, (4+96), margin, len, b_24_size, FALSE);
 }
 #endif
 
 static void _bottom_render_vertical_home()
 {
-	I8U data_buf[256];
-	I8U string[32];
-	I8U line_len;
-	BOOLEAN b_batt_charging = FALSE;
-	char *week_en[] = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
-	char *week_cn_s[] = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
-	char *week_cn_t[] = {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"};
+	I8U string1[32];
+	I8U string2[32];					
+ 	
+	_get_home_frame_stiring_core(string1, string2);
 	
-	if (BATT_is_charging()) 
-		b_batt_charging = TRUE;
+	_render_vertical_fonts_lib_character_core(string1, 8, 120, FALSE);
 	
-	memset(data_buf, 0, 256);
-	
-	if (b_batt_charging) {
-	  sprintf((char *)string, "%d%%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);	
-	} else {
-		sprintf((char *)string, "%d/%02d",cling.time.local.month, cling.time.local.day);	
-	}
-	
-	line_len = FONT_load_characters(data_buf, (char *)string, 8, 128, FALSE);
-	_vertical_centerize(data_buf, data_buf+32, data_buf+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+120);
-	
-	memset(data_buf, 0, 256);	
-
-	// Render the dow	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-		sprintf((char *)string, "%s", week_en[cling.time.local.dow]);
-		line_len = FONT_load_characters(data_buf, (char *)string, 16, 128, FALSE);
-	} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-		sprintf((char *)string, "%s", week_cn_s[cling.time.local.dow]);
-		line_len = FONT_load_characters(data_buf, (char *)string, 16, 128, FALSE);
-	} else {
-		sprintf((char *)string, "%s", week_cn_t[cling.time.local.dow]);
-		line_len = FONT_load_characters(data_buf, (char *)string, 16, 128, FALSE);
-	}
-	
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+96+4);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+104+4);	
+  _render_vertical_fonts_lib_character_core(string2, 16, 96, FALSE);
 }
 
 static void _render_vertical_small_clock(I8U offset)
 {
-	I8U data_buf[128];
 	I8U string[32];
-	I8U line_len;
-	
-	memset(data_buf, 0, 128);
-	
+
 	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
 		sprintf((char *)string, "%d:%02d",cling.time.local.hour, cling.time.local.minute);
 	} else {
-		cling.ui.clock_sec_blinking = TRUE;
 		sprintf((char *)string, "%d %02d",cling.time.local.hour, cling.time.local.minute);		
 	}
 	
-	line_len = FONT_load_characters(data_buf, (char *)string, 8, 128, FALSE);
-	_vertical_centerize(data_buf, data_buf+32, data_buf+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+offset);
+  _render_vertical_fonts_lib_character_core(string, 8, offset, FALSE);
 }
 
 static void _bottom_render_vertical_small_clock()
@@ -4940,19 +4035,13 @@ static void _bottom_render_vertical_more()
 
 static void _bottom_render_vertical_delta_data_backward()
 {
-	I8U data_buf[128];
 	I8U string[32];
-	I8U line_len;
 	SYSTIME_CTX delta;
-	
-	memset(data_buf, 0, 128);
 
 	RTC_get_delta_clock_backward(&delta, cling.ui.vertical_index);	
 	sprintf((char *)string, "%d/%02d", delta.month, delta.day);
-	line_len = FONT_load_characters(data_buf, (char *)string, 8, 128, FALSE);
-	
-	_vertical_centerize(data_buf, data_buf+32, data_buf+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
+
+	_render_vertical_fonts_lib_character_core(string, 8, 112, FALSE);
 }
 
 static void _bottom_render_vertical_tracker()
@@ -4971,15 +4060,12 @@ static void _bottom_render_vertical_tracker()
 		_bottom_render_vertical_more();	
 	}	
 }
+#endif
 
+#ifdef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertiacl_reminder()
 {
-	I8U buf1[256];
-  I8U *buf2, *buf3;
 	I8U string[32];
-	I8U line_len;
-
-	memset(buf1, 0, 256);
 
 	if (cling.reminder.ui_alarm_on)
 		return;
@@ -4988,14 +4074,8 @@ static void _bottom_render_vertiacl_reminder()
     return;		
 	
 	sprintf((char *)string, "%02d", cling.ui.vertical_index);
-	line_len = FONT_load_characters(buf1, (char *)string, 16, 128, FALSE);	
-
-	buf2 = buf1 + 128;
-	buf3 = buf2 + 32;
 	
-	_vertical_centerize(buf1, buf2, buf3, line_len);
-	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+101);
-	_rotate_270_degree(buf2, cling.ui.p_oled_up+384+101+8);
+  _render_vertical_fonts_lib_character_core(string, 16, 100, FALSE);
 	
 	_bottom_render_vertical_more();	
 }
@@ -5004,149 +4084,46 @@ static void _bottom_render_vertiacl_reminder()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_run_go()
 {
-	I8U data_buf[256];
-	I8U line_len;
-	I8U i;
-	I8U *p0, *p1;
-	
-	memset(data_buf, 0x00, 32);
-	memset(data_buf+128, 0x00, 32);
-	
-	FONT_load_characters(data_buf+7, "G", 16, 128, FALSE);
-	FONT_load_characters(data_buf+18, "O", 16, 128, FALSE);
-	
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	line_len = 32;
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+112+8);	
+	_render_vertical_fonts_lib_character_core((I8U *)"G O", 16, 112, TRUE);
 }
 
 static void _bottom_render_vertical_run_ok()
 {
-	I8U data_buf[256];
-	I8U line_len;
-	I8U i;
-	I8U *p0, *p1;
-	
-	memset(data_buf, 0x00, 32);
-	memset(data_buf+128, 0x00, 32);
-	
-	FONT_load_characters(data_buf+6, "O", 16, 128, FALSE);
-	FONT_load_characters(data_buf+16, "K", 16, 128, FALSE);
-	
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	line_len = 32;
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+112+8);	
+	_render_vertical_fonts_lib_character_core((I8U *)"O K", 16, 112, TRUE);	
 }
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_button_hold()
 {
-	I8U string[32];
-	I8U data_buf[256];
-	I8U line_len;
-	I8U i;
-	I8U *p0, *p1;
+	const	char *button_hold_name[] = {"HOLD", "长按", "長按"};	
+	I8U language_type = cling.ui.language_type;	
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-	  sprintf((char *)string, "HOLD");
-  } else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {	
-		sprintf((char *)string, "长按");
-	} else {
-	  sprintf((char *)string, "長按");	
-	}
-
-	line_len = FONT_load_characters(data_buf, (char *)string, 16, 128, FALSE);
-
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+112+8);			
+	_render_vertical_fonts_lib_character_core((I8U *)button_hold_name[language_type], 16, 112, TRUE);	
 }
 #endif
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_cycling_outdoor_distance()
 {
-	I8U string1[32];
-	I8U string2[32];	
-	I8U len1 = 0, len2 = 0;
-	I8U margin = 0;
-	I8U b_24_size = 16;
-  BOOLEAN b_ble_connected = FALSE;
- 	
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
+	const char* distance_name[] = {"KM", "公里", "公裏"};
+ 	I8U language_type = cling.ui.language_type;	
 	
-	if (b_ble_connected) {
-		if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {
-			len1 = sprintf((char *)string1, "KM");	
-		} else if (cling.ui.language_type == LANGUAGE_TYPE_SIMPLIFIED_CHINESE) {
-			len1 = sprintf((char *)string1, "公里");
-		} else {
-			len1 = sprintf((char *)string1, "公裏");
-		}
+	if (BTLE_is_connected()) {
+		_render_vertical_fonts_lib_character_core((I8U *)distance_name[language_type], 16, 112, FALSE);
 	} else {
-		len1 = sprintf((char *)string1, "无 ");
-		len2 = sprintf((char *)string2, "蓝牙");			
-	} 
-		
-	if (len2) {
-	  _render_vertical_character(string1, 92,  margin, len1, b_24_size, FALSE, TRUE);
-		_render_vertical_character(string2, 112, margin, len2, b_24_size, FALSE, TRUE);
-	} else {
-		_render_vertical_character(string1, 112, margin, len1, b_24_size, FALSE, TRUE);
+	  _render_vertical_fonts_lib_character_core((I8U *)"无 ", 16, 92, FALSE);
+		_render_vertical_fonts_lib_character_core((I8U *)"蓝牙", 16, 112, FALSE);
 	}
 }
 
 static void _bottom_render_vertical_cycling_outdoor_speed()
-{
-	I8U data_buf[256];
-	I8U string[32];
-	I8U line_len;
-  BOOLEAN b_ble_connected = FALSE;
-	
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	memset(data_buf, 0, 256);
-
-  if (b_ble_connected) {	
-		sprintf((char *)string, "KM/H");
-		line_len = FONT_load_characters(data_buf, (char *)string, 8, 128, FALSE);
-		_vertical_centerize(data_buf, data_buf+32, data_buf+64, line_len);
-		_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+120);	
+{ 
+  if (BTLE_is_connected()) {	
+	  _render_vertical_fonts_lib_character_core((I8U *)"KM/H", 8, 120, FALSE);
 	} else {
-		sprintf((char *)string, "无蓝牙 ");	
-    line_len = FONT_load_characters(data_buf, (char *)string, 16, 128, FALSE);		
-	  _vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	  _rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
-	  _rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+112+8);				
+	  _render_vertical_fonts_lib_character_core((I8U *)"无 ",  16, 92, FALSE);
+		_render_vertical_fonts_lib_character_core((I8U *)"蓝牙", 16, 112, FALSE);	
 	}
 }
 #endif
@@ -5550,141 +4527,141 @@ void UI_frame_display_appear(I8U index, BOOLEAN b_render)
 /************************************ frame display **************************************************/
 /*****************************************************************************************************/
 const UI_RENDER_CTX horizontal_ui_render[] = {
-  {"NONE",                     _RENDER_NONE,                                  _RENDER_NONE,                                        _RENDER_NONE},                                     /*UI_FRAME_PAGE_NONE*/
-  {"HOME_CLOCK",               _left_render_horizontal_batt_ble,              _middle_render_horizontal_clock,                     _right_render_horizontal_home},                    /*UI_FRAME_PAGE_HOME_CLOCK*/
-  {"SYATEM_RESTART_LOGO",      _RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},	                                    /*UI_FRAME_PAGE_PACE_LOGO*/
-  {"SYATEM_AUTH_UNAUTHORIZED", _left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _right_render_horizontal_firmware_ver},            /*UI_FRAME_PAGE_UNAUTHORIZED*/
-  {"SYATEM_AUTH_LINKING",      _left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_LINKING*/
-  {"SYATEM_OTA",               _RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_FRAME_PAGE_OTA*/
-  {"SYSTEM_BATT_POWER_1",      _RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_BATT_POWER*/
-  {"TRACKER_STEP",             _left_render_horizontal_steps,                 _middle_render_horizontal_steps,                     _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_STEPS*/
-  {"TRACKER_DISTANCE",         _left_render_horizontal_distance,              _middle_render_horizontal_distance,                  _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_DISTANCE*/
-  {"TRACKER_CALORIES",         _left_render_horizontal_calories,              _middle_render_horizontal_calories,                  _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_CALORIES*/
-  {"TRACKER_ACTIVE_TIME",      _left_render_horizontal_active_time,           _middle_render_horizontal_active_time,               _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_ACTIVE_TIME*/
-  {"SMART_PM2P5",              _left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_PM2P5*/
-  {"SMART_WEATHER",            _left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_WEATHER*/
-  {"SMART_MESSAGE",            _left_render_horizontal_return,                _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_FRAME_PAGE_MESSAGE*/
-  {"SMART_APP_NOTIF",          _left_render_horizontal_return,                _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_FRAME_PAGE_APP_NOTIF*/
-  {"SMART_INCOMING_CALL",      _left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call,             _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_INCOMING_CALL*/
-  {"SMART_INCOMING_MESSAGE",   _left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_message,          _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
-  {"SMART_DETAIL_NOTIF",       _RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
-  {"SMART_ALARM_REMINDER",     _left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
-  {"SMART_ALARM_DETAIL",       _left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
-  {"SMART_IDLE_ALERT",         _left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_IDLE_ALERT*/
-  {"SMART_HEART_RATE_ALERT",   _left_render_horizontal_heart_rate,            _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
-  {"SMART_STEP_10K_ALERT",     _left_render_horizontal_steps,                 _middle_render_horizontal_steps,                     _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_STEP_10K_ALERT*/
-  {"TRACKER_HEART_RATE",       _left_render_horizontal_heart_rate,            _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_HEART_RATE*/
-  {"TRACKER_SKIN_TEMP",        _left_render_horizontal_skin_temp,             _middle_render_horizontal_skin_temp,                 _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_SKIN_TEMP*/
-  {"SETTING",                  _RENDER_NONE,                                  _middle_render_horizontal_setting,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_SETTING*/
-  {"STOPWATCH_START",          _left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_STOPWATCH_START*/
-  {"STOPWATCH_STOP",           _left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_STOPWATCH_STOP*/
-  {"WORKOUT_RUNNING_MODE",     _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_RUNNING*/
-  {"WORKOUT_CYCLING_MODE",     _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_CYCLING*/
-  {"WORKOUT_STAIRS_MODE",      _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_STAIRS*/
-  {"WORKOUT_ELLIPTICAL_MODE",  _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_ELLIPTICAL*/
-  {"WORKOUT_ROW_MODE",         _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_ROW*/
-  {"WORKOUT_AEROBIC_MODE",     _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_AEROBIC*/
-  {"WORKOUT_PILOXING_MODE",    _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_PILOXING*/
-  {"WORKOUT_OTHERS_MODE",      _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_OTHERS*/
-  {"WORKOUT_RUN_READY",        _RENDER_NONE,                                  _middle_render_horizontal_workout_ready,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_READY*/
-  {"WORKOUT_RUN_TIME",         _left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_TIME*/
-  {"WORKOUT_RUN_HEART_RATE",   _left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_WORKOUT_RUN_HEART_RATE*/
-  {"WORKOUT_RUN_CALORIES",     _left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_WORKOUT_RUN_CALORIES*/
-  {"WORKOUT_RUN_END",          _left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_WORKOUT_RUN_END*/
-  {"RUN_DISTANCE",             _left_render_horizontal_running_distance_16,   _middle_render_horizontal_running_distance,          _right_render_horizontal_running_distance},        /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
-  {"RUN_TIME",                 _left_render_horizontal_running_time,          _middle_render_horizontal_running_time,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_TIME*/
-  {"RUN_PACE",                 _left_render_horizontal_running_pace,          _middle_render_horizontal_running_pace,              _right_render_horizontal_running_pace},            /*UI_FRAME_PAGE_RUNNING_PACE*/
-  {"RUN_HR",                   _left_render_horizontal_running_hr,            _middle_render_horizontal_running_hr,                _right_render_horizontal_running_hr},              /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
-  {"RUN_CAL",                  _left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_RUNNING_CALORIES*/
-  {"RUN_CADENCE",              _left_render_horizontal_running_cadence,       _middle_render_horizontal_running_cadence,           _right_render_horizontal_running_cadence},         /*UI_FRAME_PAGE_RUNNING_CADENCE*/
-  {"RUN_STRIDE",               _left_render_horizontal_running_stride,        _middle_render_horizontal_running_stride,            _right_render_horizontal_running_stride},          /*UI_FRAME_PAGE_RUNNING_STRIDE*/
-  {"TRAIN_RUN_START",          _left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_start_run,        _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_TRAINING_RUN_START*/
-  {"TRAIN_RUN_OR_ANALYSIS",    _left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_run_or_analysis,  _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/
-  {"TRAIN_READY",              _left_render_horizontal_training_ready,        _middle_render_horizontal_training_ready,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
-  {"TRAIN_TIME",               _left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
-  {"TRAIN_DISTANCE",           _left_render_horizontal_training_distance,     _middle_render_horizontal_training_distance,         _right_render_horizontal_training_distance},       /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
-  {"TRAIN_PACE",               _left_render_horizontal_training_pace,         _middle_render_horizontal_training_pace,             _right_render_horizontal_training_pace},           /*UI_FRAME_PAGE_TRAINING_PACE*/
-  {"TRAIN_HR",                 _left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
-  {"TRAIN_RUN_STOP",           _left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
-  {"CYCLING_OUTDOOR_RUN_START",_left_render_horizontal_cycling_outdoor_24,    _middle_render_horizontal_cycling_outdoor_run_start, _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START*/
-  {"CYCLING_OUTDOOR_READY",    _left_render_horizontal_cycling_outdoor_ready, _middle_render_horizontal_cycling_outdoor_ready,     _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_READY*/
-  {"CYCLING_OUTDOOR_TIME",     _left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_TIME*/
-  {"CYCLING_OUTDOOR_DISTANCE", _left_render_horizontal_cycling_outdoor_16,    _middle_render_horizontal_cycling_outdoor_distance,  _right_render_horizontal_cycling_outdoor_distance},/*UI_FRAME_PAGE_CYCLING_OUTDOOR_DISTANCE*/
-  {"CYCLING_OUTDOOR_SPEED",    _left_render_horizontal_cycling_outdoor_speed, _middle_render_horizontal_cycling_outdoor_speed,     _right_render_horizontal_cycling_outdoor_speed},   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_SPEED*/
-  {"CYCLING_OUTDOOR_HR",       _left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_CYCLING_OUTDOOR_HEART_RATE*/
-  {"CYCLING_OUTDOOR_RUN_STOP", _left_render_horizontal_running_stop,          _middle_render_horizontal_cycling_outdoor_run_stop,  _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP*/
-  {"CAROUSEL_1",               _RENDER_NONE,                                  _middle_render_horizontal_carousel_1,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_1*/
-  {"CAROUSEL_2",               _RENDER_NONE,                                  _middle_render_horizontal_carousel_2,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_2*/
-  {"CAROUSEL_3",               _RENDER_NONE,                                  _middle_render_horizontal_carousel_3,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_3*/
+  {_RENDER_NONE,                                  _RENDER_NONE,                                        _RENDER_NONE},                                     /*UI_FRAME_PAGE_NONE*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_clock,                     _right_render_horizontal_home},                    /*UI_FRAME_PAGE_HOME_CLOCK*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},	                                    /*UI_FRAME_PAGE_PACE_LOGO*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _right_render_horizontal_firmware_ver},            /*UI_FRAME_PAGE_UNAUTHORIZED*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_LINKING*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_FRAME_PAGE_OTA*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_BATT_POWER*/
+  {_left_render_horizontal_steps,                 _middle_render_horizontal_steps,                     _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_STEPS*/
+  {_left_render_horizontal_distance,              _middle_render_horizontal_distance,                  _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_DISTANCE*/
+  {_left_render_horizontal_calories,              _middle_render_horizontal_calories,                  _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_CALORIES*/
+  {_left_render_horizontal_active_time,           _middle_render_horizontal_active_time,               _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_ACTIVE_TIME*/
+   {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_PM2P5*/
+  {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_WEATHER*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_FRAME_PAGE_MESSAGE*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_FRAME_PAGE_APP_NOTIF*/
+  {_left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_CALL*/
+  {_left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
+  {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_IDLE_ALERT*/
+  {_left_render_horizontal_heart_rate,            _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
+  {_left_render_horizontal_steps,                 _middle_render_horizontal_steps,                     _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_STEP_10K_ALERT*/
+  {_left_render_horizontal_heart_rate,            _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_HEART_RATE*/
+  {_left_render_horizontal_skin_temp,             _middle_render_horizontal_skin_temp,                 _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_SKIN_TEMP*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_SETTING*/
+  {_left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_STOPWATCH_START*/
+  {_left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_STOPWATCH_STOP*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_RUNNING*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_CYCLING*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_STAIRS*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_ELLIPTICAL*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_ROW*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_AEROBIC*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_PILOXING*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_OTHERS*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_workout_ready,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_READY*/
+  {_left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_TIME*/
+  {_left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_WORKOUT_RUN_HEART_RATE*/
+  {_left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_WORKOUT_RUN_CALORIES*/
+  {_left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_WORKOUT_RUN_END*/
+  {_left_render_horizontal_running_distance_16,   _middle_render_horizontal_running_distance,          _right_render_horizontal_running_distance},        /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
+  {_left_render_horizontal_running_time,          _middle_render_horizontal_running_time,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_TIME*/
+  {_left_render_horizontal_running_pace,          _middle_render_horizontal_running_pace,              _right_render_horizontal_running_pace},            /*UI_FRAME_PAGE_RUNNING_PACE*/
+  {_left_render_horizontal_running_hr,            _middle_render_horizontal_running_hr,                _right_render_horizontal_running_hr},              /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
+  {_left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_RUNNING_CALORIES*/
+  {_left_render_horizontal_running_cadence,       _middle_render_horizontal_running_cadence,           _right_render_horizontal_running_cadence},         /*UI_FRAME_PAGE_RUNNING_CADENCE*/
+  {_left_render_horizontal_running_stride,        _middle_render_horizontal_running_stride,            _right_render_horizontal_running_stride},          /*UI_FRAME_PAGE_RUNNING_STRIDE*/
+  {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_start_run,        _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_TRAINING_RUN_START*/
+  {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_run_or_analysis,  _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/
+  {_left_render_horizontal_training_ready,        _middle_render_horizontal_training_ready,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
+  {_left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
+  {_left_render_horizontal_training_distance,     _middle_render_horizontal_training_distance,         _right_render_horizontal_training_distance},       /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
+  {_left_render_horizontal_training_pace,         _middle_render_horizontal_training_pace,             _right_render_horizontal_training_pace},           /*UI_FRAME_PAGE_TRAINING_PACE*/
+  {_left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
+  {_left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
+  {_left_render_horizontal_cycling_outdoor_24,    _middle_render_horizontal_cycling_outdoor_run_start, _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START*/
+  {_left_render_horizontal_cycling_outdoor_ready, _middle_render_horizontal_cycling_outdoor_ready,     _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_READY*/
+  {_left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_TIME*/
+  {_left_render_horizontal_cycling_outdoor_16,    _middle_render_horizontal_cycling_outdoor_distance,  _right_render_horizontal_cycling_outdoor_distance},/*UI_FRAME_PAGE_CYCLING_OUTDOOR_DISTANCE*/
+  {_left_render_horizontal_cycling_outdoor_speed, _middle_render_horizontal_cycling_outdoor_speed,     _right_render_horizontal_cycling_outdoor_speed},   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_SPEED*/
+  {_left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_CYCLING_OUTDOOR_HEART_RATE*/
+  {_left_render_horizontal_running_stop,          _middle_render_horizontal_cycling_outdoor_run_stop,  _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_carousel_1,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_1*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_carousel_2,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_2*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_carousel_3,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_3*/
 };
 
 const UI_RENDER_CTX vertical_ui_render[] = {
-  {"NONE",                     _RENDER_NONE,                                  _RENDER_NONE,                                        _RENDER_NONE},                                     /*UI_FRAME_PAGE_NONE*/
-  {"HOME_CLOCK",               _top_render_vertical_batt_ble,                 _middle_render_vertical_clock,                       _bottom_render_vertical_home},                     /*UI_FRAME_PAGE_HOME_CLOCK*/
-  {"SYATEM_RESTART_LOGO",      _RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},		                                  /*UI_FRAME_PAGE_PACE_LOGO*/
-  {"SYATEM_AUTH_UNAUTHORIZED", _left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _right_render_horizontal_firmware_ver},            /*UI_FRAME_PAGE_UNAUTHORIZED*/
-  {"SYATEM_AUTH_LINKING",      _left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_LINKING*/
-  {"SYATEM_OTA",               _RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_FRAME_PAGE_OTA*/
-  {"SYSTEM_BATT_POWER_1",      _RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_BATT_POWER*/
-  {"TRACKER_STEP",             _top_render_vertical_steps,                    _middle_render_vertical_steps,                       _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_STEPS*/
-  {"TRACKER_DISTANCE",         _top_render_vertical_distance,                 _middle_render_vertical_distance,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_DISTANCE*/
-  {"TRACKER_CALORIES",         _top_render_vertical_calories,                 _middle_render_vertical_calories,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_CALORIES*/
-  {"TRACKER_ACTIVE_TIME",      _top_render_vertical_active_time,              _middle_render_vertical_active_time,                 _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_ACTIVE_TIME*/
-  {"SMART_PM2P5",              _top_render_vertical_pm2p5,                    _middle_render_vertical_pm2p5,                       _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_PM2P5*/
-  {"SMART_WEATHER",            _top_render_vertical_weather,                  _middle_render_vertical_weather,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_WEATHER*/
-  {"SMART_MESSAGE",            _left_render_horizontal_return,                _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_FRAME_PAGE_MESSAGE*/
-  {"SMART_APP_NOTIF",          _left_render_horizontal_return,                _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_FRAME_PAGE_APP_NOTIF*/
-  {"SMART_INCOMING_CALL",      _left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call,             _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_INCOMING_CALL*/
-  {"SMART_INCOMING_MESSAGE",   _left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_message,          _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
-  {"SMART_DETAIL_NOTIF",       _RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
-  {"SMART_ALARM_REMINDER",     _top_render_vertical_reminder,                 _middle_render_vertical_reminder,                    _bottom_render_vertiacl_reminder},                 /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
-  {"SMART_ALARM_DETAIL",       _top_render_vertical_reminder,                 _middle_render_vertical_reminder,                    _bottom_render_vertiacl_reminder},                 /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
-  {"SMART_IDLE_ALERT",         _left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_IDLE_ALERT*/
-  {"SMART_HEART_RATE_ALERT",   _top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
-  {"SMART_STEP_10K_ALERT",     _top_render_vertical_steps,                    _middle_render_vertical_steps,                       _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_STEP_10K_ALERT*/
-  {"TRACKER_HEART_RATE",       _top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE*/
-  {"TRACKER_SKIN_TEMP",        _top_render_vertical_skin_temp,                _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_SKIN_TEMP*/
-  {"SETTING",                  _RENDER_NONE,                                  _middle_render_horizontal_setting,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_SETTING*/
-  {"STOPWATCH_START",          _left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_STOPWATCH_START*/
-  {"STOPWATCH_STOP",           _left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_STOPWATCH_STOP*/
-  {"WORKOUT_RUNNING_MODE",     _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_RUNNING*/
-  {"WORKOUT_CYCLING_MODE",     _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_CYCLING*/
-  {"WORKOUT_STAIRS_MODE",      _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_STAIRS*/
-  {"WORKOUT_ELLIPTICAL_MODE",  _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_ELLIPTICAL*/
-  {"WORKOUT_ROW_MODE",         _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_ROW*/
-  {"WORKOUT_AEROBIC_MODE",     _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_AEROBIC*/
-  {"WORKOUT_PILOXING_MODE",    _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_PILOXING*/
-  {"WORKOUT_OTHERS_MODE",      _left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok},                      /*UI_FRAME_PAGE_WORKOUT_OTHERS*/
-  {"WORKOUT_RUN_READY",        _RENDER_NONE,                                  _middle_render_horizontal_workout_ready,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_READY*/
-  {"WORKOUT_RUN_TIME",         _left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_TIME*/
-  {"WORKOUT_RUN_HEART_RATE",   _left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_HEART_RATE*/
-  {"WORKOUT_RUN_CALORIES",     _left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_WORKOUT_RUN_CALORIES*/
-  {"WORKOUT_RUN_END",          _left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_WORKOUT_RUN_END*/
-  {"RUN_DISTANCE",             _top_render_vertical_running_distance,         _middle_render_vertical_running_distance,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
-  {"RUN_TIME",                 _top_render_vertical_running_time,             _middle_render_vertical_running_time,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_TIME*/
-  {"RUN_PACE",                 _top_render_vertical_running_pace,             _middle_render_vertical_running_pace,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_PACE*/
-  {"RUN_HR",                   _top_render_vertical_running_hr,               _middle_render_vertical_running_hr,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
-  {"RUN_CAL",                  _top_render_vertical_running_calories,         _middle_render_vertical_running_calories,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CALORIES*/
-  {"RUN_CADENCE",              _top_render_vertical_running_cadence,          _middle_render_vertical_running_cadence,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CADENCE*/
-  {"RUN_STRIDE",               _top_render_vertical_running_stride,           _middle_render_vertical_running_stride,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_STRIDE*/
-  {"TRAIN_RUN_START",          _top_render_vertical_running_distance,         _middle_render_vertical_training_run_start,          _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_TRAINING_RUN_START*/ 
-  {"TRAIN_RUN_OR_ANALYSIS",    _top_render_vertical_running_distance,         _middle_render_vertical_training_run_or_analysis,    _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/ 
-  {"TRAIN_READY",              _top_render_vertical_running_distance,         _middle_render_vertical_training_ready,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
-  {"TRAIN_TIME",               _top_render_vertical_training_time,            _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
-  {"TRAIN_DISTANCE",           _top_render_vertical_running_distance,         _middle_render_vertical_training_distance,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
-  {"TRAIN_PACE",               _top_render_vertical_running_pace,             _middle_render_vertical_training_pace,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_PACE*/
-  {"TRAIN_HR",                 _top_render_vertical_running_hr,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
-  {"TRAIN_RUN_STOP",           _top_render_vertical_running_stop,             _middle_render_vertical_training_run_stop,           _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
-  {"CYCLING_OUTDOOR_RUN_START",_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_run_start,   _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START*/
-  {"CYCLING_OUTDOOR_READY",    _top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_ready,       _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_READY*/
-  {"CYCLING_OUTDOOR_TIME",     _top_render_vertical_training_time,            _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_TIME*/
-  {"CYCLING_OUTDOOR_DISTANCE", _top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_distance,    _bottom_render_vertical_cycling_outdoor_distance}, /*UI_FRAME_PAGE_CYCLING_OUTDOOR_DISTANCE*/
-  {"CYCLING_OUTDOOR_SPEED",    _top_render_vertical_cycling_outdoor_speed,    _middle_render_vertical_cycling_outdoor_speed,       _bottom_render_vertical_cycling_outdoor_speed},    /*UI_FRAME_PAGE_CYCLING_OUTDOOR_SPEED*/
-  {"CYCLING_OUTDOOR_HR",       _top_render_vertical_running_hr,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_HEART_RATE*/
-  {"CYCLING_OUTDOOR_RUN_STOP", _top_render_vertical_running_stop,             _middle_render_vertical_cycling_outdoor_run_stop,    _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP*/
-  {"CAROUSEL_1",               _RENDER_NONE,                                  _middle_render_vertical_carousel_1,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_1*/
-  {"CAROUSEL_2",               _RENDER_NONE,                                  _middle_render_vertical_carousel_2,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_2*/
-  {"CAROUSEL_3",               _RENDER_NONE,                                  _middle_render_vertical_carousel_3,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_3*/	
+  {_RENDER_NONE,                                  _RENDER_NONE,                                        _RENDER_NONE},                                     /*UI_FRAME_PAGE_NONE*/
+  {_top_render_vertical_batt_ble,                 _middle_render_vertical_clock,                       _bottom_render_vertical_home},                     /*UI_FRAME_PAGE_HOME_CLOCK*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},		                                  /*UI_FRAME_PAGE_PACE_LOGO*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _right_render_horizontal_firmware_ver},            /*UI_FRAME_PAGE_UNAUTHORIZED*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_LINKING*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_FRAME_PAGE_OTA*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_BATT_POWER*/
+  {_top_render_vertical_steps,                    _middle_render_vertical_steps,                       _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_STEPS*/
+  {_top_render_vertical_distance,                 _middle_render_vertical_distance,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_DISTANCE*/
+  {_top_render_vertical_calories,                 _middle_render_vertical_calories,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_CALORIES*/
+  {_top_render_vertical_active_time,              _middle_render_vertical_active_time,                 _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_ACTIVE_TIME*/
+  {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_PM2P5*/
+  {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_WEATHER*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_FRAME_PAGE_MESSAGE*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_FRAME_PAGE_APP_NOTIF*/
+  {_left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_CALL*/
+  {_left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
+  {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_IDLE_ALERT*/
+  {_top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
+  {_top_render_vertical_steps,                    _middle_render_vertical_steps,                       _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_STEP_10K_ALERT*/
+  {_top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE*/
+  {_top_render_vertical_skin_temp,                _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_SKIN_TEMP*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_SETTING*/
+  {_left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_STOPWATCH_START*/
+  {_left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_STOPWATCH_STOP*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_RUNNING*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_CYCLING*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_STAIRS*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_ELLIPTICAL*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_ROW*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_AEROBIC*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_PILOXING*/
+  {_left_render_horizontal_return,                _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_run_go},                  /*UI_FRAME_PAGE_WORKOUT_OTHERS*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_workout_ready,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_READY*/
+  {_left_render_horizontal_training_time,         _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_TIME*/
+  {_left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_HEART_RATE*/
+  {_left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_WORKOUT_RUN_CALORIES*/
+  {_left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_WORKOUT_RUN_END*/
+  {_top_render_vertical_running_distance,         _middle_render_vertical_running_distance,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
+  {_top_render_vertical_running_time,             _middle_render_vertical_running_time,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_TIME*/
+  {_top_render_vertical_running_pace,             _middle_render_vertical_running_pace,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_PACE*/
+  {_top_render_vertical_running_hr,               _middle_render_vertical_running_hr,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
+  {_top_render_vertical_running_calories,         _middle_render_vertical_running_calories,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CALORIES*/
+  {_top_render_vertical_running_cadence,          _middle_render_vertical_running_cadence,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CADENCE*/
+  {_top_render_vertical_running_stride,           _middle_render_vertical_running_stride,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_STRIDE*/
+  {_top_render_vertical_running_distance,         _middle_render_vertical_training_run_start,          _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_TRAINING_RUN_START*/ 
+  {_top_render_vertical_running_distance,         _middle_render_vertical_training_run_or_analysis,    _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/ 
+  {_top_render_vertical_running_distance,         _middle_render_vertical_training_ready,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
+  {_top_render_vertical_running_time,             _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
+  {_top_render_vertical_running_distance,         _middle_render_vertical_training_distance,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
+  {_top_render_vertical_running_pace,             _middle_render_vertical_training_pace,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_PACE*/
+  {_top_render_vertical_running_hr,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
+  {_top_render_vertical_running_stop,             _middle_render_vertical_training_run_stop,           _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
+  {_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_run_start,   _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START*/
+  {_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_ready,       _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_READY*/
+  {_top_render_vertical_running_time,             _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_TIME*/
+  {_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_distance,    _bottom_render_vertical_cycling_outdoor_distance}, /*UI_FRAME_PAGE_CYCLING_OUTDOOR_DISTANCE*/
+  {_top_render_vertical_cycling_outdoor_speed,    _middle_render_vertical_cycling_outdoor_speed,       _bottom_render_vertical_cycling_outdoor_speed},    /*UI_FRAME_PAGE_CYCLING_OUTDOOR_SPEED*/
+  {_top_render_vertical_running_hr,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_HEART_RATE*/
+  {_top_render_vertical_running_stop,             _middle_render_vertical_cycling_outdoor_run_stop,    _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP*/
+  {_RENDER_NONE,                                  _middle_render_vertical_carousel_1,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_1*/
+  {_RENDER_NONE,                                  _middle_render_vertical_carousel_2,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_2*/
+  {_RENDER_NONE,                                  _middle_render_vertical_carousel_3,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_3*/	
 };
 
 

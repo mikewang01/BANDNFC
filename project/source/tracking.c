@@ -766,7 +766,7 @@ void _check_training_pace_and_hr_alert(I16U minute_distance)
 		if (input_pace_min < pace_range_up) {
 			if (!u->b_training_alert) {
 				u->b_training_alert = TRUE;
-				NOTIFIC_start_training_pace_alert();					
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
 			}
 		} else {
 			u->b_training_alert = FALSE;
@@ -777,7 +777,7 @@ void _check_training_pace_and_hr_alert(I16U minute_distance)
 		if (hr_perc >= hr_range_down) {
 			if (!u->b_training_alert) {
 				u->b_training_alert = TRUE;
-	      NOTIFIC_start_training_hr_alert();				
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
 			}
 		} else {
 			u->b_training_alert = FALSE;
@@ -869,14 +869,14 @@ static void _logging_per_minute()
 			cling.hr.b_closing_to_skin = TRUE;
 			cling.hr.heart_rate_ready = TRUE;
 			N_SPRINTF("[TRACKING] HR alerting ...");
-			NOTIFIC_start_HR_alert();
+			NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_HR_ALERT, 0);
 		}
 	}
 	
 	// alert user if steps go beyond 10 K steps
 	if ((cling.activity.day.walking + cling.activity.day.running) >= 10000) {
 		if ((cling.activity.day_stored.walking+cling.activity.day_stored.running) < 10000) {
-			NOTIFIC_start_10KStep_alert();
+			NOTIFIC_start_notifying(NOTIFICATION_TYPE_10K_STEP, 0);
 		}
 	}
 	

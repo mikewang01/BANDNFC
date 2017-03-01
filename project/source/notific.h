@@ -39,19 +39,14 @@ typedef struct tagNOTIFIC_CTX {
 	NOTIFIC_STATE_TYPE state;
 } NOTIFIC_CTX;
 
-void NOTIFIC_set_next_reminder(I8U *data, I8U num);
+
 void NOTIFIC_state_machine(void);
-void NOTIFIC_start_notifying(I8U cat_id);
+void NOTIFIC_start_notifying(I8U notif_type,I8U cat_id);
 void NOTIFIC_stop_notifying(void);
-void NOTIFIC_start_idle_alert(void);
+
 void NOTIFIC_smart_phone_notify(I8U* data);
 I8U NOTIFIC_get_message_total(void);
 I8U NOTIFIC_get_app_name(I8U index, char *app_name);
 I8U NOTIFIC_get_app_message_detail(I8U index, char *string);
-I8U NOTIFIC_get_callerID(char *string);
 BOOLEAN NOTIFIC_is_user_viewing_message(void);
-void NOTIFIC_start_HR_alert(void);
-void NOTIFIC_start_10KStep_alert(void);
-void NOTIFIC_start_training_pace_alert(void);
-void NOTIFIC_start_training_hr_alert(void);
 #endif  // __NOTIFIC_HEADER__

@@ -11,16 +11,10 @@
 
 
 enum {
-	ALIGNMENT_TYPE_NULL=0,
-	ALIGNMENT_TYPE_LEFT,
-	ALIGNMENT_TYPE_CENTER,
-	ALIGNMENT_TYPE_RIGHT,
-};
-
-enum {
 	LANGUAGE_TYPE_ENGLISH=0,
 	LANGUAGE_TYPE_SIMPLIFIED_CHINESE,
-	LANGUAGE_TYPE_TRADITIONAL_CHINESE
+	LANGUAGE_TYPE_TRADITIONAL_CHINESE,
+	LANGUAGE_TYPE_MAX
 };
 
 /** @brief UI page frame display list.
@@ -371,7 +365,6 @@ enum {
 #endif
 
 typedef struct tagUI_RENDER_CTX {
-  char *name;       //codec name (provisionable)
   void (*top_row_render)();
   void (*middle_row_render)();
   void (*bottom_row_render)();
