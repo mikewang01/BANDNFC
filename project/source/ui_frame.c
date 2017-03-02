@@ -331,7 +331,7 @@ static void _left_render_horizontal_running_stride()
 
 static void _left_render_horizontal_training_ready()
 {
-	I8U *in = cling.ui.p_oled_up+20;
+	I8U *in = cling.ui.p_oled_up+128+15;
 	
 	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, in, asset_content+ICON24_RUNNING_DISTANCE_POS);
 }
@@ -376,7 +376,7 @@ static void _left_render_horizontal_cycling_outdoor_24()
 
 static void _left_render_horizontal_cycling_outdoor_ready()
 {
-	I8U *in = cling.ui.p_oled_up+20;
+	I8U *in = cling.ui.p_oled_up+128+15;
 	
 	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, in, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);
 }
@@ -452,12 +452,11 @@ static I16U _render_middle_section_core(I8U len, I8U *string, I8U margin, I16U o
 						char_len = asset_len[512+string[i]];
 					}
 				}
-		}	
-		
-		for (j = 0; j < char_len; j++) {
-			*p0++ = (*pin++);
-			*p1++ = (*pin++);
-			*p2++ = (*pin++);
+				for (j = 0; j < char_len; j++) {
+					*p0++ = (*pin++);
+					*p1++ = (*pin++);
+					*p2++ = (*pin++);
+				}	
 		}	
 		
 		if (i != (len-1))
@@ -481,7 +480,7 @@ static void _horizontal_display_dynamic(I8U *string, I8U len, BOOLEAN b_in_cente
 	else 
 	  p0 = cling.ui.p_oled_up+384;
 	
-	p0 = p1;
+	p1 = p0;
 
 	for (i = 0; i < len; i++) {
 		pin = asset_content+asset_pos[string[i]];
@@ -550,7 +549,7 @@ static void _middle_render_horizontal_clock()
 		len = sprintf((char *)string, "%02d %02d", cling.time.local.hour, cling.time.local.minute);
 	}
 	
-	_render_middle_section_core(len, string, margin, offset, len);
+	_render_middle_section_core(len, string, margin, offset, 3);
 }
 
 static void _middle_render_horizontal_ota()
@@ -624,8 +623,18 @@ static void _middle_render_horizontal_ble_code()
 	I8U string[32];
 
 	SYSTEM_get_ble_code(string);
+	string[4] = 0;
 	
+#ifdef 	_CLINGBAND_PACE_MODEL_
+	I8U len = 0;
+	I8U margin = 3;	
+	I16U offset = 0;		
+	
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
+	_middle_horizontal_alignment_center(offset);
+#else 
 	FONT_load_characters(cling.ui.p_oled_up+256, (char *)string, 16, 128, TRUE);
+#endif	
 }
 
 static void _middle_render_horizontal_linking()
@@ -722,11 +731,17 @@ static void _middle_render_horizontal_distance()
 		len = sprintf((char *)string, "%d.%02d", integer, fractional);
 	}
 
-	offset = _render_middle_section_core(len, string, margin, offset, 0);
-	// Shift all the display to the middle
-	_middle_horizontal_alignment_center(offset);
+  if (len == 4) {
+		offset = 25;
+		margin = 3;
+	} else {
+	  offset = 20;
+		margin = 1;
+	}
 	
-	FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)unit_distance_display[language_type][metric], 16, 128, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
+	
+	FONT_load_characters(cling.ui.p_oled_up+256+offset+3, (char *)unit_distance_display[language_type][metric], 16, 128, FALSE);
 }
 
 static void _middle_render_horizontal_calories()
@@ -775,11 +790,16 @@ static void _middle_render_horizontal_active_time()
 	
 	len = sprintf((char *)string, "%d", stat);
 
-	offset = _render_middle_section_core(len, string, margin, offset, 0);
-	// Shift all the display to the middle
-	_middle_horizontal_alignment_center(offset);
+	if (len == 1) 
+		offset = 40;
+	else if (len == 2)
+		offset = 35;
+  else 
+    offset = 30;
 
-	FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)active_time_name[language_type], 16, 128, FALSE);
+	offset = _render_middle_section_core(len, string, margin, offset, 0);
+
+	FONT_load_characters(cling.ui.p_oled_up+256+offset+10, (char *)active_time_name[language_type], 16, 128, FALSE);
 }
 
 #ifdef _CLINGBAND_UV_MODEL_		
@@ -803,14 +823,13 @@ static void _middle_render_horizontal_uv_index()
 static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 {
 	const char *heart_rate_wave_indicator[] = {
-		"-,,,,,,,",
-		",-,,,,,,", 
-		",,-,,,,,", 
-		",,,-,,,,", 
-		",,,,-,,,", 
-		",,,,,-,,", 
-		",,,,,,-,", 
-		",,,,,,,-"};	
+		"-,,,,,,",
+		",-,,,,,", 
+		",,-,,,,", 
+		",,,-,,,", 
+		",,,,-,,", 
+		",,,,,-,", 
+		",,,,,,-"};	
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 0;
@@ -822,7 +841,7 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 		  hr_result = PPG_minute_hr_calibrate();
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
-			if (cling.ui.heart_rate_wave_index > 5) {
+			if (cling.ui.heart_rate_wave_index > 6) {
 				cling.ui.heart_rate_wave_index = 0;
 			}
 			len = sprintf((char *)string, "%s", heart_rate_wave_indicator[cling.ui.heart_rate_wave_index]);
@@ -1114,6 +1133,7 @@ static void _middle_render_horizontal_workout_mode_switch()
 		
 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)workout_name[language_type][workout_idx], 16, 128, TRUE);
 	
+	len = 8;
 	_horizontal_display_dynamic((I8U *)workout_indicator[workout_idx], len, FALSE);
 }
 #endif
@@ -1426,27 +1446,29 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
 	const char *ready_indicator_name[] = {"3","2","1","GO"};
 	I8U string[32];
 	I8U len = 0;
-	I16U offset = 0;
-	I8U margin = 0;
+	I16U offset = 70;
+	I8U margin = 6;
   I32U t_curr = CLK_get_system_time();
+	BOOLEAN b_ready_finished = FALSE;	
 	
-	if (t_curr  > (cling.ui.running_time_stamp + 600)) {
+	if (t_curr  > (cling.ui.running_time_stamp + 700)) {
 		cling.ui.running_time_stamp = t_curr;		
 		cling.ui.run_ready_index++;
 	}
-	
+
 	if (cling.ui.run_ready_index > 3) {
-		cling.ui.run_ready_index = 0;
-		return TRUE;
+		cling.ui.run_ready_index = 3;
+		b_ready_finished = TRUE;
 	}
+	
+	if (cling.ui.run_ready_index == 3)
+		offset = 60;
 	
 	len = sprintf((char *)string, "%s", ready_indicator_name[cling.ui.run_ready_index]);
 		
-  offset = _render_middle_section_core(len, string, margin, offset, len);
-	// Shift all the display to the middle
-  _middle_horizontal_alignment_center(offset);
+  _render_middle_section_core(len, string, margin, offset, len);
 
-	return FALSE;
+	return b_ready_finished;
 }
 
 static void _middle_render_horizontal_training_ready()
@@ -2367,15 +2389,16 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	    *(p0+i) = ~(*(p0+i));
 	    *(p1+i) = ~(*(p1+i));	
 	  }
+		line_len = 32;
 	}
 		
 	// Shift to the center
 	_vertical_centerize(p0, p1, p2, line_len);
 	
 	// do the rotation
-	_rotate_270_degree(p1, cling.ui.p_oled_up+384+offset);
+	_rotate_270_degree(p0, cling.ui.p_oled_up+384+offset);
 	if (height == 16)
-	  _rotate_270_degree(p2, cling.ui.p_oled_up+384+offset+8);
+	  _rotate_270_degree(p1, cling.ui.p_oled_up+384+offset+8);
 }
 
 static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U len, I8U b_24_size, BOOLEAN b_all_hold)
@@ -2536,8 +2559,6 @@ static void _top_render_vertical_skin_temp()
 	_render_vertical_icon(ICON24_SKIN_TEMP_IDX);
 }
 #endif
-
-
 
 static void _top_render_vertical_running_distance()
 {
@@ -3645,22 +3666,23 @@ static BOOLEAN _middle_render_vertical_core_ready()
 	const char *ready_indicator_name[] = {"3","2","1","GO"};
 	I8U string[32];
   I32U t_curr = CLK_get_system_time();
+  BOOLEAN b_ready_finished = FALSE;	
 	
-	if (t_curr  > (cling.ui.running_time_stamp + 600)) {
+	if (t_curr  > (cling.ui.running_time_stamp + 700)) {
 		cling.ui.running_time_stamp = t_curr;		
 		cling.ui.run_ready_index++;
 	}
 	
 	if (cling.ui.run_ready_index > 3) {
-		cling.ui.run_ready_index = 0;
-		return TRUE;
+		cling.ui.run_ready_index = 3;
+		b_ready_finished = TRUE;
 	}
 
 	sprintf((char *)string, "%s", ready_indicator_name[cling.ui.run_ready_index]);
 	
 	_render_vertical_time(string, 60, TRUE, TRUE);
 
-	return FALSE;	
+	return b_ready_finished;	
 }
 
 static void _middle_render_vertical_training_ready()
@@ -4062,7 +4084,7 @@ static void _bottom_render_vertical_tracker()
 }
 #endif
 
-#ifdef _CLINGBAND_PACE_MODEL_
+#if 0
 static void _bottom_render_vertiacl_reminder()
 {
 	I8U string[32];
@@ -4084,12 +4106,12 @@ static void _bottom_render_vertiacl_reminder()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_run_go()
 {
-	_render_vertical_fonts_lib_character_core((I8U *)"G O", 16, 112, TRUE);
+	_render_vertical_fonts_lib_character_core((I8U *)" GO ", 16, 112, TRUE);
 }
 
 static void _bottom_render_vertical_run_ok()
 {
-	_render_vertical_fonts_lib_character_core((I8U *)"O K", 16, 112, TRUE);	
+	_render_vertical_fonts_lib_character_core((I8U *)" OK ", 16, 112, TRUE);	
 }
 #endif
 

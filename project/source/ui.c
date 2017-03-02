@@ -440,7 +440,7 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 #else
 		// Allways open home page. 
 	  regular_page_filtering |= 0x8000; 
-	  regular_page_filtering = 0xffff;
+	  //regular_page_filtering = 0xffff;
 #endif
 
 		u->frame_index = p_matrix[u->frame_index];
