@@ -516,7 +516,7 @@ const I8U ui_gesture_constrain[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_SYSTEM_OTA,*/                     N_F,
 	/*UI_DISPLAY_SYSTEM_LINKING,*/                 N_F,
 	/*UI_DISPLAY_SYSTEM_UNAUTHORIZED,*/            N_F,		
-	/*UI_DISPLAY_SYSTEM_BATT_POWER,*/              S_F_BS_BH,	
+	/*UI_DISPLAY_SYSTEM_BATT_POWER,*/              N_F,	
 	// 2: a set of the typical use cases
 	/*UI_DISPLAY_TRACKER_STEP,*/                   S_F_BS_BH,  
 	/*UI_DISPLAY_TRACKER_DISTANCE,*/               S_F_BS_BH,
@@ -525,7 +525,7 @@ const I8U ui_gesture_constrain[UI_DISPLAY_MAXIMUM] = {
 	// 3: a set of smart features
 	/*UI_DISPLAY_SMART_PM2P5,*/                    S_F_BS_BH,		
 	/*UI_DISPLAY_SMART_WEATHER,*/                  S_F_BS_BH,	
-	/*UI_DISPLAY_SMART_MESSAGE,*/                  S_F_BS_BH,
+	/*UI_DISPLAY_SMART_MESSAGE,*/                  F_BS,
 	/*UI_DISPLAY_SMART_APP_NOTIF,*/                S_F_BS_BH,
 	/*UI_DISPLAY_SMART_DETAIL_NOTIF,*/             S_F_BS_BH,
 	/*UI_DISPLAY_SMART_INCOMING_CALL,*/            S_F_BS_BH,
@@ -634,14 +634,14 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_WORKOUT_AEROBIC,*/                400,
 	/*UI_DISPLAY_WORKOUT_PILOXING,*/               400,
 	/*UI_DISPLAY_WORKOUT_OTHERS,*/                 400,	
-	/*UI_DISPLAY_WORKOUT_RUN_READY,*/              300,
+	/*UI_DISPLAY_WORKOUT_RUN_READY,*/              100,
 	/*UI_DISPLAY_WORKOUT_RUN_TIME,*/               300,
 	/*UI_DISPLAY_WORKOUT_RUN_HEART_RATE,*/         300,
 	/*UI_DISPLAY_WORKOUT_RUN_CALORIES,*/           300,
 	/*UI_DISPLAY_WORKOUT_RUN_END,*/                400,
 	// 8: Running Statistics
 	/*UI_DISPLAY_RUNNING_STAT_DISTANCE,*/          400,
-	/*UI_DISPLAY_RUNNING_STAT_TIME,*/              300,
+	/*UI_DISPLAY_RUNNING_STAT_TIME,*/              400,
 	/*UI_DISPLAY_RUNNING_STAT_PACE,*/              400,
 	/*UI_DISPLAY_RUNNING_STAT_STRIDE,*/            400,
 	/*UI_DISPLAY_RUNNING_STAT_CADENCE,*/           400,
@@ -650,7 +650,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	// 9: training Statistics
 	/*UI_DISPLAY_TRAINING_STAT_RUN_START,*/        400,
 	/*UI_DISPLAY_TRAINING_STAT_RUN_OR_ANALYSIS,*/  400,	
-	/*UI_DISPLAY_TRAINING_STAT_READY,*/            300,
+	/*UI_DISPLAY_TRAINING_STAT_READY,*/            100,
 	/*UI_DISPLAY_TRAINING_STAT_TIME,*/             300,	
 	/*UI_DISPLAY_TRAINING_STAT_DISTANCE,*/         300,
 	/*UI_DISPLAY_TRAINING_STAT_PACE,*/             300,
@@ -658,7 +658,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_TRAINING_STAT_RUN_STOP,*/         400,
 	// 10: CYCLING_OUTDOOR Statistics
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_START,*/ 400,	
-	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY,*/     300,	
+	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY,*/     100,	
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME,*/      300,		
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_DISTANCE,*/  300,	
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_SPEED,*/     300,	

@@ -661,11 +661,6 @@ static void _update_notif_repeat_look_time(UI_ANIMATION_CTX *u)
 {	
 	BOOLEAN b_look_finished = FALSE;
 
-	if (!_is_smart_incoming_notifying_page(u->frame_index)) {
-		u->notif_repeat_look_time = 0;
-		return;
-	}
-		
 	switch (u->frame_index) {
 		case UI_DISPLAY_SMART_INCOMING_CALL: {
 		  // Don't need to look the incoming call detail information, and go back to previous UI page directly.
@@ -734,7 +729,7 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 	char data[128];	
 	I8U max_frame_num = 0;
 
-	if (u->frame_prev_idx == UI_DISPLAY_SMART_DETAIL_NOTIF){
+	if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF){
 
 #ifdef _CLINGBAND_PACE_MODEL_			
 	  NOTIFIC_get_app_message_detail(0 ,data);
@@ -752,7 +747,7 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 		// Update vertical Notific detail index
 		u->notif_detail_index++;
 			
-		if (u->notif_detail_index >= max_frame_num) {
+		if (u->notif_detail_index > max_frame_num) {
 			u->notif_detail_index = 0;
 			u->notif_repeat_look_time++;
 		}

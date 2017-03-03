@@ -160,9 +160,6 @@
 #define ICON24_NORMAL_ALARM_CLOCK_IDX      139
 #define ICON24_NORMAL_ALARM_CLOCK_LEN      asset_len[512+139]
 #define ICON24_NORMAL_ALARM_CLOCK_POS      asset_pos[512+139]
-#define ICON24_SLEEP_ALARM_CLOCK_IDX       140
-#define ICON24_SLEEP_ALARM_CLOCK_LEN       asset_len[512+140]
-#define ICON24_SLEEP_ALARM_CLOCK_POS       asset_pos[512+140]
 #define ICON24_SETTING_IDX                 141
 #define ICON24_SETTING_LEN                 asset_len[512+141]
 #define ICON24_SETTING_POS                 asset_pos[512+141]
@@ -181,15 +178,9 @@
 #define ICON24_RUNNING_MODE_IDX            147
 #define ICON24_RUNNING_MODE_LEN            asset_len[512+147]
 #define ICON24_RUNNING_MODE_POS            asset_pos[512+147]
-#define ICON24_PHONE_FINDER_IDX            148		
-#define ICON24_PHONE_FINDER_LEN            asset_len[512+148]
-#define ICON24_PHONE_FINDER_POS            asset_pos[512+148]
 #define ICON24_RUNNING_STOP_IDX            149		
 #define ICON24_RUNNING_STOP_LEN            asset_len[512+149]
 #define ICON24_RUNNING_STOP_POS            asset_pos[512+149]
-#define ICON24_BATT_POWER_IDX              150		
-#define ICON24_BATT_POWER_LEN              asset_len[512+150]
-#define ICON24_BATT_POWER_POS              asset_pos[512+150]
 #define ICON24_CYCLING_OUTDOOR_MODE_IDX    151		
 #define ICON24_CYCLING_OUTDOOR_MODE_LEN    asset_len[512+151]
 #define ICON24_CYCLING_OUTDOOR_MODE_POS    asset_pos[512+151]
