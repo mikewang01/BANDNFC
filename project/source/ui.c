@@ -889,13 +889,6 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 	I8U max_frame_num=0;
   BOOLEAN b_up;
 	
-	if (gesture == TOUCH_FINGER_LEFT) 
-		b_up = TRUE;
-	else if (gesture == TOUCH_FINGER_RIGHT) 
-		b_up = FALSE;
-	else
-		return;
-			
   if (u->frame_index == UI_DISPLAY_SMART_APP_NOTIF) {
 #ifdef _ENABLE_ANCS_				
 		max_frame_num = NOTIFIC_get_message_total();		
@@ -906,7 +899,14 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 			u->app_notific_index = 0;
 			return;
 		}
-		
+
+		if (gesture == TOUCH_SWIPE_LEFT) 
+			b_up = TRUE;
+		else if (gesture == TOUCH_SWIPE_RIGHT) 
+			b_up = FALSE;
+		else
+			return;
+			
 		// Update App notific index
 		if (b_up) {
 			u->app_notific_index++;

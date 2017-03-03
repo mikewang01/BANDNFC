@@ -331,7 +331,7 @@ static void _left_render_horizontal_running_stride()
 
 static void _left_render_horizontal_training_ready()
 {
-	I8U *in = cling.ui.p_oled_up+128+15;
+	I8U *in = cling.ui.p_oled_up+128+10;
 	
 	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, in, asset_content+ICON24_RUNNING_DISTANCE_POS);
 }
@@ -376,7 +376,7 @@ static void _left_render_horizontal_cycling_outdoor_24()
 
 static void _left_render_horizontal_cycling_outdoor_ready()
 {
-	I8U *in = cling.ui.p_oled_up+128+15;
+	I8U *in = cling.ui.p_oled_up+128+10;
 	
 	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, in, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);
 }
@@ -1448,7 +1448,7 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
 	const char *ready_indicator_name[] = {"3","2","1","GO"};
 	I8U string[32];
 	I8U len = 0;
-	I16U offset = 70;
+	I16U offset = 60;
 	I8U margin = 6;
   I32U t_curr = CLK_get_system_time();
 	BOOLEAN b_ready_finished = FALSE;	
@@ -1464,7 +1464,7 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
 	}
 	
 	if (cling.ui.run_ready_index == 3)
-		offset = 60;
+		offset = 53;
 	
 	len = sprintf((char *)string, "%s", ready_indicator_name[cling.ui.run_ready_index]);
 		
@@ -1611,7 +1611,6 @@ static void _middle_render_horizontal_cycling_outdoor_ready()
 static void _middle_render_horizontal_cycling_outdoor_distance()
 {
   BOOLEAN b_ble_connected = FALSE;
-	I8U string[32];
 	
 	if (BTLE_is_connected())
 		b_ble_connected = TRUE;
@@ -1620,8 +1619,6 @@ static void _middle_render_horizontal_cycling_outdoor_distance()
 		_horizontal_core_run_distance(cling.run_stat.distance, TRUE);
 	} else {
 		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_LEN, cling.ui.p_oled_up+128+40, asset_content+ICON24_NO_SKIN_TOUCH_POS);
-		sprintf((char *)string, "无蓝牙 ");	
-		FONT_load_characters(cling.ui.p_oled_up+128+128+80, (char *)string, 16, 128, FALSE);
 	}
 }
 
@@ -2284,13 +2281,18 @@ static void _right_render_horizontal_run_go()
 
 static void _right_render_horizontal_cycling_outdoor_distance()
 {
+	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏" ,"英裏"}};	
+	I8U language_type = cling.ui.language_type;	
+	I8U metric = cling.user_data.profile.metric_distance;	
   BOOLEAN b_ble_connected = FALSE;
 	
 	if (BTLE_is_connected())
 		b_ble_connected = TRUE;
 	
 	if (b_ble_connected) {
-    _right_render_horizontal_training_distance();
+	  _right_render_horizontal_string_core(NULL, unit_distance_display[language_type][metric]);			
+	} else {
+		_right_render_horizontal_string_core(NULL, "无蓝牙 ");	
 	}
 }
 

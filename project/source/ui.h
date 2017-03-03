@@ -680,8 +680,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U vertical_index;
 	I8U display_layer;
 	
-	// App notific index
-	I8U app_notific_index;
+
 		
 	// Icon flashing
 	BOOLEAN clock_sec_blinking;
@@ -706,7 +705,8 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U notif_detail_index;     // Incoming message detail index.
   I8U string_pos_buf[5];	    // Incoming message detail index buff.
 	I8U notif_repeat_look_time; // Notification repeat look time.
-
+	I8U app_notific_index;	    // App notific index
+	
 	// Running
 	I8U run_ready_index;    // Read go index.
 	BOOLEAN b_training_first_enter;
