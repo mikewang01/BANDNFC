@@ -142,22 +142,6 @@ static BOOLEAN _is_carousel_page(I8U frame_index)
 }
 
 /*------------------------------------------------------------------------------------------
-*  Function:	_is_music_page(I8U frame_index)
-*
-*  Description: Determine whether the current page is music page.
-*
-*------------------------------------------------------------------------------------------*/
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
-static BOOLEAN _is_music_page(I8U frame_index)
-{
-  if ((frame_index >= UI_DISPLAY_MUSIC) && (frame_index <= UI_DISPLAY_MUSIC_END))
-		return TRUE;
-	else 
-		return FALSE;
-}
-#endif
-
-/*------------------------------------------------------------------------------------------
 *  Function:	_is_stopwatch_page(I8U frame_index)
 *
 *  Description: Determine whether the current page is stopwatch page.
@@ -180,6 +164,22 @@ static BOOLEAN _is_stopwatch_page(I8U frame_index)
 static BOOLEAN _is_workout_type_switch_page(I8U frame_index)
 {
   if ((frame_index >= UI_DISPLAY_WORKOUT_RUNNING) && (frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
+		return TRUE;
+	else 
+		return FALSE;
+}
+#endif
+
+/*------------------------------------------------------------------------------------------
+*  Function:	_is_music_page(I8U frame_index)
+*
+*  Description: Determine whether the current page is music page.
+*
+*------------------------------------------------------------------------------------------*/
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+static BOOLEAN _is_music_page(I8U frame_index)
+{
+  if ((frame_index >= UI_DISPLAY_MUSIC) && (frame_index <= UI_DISPLAY_MUSIC_END))
 		return TRUE;
 	else 
 		return FALSE;
@@ -213,7 +213,7 @@ static BOOLEAN _ui_vertical_animation(I8U frame_index)
 #endif
 	
 #ifndef _CLINGBAND_PACE_MODEL_		
-	if ((frame_index >= UI_DISPLAY_TRACKER) && (frame_index <= UI_DISPLAY_TRACKER_END)) {
+	if ((frame_index >= UI_DISPLAY_TRACKER) && (frame_index <= UI_DISPLAY_TRACKER_ACTIVE_TIME)) {
 		return TRUE;
 	} else if (frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE) {
 		return TRUE; 
@@ -265,6 +265,14 @@ static void _stote_frame_cached_index()
 	if (_is_stopwatch_page(u->frame_index)) {
 		u->frame_cached_index = u->frame_index;
 	}
+
+	if (_is_carousel_page(u->frame_index)) {
+		u->frame_cached_index = u->frame_index;
+	}	
+
+	if (_is_workout_type_switch_page(u->frame_index)) {
+		u->frame_cached_index = u->frame_index;
+	}		
 #endif	
 	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)		
@@ -337,7 +345,14 @@ static void _restore_perv_frame_index()
 			u->frame_index = u->frame_cached_index;	
 	    if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) || (u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)) {	
 		    PPG_closing_to_skin_detect_init();
-		  }
+		  } 
+#ifndef _CLINGBAND_PACE_MODEL_				
+			else if (_is_carousel_page(u->frame_index)) {
+				u->frame_index = UI_DISPLAY_HOME;
+			} else if (_is_workout_type_switch_page(u->frame_index)) {
+				u->frame_index = UI_DISPLAY_HOME;				
+			}
+#endif			
 		}	
 	}
 }
@@ -1065,7 +1080,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		cling.activity.workout_type = WORKOUT_NONE;
 		cling.activity.b_workout_active = FALSE;
 		return;				
-	}	
+	}		
 #endif	
 	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)			
@@ -1155,6 +1170,11 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
   // 2. Stop stopwatch
 	if ((u->frame_prev_idx == UI_DISPLAY_STOPWATCH_STOP) && (u->frame_index == UI_DISPLAY_CAROUSEL_2)) {
 		u->stopwatch_time_stamp = 0;
+	}
+	
+	if (!_is_stopwatch_page(u->frame_index)) {
+		u->stopwatch_time_stamp = 0;
+		u->b_stopwatch_first_enter = FALSE;		
 	}
 }
 #endif	
