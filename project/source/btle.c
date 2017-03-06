@@ -708,8 +708,8 @@ BOOLEAN BTLE_streaming_authorized()
 
 	// Nothing gets streamed out if OTA is turned on
 	if (OTA_if_enabled()) {
-		if (t_curr > (r->packet_received_ts + 30000)) {
-			Y_SPRINTF("[BTLE] OTA no response for 30 seconds -> reboot ");
+		if (t_curr > (r->packet_received_ts + 10000)) {
+			Y_SPRINTF("[BTLE] OTA no response for 10 seconds -> reboot ");
 			SYSTEM_restart_from_reset_vector();
 		}
 		return FALSE;

@@ -985,7 +985,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 {
 	I8U i;
 	BOOLEAN b_enter_workout_mode = FALSE;
-
+	
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
 		N_SPRINTF("[UI] Enter training workout mode");	
     b_enter_workout_mode = TRUE;		
@@ -1685,6 +1685,8 @@ void UI_state_machine()
 					UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);	
 				} 
 				u->frame_index = UI_DISPLAY_HOME;	
+			  cling.activity.workout_type = WORKOUT_NONE;
+		    cling.activity.b_workout_active = FALSE;		
 			}
 #ifdef _CLINGBAND_PACE_MODEL_						
 			else if ((t_curr > u->display_to_base + 400) || HOMEKEY_new_gesture()) {
@@ -1720,16 +1722,20 @@ void UI_state_machine()
 		}
 		case UI_STATE_FIRMWARE_OTA:
 		{
-		  // Skip all the gestures					
-			if (u->state_init) {
-				u->state_init = FALSE;
-				UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
-				u->display_to_base = t_curr;
-			}	else {
-				if (t_curr > (u->display_to_base+2000)) {
-					u->display_to_base = t_curr;
+			if (!OTA_if_enabled()) {
+				u->frame_index = UI_DISPLAY_HOME; 
+				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
+			} else {
+				if (u->state_init) {
+					u->state_init = FALSE;
 					UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
-				}
+					u->display_to_base = t_curr;
+				}	else {
+					if (t_curr > (u->display_to_base+2000)) {
+						u->display_to_base = t_curr;
+						UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
+					}
+				}				
 			}
 		  break;
 		}
