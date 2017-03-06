@@ -316,27 +316,29 @@ static void _restore_perv_frame_index()
 		if (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY) 
 			return;		
 #endif		
+		if (_is_workout_active_page(u->frame_index)) 
+			return;
 		if (_is_workout_active_page(u->frame_cached_index)) {
-			u->frame_index = u->frame_cached_index;
-		} else {
-			if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) {
-		    u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
-			}	
+			u->frame_index = u->frame_cached_index;	
+			return;		
+		}			
+		if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) {
+			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
+		}	
 #ifndef _CLINGBAND_PACE_MODEL_					
-			else if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
-		    u->frame_index = UI_DISPLAY_WORKOUT_RUN_TIME;		
-			}			
-			else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
-		    u->frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;		
-			}	 
+		else if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
+			u->frame_index = UI_DISPLAY_WORKOUT_RUN_TIME;		
+		}			
+		else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
+			u->frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;		
+		}	 
 #endif			
-      else {
-		    u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
-      } 	
-		}
+		else {
+			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
+		} 	
 		return;
 	}	
-	
+
 	// 3. Go back to previous UI page.
 	if (u->frame_index == UI_DISPLAY_PREVIOUS) {
 		if (t_curr > (u->dark_time_stamp + UI_STORE_FRAME_MAX_TIME_IN_MS)) {
@@ -451,20 +453,19 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 		
 #ifdef _CLINGBAND_PACE_MODEL_			
 		// Allways open home page and run analysis page.
-	  regular_page_filtering |= 0x8200; 
+	  regular_page_filtering |= 0x8200; 	
 #else
 		// Allways open home page. 
 	  regular_page_filtering |= 0x8000; 
 	  //regular_page_filtering = 0xffff;
 #endif
 
-		u->frame_index = p_matrix[u->frame_index];
-		regular_page_enable = _get_regular_page_enable_index(u->frame_index);
-
 		for (i=0;i<10;i++) {
+			u->frame_index = p_matrix[u->frame_index];
+		  regular_page_enable = _get_regular_page_enable_index(u->frame_index);
+			
 		  if (regular_page_enable & regular_page_filtering) 
 				break;
-			u->frame_index = p_matrix[u->frame_index];		
 		}
 		
 		u->frame_next_idx = u->frame_index;
@@ -480,13 +481,12 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 	  run_analysis_page_filtering |= 0x01;	 	
 #endif
 		
-		u->frame_index = p_matrix[u->frame_index];
-		run_analysis_page_enable = _get_running_analysis_page_enable_index(u->frame_index);
-		
 		for (i=0;i<10;i++) {
+			u->frame_index = p_matrix[u->frame_index];
+		  run_analysis_page_enable = _get_running_analysis_page_enable_index(u->frame_index);		
+			
 		  if (run_analysis_page_enable & run_analysis_page_filtering) 
 				break;
-			u->frame_index = p_matrix[u->frame_index];		
 		}		
 		
 	  u->frame_next_idx = u->frame_index;
@@ -513,7 +513,7 @@ static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 	}
 	
 	_update_page_filtering_pro(u, p_matrix);
-
+	
 	// Display running analysis page only user has actual running distance. 
 #ifdef _CLINGBAND_PACE_MODEL_	
 	if (u->frame_index == UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS) {

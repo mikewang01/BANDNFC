@@ -2016,7 +2016,7 @@ static void _right_render_horizontal_button_hold()
 	I8U i;
 	I8U *p0, *p1;
 	
-	FONT_load_characters(cling.ui.p_oled_up+96, (char *)hold_name[language_type], 16, 128, FALSE);	
+	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)hold_name[language_type], 16, 128, FALSE);	
 	
   p0 = cling.ui.p_oled_up+128+96,
 	p1 = p0+128;
