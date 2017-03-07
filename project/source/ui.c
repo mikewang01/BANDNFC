@@ -1503,6 +1503,16 @@ void UI_start_notifying(I8U frame_index, I8U notif_type)
 		UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 		u->b_restore_notif = FALSE;		
 	}
+	
+	// 6. Stop reminder when inconming one new message.
+	if (u->notif_type != NOTIFICATION_TYPE_REMINDER) {
+		// Reset alarm clock flag
+		cling.reminder.ui_alarm_on = FALSE;
+		// Stop reminder
+		if (cling.reminder.state != REMINDER_STATE_IDLE) {
+			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+		}
+  }	
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1557,11 +1567,6 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	
 	// 4. Restore previous UI page
 	_restore_perv_frame_index();
-	
-	// 5. Record current notification received time
-	if (_is_smart_incoming_notifying_page(cling.ui.frame_index)) {
-	  cling.ui.notif_time_stamp = CLK_get_system_time();
-	}
 	
 	N_SPRINTF("[UI] State switch :%d, :%d", state, time_offset);
 	
@@ -1771,7 +1776,7 @@ void UI_state_machine()
 					  u->state = UI_STATE_DARK;
 					}
 				} else {
-					if (t_curr > u->notif_time_stamp + 11000) {
+					if (t_curr > u->notif_time_stamp + 12000) {
 						// Go back to previous UI page
 						u->frame_index = UI_DISPLAY_PREVIOUS;		
 					}						
