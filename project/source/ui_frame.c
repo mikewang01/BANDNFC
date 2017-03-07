@@ -554,16 +554,47 @@ static void _middle_render_horizontal_clock()
 
 static void _middle_render_horizontal_ota()
 {
-	I16U i;
+  const I8U font_content[] = {0x3c,0x42,0x42,0xbc,0x60,0x18,0x06,0x00,0x60,0x18,0x06,0x3d,0x42,0x42,0x3c,0x00};/*%*/
 	I8U string[32];
-	I8U bar_len=0;
-	I8U *p0;
+  I8U string_len=0;
+  I8U offset=0;
+	I8U bar_len=0,char_len=0;
+  I8U margin=2;
+	I8U *p0,*p1;
+	I8U i,j;
+	const I8U *pin;
 
-	sprintf((char *)string, "%d %%", cling.ota.percent);
+	string_len = sprintf((char *)string, "%d", cling.ota.percent);
 	bar_len = cling.ota.percent;
-	FONT_load_ota_percent(cling.ui.p_oled_up+128,cling.ota.percent);
 
-	p0 = cling.ui.p_oled_up+128+128+128+14;
+  offset = 56 - string_len*4;
+
+	for (i = 0; i < string_len; i++) {
+	  p0 = cling.ui.p_oled_up+128+offset;
+	  p1 = p0+128;
+		if ((string[i] >= '0') && (string[i] <= '9')) {
+			pin = asset_content+asset_pos[256+string[i]];
+			char_len = asset_len[256+string[i]];
+			
+			for (j = 0; j < char_len; j++) {
+				*p0++ = (*pin++);
+				*p1++ = (*pin++);
+			}				
+		} 
+				
+		if (i != (string_len-1))
+			offset += char_len + margin;
+		else
+			offset += char_len;
+	}
+
+	offset += 4;
+	p0 = cling.ui.p_oled_up+128+offset;
+	p1 = p0+128;
+	memcpy(p0, font_content, 8);
+	memcpy(p1, font_content+8, 8);
+	
+	p0 = cling.ui.p_oled_up+384+14;
 	for (i = 0; i < bar_len; i++) {
 		*p0++ = 0xf0;
 	}

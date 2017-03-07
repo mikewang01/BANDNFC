@@ -1077,7 +1077,7 @@ static void _update_running_pace()
 	cling.run_stat.last_10sec_pace_min = min;
 	cling.run_stat.last_10sec_pace_sec = sec;
 	
-	Y_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_distance);
+	Y_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_pace_min, cling.run_stat.last_10sec_pace_sec);
 	
 	cling.run_stat.pace_calc_ts = t_curr;
 	cling.run_stat.last_10sec_distance = 0;

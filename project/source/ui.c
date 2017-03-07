@@ -985,6 +985,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 {
 	I8U i;
 	BOOLEAN b_enter_workout_mode = FALSE;
+	BOOLEAN b_exit_workout_mode = FALSE;
 	
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
 		N_SPRINTF("[UI] Enter training workout mode");	
@@ -1016,12 +1017,12 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	
   if (b_enter_workout_mode) {
  	  cling.ui.run_ready_index = 0;
+		cling.ui.b_training_first_enter = TRUE;			
 		cling.ui.running_time_stamp = CLK_get_system_time();
 		cling.ui.b_training_alert = FALSE;
 		// Reset all training data
 		cling.train_stat.distance = 0;
 		cling.train_stat.time_start_in_ms = CLK_get_system_time();
-		cling.ui.b_training_first_enter = TRUE;	
 		// Running session ID
 		cling.run_stat.session_id = cling.time.time_since_1970;
 		// Running pace time stamp
@@ -1047,44 +1048,40 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	}
 	
 	if (_is_regular_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-    return;		
+		b_exit_workout_mode = TRUE;
 	} 
 	
 	if (_is_running_analysis_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;		
+    b_exit_workout_mode = TRUE;
 	} 
 
 #ifndef _CLINGBAND_PACE_MODEL_			
 	if (_is_carousel_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
+    b_exit_workout_mode = TRUE;		
 	}
 	
 	if (_is_stopwatch_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
+    b_exit_workout_mode = TRUE;		
 	}		
 	
 	if (_is_workout_type_switch_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
+    b_exit_workout_mode = TRUE;		
 	}		
 #endif	
 	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)			
 	if (_is_music_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
+    b_exit_workout_mode = TRUE;		
 	}	
 #endif
+	
+	if (b_exit_workout_mode) {
+		cling.activity.b_workout_active = FALSE;		
+		cling.activity.workout_type = WORKOUT_NONE;
+ 	  cling.ui.run_ready_index = 0;
+		cling.ui.b_training_first_enter = TRUE;			
+		cling.ui.running_time_stamp = CLK_get_system_time();				
+	}
 }
 
 /*------------------------------------------------------------------------------------------
