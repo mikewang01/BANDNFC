@@ -1446,15 +1446,19 @@ static void _middle_render_horizontal_training_start_run()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_training_run_or_analysis()
 {
+	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
+	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
+	I8U language_type = cling.ui.language_type;		
 	I8U i;
 	I8U *p0, *p1;
-	I8U *in = cling.ui.p_oled_up+128+40;
 	
-	memset(in, 0xff, 32);
-	memset(in+128, 0xff, 32);
+	memset(cling.ui.p_oled_up+128+40, 0, 32);
+	memset(cling.ui.p_oled_up+128+128+40, 0, 32);
+	memset(cling.ui.p_oled_up+128+96, 0, 32);
+	memset(cling.ui.p_oled_up+128+128+96, 0, 32);	
 	
-	FONT_load_characters(cling.ui.p_oled_up+128+40, "开始 ", 16, 128, FALSE);
- 	FONT_load_characters(cling.ui.p_oled_up+128+96, "记录 ", 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+40, (char *)start_name[language_type], 16, 128, FALSE);
+ 	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)analysis_name[language_type], 16, 128, FALSE);
 	
   p0 = cling.ui.p_oled_up+128+40,
 	p1 = p0+128;
@@ -1480,7 +1484,7 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 60;
-	I8U margin = 6;
+	I8U margin = 5;
   I32U t_curr = CLK_get_system_time();
 	BOOLEAN b_ready_finished = FALSE;	
 	
@@ -3000,46 +3004,13 @@ static void _middle_render_vertical_training_run_start()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_training_run_or_analysis()
 {
-	I8U data_buf[256];
-	I8U line_len;
-	I8U i;
-	I8U *p0, *p1;
+	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
+	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
+	I8U language_type = cling.ui.language_type;	
 	
-	memset(data_buf, 0x00, 32);
-	memset(data_buf+128, 0x00, 32);
-	
-	FONT_load_characters(data_buf, "开始 ", 16, 128, FALSE);
-
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	line_len = 32;
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+64);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+64+8);		
-	
-	memset(data_buf, 0x00, 32);
-	memset(data_buf+128, 0x00, 32);
-	
-	FONT_load_characters(data_buf, "记录", 16, 128, FALSE);
-
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	line_len = 32;
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+112+8);			
+	_render_vertical_fonts_lib_character_core((I8U *)start_name[language_type], 16, 64, TRUE);	
+		
+	_render_vertical_fonts_lib_character_core((I8U *)analysis_name[language_type], 16, 64, TRUE);	
 }
 #endif
 
