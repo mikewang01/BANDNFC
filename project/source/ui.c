@@ -1047,26 +1047,14 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		return;
 	}
 	
-	if (_is_regular_page(u->frame_index)) {
+	if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
 		b_exit_workout_mode = TRUE;
 	} 
 	
-	if (_is_running_analysis_page(u->frame_index)) {
-    b_exit_workout_mode = TRUE;
-	} 
-
 #ifndef _CLINGBAND_PACE_MODEL_			
-	if (_is_carousel_page(u->frame_index)) {
+	if (_is_carousel_page(u->frame_index) || _is_stopwatch_page(u->frame_index) || _is_workout_type_switch_page(u->frame_index)) {
     b_exit_workout_mode = TRUE;		
 	}
-	
-	if (_is_stopwatch_page(u->frame_index)) {
-    b_exit_workout_mode = TRUE;		
-	}		
-	
-	if (_is_workout_type_switch_page(u->frame_index)) {
-    b_exit_workout_mode = TRUE;		
-	}		
 #endif	
 	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)			

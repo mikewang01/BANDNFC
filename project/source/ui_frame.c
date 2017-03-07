@@ -667,7 +667,7 @@ static void _middle_render_horizontal_ble_code()
 	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)			
 	FONT_load_characters(cling.ui.p_oled_up+256, (char *)string, 16, 128, TRUE);
-#endif	
+#endif
 }
 
 static void _middle_render_horizontal_linking()
@@ -1304,7 +1304,7 @@ static void _middle_render_horizontal_running_pace()
 	I32U min, sec;
 	
 	if (cling.run_stat.distance) {
-		pace = cling.run_stat.time_min*60;
+		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
 		pace *= 100000;
 		pace /= 60;
 		pace /= cling.run_stat.distance;
@@ -3416,7 +3416,7 @@ static void _middle_render_vertical_running_pace()
 	_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 46, FALSE);
 	
 	if (cling.run_stat.distance) {
-		pace = cling.run_stat.time_min*60;
+		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
 		pace *= 100000;
 		pace /= 60;
 		pace /= cling.run_stat.distance;
