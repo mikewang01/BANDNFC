@@ -377,7 +377,7 @@ static I16U _get_regular_page_enable_index(I8U frame_index)
 		return UI_FRAME_ENABLE_CALORIES;			
 	else if (frame_index == UI_DISPLAY_TRACKER_ACTIVE_TIME)
 		return UI_FRAME_ENABLE_ACTIVE_TIME;		
-	else if (frame_index == UI_FRAME_ENABLE_HEART_RATE)
+	else if (frame_index == UI_DISPLAY_VITAL_HEART_RATE)
 		return UI_FRAME_ENABLE_HEART_RATE;			
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 	else if (frame_index == UI_DISPLAY_VITAL_SKIN_TEMP)

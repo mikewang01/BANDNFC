@@ -2100,12 +2100,6 @@ static void _right_render_horizontal_reminder()
 	I8U string[16];
 	I8U len;
 
-	if (cling.reminder.ui_alarm_on)
-		return;
-	
-  if (!cling.ui.b_detail_page) 	
-		return;
-	
 	len = sprintf((char *)string, "%02d", cling.ui.vertical_index);
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);	
 
@@ -4040,25 +4034,6 @@ static void _bottom_render_vertical_tracker()
 }
 #endif
 
-#if 0
-static void _bottom_render_vertiacl_reminder()
-{
-	I8U string[32];
-
-	if (cling.reminder.ui_alarm_on)
-		return;
-
-	if (!cling.ui.b_detail_page) 
-    return;		
-	
-	sprintf((char *)string, "%02d", cling.ui.vertical_index);
-	
-  _render_vertical_fonts_lib_character_core(string, 16, 100, FALSE);
-	
-	_bottom_render_vertical_more();	
-}
-#endif
-
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_run_go()
 {
@@ -4554,7 +4529,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_CALL*/
   {_left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
-  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_more},                    /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_IDLE_ALERT*/
   {_left_render_horizontal_heart_rate,            _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
@@ -4623,7 +4598,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_CALL*/
   {_left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
-  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_more},                    /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_IDLE_ALERT*/
   {_top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
@@ -4677,7 +4652,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 static void _core_frame_display(I8U middle, BOOLEAN b_render)
 {	
 	const UI_RENDER_CTX *ui_render;
-
+	
 	// Set correct screen orientation
 	if (cling.ui.clock_orientation == 1) {
 		ui_render = horizontal_ui_render;
