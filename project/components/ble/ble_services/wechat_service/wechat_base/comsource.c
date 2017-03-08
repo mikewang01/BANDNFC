@@ -168,7 +168,7 @@ void	data_handler_init(data_handler** p_data_handler, uint8_t product_type)
     }
 }
 
-
+ 
 /******************************************************************************
  * FunctionName : wehchat_resource_init
  * Description  : wechat resource init function
@@ -182,18 +182,18 @@ void wehchat_resource_init(void)
     Y_SPRINTF("\r\n bond manager initi");
 #endif
 
-    register_all_products();
+   // register_all_products();
 #ifdef CATCH_LOG
     Y_SPRINTF("\r\n register products!");
 #endif
 
-    data_handler_init(&m_mpbledemo2_handler,	PRODUCT_TYPE_MPBLEDEMO2);
+   // data_handler_init(&m_mpbledemo2_handler,	PRODUCT_TYPE_MPBLEDEMO2);
 #ifdef CATCH_LOG
     Y_SPRINTF("\r\n data handler init!");
 
 #endif
 
-    APP_ERROR_CHECK(m_mpbledemo2_handler->m_data_init_func());
+   // APP_ERROR_CHECK(m_mpbledemo2_handler->m_data_init_func());
 #ifdef CATCH_LOG
     Y_SPRINTF("\r\n mpbledemo2 init");
 #endif
@@ -218,7 +218,7 @@ void wehchat_resource_init(void)
 #ifdef CATCH_LOG
     Y_SPRINTF("\r\n sec params init");
 #endif
-
+ 
 
 }
 
