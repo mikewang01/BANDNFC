@@ -100,7 +100,7 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 		if (!_touch_screen_activation())
 			return;
 	}
-	
+#ifdef _ENABLE_UART_
 	// finger down
 	if (op_detail == 0) {
 		t->gesture = TOUCH_FINGER_LEFT;
@@ -115,7 +115,10 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 		N_SPRINTF("[TOUCH] ------------ FINGER: right --------");
 		N_SPRINTF("Finger: right");
 	}
-					
+#else
+	const uint8_t op_check_table[] = {TOUCH_FINGER_LEFT, TOUCH_FINGER_MIDDLE, TOUCH_FINGER_RIGHT};
+	t->gesture = op_check_table[op_detail];	
+#endif	
 	// Make sure OLED display panel is faced up.
 //		if (LINK_is_authorized() && (cling.activity.z_mean < 0)) {
 	if (LINK_is_authorized()) {
@@ -140,10 +143,10 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 {
 	if (UI_is_idle()) {
 
-		if (!_touch_screen_activation())
+		if (!_touch_screen_activation() || op_detail > 1)
 			return;
 	}
-	
+#ifdef _ENABLE_UART_	
 	// Swipe
 	if (op_detail == 0) {
 		t->gesture = TOUCH_SWIPE_LEFT;
@@ -156,7 +159,10 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 	} else {
 		return;
 	}
-	
+#else
+	/*since TOUCH_SWIPE_LEFT = 1 and TOUCH_SWIPE_RIGHT =2, a simple add algrithon is able to help to get right op*/
+	t->gesture = TOUCH_SWIPE_LEFT + op_detail;
+#endif
 //		if (LINK_is_authorized() && (cling.activity.z_mean < 0)) {
 	if (LINK_is_authorized()) {
 
@@ -178,6 +184,7 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 static void _skin_touch_processing(TOUCH_CTX *t, BOOLEAN b_skin_detected)
 {
 		// skin touch
+#ifdef _ENABLE_UART_	
 		if (b_skin_detected) {
 			t->b_skin_touch = TRUE;
 			N_SPRINTF("[TOUCH] ------------ SKIN: ON --------");
@@ -187,6 +194,9 @@ static void _skin_touch_processing(TOUCH_CTX *t, BOOLEAN b_skin_detected)
 			N_SPRINTF("[TOUCH] ------------ SKIN: OFF --------");
 			N_SPRINTF("SKIN: OFF");
 		}		
+#else
+			t->b_skin_touch = b_skin_detected;
+#endif
 }
 
 void TOUCH_gesture_check(void)

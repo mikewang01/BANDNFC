@@ -361,7 +361,38 @@ int main(void)
 {
     // Initialize Wristband firmware gloal structure
     _cling_global_init();
-
+//	    MINUTE_TRACKING_CTX pminute_1 ={
+//					.epoch = 0x01,
+//					.skin_temperature =0x02,
+//					.activity_count=0x03,
+//					.walking=0x04,
+//					.running=0x05,
+//					.calories=0x06,
+//					.distance=0x07,
+//					.sleep_state=0x08,
+//					.heart_rate=0x09,
+//					.skin_touch_pads=0x0a,
+//					.uv_and_activity_type=0x0b,
+//			};
+//				    MINUTE_TRACKING_CTX pminute_2 ={
+//					.epoch = 0x01,
+//					.skin_temperature =0x02,
+//					.activity_count=0x04,
+//					.walking=0x04,
+//					.running=0x05,
+//					.calories=0x06,
+//					.distance=0x07,
+//					.sleep_state=0x08,
+//					.heart_rate=0x09,
+//					.skin_touch_pads=0x0b,
+//					.uv_and_activity_type=0x0b,
+//			};
+//						
+//						volatile int ret = memcmp(&pminute_2.activity_count, &pminute_1.activity_count, (uint32_t)&(pminute_1.skin_touch_pads) - (uint32_t)&(pminute_1.activity_count));
+//						if(ret != 0){
+//								static int i;
+//									i++;
+//						}
 #ifdef _POWER_TEST_
     _power_test_powerdown(FALSE);
 #endif

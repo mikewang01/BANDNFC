@@ -76,9 +76,9 @@ I32U ble_char_add(I16U uuid, I8U idx)
 
 	memset(&char_md, 0, sizeof(char_md));
 
-	if ((idx == 1) || (idx == 2) || (idx == 3) || (idx == 4)) {
+	if ((idx >= 1) && (idx <= 4)) {
 		char_md.char_props.notify = 1;
-	} else if ((idx == 5) || (idx == 6) || (idx == 7) || (idx == 8)) {
+	} else if ((idx >= 5) && (idx <= 8)) {
 		char_md.char_props.write = 1;
 	} else {
 		return err_code;
@@ -167,16 +167,19 @@ I32U BTLE_services_init()
 	}
 	
 	// Server - Notify characteristics (for sending packets)
-	ble_char_add(UUID_TX_SP, 1);
-	ble_char_add(UUID_TX_START, 2);
-	ble_char_add(UUID_TX_MIDDLE, 3);
-	ble_char_add(UUID_TX_END, 4);
-	
-	// Write characteristics (for sending packets)
-	ble_char_add(UUID_RX_SP, 5);
-	ble_char_add(UUID_RX_START, 6);
-	ble_char_add(UUID_RX_MIDDLE, 7);
-	ble_char_add(UUID_RX_END, 8);
+	for(uint16_t uuid_num = UUID_TX_SP; uuid_num <= UUID_RX_END; uuid_num++){
+			ble_char_add(uuid_num, uuid_num - UUID_TX_SP + 1);
+	}
+//	ble_char_add(UUID_TX_SP, 1);
+//	ble_char_add(UUID_TX_START, 2);
+//	ble_char_add(UUID_TX_MIDDLE, 3);
+//	ble_char_add(UUID_TX_END, 4);
+//	
+//	// Write characteristics (for sending packets)
+//	ble_char_add(UUID_RX_SP, 5);
+//	ble_char_add(UUID_RX_START, 6);
+//	ble_char_add(UUID_RX_MIDDLE, 7);
+//	ble_char_add(UUID_RX_END, 8);
 	
 	return NRF_SUCCESS;
 #else
@@ -293,18 +296,27 @@ static void _on_write(ble_evt_t * p_ble_evt)
 	
 	// Set index for correct characteristics
 	rec_buf[0] = 0xff;
-	
-	if (r->char_handles[4].value_handle == p_evt_write->handle) {
-		rec_buf[1] = 0xe5;
-	} else if (r->char_handles[5].value_handle == p_evt_write->handle) {
-		rec_buf[1] = 0xe6;
-	} else if (r->char_handles[6].value_handle == p_evt_write->handle) {
-		rec_buf[1] = 0xe7;
-	} else if (r->char_handles[7].value_handle == p_evt_write->handle) {
-		rec_buf[1] = 0xe8;
-	} else {
-		return;
+
+	for(i = 4; i<= 7; i++){
+		 if(r->char_handles[i].value_handle == p_evt_write->handle){
+				rec_buf[1] = 0xe5 + i - 4;
+				break;
+		 }
 	}
+	if(i > 7){
+			return;
+	}
+//	if (r->char_handles[4].value_handle == p_evt_write->handle) {
+//		rec_buf[1] = 0xe5;
+//	} else if (r->char_handles[5].value_handle == p_evt_write->handle) {
+//		rec_buf[1] = 0xe6;
+//	} else if (r->char_handles[6].value_handle == p_evt_write->handle) {
+//		rec_buf[1] = 0xe7;
+//	} else if (r->char_handles[7].value_handle == p_evt_write->handle) {
+//		rec_buf[1] = 0xe8;
+//	} else {
+//		return;
+//	}
 
 	// Fill up the rest of packet
 	for (i = 0; i < 20; i++) {
@@ -433,17 +445,23 @@ BOOLEAN BTLE_Send_Packet(I8U *data, I8U len)
 	data[2], data[3], data[4],data[5], data[6], data[7], data[8], data[9],
 	data[10], data[11], data[12], data[13], data[14],data[15], data[16], data[17], data[18], data[19],data[20], data[21], );
 	
-	if (data[1] == 0xe1) {
-		ch_idx = 0;
-	} else if (data[1] == 0xe2) {
-		ch_idx = 1;
-	} else if (data[1] == 0xe3) {
-		ch_idx = 2;
-	} else if (data[1] == 0xe4) {
-		ch_idx = 3;
-	} else {
-		return FALSE;
+	ch_idx = data[1] - 0xe1;
+	/*if channel index is out of specific range return false*/
+	/*ch_idx is a unsigned char, so it's vale is no way to become minus one*/
+	if(ch_idx > 3){
+			return FALSE;
 	}
+//	if (data[1] == 0xe1) {
+//		ch_idx = 0;
+//	} else if (data[1] == 0xe2) {
+//		ch_idx = 1;
+//	} else if (data[1] == 0xe3) {
+//		ch_idx = 2;
+//	} else if (data[1] == 0xe4) {
+//		ch_idx = 3;
+//	} else {
+//		return FALSE;
+//	}
 	
 	hvx_len = len-2;
 
