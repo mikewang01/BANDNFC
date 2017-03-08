@@ -377,7 +377,7 @@ static I16U _get_regular_page_enable_index(I8U frame_index)
 		return UI_FRAME_ENABLE_CALORIES;			
 	else if (frame_index == UI_DISPLAY_TRACKER_ACTIVE_TIME)
 		return UI_FRAME_ENABLE_ACTIVE_TIME;		
-	else if (frame_index == UI_FRAME_ENABLE_HEART_RATE)
+	else if (frame_index == UI_DISPLAY_VITAL_HEART_RATE)
 		return UI_FRAME_ENABLE_HEART_RATE;			
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 	else if (frame_index == UI_DISPLAY_VITAL_SKIN_TEMP)
@@ -985,7 +985,8 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 {
 	I8U i;
 	BOOLEAN b_enter_workout_mode = FALSE;
-
+	BOOLEAN b_exit_workout_mode = FALSE;
+	
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
 		N_SPRINTF("[UI] Enter training workout mode");	
     b_enter_workout_mode = TRUE;		
@@ -1016,12 +1017,12 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	
   if (b_enter_workout_mode) {
  	  cling.ui.run_ready_index = 0;
+		cling.ui.b_training_first_enter = TRUE;			
 		cling.ui.running_time_stamp = CLK_get_system_time();
 		cling.ui.b_training_alert = FALSE;
 		// Reset all training data
 		cling.train_stat.distance = 0;
 		cling.train_stat.time_start_in_ms = CLK_get_system_time();
-		cling.ui.b_training_first_enter = TRUE;	
 		// Running session ID
 		cling.run_stat.session_id = cling.time.time_since_1970;
 		// Running pace time stamp
@@ -1046,45 +1047,29 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		return;
 	}
 	
-	if (_is_regular_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-    return;		
+	if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
+		b_exit_workout_mode = TRUE;
 	} 
 	
-	if (_is_running_analysis_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;		
-	} 
-
 #ifndef _CLINGBAND_PACE_MODEL_			
-	if (_is_carousel_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
+	if (_is_carousel_page(u->frame_index) || _is_stopwatch_page(u->frame_index) || _is_workout_type_switch_page(u->frame_index)) {
+    b_exit_workout_mode = TRUE;		
 	}
-	
-	if (_is_stopwatch_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
-	}		
-	
-	if (_is_workout_type_switch_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
-	}		
 #endif	
 	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)			
 	if (_is_music_page(u->frame_index)) {
-		cling.activity.workout_type = WORKOUT_NONE;
-		cling.activity.b_workout_active = FALSE;
-		return;				
+    b_exit_workout_mode = TRUE;		
 	}	
 #endif
+	
+	if (b_exit_workout_mode) {
+		cling.activity.b_workout_active = FALSE;		
+		cling.activity.workout_type = WORKOUT_NONE;
+ 	  cling.ui.run_ready_index = 0;
+		cling.ui.b_training_first_enter = TRUE;			
+		cling.ui.running_time_stamp = CLK_get_system_time();				
+	}
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1518,6 +1503,16 @@ void UI_start_notifying(I8U frame_index, I8U notif_type)
 		UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 		u->b_restore_notif = FALSE;		
 	}
+	
+	// 6. Stop reminder when inconming one new message.
+	if (u->notif_type != NOTIFICATION_TYPE_REMINDER) {
+		// Reset alarm clock flag
+		cling.reminder.ui_alarm_on = FALSE;
+		// Stop reminder
+		if (cling.reminder.state != REMINDER_STATE_IDLE) {
+			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+		}
+  }	
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1572,11 +1567,6 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	
 	// 4. Restore previous UI page
 	_restore_perv_frame_index();
-	
-	// 5. Record current notification received time
-	if (_is_smart_incoming_notifying_page(cling.ui.frame_index)) {
-	  cling.ui.notif_time_stamp = CLK_get_system_time();
-	}
 	
 	N_SPRINTF("[UI] State switch :%d, :%d", state, time_offset);
 	
@@ -1685,6 +1675,8 @@ void UI_state_machine()
 					UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);	
 				} 
 				u->frame_index = UI_DISPLAY_HOME;	
+			  cling.activity.workout_type = WORKOUT_NONE;
+		    cling.activity.b_workout_active = FALSE;		
 			}
 #ifdef _CLINGBAND_PACE_MODEL_						
 			else if ((t_curr > u->display_to_base + 400) || HOMEKEY_new_gesture()) {
@@ -1720,16 +1712,20 @@ void UI_state_machine()
 		}
 		case UI_STATE_FIRMWARE_OTA:
 		{
-		  // Skip all the gestures					
-			if (u->state_init) {
-				u->state_init = FALSE;
-				UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
-				u->display_to_base = t_curr;
-			}	else {
-				if (t_curr > (u->display_to_base+2000)) {
-					u->display_to_base = t_curr;
+			if (!OTA_if_enabled()) {
+				u->frame_index = UI_DISPLAY_HOME; 
+				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
+			} else {
+				if (u->state_init) {
+					u->state_init = FALSE;
 					UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
-				}
+					u->display_to_base = t_curr;
+				}	else {
+					if (t_curr > (u->display_to_base+2000)) {
+						u->display_to_base = t_curr;
+						UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
+					}
+				}				
 			}
 		  break;
 		}
@@ -1780,7 +1776,7 @@ void UI_state_machine()
 					  u->state = UI_STATE_DARK;
 					}
 				} else {
-					if (t_curr > u->notif_time_stamp + 11000) {
+					if (t_curr > u->notif_time_stamp + 12000) {
 						// Go back to previous UI page
 						u->frame_index = UI_DISPLAY_PREVIOUS;		
 					}						

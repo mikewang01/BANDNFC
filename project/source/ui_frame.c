@@ -554,16 +554,47 @@ static void _middle_render_horizontal_clock()
 
 static void _middle_render_horizontal_ota()
 {
-	I16U i;
+  const I8U font_content[] = {0x3c,0x42,0x42,0xbc,0x60,0x18,0x06,0x00,0x60,0x18,0x06,0x3d,0x42,0x42,0x3c,0x00};/*%*/
 	I8U string[32];
-	I8U bar_len=0;
-	I8U *p0;
+  I8U string_len=0;
+  I8U offset=0;
+	I8U bar_len=0,char_len=0;
+  I8U margin=2;
+	I8U *p0,*p1;
+	I8U i,j;
+	const I8U *pin;
 
-	sprintf((char *)string, "%d %%", cling.ota.percent);
+	string_len = sprintf((char *)string, "%d", cling.ota.percent);
 	bar_len = cling.ota.percent;
-	FONT_load_ota_percent(cling.ui.p_oled_up+128,cling.ota.percent);
 
-	p0 = cling.ui.p_oled_up+128+128+128+14;
+  offset = 56 - string_len*4;
+
+	for (i = 0; i < string_len; i++) {
+	  p0 = cling.ui.p_oled_up+128+offset;
+	  p1 = p0+128;
+		if ((string[i] >= '0') && (string[i] <= '9')) {
+			pin = asset_content+asset_pos[256+string[i]];
+			char_len = asset_len[256+string[i]];
+			
+			for (j = 0; j < char_len; j++) {
+				*p0++ = (*pin++);
+				*p1++ = (*pin++);
+			}				
+		} 
+				
+		if (i != (string_len-1))
+			offset += char_len + margin;
+		else
+			offset += char_len;
+	}
+
+	offset += 4;
+	p0 = cling.ui.p_oled_up+128+offset;
+	p1 = p0+128;
+	memcpy(p0, font_content, 8);
+	memcpy(p1, font_content+8, 8);
+	
+	p0 = cling.ui.p_oled_up+384+14;
 	for (i = 0; i < bar_len; i++) {
 		*p0++ = 0xf0;
 	}
@@ -636,7 +667,7 @@ static void _middle_render_horizontal_ble_code()
 	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)			
 	FONT_load_characters(cling.ui.p_oled_up+256, (char *)string, 16, 128, TRUE);
-#endif	
+#endif
 }
 
 static void _middle_render_horizontal_linking()
@@ -1273,7 +1304,7 @@ static void _middle_render_horizontal_running_pace()
 	I32U min, sec;
 	
 	if (cling.run_stat.distance) {
-		pace = cling.run_stat.time_min*60;
+		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
 		pace *= 100000;
 		pace /= 60;
 		pace /= cling.run_stat.distance;
@@ -1415,15 +1446,19 @@ static void _middle_render_horizontal_training_start_run()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_training_run_or_analysis()
 {
+	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
+	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
+	I8U language_type = cling.ui.language_type;		
 	I8U i;
 	I8U *p0, *p1;
-	I8U *in = cling.ui.p_oled_up+128+40;
 	
-	memset(in, 0xff, 32);
-	memset(in+128, 0xff, 32);
+	memset(cling.ui.p_oled_up+128+40, 0, 32);
+	memset(cling.ui.p_oled_up+128+128+40, 0, 32);
+	memset(cling.ui.p_oled_up+128+96, 0, 32);
+	memset(cling.ui.p_oled_up+128+128+96, 0, 32);	
 	
-	FONT_load_characters(cling.ui.p_oled_up+128+40, "开始 ", 16, 128, FALSE);
- 	FONT_load_characters(cling.ui.p_oled_up+128+96, "记录 ", 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+40, (char *)start_name[language_type], 16, 128, FALSE);
+ 	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)analysis_name[language_type], 16, 128, FALSE);
 	
   p0 = cling.ui.p_oled_up+128+40,
 	p1 = p0+128;
@@ -1449,7 +1484,7 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
 	I8U string[32];
 	I8U len = 0;
 	I16U offset = 60;
-	I8U margin = 6;
+	I8U margin = 5;
   I32U t_curr = CLK_get_system_time();
 	BOOLEAN b_ready_finished = FALSE;	
 	
@@ -2065,12 +2100,6 @@ static void _right_render_horizontal_reminder()
 	I8U string[16];
 	I8U len;
 
-	if (cling.reminder.ui_alarm_on)
-		return;
-	
-  if (!cling.ui.b_detail_page) 	
-		return;
-	
 	len = sprintf((char *)string, "%02d", cling.ui.vertical_index);
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);	
 
@@ -2969,46 +2998,13 @@ static void _middle_render_vertical_training_run_start()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_training_run_or_analysis()
 {
-	I8U data_buf[256];
-	I8U line_len;
-	I8U i;
-	I8U *p0, *p1;
+	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
+	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
+	I8U language_type = cling.ui.language_type;	
 	
-	memset(data_buf, 0x00, 32);
-	memset(data_buf+128, 0x00, 32);
-	
-	FONT_load_characters(data_buf, "开始 ", 16, 128, FALSE);
-
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	line_len = 32;
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+64);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+64+8);		
-	
-	memset(data_buf, 0x00, 32);
-	memset(data_buf+128, 0x00, 32);
-	
-	FONT_load_characters(data_buf, "记录", 16, 128, FALSE);
-
-  p0 = data_buf,
-	p1 = p0+128;
-	
-	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}
-	
-	line_len = 32;
-	_vertical_centerize(data_buf, data_buf+128, data_buf+128+64, line_len);
-	_rotate_270_degree(data_buf, cling.ui.p_oled_up+384+112);
-	_rotate_270_degree(data_buf+128, cling.ui.p_oled_up+384+112+8);			
+	_render_vertical_fonts_lib_character_core((I8U *)start_name[language_type], 16, 64, TRUE);	
+		
+	_render_vertical_fonts_lib_character_core((I8U *)analysis_name[language_type], 16, 64, TRUE);	
 }
 #endif
 
@@ -3385,7 +3381,7 @@ static void _middle_render_vertical_running_pace()
 	_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 46, FALSE);
 	
 	if (cling.run_stat.distance) {
-		pace = cling.run_stat.time_min*60;
+		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
 		pace *= 100000;
 		pace /= 60;
 		pace /= cling.run_stat.distance;
@@ -4038,25 +4034,6 @@ static void _bottom_render_vertical_tracker()
 }
 #endif
 
-#if 0
-static void _bottom_render_vertiacl_reminder()
-{
-	I8U string[32];
-
-	if (cling.reminder.ui_alarm_on)
-		return;
-
-	if (!cling.ui.b_detail_page) 
-    return;		
-	
-	sprintf((char *)string, "%02d", cling.ui.vertical_index);
-	
-  _render_vertical_fonts_lib_character_core(string, 16, 100, FALSE);
-	
-	_bottom_render_vertical_more();	
-}
-#endif
-
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_run_go()
 {
@@ -4552,7 +4529,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_CALL*/
   {_left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
-  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_more},                    /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_IDLE_ALERT*/
   {_left_render_horizontal_heart_rate,            _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
@@ -4621,7 +4598,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_incoming_call,         _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_CALL*/
   {_left_render_horizontal_incoming_message,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_message_ok},              /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_FRAME_PAGE_DETAIL_NOTIF*/
-  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_more},                    /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_IDLE_ALERT*/
   {_top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
@@ -4675,7 +4652,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 static void _core_frame_display(I8U middle, BOOLEAN b_render)
 {	
 	const UI_RENDER_CTX *ui_render;
-
+	
 	// Set correct screen orientation
 	if (cling.ui.clock_orientation == 1) {
 		ui_render = horizontal_ui_render;

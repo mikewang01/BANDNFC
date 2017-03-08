@@ -765,8 +765,12 @@ void _check_training_pace_and_hr_alert(I16U minute_distance)
 	if (b_pace_range_alert) {
 		if (input_pace_min < pace_range_up) {
 			if (!u->b_training_alert) {
-				u->b_training_alert = TRUE;
-				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
+				if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
+					cling.hr.alert_ts = cling.time.system_clock_in_sec;
+
+					u->b_training_alert = TRUE;
+					NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
+				}
 			}
 		} else {
 			u->b_training_alert = FALSE;
@@ -776,8 +780,12 @@ void _check_training_pace_and_hr_alert(I16U minute_distance)
 	if (b_hr_range_alert) {
 		if (hr_perc >= hr_range_down) {
 			if (!u->b_training_alert) {
-				u->b_training_alert = TRUE;
-				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
+				if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
+					cling.hr.alert_ts = cling.time.system_clock_in_sec;
+					
+					u->b_training_alert = TRUE;
+					NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
+				}
 			}
 		} else {
 			u->b_training_alert = FALSE;
@@ -862,14 +870,16 @@ static void _logging_per_minute()
 		Y_SPRINTF("[TRACKING] Max heart rate: %d", max_heart_rate);
 	}
 
-	// alert user if heart rate is approaching the limit
-	if ((minute.heart_rate > max_heart_rate) && (diff.running > 172) && !cling.ui.display_layer) {
-		if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
-			cling.hr.alert_ts = cling.time.system_clock_in_sec;
-			cling.hr.b_closing_to_skin = TRUE;
-			cling.hr.heart_rate_ready = TRUE;
-			N_SPRINTF("[TRACKING] HR alerting ...");
-			NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_HR_ALERT, 0);
+	if (!cling.activity.b_workout_active) {
+		// alert user if heart rate is approaching the limit
+		if ((minute.heart_rate > max_heart_rate) && (diff.running > 172) && !cling.ui.display_layer) {
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
+				cling.hr.alert_ts = cling.time.system_clock_in_sec;
+				cling.hr.b_closing_to_skin = TRUE;
+				cling.hr.heart_rate_ready = TRUE;
+				N_SPRINTF("[TRACKING] HR alerting ...");
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_HR_ALERT, 0);
+			}
 		}
 	}
 	
@@ -1077,7 +1087,7 @@ static void _update_running_pace()
 	cling.run_stat.last_10sec_pace_min = min;
 	cling.run_stat.last_10sec_pace_sec = sec;
 	
-	Y_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_distance);
+	Y_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_pace_min, cling.run_stat.last_10sec_pace_sec);
 	
 	cling.run_stat.pace_calc_ts = t_curr;
 	cling.run_stat.last_10sec_distance = 0;
