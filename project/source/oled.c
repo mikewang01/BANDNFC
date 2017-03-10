@@ -184,16 +184,9 @@ void OLED_state_machine(void)
 #ifndef _CLING_PC_SIMULATION_
 	I32U t_curr;
 	CLING_OLED_CTX *o = &cling.oled;
-//	I8U ui_frame_index;
-	
-	#if 0
-	if (oledstate != o->state) {
-		oledstate = o->state;
-		Y_SPRINTF("[OLED] new oled state: %d @ %d", o->state, CLK_get_system_time());
-	}
-	#endif
-
 	t_curr = CLK_get_system_time();
+	
+	N_SPRINTF("[OLED] new oled state: %d @ %d", o->state, CLK_get_system_time());
 	
 	if (o->state != OLED_STATE_IDLE) {
 		// Start system timer

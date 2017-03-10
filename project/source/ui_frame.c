@@ -284,7 +284,7 @@ static void _left_render_horizontal_running_stride()
 
 static void _left_render_horizontal_training_ready()
 {
-	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, 128+1, asset_content+ICON24_RUNNING_DISTANCE_POS);
+	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, 128+10, asset_content+ICON24_RUNNING_DISTANCE_POS);
 }
 
 static void _left_render_horizontal_training_pace()
@@ -1681,7 +1681,8 @@ static void _middle_render_horizontal_stopwatch_start()
 	I8U string[32];
 	I8U len = 0;
 	I32U t_diff = 0;
-	I8U hour = 0, min = 0, sec = 0, ms = 0;
+	I8U hour = 0, min = 0, sec = 0;
+	I16U ms = 0;
 	I8U offset = 0;
   BOOLEAN b_hour_hold = FALSE;
 	

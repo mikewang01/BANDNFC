@@ -231,11 +231,11 @@ uint16_t wechat_sports_update_target_steps_count(uint32_t steps_count)
  *
 * @return  TRUE sucessfully FALSE:FAILED
  */
-static uint16_t (*app_layer_upload_stream_call_back)(uint16_t order) = NULL;
+//static uint16_t (*app_layer_upload_stream_call_back)(uint16_t order) = NULL;
 uint16_t wechat_sports_register_upload_stream_callback(uint16_t (*p)(uint16_t))
 {
     if(p == NULL) {
-        app_layer_upload_stream_call_back = p;
+//        app_layer_upload_stream_call_back = p;
     }
     return TRUE;
 }
@@ -341,7 +341,7 @@ uint16_t  wechat_init(void)
 {
     wehchat_resource_init();
 		app_layer_obtain_system_data_call_back = app_layer_obtain_system_data_call_back;
-		app_layer_upload_stream_call_back = app_layer_upload_stream_call_back;
+//		app_layer_upload_stream_call_back = app_layer_upload_stream_call_back;
     return TRUE;
 }
  

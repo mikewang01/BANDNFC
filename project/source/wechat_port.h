@@ -31,7 +31,7 @@ extern "C"{
 
 /*================================CONFIGRATION===============================================*/
 	
-#define WECHAT_SIMPLIFIED_PROTOCOL_SUPPORTED    1
+#define WECHAT_SIMPLIFIED_PROTOCOL_SUPPORTED    1     // TBD: comsource.c, line 196, seems affect 'GPIO_CHARGER_INT' pin.
 #define WECHAT_COMPELEX_PROTOCOL_SUPPORTED      0
 
 #if (WECHAT_SIMPLIFIED_PROTOCOL_SUPPORTED == 1 || WECHAT_COMPELEX_PROTOCOL_SUPPORTED == 1)
