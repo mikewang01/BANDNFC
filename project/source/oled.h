@@ -45,7 +45,7 @@ void OLED_state_machine(void);
 BOOLEAN OLED_set_panel_on(void);
 void OLED_set_panel_off(void);
 void OLED_im_show(OLED_DISPLAY_MODE mode, I8U *pram, I8U offset);
-void OLED_full_scree_show(I8U *pram);
+void OLED_full_scree_show(void);
 void OLED_power_off(void);
 BOOLEAN OLED_is_panel_idle(void);
 

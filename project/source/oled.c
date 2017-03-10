@@ -40,13 +40,13 @@ void OLED_power_off()
 #endif
 }
 
-void OLED_full_scree_show(I8U *pram)
+void OLED_full_scree_show()
 {
 #ifndef _CLING_PC_SIMULATION_
 	I8U i;
 	I8U *data;
 	
-	data = pram;
+	data = cling.ui.p_oled_up;
 	
 	for (i = 0; i < 4; i++) {
 		_set_reg(0xb0+i);

@@ -18,7 +18,7 @@ static void _RENDER_NONE() { }
 
 void UI_render_screen()
 {	
-	OLED_full_scree_show(cling.ui.p_oled_up);
+	OLED_full_scree_show();
 
 	OLED_set_display(1);
 }
@@ -37,10 +37,10 @@ static void _render_one_icon_8(I8U len, I8U *p_out, const I8U *p_in)
 	}
 }
 
-static void _render_one_icon_16(I8U len, I8U *p_out, const I8U *p_in)
+static void _render_one_icon_16(I8U len, I16U offset, const I8U *p_in)
 {
 	I8U j;
-	I8U *p_out_0 = p_out;
+	I8U *p_out_0 = cling.ui.p_oled_up+offset;
 	I8U *p_out_1 = p_out_0+128;
 	
 	// Render the left side
@@ -50,10 +50,10 @@ static void _render_one_icon_16(I8U len, I8U *p_out, const I8U *p_in)
 	}
 }
 
-static void _render_one_icon_24(I8U len, I8U *p_out, const I8U *p_in)
+static void _render_one_icon_24(I8U len, I16U offset, const I8U *p_in)
 {
 	I8U j;
-	I8U *p_out_0 = p_out;
+	I8U *p_out_0 = cling.ui.p_oled_up+offset;
 	I8U *p_out_1 = p_out_0+128;
 	I8U *p_out_2 = p_out_1+128;
 	
@@ -119,39 +119,29 @@ static void _left_render_horizontal_batt_ble()
 
 static void _left_render_horizontal_steps()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_STEPS_LEN, in, asset_content+ICON16_STEPS_POS);
+	_render_one_icon_16(ICON16_STEPS_LEN, 0, asset_content+ICON16_STEPS_POS);
 }
 
 static void _left_render_horizontal_active_time()
-{
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_ACTIVE_TIME_LEN, in, asset_content+ICON16_ACTIVE_TIME_POS);
+{	
+	_render_one_icon_16(ICON16_ACTIVE_TIME_LEN, 0, asset_content+ICON16_ACTIVE_TIME_POS);
 }
 
 #ifdef _CLINGBAND_UV_MODEL_
 static void _left_render_horizontal_uv_index()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_UV_INDEX_LEN, in, asset_content+ICON16_UV_INDEX_POS);
+	_render_one_icon_16(ICON16_UV_INDEX_LEN, 0, asset_content+ICON16_UV_INDEX_POS);
 }
 #endif
 
 static void _left_render_horizontal_distance()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_DISTANCE_LEN, in, asset_content+ICON16_DISTANCE_POS);
+	_render_one_icon_16(ICON16_DISTANCE_LEN, 0, asset_content+ICON16_DISTANCE_POS);
 }
 
 static void _left_render_horizontal_calories()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_CALORIES_LEN, in, asset_content+ICON16_CALORIES_POS);
+	_render_one_icon_16(ICON16_CALORIES_LEN, 0, asset_content+ICON16_CALORIES_POS);
 }
 
 static void _left_render_horizontal_pm2p5()
@@ -164,7 +154,7 @@ static void _left_render_horizontal_pm2p5()
 	I8U language_type = cling.ui.language_type;
 
   //  First render pm2.5 icon.	
-	_render_one_icon_16(ICON16_PM2P5_LEN, cling.ui.p_oled_up, asset_content+ICON16_PM2P5_POS);
+	_render_one_icon_16(ICON16_PM2P5_LEN, 0, asset_content+ICON16_PM2P5_POS);
 	
 	if (cling.pm2p5 == 0xffff) {
 		// AQI value Not available
@@ -187,205 +177,152 @@ static void _left_render_horizontal_pm2p5()
 static void _left_render_horizontal_weather()
 {
 	WEATHER_CTX weather;
-	I8U *in = cling.ui.p_oled_up;
-
+	
 	WEATHER_get_weather(0, &weather);
-	_render_one_icon_16(asset_len[256+ICON16_WEATHER_IDX+weather.type], in, asset_content+asset_pos[256+ICON16_WEATHER_IDX+weather.type]);
+	_render_one_icon_16(asset_len[256+ICON16_WEATHER_IDX+weather.type], 0, asset_content+asset_pos[256+ICON16_WEATHER_IDX+weather.type]);
 }
 
 static void _left_render_horizontal_heart_rate()
 {
-	I8U *in = cling.ui.p_oled_up;
-
 	if (cling.ui.heart_rate_sec_blinking) 
-		_render_one_icon_16(ICON16_HEART_RATE_LEN, in, asset_content+ICON16_HEART_RATE_POS);
+		_render_one_icon_16(ICON16_HEART_RATE_LEN, 0, asset_content+ICON16_HEART_RATE_POS);
 }
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
 static void _left_render_horizontal_skin_temp()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_SKIN_TEMP_LEN, in, asset_content+ICON16_SKIN_TEMP_POS);
+	_render_one_icon_16(ICON16_SKIN_TEMP_LEN, 0, asset_content+ICON16_SKIN_TEMP_POS);
 }
 #endif
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _left_render_horizontal_return()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_RETURN_LEN, in, asset_content+ICON16_RETURN_POS);
+	_render_one_icon_16(ICON16_RETURN_LEN, 0, asset_content+ICON16_RETURN_POS);
 }
 
 static void _left_render_horizontal_stopwatch()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_STOPWATCH_LEN, in, asset_content+ICON16_STOPWATCH_POS);
+	_render_one_icon_16(ICON16_STOPWATCH_LEN, 0, asset_content+ICON16_STOPWATCH_POS);
 }
 #endif
 
 static void _left_render_horizontal_reminder()
 {
-	I8U *in = cling.ui.p_oled_up;
-
 	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK))
-		_render_one_icon_16(ICON16_SLEEP_ALARM_CLOCK_LEN, in, asset_content+ICON16_SLEEP_ALARM_CLOCK_POS);				
+		_render_one_icon_16(ICON16_SLEEP_ALARM_CLOCK_LEN, 0, asset_content+ICON16_SLEEP_ALARM_CLOCK_POS);				
 	else 
-		_render_one_icon_16(ICON16_NORMAL_ALARM_CLOCK_LEN, in, asset_content+ICON16_NORMAL_ALARM_CLOCK_POS);
+		_render_one_icon_16(ICON16_NORMAL_ALARM_CLOCK_LEN, 0, asset_content+ICON16_NORMAL_ALARM_CLOCK_POS);
 }
 
 static void _left_render_horizontal_incoming_call()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_INCOMING_CALL_LEN, in, asset_content+ICON16_INCOMING_CALL_POS);
+	_render_one_icon_16(ICON16_INCOMING_CALL_LEN, 0, asset_content+ICON16_INCOMING_CALL_POS);
 }
 
 static void _left_render_horizontal_incoming_message()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_MESSAGE_LEN, in, asset_content+ICON16_MESSAGE_POS);
+	_render_one_icon_16(ICON16_MESSAGE_LEN, 0, asset_content+ICON16_MESSAGE_POS);
 }
 
 static void _left_render_horizontal_idle_alert()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-  _render_one_icon_24(ICON24_IDLE_ALERT_LEN, in, asset_content+ICON24_IDLE_ALERT_POS);	
+  _render_one_icon_24(ICON24_IDLE_ALERT_LEN, 0, asset_content+ICON24_IDLE_ALERT_POS);	
 }
 
 static void _left_render_horizontal_running_distance_16()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, in, asset_content+ICON16_RUNNING_DISTANCE_POS);	
+	_render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, 0, asset_content+ICON16_RUNNING_DISTANCE_POS);	
 }
 
 static void _left_render_horizontal_training_distance()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
 	if (cling.ui.clock_sec_blinking) 
-	  _render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, in, asset_content+ICON16_RUNNING_DISTANCE_POS);	
+	  _render_one_icon_16(ICON16_RUNNING_DISTANCE_LEN, 0, asset_content+ICON16_RUNNING_DISTANCE_POS);	
 }
 
 static void _left_render_horizontal_running_distance_24()
-{
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, in, asset_content+ICON24_RUNNING_DISTANCE_POS);
+{	
+	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, 0, asset_content+ICON24_RUNNING_DISTANCE_POS);
 }
 
 static void _left_render_horizontal_running_time()
 {
-	I8U *in = cling.ui.p_oled_up;
-
-	_render_one_icon_16(ICON16_RUNNING_TIME_LEN, in, asset_content+ICON16_RUNNING_TIME_POS);
+	_render_one_icon_16(ICON16_RUNNING_TIME_LEN, 0, asset_content+ICON16_RUNNING_TIME_POS);
 }
 
 static void _left_render_horizontal_training_time()
 {
-	I8U *in = cling.ui.p_oled_up;
-
 	if (cling.ui.clock_sec_blinking) 
-	  _render_one_icon_16(ICON16_RUNNING_TIME_LEN, in, asset_content+ICON16_RUNNING_TIME_POS);
+	  _render_one_icon_16(ICON16_RUNNING_TIME_LEN, 0, asset_content+ICON16_RUNNING_TIME_POS);
 }
 
 static void _left_render_horizontal_running_pace()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_PACE_LEN, in, asset_content+ICON16_RUNNING_PACE_POS);
+	_render_one_icon_16(ICON16_RUNNING_PACE_LEN, 0, asset_content+ICON16_RUNNING_PACE_POS);
 }
 
 static void _left_render_horizontal_running_calories()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_CALORIES_LEN, in, asset_content+ICON16_RUNNING_CALORIES_POS);
+	_render_one_icon_16(ICON16_RUNNING_CALORIES_LEN, 0, asset_content+ICON16_RUNNING_CALORIES_POS);
 }
 
 static void _left_render_horizontal_running_hr()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_HR_LEN, in, asset_content+ICON16_RUNNING_HR_POS);
+	_render_one_icon_16(ICON16_RUNNING_HR_LEN, 0, asset_content+ICON16_RUNNING_HR_POS);
 }
 
 static void _left_render_horizontal_running_cadence()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_CADENCE_LEN, in, asset_content+ICON16_RUNNING_CADENCE_POS);
+	_render_one_icon_16(ICON16_RUNNING_CADENCE_LEN, 0, asset_content+ICON16_RUNNING_CADENCE_POS);
 }
 
 static void _left_render_horizontal_running_stride()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_STRIDE_LEN, in, asset_content+ICON16_RUNNING_STRIDE_POS);
+	_render_one_icon_16(ICON16_RUNNING_STRIDE_LEN, 0, asset_content+ICON16_RUNNING_STRIDE_POS);
 }
 
 static void _left_render_horizontal_training_ready()
 {
-	I8U *in = cling.ui.p_oled_up+128+10;
-	
-	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, in, asset_content+ICON24_RUNNING_DISTANCE_POS);
+	_render_one_icon_24(ICON24_RUNNING_DISTANCE_LEN, 128+1, asset_content+ICON24_RUNNING_DISTANCE_POS);
 }
 
 static void _left_render_horizontal_training_pace()
 {
-	I8U *in = cling.ui.p_oled_up;
-
 	if (cling.ui.clock_sec_blinking) 
-	  _render_one_icon_16(ICON16_RUNNING_PACE_LEN, in, asset_content+ICON16_RUNNING_PACE_POS);
+	  _render_one_icon_16(ICON16_RUNNING_PACE_LEN, 0, asset_content+ICON16_RUNNING_PACE_POS);
 }
 
 static void _left_render_horizontal_training_hr()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
 	if (cling.ui.clock_sec_blinking) 
-	  _render_one_icon_16(ICON16_RUNNING_HR_LEN, in, asset_content+ICON16_RUNNING_HR_POS);
+	  _render_one_icon_16(ICON16_RUNNING_HR_LEN, 0, asset_content+ICON16_RUNNING_HR_POS);
 }
 
 static void _left_render_horizontal_running_stop()
-{
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_RUNNING_STOP_LEN, in, asset_content+ICON16_RUNNING_STOP_POS);
+{	
+	_render_one_icon_16(ICON16_RUNNING_STOP_LEN, 0, asset_content+ICON16_RUNNING_STOP_POS);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _left_render_horizontal_cycling_outdoor_16()
-{
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_CYCLING_OUTDOOR_MODE_LEN, in, asset_content+ICON16_CYCLING_OUTDOOR_MODE_POS);
+{	
+	_render_one_icon_16(ICON16_CYCLING_OUTDOOR_MODE_LEN, 0, asset_content+ICON16_CYCLING_OUTDOOR_MODE_POS);
 }
 
 static void _left_render_horizontal_cycling_outdoor_24()
 {
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, in, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);
+	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, 0, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);
 }
 
 static void _left_render_horizontal_cycling_outdoor_ready()
 {
-	I8U *in = cling.ui.p_oled_up+128+10;
-	
-	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, in, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);
+	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, 128+10, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);
 }
 
 static void _left_render_horizontal_cycling_outdoor_speed()
-{
-	I8U *in = cling.ui.p_oled_up;
-	
-	_render_one_icon_16(ICON16_CYCLING_OUTDOOR_SPEED_LEN, in, asset_content+ICON16_CYCLING_OUTDOOR_SPEED_POS);
+{	
+	_render_one_icon_16(ICON16_CYCLING_OUTDOOR_SPEED_LEN, 0, asset_content+ICON16_CYCLING_OUTDOOR_SPEED_POS);
 }
 #endif
 
@@ -619,12 +556,12 @@ static void _middle_render_horizontal_system_charging()
 	offset = 15;
 		
 	if (b_batt_charging) {
-	  _render_one_icon_16(ICON16_BATT_CHARGING_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_BATT_CHARGING_POS);
+	  _render_one_icon_16(ICON16_BATT_CHARGING_LEN, 128+offset, asset_content+ICON16_BATT_CHARGING_POS);
 		offset += ICON16_BATT_CHARGING_LEN;
 		offset += 5;
-		_render_one_icon_16(ICON16_BATT_CHARGING_FLAG_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_BATT_CHARGING_FLAG_POS);
+		_render_one_icon_16(ICON16_BATT_CHARGING_FLAG_LEN, 128+offset, asset_content+ICON16_BATT_CHARGING_FLAG_POS);
 	} else {
-	  _render_one_icon_16(ICON16_BATT_CHARGING_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_BATT_CHARGING_POS);
+	  _render_one_icon_16(ICON16_BATT_CHARGING_LEN, 128+offset, asset_content+ICON16_BATT_CHARGING_POS);
 	}
 	
 	// Filling up the percentage
@@ -678,17 +615,17 @@ static void _middle_render_horizontal_linking()
 		 cling.ui.linking_wave_index=0;
 
 	for (I8U i=0;i<cling.ui.linking_wave_index;i++) {
-		_render_one_icon_16(ICON16_AUTH_PROGRESS_LEFT_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_LEFT_POS);
+		_render_one_icon_16(ICON16_AUTH_PROGRESS_LEFT_LEN, 128+offset, asset_content+ICON16_AUTH_PROGRESS_LEFT_POS);
 		offset += ICON16_AUTH_PROGRESS_LEFT_LEN;	
 		offset += 5;		
 	}
 
-	_render_one_icon_16(ICON16_AUTH_PROGRESS_MIDDLE_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_MIDDLE_POS);
+	_render_one_icon_16(ICON16_AUTH_PROGRESS_MIDDLE_LEN, 128+offset, asset_content+ICON16_AUTH_PROGRESS_MIDDLE_POS);
 	offset += ICON16_AUTH_PROGRESS_MIDDLE_LEN;		
 	offset += 5;
 	
 	for (I8U i=0;i<cling.ui.linking_wave_index;i++) {
-		_render_one_icon_16(ICON16_AUTH_PROGRESS_RIGHT_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON16_AUTH_PROGRESS_RIGHT_POS);
+		_render_one_icon_16(ICON16_AUTH_PROGRESS_RIGHT_LEN, 128+offset, asset_content+ICON16_AUTH_PROGRESS_RIGHT_POS);
 		offset += ICON16_AUTH_PROGRESS_RIGHT_LEN;			
     offset += 5;			
 	}
@@ -1125,15 +1062,15 @@ static void _middle_render_horizontal_phone_finder()
 {
 	I16U offset = 0;
 
-	_render_one_icon_24(ICON24_PHONE_FINDER_0_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_PHONE_FINDER_0_POS);
+	_render_one_icon_24(ICON24_PHONE_FINDER_0_LEN, 128+offset, asset_content+ICON24_PHONE_FINDER_0_POS);
 	offset += ICON24_PHONE_FINDER_0_LEN;
 	offset += 12;
 	
-	_render_one_icon_24(ICON24_PHONE_FINDER_1_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_PHONE_FINDER_1_POS);
+	_render_one_icon_24(ICON24_PHONE_FINDER_1_LEN, 128+offset, asset_content+ICON24_PHONE_FINDER_1_POS);
 	offset += ICON24_PHONE_FINDER_1_LEN;
 	offset += 12;
 	
-	_render_one_icon_24(ICON24_PHONE_FINDER_2_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_PHONE_FINDER_2_POS);
+	_render_one_icon_24(ICON24_PHONE_FINDER_2_LEN, 128+offset, asset_content+ICON24_PHONE_FINDER_2_POS);
 	offset += ICON24_PHONE_FINDER_2_LEN;
 
 	_middle_horizontal_alignment_center(offset);
@@ -1653,7 +1590,7 @@ static void _middle_render_horizontal_cycling_outdoor_distance()
 	if (b_ble_connected) {
 		_horizontal_core_run_distance(cling.run_stat.distance, TRUE);
 	} else {
-		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_LEN, cling.ui.p_oled_up+128+40, asset_content+ICON24_NO_SKIN_TOUCH_POS);
+		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_LEN, 128+40, asset_content+ICON24_NO_SKIN_TOUCH_POS);
 	}
 }
 
@@ -1667,7 +1604,7 @@ static void _middle_render_horizontal_cycling_outdoor_speed()
 	if (b_ble_connected) {
 		_horizontal_core_run_distance(17, TRUE);
 	} else {
-		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_LEN, cling.ui.p_oled_up+128+40, asset_content+ICON24_NO_SKIN_TOUCH_POS);
+		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_LEN, 128+40, asset_content+ICON24_NO_SKIN_TOUCH_POS);
 	}
 }
 
@@ -1797,15 +1734,15 @@ static void _middle_render_horizontal_music_play()
 {
 	I16U offset = 10;
 
-	_render_one_icon_24(ICON24_MUSIC_PLAY_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_MUSIC_PLAY_POS);
+	_render_one_icon_24(ICON24_MUSIC_PLAY_LEN, 128+offset, asset_content+ICON24_MUSIC_PLAY_POS);
 	offset += ICON24_MUSIC_PLAY_LEN;
 	offset += 20;
 	
-	_render_one_icon_24(ICON24_MUSIC_MUTE_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_MUSIC_MUTE_POS);
+	_render_one_icon_24(ICON24_MUSIC_MUTE_LEN, 128+offset, asset_content+ICON24_MUSIC_MUTE_POS);
 	offset += ICON24_MUSIC_MUTE_LEN;
 	offset += 20;
 	
-	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, cling.ui.p_oled_up+128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
+	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, 128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
 	offset += ICON16_MUSIC_MORE_LEN;
 
 	_middle_horizontal_alignment_center(offset);
@@ -1815,15 +1752,15 @@ static void _middle_render_horizontal_music_track()
 {
 	I16U offset = 10;
 
-	_render_one_icon_24(ICON24_MUSIC_PREV_SONG_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_MUSIC_PREV_SONG_POS);
+	_render_one_icon_24(ICON24_MUSIC_PREV_SONG_LEN, 128+offset, asset_content+ICON24_MUSIC_PREV_SONG_POS);
 	offset += ICON24_MUSIC_PREV_SONG_LEN;
 	offset += 20;
 	
-	_render_one_icon_24(ICON24_MUSIC_NEXT_SONG_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_MUSIC_NEXT_SONG_POS);
+	_render_one_icon_24(ICON24_MUSIC_NEXT_SONG_LEN, 128+offset, asset_content+ICON24_MUSIC_NEXT_SONG_POS);
 	offset += ICON24_MUSIC_NEXT_SONG_LEN;
 	offset += 20;
 	
-	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, cling.ui.p_oled_up+128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
+	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, 128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
 	offset += ICON16_MUSIC_MORE_LEN;
 
 	_middle_horizontal_alignment_center(offset);
@@ -1833,15 +1770,15 @@ static void _middle_render_horizontal_music_volume()
 {
 	I16U offset = 10;
 
-	_render_one_icon_24(ICON24_MUSIC_VOLUME_DOWN_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_MUSIC_VOLUME_DOWN_POS);
+	_render_one_icon_24(ICON24_MUSIC_VOLUME_DOWN_LEN, 128+offset, asset_content+ICON24_MUSIC_VOLUME_DOWN_POS);
 	offset += ICON24_MUSIC_VOLUME_DOWN_LEN;
 	offset += 20;
 	
-	_render_one_icon_24(ICON24_MUSIC_VOLUME_UP_LEN, cling.ui.p_oled_up+128+offset, asset_content+ICON24_MUSIC_VOLUME_UP_POS);
+	_render_one_icon_24(ICON24_MUSIC_VOLUME_UP_LEN, 128+offset, asset_content+ICON24_MUSIC_VOLUME_UP_POS);
 	offset += ICON24_MUSIC_VOLUME_UP_LEN;
 	offset += 20;
 	
-	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, cling.ui.p_oled_up+128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
+	_render_one_icon_16(ICON16_MUSIC_MORE_LEN, 128+128+offset, asset_content+ICON16_MUSIC_MORE_POS);
 	offset += ICON16_MUSIC_MORE_LEN;
 
 	_middle_horizontal_alignment_center(offset);	
@@ -1851,108 +1788,102 @@ static void _middle_render_horizontal_music_volume()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_carousel_1()
 {
-	I8U *in = cling.ui.p_oled_up+128;
-	I8U offset = 4;
+	I8U offset = 128+4;
 	
-  _render_one_icon_24(ICON24_RUNNING_MODE_LEN, in+offset, asset_content+ICON24_RUNNING_MODE_POS);	
+  _render_one_icon_24(ICON24_RUNNING_MODE_LEN, offset, asset_content+ICON24_RUNNING_MODE_POS);	
 	offset += ICON24_RUNNING_MODE_LEN;
 	offset += 24;
 
-  _render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, in+offset, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);	
+  _render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_LEN, offset, asset_content+ICON24_CYCLING_OUTDOOR_MODE_POS);	
 	offset += ICON24_CYCLING_OUTDOOR_MODE_LEN;
 	offset += 24;
 	
-  _render_one_icon_24(ICON24_WORKOUT_MODE_LEN, in+offset, asset_content+ICON24_WORKOUT_MODE_POS);	
+  _render_one_icon_24(ICON24_WORKOUT_MODE_LEN, offset, asset_content+ICON24_WORKOUT_MODE_POS);	
 }
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 static void _middle_render_horizontal_carousel_2()
 {
-	I8U *in = cling.ui.p_oled_up+128;
-	I8U offset = 4;
+	I8U offset = 128+4;
 	
-  _render_one_icon_24(ICON24_MUSIC_LEN, in+offset, asset_content+ICON24_MUSIC_POS);	
+  _render_one_icon_24(ICON24_MUSIC_LEN, offset, asset_content+ICON24_MUSIC_POS);	
 	offset += ICON24_MUSIC_LEN;
 	offset += 24;
 
-  _render_one_icon_24(ICON24_STOPWATCH_LEN, in+offset, asset_content+ICON24_STOPWATCH_POS);	
+  _render_one_icon_24(ICON24_STOPWATCH_LEN, offset, asset_content+ICON24_STOPWATCH_POS);	
 	offset += ICON24_STOPWATCH_LEN;
 	offset += 24;
 	
-  _render_one_icon_24(ICON24_MESSAGE_LEN, in+offset, asset_content+ICON24_MESSAGE_POS);	
+  _render_one_icon_24(ICON24_MESSAGE_LEN, offset, asset_content+ICON24_MESSAGE_POS);	
 }
 #endif
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	
 static void _middle_render_horizontal_carousel_2()
 {
-	I8U *in = cling.ui.p_oled_up+128;
-	I8U offset = 4;
+	I8U offset = 128+4;
 	
-  _render_one_icon_24(ICON24_MESSAGE_LEN, in+offset, asset_content+ICON24_MESSAGE_POS);	
+  _render_one_icon_24(ICON24_MESSAGE_LEN, offset, asset_content+ICON24_MESSAGE_POS);	
 	offset += ICON24_MESSAGE_LEN;
 	offset += 24;
 
-  _render_one_icon_24(ICON24_STOPWATCH_LEN, in+offset, asset_content+ICON24_STOPWATCH_POS);	
+  _render_one_icon_24(ICON24_STOPWATCH_LEN, offset, asset_content+ICON24_STOPWATCH_POS);	
 	offset += ICON24_STOPWATCH_LEN;
 	offset += 24;
 	
-  _render_one_icon_24(ICON24_WEATHER_LEN, in+offset, asset_content+ICON24_WEATHER_POS);	
+  _render_one_icon_24(ICON24_WEATHER_LEN, offset, asset_content+ICON24_WEATHER_POS);	
 }
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 static void _middle_render_horizontal_carousel_3()
 {
-	I8U *in = cling.ui.p_oled_up+128;
-	I8U offset = 4;
+	I8U offset = 128+4;
 	
-  _render_one_icon_24(ICON24_WEATHER_LEN, in+offset, asset_content+ICON24_WEATHER_POS);	
+  _render_one_icon_24(ICON24_WEATHER_LEN, offset, asset_content+ICON24_WEATHER_POS);	
 	offset += ICON24_WEATHER_LEN;
 	offset += 24;
 
-  _render_one_icon_24(ICON24_PM2P5_LEN, in+offset, asset_content+ICON24_PM2P5_POS);	
+  _render_one_icon_24(ICON24_PM2P5_LEN, offset, asset_content+ICON24_PM2P5_POS);	
 	offset += ICON24_PM2P5_LEN;
 	offset += 24;
 	
-  _render_one_icon_24(ICON24_NORMAL_ALARM_CLOCK_LEN, in+offset, asset_content+ICON24_NORMAL_ALARM_CLOCK_POS);	
+  _render_one_icon_24(ICON24_NORMAL_ALARM_CLOCK_LEN, offset, asset_content+ICON24_NORMAL_ALARM_CLOCK_POS);	
 }
 #endif
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	
 static void _middle_render_horizontal_carousel_3()
 {
-	I8U *in = cling.ui.p_oled_up+128;
-	I8U offset = 4;
+	I8U offset = 128+4;
 	
-  _render_one_icon_24(ICON24_PM2P5_LEN, in+offset, asset_content+ICON24_PM2P5_POS);	
+  _render_one_icon_24(ICON24_PM2P5_LEN, offset, asset_content+ICON24_PM2P5_POS);	
 	offset += ICON24_PM2P5_LEN;
 	offset += 24;
 
-  _render_one_icon_24(ICON24_NORMAL_ALARM_CLOCK_LEN, in+offset, asset_content+ICON24_NORMAL_ALARM_CLOCK_POS);	
+  _render_one_icon_24(ICON24_NORMAL_ALARM_CLOCK_LEN, offset, asset_content+ICON24_NORMAL_ALARM_CLOCK_POS);	
 	offset += ICON24_NORMAL_ALARM_CLOCK_LEN;
 	offset += 24;
 	
-  _render_one_icon_24(ICON24_SETTING_LEN, in+offset, asset_content+ICON24_SETTING_POS);	
+  _render_one_icon_24(ICON24_SETTING_LEN, offset, asset_content+ICON24_SETTING_POS);	
 }
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 static void _middle_render_horizontal_carousel_4()
 {
-	I8U *in = cling.ui.p_oled_up+128;
-	I8U offset = 4;
+	I8U offset = 128+4;
 	
-  _render_one_icon_24(ICON24_BATT_POWER_LEN, in+offset, asset_content+ICON24_BATT_POWER_POS);	
+  _render_one_icon_24(ICON24_BATT_POWER_LEN, offset, asset_content+ICON24_BATT_POWER_POS);	
 	offset += ICON24_BATT_POWER_LEN;
 	offset += 24;
 
-  _render_one_icon_24(ICON24_PHONE_FINDER_LEN, in+offset, asset_content+ICON24_PHONE_FINDER_POS);	
+  _render_one_icon_24(ICON24_PHONE_FINDER_LEN, offset, asset_content+ICON24_PHONE_FINDER_POS);	
 	offset += ICON24_PHONE_FINDER_LEN;
 	offset += 24;
 	
-  _render_one_icon_24(ICON24_SETTING_LEN, in+offset, asset_content+ICON24_SETTING_POS);	
+  _render_one_icon_24(ICON24_SETTING_LEN, offset, asset_content+ICON24_SETTING_POS);	
 }
 #endif
 
@@ -2355,9 +2286,10 @@ static void _rotate_8_bytes_opposite_core(I8U *in_data, I8U *out_data)
 	}
 }
 
-static void _rotate_270_degree(I8U *in, I8U *out)
+static void _rotate_270_degree(I8U *in, I16U offset)
 {
 	I8U *in_data;
+	I8U *out = cling.ui.p_oled_up+offset;
 	I8U *out_data;
 	
 	// first 8 bytes
@@ -2429,9 +2361,9 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	_vertical_centerize(p0, p1, p2, line_len);
 	
 	// do the rotation
-	_rotate_270_degree(p0, cling.ui.p_oled_up+384+offset);
+	_rotate_270_degree(p0, 384+offset);
 	if (height == 16)
-	  _rotate_270_degree(p1, cling.ui.p_oled_up+384+offset+8);
+	  _rotate_270_degree(p1, 384+offset+8);
 }
 
 static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U len, I8U b_24_size, BOOLEAN b_all_hold)
@@ -2506,11 +2438,11 @@ static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U 
 	_vertical_centerize(buf1, buf2, buf3, line_len);
 	
 	// do the rotation
-	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
+	_rotate_270_degree(buf1, 384+offset);
 	if (b_24_size != 8)
-		_rotate_270_degree(buf2, cling.ui.p_oled_up+384+offset+8);
+		_rotate_270_degree(buf2, 384+offset+8);
 	if (b_24_size == 24)
-		_rotate_270_degree(buf3, cling.ui.p_oled_up+384+offset+16);
+		_rotate_270_degree(buf3, 384+offset+16);
 }
 
 static void _render_vertical_icon()
@@ -2527,13 +2459,12 @@ static void _render_vertical_icon()
 static void _top_render_vertical_batt_ble()
 {
 	I8U data_buf[128];
-	I8U *in = cling.ui.p_oled_up;
 
 	memset(data_buf, 0, 128);
 	
 	_render_batt_and_ble(data_buf);
 
-	_rotate_270_degree(data_buf, in+384);
+	_rotate_270_degree(data_buf, 384);
 }
 
 
@@ -2651,9 +2582,9 @@ static void _render_vertical_time(I8U *string, I8U offset, BOOLEAN b_bold, BOOLE
     _vertical_centerize(buf1, buf2, buf3, line_len);	
 	
 	// do the rotation
-	_rotate_270_degree(buf1, cling.ui.p_oled_up+384+offset);
-	_rotate_270_degree(buf2, cling.ui.p_oled_up+384+offset+8);
-	_rotate_270_degree(buf3, cling.ui.p_oled_up+384+offset+16);
+	_rotate_270_degree(buf1, 384+offset);
+	_rotate_270_degree(buf2, 384+offset+8);
+	_rotate_270_degree(buf3, 384+offset+16);
 }
 
 static void _middle_render_vertical_clock()
