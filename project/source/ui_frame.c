@@ -2513,14 +2513,14 @@ static void _render_vertical_character(I8U *string, I8U offset, I8U margin, I8U 
 		_rotate_270_degree(buf3, cling.ui.p_oled_up+384+offset+16);
 }
 
-static void _render_vertical_icon(I8U icon_idx)
+static void _render_vertical_icon()
 {
-	I8U string[32];	
+	I8U string[4];	
 	I8U len = 0;	
 	I8U	margin = 2;
 	I8U b_24_size = 24;
 
-	string[len++] = icon_idx;
+	string[len++] = cling.ui.frm_render.icon_24_idx;
 	_render_vertical_character(string, 0, margin, len, b_24_size, FALSE);
 }
 
@@ -2536,20 +2536,7 @@ static void _top_render_vertical_batt_ble()
 	_rotate_270_degree(data_buf, in+384);
 }
 
-static void _top_render_vertical_steps()
-{
-	_render_vertical_icon(ICON24_STEPS_IDX);
-}
 
-static void _top_render_vertical_distance()
-{
-	_render_vertical_icon(ICON24_DISTANCE_IDX);
-}
-
-static void _top_render_vertical_calories()
-{
-	_render_vertical_icon(ICON24_CALORIES_IDX);
-}
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _top_render_vertical_pm2p5()
@@ -2583,77 +2570,14 @@ static void _top_render_vertical_weather()
 static void _top_render_vertical_heart_rate()
 {
 	if (cling.ui.heart_rate_sec_blinking) 
-		_render_vertical_icon(ICON24_HEART_RATE_IDX);
+		_render_vertical_icon();
 }
 
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
-static void _top_render_vertical_skin_temp()
-{
-	_render_vertical_icon(ICON24_SKIN_TEMP_IDX);
-}
-#endif
-
-static void _top_render_vertical_running_distance()
-{
-	_render_vertical_icon(ICON24_RUNNING_DISTANCE_IDX);
-}
-
-static void _top_render_vertical_running_time()
-{
-	_render_vertical_icon(ICON24_RUNNING_TIME_IDX);
-}
-
-static void _top_render_vertical_running_calories()
-{
-	_render_vertical_icon(ICON24_RUNNING_CALORIES_IDX);
-}
-
-static void _top_render_vertical_running_cadence()
-{
-	_render_vertical_icon(ICON24_RUNNING_CADENCE_IDX);
-}
-
-static void _top_render_vertical_running_stride()
-{
-	_render_vertical_icon(ICON24_RUNNING_STRIDE_IDX);
-}
-
-static void _top_render_vertical_running_pace()
-{
-	_render_vertical_icon(ICON24_RUNNING_PACE_IDX);
-}
-
-static void _top_render_vertical_running_hr()
-{
-	_render_vertical_icon(ICON24_RUNNING_HR_IDX);
-}
-
-static void _top_render_vertical_active_time()
-{
-	_render_vertical_icon(ICON24_ACTIVE_TIME_IDX);
-}
 
 #ifdef _CLINGBAND_UV_MODEL_
 static void _top_render_vertical_uv_index()
 {
 	_render_vertical_icon(ICON24_UV_INDEX_IDX);
-}
-#endif
-
-static void _top_render_vertical_running_stop()
-{
-	_render_vertical_icon(ICON24_RUNNING_STOP_IDX);
-}
-
-#ifndef _CLINGBAND_PACE_MODEL_		
-static void _top_render_vertical_cycling_outdoor()
-{
-	_render_vertical_icon(ICON24_CYCLING_OUTDOOR_MODE_IDX);
-}
-
-static void _top_render_vertical_cycling_outdoor_speed()
-{
-	_render_vertical_icon(ICON24_CYCLING_OUTDOOR_SPEED_IDX);
 }
 #endif
 
@@ -4522,7 +4446,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_distance,              _middle_render_horizontal_distance,                  _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_DISTANCE*/
   {_left_render_horizontal_calories,              _middle_render_horizontal_calories,                  _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_CALORIES*/
   {_left_render_horizontal_active_time,           _middle_render_horizontal_active_time,               _right_render_horizontal_tracker},                 /*UI_FRAME_PAGE_ACTIVE_TIME*/
-   {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_PM2P5*/
+  {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_PM2P5*/
   {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_WEATHER*/
   {_left_render_horizontal_return,                _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_FRAME_PAGE_MESSAGE*/
   {_left_render_horizontal_return,                _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_FRAME_PAGE_APP_NOTIF*/
@@ -4587,10 +4511,10 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_LINKING*/
   {_RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_FRAME_PAGE_OTA*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_BATT_POWER*/
-  {_top_render_vertical_steps,                    _middle_render_vertical_steps,                       _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_STEPS*/
-  {_top_render_vertical_distance,                 _middle_render_vertical_distance,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_DISTANCE*/
-  {_top_render_vertical_calories,                 _middle_render_vertical_calories,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_CALORIES*/
-  {_top_render_vertical_active_time,              _middle_render_vertical_active_time,                 _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_ACTIVE_TIME*/
+  {_render_vertical_icon,                    _middle_render_vertical_steps,                       _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_STEPS*/
+  {_render_vertical_icon,                 _middle_render_vertical_distance,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_DISTANCE*/
+  {_render_vertical_icon,                 _middle_render_vertical_calories,                    _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_CALORIES*/
+  {_render_vertical_icon,              _middle_render_vertical_active_time,                 _bottom_render_vertical_tracker},                  /*UI_FRAME_PAGE_ACTIVE_TIME*/
   {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_FRAME_PAGE_PM2P5*/
   {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_FRAME_PAGE_WEATHER*/
   {_left_render_horizontal_return,                _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_FRAME_PAGE_MESSAGE*/
@@ -4602,9 +4526,9 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_reminder,              _middle_render_horizontal_reminder,                  _right_render_horizontal_reminder},                /*UI_FRAME_PAGE_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_FRAME_PAGE_IDLE_ALERT*/
   {_top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
-  {_top_render_vertical_steps,                    _middle_render_vertical_steps,                       _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_STEP_10K_ALERT*/
+  {_render_vertical_icon,                    _middle_render_vertical_steps,                       _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_STEP_10K_ALERT*/
   {_top_render_vertical_heart_rate,               _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_HEART_RATE*/
-  {_top_render_vertical_skin_temp,                _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_SKIN_TEMP*/
+  {_render_vertical_icon,                _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_FRAME_PAGE_SKIN_TEMP*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_SETTING*/
   {_left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_FRAME_PAGE_STOPWATCH_START*/
   {_left_render_horizontal_stopwatch,             _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_STOPWATCH_STOP*/
@@ -4621,38 +4545,107 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_training_hr,           _middle_render_horizontal_training_hr,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_WORKOUT_RUN_HEART_RATE*/
   {_left_render_horizontal_running_calories,      _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_FRAME_PAGE_WORKOUT_RUN_CALORIES*/
   {_left_render_horizontal_running_stop,          _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_WORKOUT_RUN_END*/
-  {_top_render_vertical_running_distance,         _middle_render_vertical_running_distance,            _bottom_render_vertical_runnng_distance},          /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
-  {_top_render_vertical_running_time,             _middle_render_vertical_running_time,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_TIME*/
-  {_top_render_vertical_running_pace,             _middle_render_vertical_running_pace,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_PACE*/
-  {_top_render_vertical_running_hr,               _middle_render_vertical_running_hr,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
-  {_top_render_vertical_running_calories,         _middle_render_vertical_running_calories,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CALORIES*/
-  {_top_render_vertical_running_cadence,          _middle_render_vertical_running_cadence,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CADENCE*/
-  {_top_render_vertical_running_stride,           _middle_render_vertical_running_stride,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_STRIDE*/
-  {_top_render_vertical_running_distance,         _middle_render_vertical_training_run_start,          _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_TRAINING_RUN_START*/ 
-  {_top_render_vertical_running_distance,         _middle_render_vertical_training_run_or_analysis,    _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/ 
-  {_top_render_vertical_running_distance,         _middle_render_vertical_training_ready,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
-  {_top_render_vertical_running_time,             _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
-  {_top_render_vertical_running_distance,         _middle_render_vertical_training_distance,           _bottom_render_vertical_training_distance},        /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
-  {_top_render_vertical_running_pace,             _middle_render_vertical_training_pace,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_PACE*/
-  {_top_render_vertical_running_hr,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
-  {_top_render_vertical_running_stop,             _middle_render_vertical_training_run_stop,           _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
-  {_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_run_start,   _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START*/
-  {_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_ready,       _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_READY*/
-  {_top_render_vertical_running_time,             _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_TIME*/
-  {_top_render_vertical_cycling_outdoor,          _middle_render_vertical_cycling_outdoor_distance,    _bottom_render_vertical_cycling_outdoor_distance}, /*UI_FRAME_PAGE_CYCLING_OUTDOOR_DISTANCE*/
-  {_top_render_vertical_cycling_outdoor_speed,    _middle_render_vertical_cycling_outdoor_speed,       _bottom_render_vertical_cycling_outdoor_speed},    /*UI_FRAME_PAGE_CYCLING_OUTDOOR_SPEED*/
-  {_top_render_vertical_running_hr,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_HEART_RATE*/
-  {_top_render_vertical_running_stop,             _middle_render_vertical_cycling_outdoor_run_stop,    _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP*/
+  {_render_vertical_icon,         _middle_render_vertical_running_distance,            _bottom_render_vertical_runnng_distance},          /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
+  {_render_vertical_icon,             _middle_render_vertical_running_time,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_TIME*/
+  {_render_vertical_icon,             _middle_render_vertical_running_pace,                _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_PACE*/
+  {_render_vertical_icon,               _middle_render_vertical_running_hr,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
+  {_render_vertical_icon,         _middle_render_vertical_running_calories,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CALORIES*/
+  {_render_vertical_icon,          _middle_render_vertical_running_cadence,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_CADENCE*/
+  {_render_vertical_icon,           _middle_render_vertical_running_stride,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_RUNNING_STRIDE*/
+  {_render_vertical_icon,         _middle_render_vertical_training_run_start,          _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_TRAINING_RUN_START*/ 
+  {_render_vertical_icon,         _middle_render_vertical_training_run_or_analysis,    _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/ 
+  {_render_vertical_icon,         _middle_render_vertical_training_ready,              _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
+  {_render_vertical_icon,             _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
+  {_render_vertical_icon,         _middle_render_vertical_training_distance,           _bottom_render_vertical_training_distance},        /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
+  {_render_vertical_icon,             _middle_render_vertical_training_pace,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_PACE*/
+  {_render_vertical_icon,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
+  {_render_vertical_icon,             _middle_render_vertical_training_run_stop,           _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
+  {_render_vertical_icon,          _middle_render_vertical_cycling_outdoor_run_start,   _bottom_render_vertical_run_go},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START*/
+  {_render_vertical_icon,          _middle_render_vertical_cycling_outdoor_ready,       _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_READY*/
+  {_render_vertical_icon,             _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_TIME*/
+  {_render_vertical_icon,          _middle_render_vertical_cycling_outdoor_distance,    _bottom_render_vertical_cycling_outdoor_distance}, /*UI_FRAME_PAGE_CYCLING_OUTDOOR_DISTANCE*/
+  {_render_vertical_icon,    _middle_render_vertical_cycling_outdoor_speed,       _bottom_render_vertical_cycling_outdoor_speed},    /*UI_FRAME_PAGE_CYCLING_OUTDOOR_SPEED*/
+  {_render_vertical_icon,               _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_FRAME_PAGE_CYCLING_OUTDOOR_HEART_RATE*/
+  {_render_vertical_icon,             _middle_render_vertical_cycling_outdoor_run_stop,    _bottom_render_vertical_run_ok},                   /*UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP*/
   {_RENDER_NONE,                                  _middle_render_vertical_carousel_1,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_1*/
   {_RENDER_NONE,                                  _middle_render_vertical_carousel_2,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_2*/
   {_RENDER_NONE,                                  _middle_render_vertical_carousel_3,                  _RENDER_NONE},                                     /*UI_FRAME_PAGE_CAROUSEL_3*/	
 };
 
 
+const I8U icon_render_idx[] = {
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+	ICON24_STEPS_IDX,
+  ICON24_DISTANCE_IDX,
+	ICON24_CALORIES_IDX,
+	ICON24_ACTIVE_TIME_IDX,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+  ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_HEART_RATE_IDX,
+	ICON24_STEPS_IDX,
+	ICON24_HEART_RATE_IDX,
+	ICON24_SKIN_TEMP_IDX,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+	ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_RUNNING_DISTANCE_IDX,
+	ICON24_RUNNING_TIME_IDX,
+	ICON24_RUNNING_PACE_IDX,
+	ICON24_RUNNING_HR_IDX,
+	ICON24_RUNNING_CALORIES_IDX,
+	ICON24_RUNNING_CADENCE_IDX,
+	ICON24_RUNNING_STRIDE_IDX,
+	ICON24_RUNNING_DISTANCE_IDX,
+	ICON24_RUNNING_DISTANCE_IDX,
+	ICON24_RUNNING_DISTANCE_IDX,
+	ICON24_RUNNING_TIME_IDX,
+	ICON24_RUNNING_DISTANCE_IDX,
+	ICON24_RUNNING_PACE_IDX,
+	ICON24_RUNNING_HR_IDX,
+	ICON24_RUNNING_STOP_IDX,
+	ICON24_CYCLING_OUTDOOR_MODE_IDX,
+	ICON24_CYCLING_OUTDOOR_MODE_IDX,
+	ICON24_RUNNING_TIME_IDX,
+	ICON24_CYCLING_OUTDOOR_MODE_IDX,
+	ICON24_CYCLING_OUTDOOR_SPEED_IDX,
+  ICON24_RUNNING_HR_IDX,
+	ICON24_RUNNING_STOP_IDX,
+  ICON24_NONE,
+  ICON24_NONE,
+  ICON24_NONE,
+};
+
 static void _core_frame_display(I8U middle, BOOLEAN b_render)
 {	
 	const UI_RENDER_CTX *ui_render;
-	
+
 	// Set correct screen orientation
 	if (cling.ui.clock_orientation == 1) {
 		ui_render = horizontal_ui_render;
@@ -4662,6 +4655,9 @@ static void _core_frame_display(I8U middle, BOOLEAN b_render)
 
 	// Clean up all screen.
 	memset(cling.ui.p_oled_up, 0, 512);
+	
+	// Get top render icon index
+	cling.ui.frm_render.icon_24_idx = icon_render_idx[middle];
 
 	ui_render[middle].middle_row_render();
 	ui_render[middle].top_row_render();	

@@ -130,6 +130,7 @@
 
 
 /****************** 24 pixels high icon *******************/
+#define ICON24_NONE                        128
 #define ICON24_WEATHER_RANGE_IDX           126
 #define ICON24_WEATHER_RANGE_LEN           asset_len[512+126]
 #define ICON24_WEATHER_RANGE_POS           asset_pos[512+126]

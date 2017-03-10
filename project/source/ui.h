@@ -643,6 +643,10 @@ enum {
 	NOTIFICATION_TYPE_RUNNING_HR_ALERT,		
 };
 
+typedef struct tagFRAME_RENDERING_CTX {
+	I8U icon_24_idx;
+} FRAME_RENDERING_CTX;
+
 typedef struct tagUI_ANIMATION_CTX {
 	// All the dword variables
 	I32U display_to_base;      // Display timeout base
@@ -721,6 +725,9 @@ typedef struct tagUI_ANIMATION_CTX {
 	
 	// Stopwatch flag
 	BOOLEAN b_stopwatch_first_enter;
+	
+	// Rendering context
+	FRAME_RENDERING_CTX frm_render;
 } UI_ANIMATION_CTX;
 
 typedef enum {
