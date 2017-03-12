@@ -242,11 +242,8 @@ I32U FILE_getFileInfo(I8U f_id, I8U *buf, I32U buf_pos)
 
 			if (f_valid == f_id) {
 				// 1/ get file length
-				buf[buf_pos++] = (root_item.size >> 24) & 0xff;
-				buf[buf_pos++] = (root_item.size >> 16) & 0xff;
-				buf[buf_pos++] = (root_item.size >> 8) & 0xff;
-				buf[buf_pos++] = root_item.size & 0xff;
-
+				buf_pos += BASE_dword_encode(root_item.size, buf+buf_pos);
+				
 				// 2/ Get file CRC
 				buf[buf_pos++] = (root_item.crc>>8) & 0xff;
 				buf[buf_pos++] = root_item.crc & 0xff;

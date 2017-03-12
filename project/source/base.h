@@ -28,5 +28,7 @@ I8U BASE_calculate_occurance(I32U in, I8U size);
 I32U CLK_get_system_time(void);
 
 void BASE_delay_msec(I32U uiMSec);
+I32U BASE_dword_decode(I8U *in);
+I8U BASE_dword_encode(I32U in, I8U *out);
 
 #endif

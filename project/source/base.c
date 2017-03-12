@@ -7,6 +7,26 @@
 
 #include "main.h"
 
+I32U BASE_dword_decode(I8U *in)
+{
+	I32U out = *in;
+	out <<= 8;
+	out |= *(in+1);
+	out <<= 8;
+	out |= *(in+2);
+	out <<= 8;
+	out |= *(in+3);
+	return out;
+}
+
+I8U BASE_dword_encode(I32U in, I8U *out)
+{
+	*out = (I8U) ((in & 0xFF000000) >> 24);
+	*(out+1) = (I8U) ((in & 0x00FF0000) >> 16);
+	*(out+2) = (I8U) ((in & 0x0000FF00) >> 8);
+	*(out+3) = (I8U) ((in & 0x000000FF) >> 0);
+	return 4;
+}
 
 I32S BASE_abs(I32S a) {
   	if (a>=0) {

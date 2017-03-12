@@ -128,7 +128,6 @@ void RTC_hw_init()
 	// Get current local minute
 	cling.time.local_day = cling.time.local.day;
 	cling.time.local_minute = cling.time.local.minute;
-
 }
 
 void RTC_minute_int_service()

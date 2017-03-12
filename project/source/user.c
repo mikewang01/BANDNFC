@@ -15,6 +15,8 @@
 #include "main.h"
 #include "pedo.h"
 
+#define USER_SPRINTF Y_SPRINTF
+
 static BOOLEAN _is_idle_alert_allowed()
 {	
 	if (OTA_if_enabled()) {
@@ -213,7 +215,7 @@ void USER_setup_profile(I8U *data)
 		return;
 	}
 	
-	Y_SPRINTF("[USER] PROFILE1: %d, %d, %d, %d", p->height_in_cm, p->weight_in_kg, p->stride_in_cm, p->stride_running_in_cm);
+	USER_SPRINTF("[USER] PROFILE1: %d, %d, %d, %d", p->height_in_cm, p->weight_in_kg, p->stride_in_cm, p->stride_running_in_cm);
 	
 	p->metric_distance = *pdata++; // Metric unit for distance
 	
@@ -223,7 +225,7 @@ void USER_setup_profile(I8U *data)
 	memcpy(p->name, pdata, p->name_len); // user name
 	pdata += p->name_len;
 
-	Y_SPRINTF("[USER] PROFILE2: %d, %d, %s", p->metric_distance, p->name_len, p->name);
+	USER_SPRINTF("[USER] PROFILE2: %d, %d, %s", p->metric_distance, p->name_len, p->name);
 
 	cling.ui.clock_orientation = *pdata++; // Clock face orientation
 	
@@ -233,7 +235,8 @@ void USER_setup_profile(I8U *data)
 	p->bed_mm = *pdata++;
 	p->wakeup_hh = *pdata++;
 	p->wakeup_mm = *pdata++;
-	Y_SPRINTF("[USER] PROFILE3: %d, %d, %d, %d, %d, %d", cling.ui.clock_orientation, 
+	USER_SPRINTF("[USER] PROFILE3: %d, %d, %d, %d, %d, %d", 
+		cling.ui.clock_orientation, 
 		p->sleep_dow,
 		p->bed_hh,
 		p->bed_mm,
@@ -250,52 +253,43 @@ void USER_setup_profile(I8U *data)
 	
 	p->age = *pdata++;  // Running page display options
 	
-	Y_SPRINTF("[USER] PROFILE4: %02x, %02x, %02x, %02x, (age: %d)", 
-		p->regular_page_display_1, p->touch_vibration, p->mileage_limit, p->running_page_display, p->age);
+	USER_SPRINTF("[USER] PROFILE4: 0x%02x, 0x%02x, 0x%02x, 0x%02x, (age: %d)", 
+		p->regular_page_display_1, 
+		p->touch_vibration, 
+		p->mileage_limit, 
+		p->running_page_display, 
+		p->age);
 
 	p->sex = *pdata++;
 	user_info = *pdata++; // stride for running
 	user_info |= (*pdata++)<<8; // 
 	p->stride_treadmill_in_cm = user_info;
 	p->max_hr_alert = *pdata++;
-	Y_SPRINTF("[USER] PROFILE5: %02x, %02x, %02x, ", 
-		p->sex, p->stride_treadmill_in_cm, p->max_hr_alert);
+	USER_SPRINTF("[USER] PROFILE5: 0x%02x, %d, %d, ", 
+		p->sex, 
+		p->stride_treadmill_in_cm, 
+		p->max_hr_alert);
 		
 	// Add more page settings for regular home pages
 	p->regular_page_display_2 = *pdata++;
-	Y_SPRINTF("[USER] PROFILE regular page display 2 :%02x",p->regular_page_display_2);
+	USER_SPRINTF("[USER] PROFILE regular page display 2 :0x%02x",p->regular_page_display_2);
 	
 	// Training alert (Pace / HR alarm zone)
 	p->training_alert = *pdata++;
 	
 	// App setting
 	p->app_setting = *pdata++;
-	Y_SPRINTF("[USER] PROFILE range&setting: %02x :%02x", p->training_alert, p->app_setting);
+	USER_SPRINTF("[USER] PROFILE range&setting: 0x%02x :0x%02x", 
+		p->training_alert, 
+		p->app_setting);
 	
 	// Running Rate
 	p->running_rate = *pdata++;
-	Y_SPRINTF("[USER] Running rate: %d", p->running_rate);
+	USER_SPRINTF("[USER] Running rate: %d", p->running_rate);
 	// If running rate is less than 150, which is unrealistic number, set to 172
 	if (p->running_rate < 150) 
 		p->running_rate = 172;
 }
-
-#if 0
-static __INLINE I32U _get_dword_value(I8U *pdata)
-{
-	I32U value;
-	
-	value = pdata[0]; // day interval
-	value <<= 8; // 
-	value |= pdata[1]; // 
-	value <<= 8; // 
-	value |= pdata[2]; // 
-	value <<= 8; // 
-	value |= pdata[3]; // 
-	
-	return value;
-}
-#endif
 
 void USER_setup_device(I8U *data)
 {
@@ -351,12 +345,12 @@ void USER_setup_device(I8U *data)
 	u->b_navigation_wrist_shake = *pdata++;
 	u->b_navigation_wrist_shake = FALSE;// NOT used
 
-	Y_SPRINTF("[USER] DEVICE1: %d,%d,%d,%d", 
+	USER_SPRINTF("[USER] DEVICE1: %d,%d,%d,%d", 
 		u->ppg_day_interval,
 		u->ppg_night_interval,
 		u->skin_temp_day_interval,
 		u->skin_temp_night_interval);
-	Y_SPRINTF("[USER] DEVICE2: %d,%d,%d,%d,%d,%d",
+	USER_SPRINTF("[USER] DEVICE2: %d,%d,%d,%d,%d,%d",
 		u->b_screen_wrist_flip,
 		u->b_screen_press_hold_1,
 		u->b_screen_press_hold_3,
@@ -380,7 +374,10 @@ void USER_setup_device(I8U *data)
 	// Do not reset idle alert state machine during data sync
 	// u->idle_state = IDLE_ALERT_STATE_IDLE;
 
-	Y_SPRINTF("[USER] DEVICE3: %d, %d, %d", u->idle_time_in_minutes, u->idle_time_start, u->idle_time_end);
+	USER_SPRINTF("[USER] DEVICE3: %d, %d, %d", 
+		u->idle_time_in_minutes, 
+		u->idle_time_start, 
+		u->idle_time_end);
 
 	u->screen_on_general = *pdata++;
 	if (u->screen_on_general == 0xff) {
@@ -400,7 +397,7 @@ void USER_setup_device(I8U *data)
 	}
 	u->b_reminder_off_weekends = *pdata++;
 	
-	Y_SPRINTF("[USER] DEVICE4: %d,%d,%d,%d,%d\n", 
+	USER_SPRINTF("[USER] DEVICE4: %d,%d,%d,%d,%d\n", 
 		u->screen_on_general, 
 		u->screen_on_heart_rate, 
 		cling.sleep.m_sensitive_mode, 

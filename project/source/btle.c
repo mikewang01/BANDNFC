@@ -18,6 +18,8 @@ extern int8_t ancs_master_handle;
 
 #endif
 
+#define _BTLE_LOG N_SPRINTF
+
 ///////////////////////////////
 // SPEED 
 //   Low: 
@@ -193,7 +195,7 @@ void BTLE_disconnect(I8U reason)
 	BLE_CTX *r = &cling.ble;
 	uint32_t err_code;
 	
-	Y_SPRINTF("[BTLE] disconnect BLE for reason: %d", reason);
+	_BTLE_LOG("[BTLE] disconnect BLE for reason: %d", reason);
 	
 	err_code = sd_ble_gap_disconnect(r->conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION ); //BLE_HCI_STATUS_CODE_SUCCESS);
 	APP_ERROR_CHECK(err_code);
@@ -222,7 +224,7 @@ static void _on_connect(ble_evt_t * p_ble_evt)
 	cling.system.conn_params_update_ts = CLK_get_system_time();
 	sd_ble_tx_buffer_count_get(&r->tx_buf_available);
 	
-	Y_SPRINTF("[BTLE] Connected! ");
+	_BTLE_LOG("[BTLE] Connected! ");
 }
 #endif
 /**@brief Function for handling the Disconnect event.
@@ -235,7 +237,7 @@ static void _on_disconnect()
   r->conn_handle = BLE_CONN_HANDLE_INVALID;
 	r->btle_State = BTLE_STATE_DISCONNECTED;
 	
-  Y_SPRINTF("[BTLE] disconnected! ");
+  _BTLE_LOG("[BTLE] disconnected! ");
 	
 	// Clear all BTLE states
 	_radio_state_cleanup();
@@ -251,7 +253,7 @@ static void _on_disconnect()
 	
 	if (OTA_if_enabled()) {
 		
-		N_SPRINTF("[BTLE] reboot if BLE disconnected in middle of OTA! ");
+		_BTLE_LOG("[BTLE] reboot if BLE disconnected in middle of OTA! ");
 	
 		SYSTEM_restart_from_reset_vector();
 	}
@@ -306,17 +308,6 @@ static void _on_write(ble_evt_t * p_ble_evt)
 	if(i > 7){
 			return;
 	}
-//	if (r->char_handles[4].value_handle == p_evt_write->handle) {
-//		rec_buf[1] = 0xe5;
-//	} else if (r->char_handles[5].value_handle == p_evt_write->handle) {
-//		rec_buf[1] = 0xe6;
-//	} else if (r->char_handles[6].value_handle == p_evt_write->handle) {
-//		rec_buf[1] = 0xe7;
-//	} else if (r->char_handles[7].value_handle == p_evt_write->handle) {
-//		rec_buf[1] = 0xe8;
-//	} else {
-//		return;
-//	}
 
 	// Fill up the rest of packet
 	for (i = 0; i < 20; i++) {
@@ -337,7 +328,7 @@ void BTLE_execute_adv(BOOLEAN b_fast)
 #if 0
 	if (!BATT_is_charging()) {
 		if (BATT_is_low_battery() && LINK_is_authorized()) {
-				Y_SPRINTF("[BTLE] BLE low power");
+				_BTLE_LOG("[BTLE] BLE low power");
 				r->btle_State = BTLE_STATE_IDLE;
 				return;
 		}
@@ -356,7 +347,7 @@ void BTLE_execute_adv(BOOLEAN b_fast)
 
 	r->btle_State = BTLE_STATE_ADVERTISING;
 	
-	Y_SPRINTF("[BTLE] start advertising.");
+	_BTLE_LOG("[BTLE] start advertising.");
 }
             
 void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
@@ -385,7 +376,7 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
 			break;
 
 		case BLE_GAP_EVT_AUTH_STATUS:
-			Y_SPRINTF("[BLE] AUTH GAP EVT - write CCCD");
+			_BTLE_LOG("[BLE] AUTH GAP EVT - write CCCD");
 			break;
 
 		case BLE_GAP_EVT_TIMEOUT:
@@ -395,10 +386,10 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
 				if (r->btle_State == BTLE_STATE_ADVERTISING) {
 					if ((r->adv_mode == BLE_ADV_SLEEP) || (!cling.system.b_powered_up)) {
 						r->btle_State = BTLE_STATE_IDLE;
-						Y_SPRINTF("[BTLE] Advertising timeout, go idle");
+						_BTLE_LOG("[BTLE] Advertising timeout, go idle");
 					} else {
 						BTLE_execute_adv(FALSE);
-						Y_SPRINTF("[BTLE] Advertising timeout, repeat advertising");
+						_BTLE_LOG("[BTLE] Advertising timeout, repeat advertising");
 					}
 				} 
 			}
@@ -408,7 +399,7 @@ void BTLE_on_ble_evt(ble_evt_t * p_ble_evt)
 		case BLE_GATTS_EVT_TIMEOUT:
 			// Disconnect on GATT Server and Client timeout events.
 			
-			Y_SPRINTF("[BTLE] GATTS - BLE disconnect");
+			_BTLE_LOG("[BTLE] GATTS - BLE disconnect");
 			if(BTLE_is_connected())
 				BTLE_disconnect(BTLE_DISCONN_REASON_GATT_TIMEOUT);
 			break;
@@ -451,17 +442,6 @@ BOOLEAN BTLE_Send_Packet(I8U *data, I8U len)
 	if(ch_idx > 3){
 			return FALSE;
 	}
-//	if (data[1] == 0xe1) {
-//		ch_idx = 0;
-//	} else if (data[1] == 0xe2) {
-//		ch_idx = 1;
-//	} else if (data[1] == 0xe3) {
-//		ch_idx = 2;
-//	} else if (data[1] == 0xe4) {
-//		ch_idx = 3;
-//	} else {
-//		return FALSE;
-//	}
 	
 	hvx_len = len-2;
 
@@ -611,7 +591,7 @@ uint32_t get_flash_minute_activity_offset()
 	I32U offset = data_sended_offset;
 	I32U dw_buf[4];
 	uint32_t epoch_file_count = FILE_exists_with_prefix((I8U *)"epoch", 5);
-	Y_SPRINTF("[TRACKING] epoch file number = %d", epoch_file_count);
+	_BTLE_LOG("[TRACKING] epoch file number = %d", epoch_file_count);
 	/*if a buffered file existed in file system this means this device has not been synced for days*/
 	if(epoch_file_count > 0){
 			return ((epoch_file_count*4096)/sizeof(MINUTE_TRACKING_CTX));
@@ -631,7 +611,7 @@ uint32_t get_flash_minute_activity_offset()
 		}
 		offset += sizeof(MINUTE_TRACKING_CTX);		
 	}
-	Y_SPRINTF("[TRACKING] stored_offset = %d : data_sended_offset = %d", stored_offset, data_sended_offset);
+	_BTLE_LOG("[TRACKING] stored_offset = %d : data_sended_offset = %d", stored_offset, data_sended_offset);
 	/*if glitch happened*/
 	if(data_sended_offset > stored_offset || data_sended_offset >= SYSTEM_TRACKING_SPACE_SIZE){
 			data_sended_offset = 0;
@@ -649,7 +629,7 @@ static void _disconnect_clean_up()
 #ifndef _CLING_PC_SIMULATION_
 	// Reboot
 	if (r->disconnect_evt & BLE_DISCONN_EVT_REBOOT) {
-		Y_SPRINTF("[BTLE] disconn event: reboot");
+		_BTLE_LOG("[BTLE] disconn event: reboot");
 		
 		// clear factory reset flag
 		r->disconnect_evt &= ~BLE_DISCONN_EVT_REBOOT;
@@ -661,7 +641,7 @@ static void _disconnect_clean_up()
 	}
 	
 	if (r->disconnect_evt & BLE_DISCONN_EVT_BONDMGR_ERROR) {
-		Y_SPRINTF("[BTLE] disconn event: bond error");
+		_BTLE_LOG("[BTLE] disconn event: bond error");
 		
 		// clear factory reset flag
 		r->disconnect_evt &= ~BLE_DISCONN_EVT_BONDMGR_ERROR;		
@@ -677,13 +657,13 @@ static void _disconnect_clean_up()
 		
 	// Factory reset
 	if (r->disconnect_evt & BLE_DISCONN_EVT_FACTORY_RESET) {
-		Y_SPRINTF("[BTLE] disconn event: factory reset");
-
+		_BTLE_LOG("[BTLE] disconn event: factory reset");
+ 
     // Have to conflict with Music control.		
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_PACE_MODEL_)			
 	  // Clear bond information
 	  HAL_device_manager_init(TRUE);		
-#endif
+#endif		
 		
 		// De-authorize
 		LINK_deauthorize();
@@ -714,7 +694,7 @@ static void _disconnect_clean_up()
 	
 	// If BLE disconnects in middle of OTA, restart the device
 	if (OTA_if_enabled()) {
-		Y_SPRINTF("[BTLE] OTA reboot at end of disconnect clean-up");
+		_BTLE_LOG("[BTLE] OTA reboot at end of disconnect clean-up");
 		SYSTEM_restart_from_reset_vector();
 	}
 }
@@ -727,7 +707,7 @@ BOOLEAN BTLE_streaming_authorized()
 	// Nothing gets streamed out if OTA is turned on
 	if (OTA_if_enabled()) {
 		if (t_curr > (r->packet_received_ts + 10000)) {
-			Y_SPRINTF("[BTLE] OTA no response for 10 seconds -> reboot ");
+			_BTLE_LOG("[BTLE] OTA no response for 10 seconds -> reboot ");
 			SYSTEM_restart_from_reset_vector();
 		}
 		return FALSE;
@@ -769,7 +749,7 @@ BOOLEAN BTLE_streaming_authorized()
 		// If elapsed time is greater than 1 hour, switch to fast mode.
 		if ((t_curr > (r->streaming_ts + 3600000)) || (r->streaming_ts == 0)) {
 			if (HAL_set_conn_params(TRUE)) {
-				Y_SPRINTF("Streaming starts: FAST Connection interval");
+				_BTLE_LOG("Streaming starts: FAST Connection interval");
 			}
 		}
 		#endif
@@ -834,7 +814,7 @@ void BTLE_update_streaming_minute_entries()
 	//
 	r->streaming_minute_file_amount = FILE_exists_with_prefix((I8U *)"epoch", 5);
 	r->streaming_minute_file_index = 0;
-	Y_SPRINTF("Streaming amount, flash: %d, file: %d", r->streaming_minute_scratch_amount, r->streaming_minute_file_amount);
+	_BTLE_LOG("Streaming amount, flash: %d, file: %d", r->streaming_minute_scratch_amount, r->streaming_minute_file_amount);
 	if (r->streaming_minute_file_amount)
 	{
 		// Get the start address and reset entry index

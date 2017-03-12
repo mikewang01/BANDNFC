@@ -18,32 +18,7 @@
 
 //#define _JACOB_TESTING_
 
-
-static uint32_t LD_I32U_FROM_BIG_EDIEN_SRTEAM(I8U *ptr)
-{
-	I32U v32b;
-	
-	v32b = *(ptr);
-	v32b <<= 8;
-	v32b |= *(ptr+1);
-	v32b <<= 8;
-	v32b |= *(ptr+2);
-	v32b <<= 8;
-	v32b |= *(ptr+3);
-	
-	return v32b;
-}
-
-
-static uint16_t BD_BIG_EDIEN_SRTEAM_FROM_I32U(I8U *ptr, uint32_t data)
-{
-	
-	ptr[0] = (data >> 24) & 0xff;
-	ptr[1] = (data >> 16) & 0xff;
-  ptr[2] = (data >> 8) & 0xff;
-	ptr[3] = (data) & 0xff;
-	return 4;
-}
+#define CP_SPRINTF N_SPRINTF
 
 static void _sync_time_proc(I8U *data)
 {
@@ -54,14 +29,7 @@ static void _sync_time_proc(I8U *data)
 		previous_time_zone = cling.time.time_zone;
     cling.time.time_zone = data[0];
 
-    cling.time.time_since_1970 = LD_I32U_FROM_BIG_EDIEN_SRTEAM(&data[1]);
-
-//    cling.time.time_since_1970 <<= 8;
-//    cling.time.time_since_1970 |= data[2];
-//    cling.time.time_since_1970 <<= 8;
-//    cling.time.time_since_1970 |= data[3];
-//    cling.time.time_since_1970 <<= 8;
-//    cling.time.time_since_1970 |= data[4];
+    cling.time.time_since_1970 = BASE_dword_decode(data+1);
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
 		RTC_set_current_epoch(cling.time.time_since_1970);
@@ -78,32 +46,12 @@ static void _sync_time_proc(I8U *data)
 		if (previous_time_zone == cling.time.time_zone)
 			return;
 			
-		// Make sure the minute file has correct offset	
-		// Update running statistics as well
-#ifdef _ENABLE_UART_
-		{
-			I32U minute_flash_offset;
-			// Make sure the minute file has correct offset
-			minute_flash_offset = TRACKING_get_daily_total(&stored_day_total);
-
-			Y_SPRINTF("[CP] time sync !! - %d (minute), %d, %d", minute_flash_offset, cling.time.time_zone, cling.time.time_since_1970);
-		}
-#else
 		TRACKING_get_daily_total(&stored_day_total);
-#endif
+		CP_SPRINTF("[CP] time sync !! @ %d, %d", cling.time.time_zone, cling.time.time_since_1970);
 		
 		// Update stored total
 		memcpy(&cling.activity.day, &stored_day_total, sizeof(stored_day_total));
-//		cling.activity.day.walking = stored_day_total.walking;
-//		cling.activity.day.running = stored_day_total.running;
-//		cling.activity.day.distance = stored_day_total.distance;
-//		cling.activity.day.calories = stored_day_total.calories;
-//		cling.activity.day.active_time = stored_day_total.active_time;
 		memcpy(&cling.activity.day_stored, &stored_day_total, sizeof(stored_day_total) - sizeof(stored_day_total.active_time));
-//		cling.activity.day_stored.walking = stored_day_total.walking;
-//		cling.activity.day_stored.running = stored_day_total.running;
-//		cling.activity.day_stored.distance = stored_day_total.distance;
-//		cling.activity.day_stored.calories = stored_day_total.calories;
 		
 		// Last, update local day since time zone is changed
 		cling.time.local_day = cling.time.local.day;
@@ -251,11 +199,7 @@ static void _create_file_list_msg()
         // Add checksum to the end
         for (i = 0; i < t->msg_filling_offset; i++)
             t->msg_checksum += t->msg[i];
-				  t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], t->msg_checksum);		
-//        t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 24) & 0xff;
-//        t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 16) & 0xff;
-//        t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 8) & 0xff;
-//        t->msg[t->msg_filling_offset++] = t->msg_checksum & 0xff;
+				t->msg_filling_offset+= BASE_dword_encode(t->msg_checksum, t->msg+t->msg_filling_offset);
 
         memcpy(t->pkt.data, t->msg, t->msg_filling_offset);
 
@@ -282,11 +226,7 @@ static void _create_file_list_msg()
             t->msg_checksum += t->msg[i];
 
         if (t->msg_file_id == t->msg_file_total) {
-						t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], t->msg_checksum);
-//            t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 24) & 0xff;
-//            t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 16) & 0xff;
-//            t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 8) & 0xff;
-//            t->msg[t->msg_filling_offset++] = t->msg_checksum & 0xff;
+						t->msg_filling_offset += BASE_dword_encode(t->msg_checksum, t->msg+t->msg_filling_offset);
 
             // Relase MUTEX as we get to the end of a file list
             SYSTEM_release_mutex(MUTEX_IOS_LOCK_VALUE);
@@ -375,11 +315,8 @@ static void _create_dev_info_msg()
     BTLE_get_radio_software_version(t->msg + t->msg_filling_offset);
     t->msg_filling_offset++;
     // File system free space
-		t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], free);
-//    t->msg[t->msg_filling_offset++] = (free >> 24) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (free >> 16) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (free >> 8) & 0xff;
-//    t->msg[t->msg_filling_offset++] = free & 0xff;
+		t->msg_filling_offset += BASE_dword_encode(free, t->msg+t->msg_filling_offset);
+		
     // Available files in the CLING
     t->msg[t->msg_filling_offset++] = (file_available >> 8) & 0xff;
     t->msg[t->msg_filling_offset++] = file_available & 0xff;
@@ -408,17 +345,9 @@ static void _create_dev_info_msg()
     t->msg[t->msg_filling_offset++] = (pPairing->crc >> 8) & 0xFF;
     t->msg[t->msg_filling_offset++] = pPairing->crc & 0xFF;
     // USER ID: 4 B
-		t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], pPairing->userID);
-//    t->msg[t->msg_filling_offset++] = (pPairing->userID >> 24) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (pPairing->userID >> 16) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (pPairing->userID >> 8) & 0xff;
-//    t->msg[t->msg_filling_offset++] = pPairing->userID & 0xff;
+		t->msg_filling_offset+= BASE_dword_encode(pPairing->userID, t->msg+t->msg_filling_offset);
     // EPOCH: 4 B
-		t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], pPairing->epoch);
-//    t->msg[t->msg_filling_offset++] = (pPairing->epoch >> 24) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (pPairing->epoch >> 16) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (pPairing->epoch >> 8) & 0xff;
-//    t->msg[t->msg_filling_offset++] = pPairing->epoch & 0xff;
+		t->msg_filling_offset+= BASE_dword_encode(pPairing->epoch, t->msg+t->msg_filling_offset);
 
     // Device info 20 bytes
     SYSTEM_get_dev_id(dev_data);
@@ -426,38 +355,54 @@ static void _create_dev_info_msg()
         t->msg[t->msg_filling_offset++] = dev_data[i];
 
     // Add system reset count
-		t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], (uint32_t)cling.system.reset_count);
-//    t->msg[t->msg_filling_offset++] = 0;
-//    t->msg[t->msg_filling_offset++] = 0;
-//    t->msg[t->msg_filling_offset++] = (cling.system.reset_count >> 8) & 0xff;
-//    t->msg[t->msg_filling_offset++] = cling.system.reset_count & 0xff;
+    t->msg[t->msg_filling_offset++] = 0;
+    t->msg[t->msg_filling_offset++] = 0;
+    t->msg[t->msg_filling_offset++] = (cling.system.reset_count >> 8) & 0xff;
+    t->msg[t->msg_filling_offset++] = cling.system.reset_count & 0xff;
 
 #ifdef _CLINGBAND_NFC_MODEL_
-		char *dev_model_p = "AU0923";
     // Add model number (Clingband NFC fixed model number: AU0923)
 		// Created on September 23, 2015
+    t->msg[t->msg_filling_offset++] = 'A';
+    t->msg[t->msg_filling_offset++] = 'U';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '9';
+    t->msg[t->msg_filling_offset++] = '2';
+    t->msg[t->msg_filling_offset++] = '3';
 #endif
 
 #ifdef _CLINGBAND_UV_MODEL_
-		char *dev_model_p = "AU0703";
     // Add model number (Clingband UV fixed model number: AU0703)
+    t->msg[t->msg_filling_offset++] = 'A';
+    t->msg[t->msg_filling_offset++] = 'U';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '7';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '3';
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
-		char *dev_model_p = "AP0831";
     // Add model number (Clingband pace fixed model number: AP0831)
 		// Created on August, 31, 2016
+    t->msg[t->msg_filling_offset++] = 'A';
+    t->msg[t->msg_filling_offset++] = 'P';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '8';
+    t->msg[t->msg_filling_offset++] = '3';
+    t->msg[t->msg_filling_offset++] = '1';
 #endif
 
 #ifdef _CLINGBAND_2_PAY_MODEL_
-		char *dev_model_p = "AI0913";
     // Add model number (Clingband 2 Pay fixed model number: AI0913)
 		// Created on Semptem 13, 2016
+    t->msg[t->msg_filling_offset++] = 'A';
+    t->msg[t->msg_filling_offset++] = 'I';
+    t->msg[t->msg_filling_offset++] = '0';
+    t->msg[t->msg_filling_offset++] = '9';
+    t->msg[t->msg_filling_offset++] = '1';
+    t->msg[t->msg_filling_offset++] = '3';
 #endif
-		// move model number to send buffer space
-		memcpy(&t->msg[t->msg_filling_offset], dev_model_p, strlen(dev_model_p));
-		t->msg_filling_offset += strlen(dev_model_p);
-		
+
     // Amount of minute streaming files
     t->msg[t->msg_filling_offset++] = FILE_exists_with_prefix((I8U *)"epoch", 5);
 
@@ -465,14 +410,13 @@ static void _create_dev_info_msg()
 		sd_ble_gap_address_get(&mac_addr_t);
 
 		t->msg[t->msg_filling_offset++] = 0x69;
-		memcpy(&(t->msg[t->msg_filling_offset]), mac_addr_t.addr, sizeof(mac_addr_t.addr));
-//		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[0];
-//		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[1];
-//		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[2];
-//		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[3];
-//		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[4];
-//		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[5];
-		t->msg_filling_offset += sizeof(mac_addr_t.addr);
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[0];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[1];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[2];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[3];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[4];
+		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[5];
+
     t->msg_len = t->msg_filling_offset;
 
     // Get message length (fixed length: 2 bytes)
@@ -530,17 +474,9 @@ static void _create_daily_activity_info_msg()
     // Type
     t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_LOAD_DAILY_ACTIVITY;
     // Steps
-		t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], day_streaming.steps);
-//    t->msg[t->msg_filling_offset++] = (day_streaming.steps >> 24) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (day_streaming.steps >> 16) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (day_streaming.steps >> 8) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (day_streaming.steps & 0xff);
+		t->msg_filling_offset += BASE_dword_encode(day_streaming.steps, t->msg+t->msg_filling_offset);
     // distance
-		t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&t->msg[t->msg_filling_offset], day_streaming.distance);
-//    t->msg[t->msg_filling_offset++] = (day_streaming.distance >> 24) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (day_streaming.distance >> 16) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (day_streaming.distance >> 8) & 0xff;
-//    t->msg[t->msg_filling_offset++] = (day_streaming.distance & 0xff);
+		t->msg_filling_offset += BASE_dword_encode(day_streaming.distance, t->msg+t->msg_filling_offset);
     // calorie active
     t->msg[t->msg_filling_offset++] = (day_streaming.calories_active >> 8) & 0xff;
     t->msg[t->msg_filling_offset++] = (day_streaming.calories_active & 0xff);
@@ -701,10 +637,10 @@ static void _write_file_to_fs_rest(I8U *data)
         if (OTA_if_enabled()) {
             if (cling.ota.file_len == 0) {
                 cling.ota.file_len = r->msg_file_len;
-				Y_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
+				CP_SPRINTF("[CP] OTA file len re-init: %d", r->msg_file_len);
 			} else {
 				cling.ota.percent = (I8U)(((cling.ota.file_len-r->msg_file_len)*100)/cling.ota.file_len);
-				Y_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
+				CP_SPRINTF("[CP] ota: %d curr: %d, all: %d", cling.ota.percent, r->msg_file_len, cling.ota.file_len);
             }
         }
     } else {
@@ -735,16 +671,10 @@ static void _write_file_to_fs_head(BYTE *data)
     I32U len;
     I8U *pd = data;
     I8U f_buf[128];
+
     // 4 BYTES - file length
-		r->msg_file_len =  LD_I32U_FROM_BIG_EDIEN_SRTEAM(pd);
-		pd += sizeof(r->msg_file_len);
-//    r->msg_file_len = *pd++;
-//    r->msg_file_len <<= 8;
-//    r->msg_file_len += *pd++;
-//    r->msg_file_len <<= 8;
-//    r->msg_file_len += *pd++;
-//    r->msg_file_len <<= 8;
-//    r->msg_file_len += *pd++;
+    r->msg_file_len = BASE_dword_decode(pd);
+    pd += 4;
 
     // If OTA is enabled, go ahead to initalize the percentage
     if (OTA_if_enabled()) {
@@ -773,16 +703,16 @@ static void _write_file_to_fs_head(BYTE *data)
     } else if (!strcmp((char *)"ota_start.txt", (char *)f_buf)) {
         r->b_ota_start = TRUE;
         r->b_reload_profile = FALSE;
-        Y_SPRINTF("[CP] OTA start text file received");
+        CP_SPRINTF("[CP] OTA start text file received");
     } else if (!strcmp((char *)"app.bin", (char *)f_buf)) {
         // App central start to download 'app.bin', which is a clear indicattor of OTA
         OTA_set_state(TRUE);
         //
-        Y_SPRINTF("[CP] Start download app.bin, set OTA flag");
+        CP_SPRINTF("[CP] Start download app.bin, set OTA flag");
 
         if (cling.ota.file_len == 0) {
             cling.ota.file_len = r->msg_file_len;
-            Y_SPRINTF("[CP] Initialize OTA file len: %d", r->msg_file_len);
+            CP_SPRINTF("[CP] Initialize OTA file len: %d", r->msg_file_len);
         }
     } else {
         r->b_reload_profile = FALSE;
@@ -868,7 +798,7 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_FILE_LOAD_LIST: {
-            Y_SPRINTF("[CP] load file list");
+            CP_SPRINTF("[CP] load file list");
             // When iOS get MUTEX, it also rely on iOS to release MUTEX, or MCU release it when turning off the radio
             if (!SYSTEM_get_mutex(MUTEX_IOS_LOCK_VALUE))
                 return ;
@@ -879,7 +809,7 @@ static void _pending_process()
 					if (HOST_TYPE_NONE != p->msg[1]) {
             cling.gcp.host_type = p->msg[1];
 					}
-					Y_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
+					CP_SPRINTF("[CP] load dev info: %d", cling.gcp.host_type);
 
 					HAL_disconnect_for_fast_connection(SWITCH_SPEED_FOR_DATA_SYNC);
 					_create_dev_info_msg();
@@ -887,32 +817,32 @@ static void _pending_process()
 					break;
         }
         case CP_MSG_TYPE_LOAD_DAILY_ACTIVITY: {
-            Y_SPRINTF("[CP] load daily activity stat");
+            CP_SPRINTF("[CP] load daily activity stat");
             _create_daily_activity_info_msg();
             BTLE_reset_streaming(); //
             break;
         }
         case CP_MSG_TYPE_DEBUG_MSG: {
-            Y_SPRINTF("[CP] debug msg");
+            CP_SPRINTF("[CP] debug msg");
             break;
         }
         case CP_MSG_TYPE_WEATHER: {
-            Y_SPRINTF("[CP] set weather");
+            CP_SPRINTF("[CP] set weather");
             WEATHER_set_weather(p->msg + 1);
             break;
         }
         case CP_MSG_TYPE_USER_REMINDER: {
-            Y_SPRINTF("[CP] Reminder setup - all week");
+            CP_SPRINTF("[CP] Reminder setup - all week");
             REMINDER_setup(p->msg + 1, FALSE);
             break;
         }
-		case CP_MSG_TYPE_DAILY_ALARM: {
-            Y_SPRINTF("[CP] Reminder setup - daily");
-            REMINDER_setup(p->msg + 1, TRUE);
-			break;
-		}
+				case CP_MSG_TYPE_DAILY_ALARM: {
+								CP_SPRINTF("[CP] Reminder setup - daily");
+								REMINDER_setup(p->msg + 1, TRUE);
+					break;
+				}
         case CP_MSG_TYPE_START_OTA: {
-            Y_SPRINTF("[CP] << OTA enabled >>");
+            CP_SPRINTF("[CP] << OTA enabled >>");
             HAL_disconnect_for_fast_connection(SWITCH_SPEED_FOR_FW_UPGRADE);
 
             // Enable over the air update flag, and exit low power mode
@@ -920,7 +850,7 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_REBOOT: {
-            Y_SPRINTF("[CP] reboot");
+            CP_SPRINTF("[CP] reboot");
             SYSTEM_reboot();
             break;
         }
@@ -965,7 +895,7 @@ static void _pending_process()
         }
         case CP_MSG_TYPE_BLE_DISCONNECT: {
             // Disconnect BLE service
-            Y_SPRINTF("[CP] BLE disconnecting ...");
+            CP_SPRINTF("[CP] BLE disconnecting ...");
             if(BTLE_is_connected())
                 BTLE_disconnect(BTLE_DISCONN_REASON_CP_DISCONN);
             break;
@@ -973,7 +903,7 @@ static void _pending_process()
         case CP_MSG_TYPE_SET_ANCS: {
 #ifdef _ENABLE_ANCS_
             if (p->msg[1]) {
-                Y_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
+                CP_SPRINTF("[CP] ANCS mode: enabled, %02x, %02x, %02x", p->msg[1], p->msg[2], p->msg[3]);
                 cling.ancs.supported_categories = p->msg[2];
                 cling.ancs.supported_categories <<= 8;
                 cling.ancs.supported_categories |= p->msg[3];
@@ -982,19 +912,19 @@ static void _pending_process()
             break;
         }
         case CP_MSG_TYPE_SET_LANGUAGE: {
-            Y_SPRINTF("[CP] SET LANGUAGE");
+            CP_SPRINTF("[CP] SET LANGUAGE");
             // Display fonts type.
             cling.ui.language_type = p->msg[1];
             break;
         }
         case CP_MSG_TYPE_SET_USER_PROFILE: {
-            Y_SPRINTF("[CP] SET PROFILE");
+            CP_SPRINTF("[CP] SET PROFILE");
 						USER_device_specifics_setup(p->msg+1, TRUE, FALSE);
             break;
         }
         case CP_MSG_TYPE_ANDROID_NOTIFY: {
 #ifdef _ENABLE_ANCS_
-            Y_SPRINTF("[CP] android notif received");
+            CP_SPRINTF("[CP] android notif received");
             NOTIFIC_smart_phone_notify(p->msg + 1);
 #endif
             break;
@@ -1003,6 +933,11 @@ static void _pending_process()
 						USER_device_specifics_setup(p->msg+1, FALSE, TRUE);
             break;
         }
+				case CP_MSG_TYPE_WORKOUT_CYCLING_DATA: {
+						cling.train_stat.distance = BASE_dword_decode(p->msg+1);
+						cling.train_stat.speed = BASE_dword_decode(p->msg+5);
+						break;
+				}
         default:
             break;
     }
@@ -1066,11 +1001,7 @@ static void _filling_msg_tx_buf()
             }
 
             if (t->msg_file_id == t->msg_file_total) {
-							  t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(& t->msg[t->msg_filling_offset], t->msg_checksum);
-//                t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 24) & 0xff;
-//                t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 16) & 0xff;
-//                t->msg[t->msg_filling_offset++] = (t->msg_checksum >> 8) & 0xff;
-//                t->msg[t->msg_filling_offset++] = t->msg_checksum & 0xff;
+								t->msg_filling_offset += BASE_dword_encode(t->msg_checksum, t->msg+t->msg_filling_offset);
 
                 // Relase MUTEX as we get to the end of a file
                 SYSTEM_release_mutex(MUTEX_IOS_LOCK_VALUE);
@@ -1290,6 +1221,7 @@ void CP_create_workout_run_msg()
 {
     CP_CTX *g = &cling.gcp;
     CP_TX_CTX *t = &g->tx;
+		I8U *pmsg;
 
     // Creat a new message
     t->msg_id ++;
@@ -1302,14 +1234,13 @@ void CP_create_workout_run_msg()
     t->pkt.uuid[1] = UUID_TX_SP & 0xff;
 
     // Filling up the message buffer
-    t->msg_filling_offset = 0;
-    t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_WORKOUT_RUN_MESSAGE;
-	  t->msg_filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(& t->msg[t->msg_filling_offset], cling.run_stat.session_id);
-//    t->msg[t->msg_filling_offset++] = (cling.run_stat.session_id>>24)&0x0ff;
-//    t->msg[t->msg_filling_offset++] = (cling.run_stat.session_id>>16)&0x0ff;
-//    t->msg[t->msg_filling_offset++] = (cling.run_stat.session_id>>8)&0x0ff;
-//    t->msg[t->msg_filling_offset++] = cling.run_stat.session_id&0x0ff;
-    t->msg[t->msg_filling_offset++] = WORKOUT_RUN_OUTDOOR;
+		pmsg = t->msg;
+    *pmsg++ = CP_MSG_TYPE_WORKOUT_RUN_MESSAGE;
+    *pmsg++ = (cling.run_stat.session_id>>24)&0x0ff;
+    *pmsg++ = (cling.run_stat.session_id>>16)&0x0ff;
+    *pmsg++ = (cling.run_stat.session_id>>8)&0x0ff;
+    *pmsg++ = cling.run_stat.session_id&0x0ff;
+    *pmsg++ = WORKOUT_RUN_OUTDOOR;
 
     // Create packet payload
     // Pending message delivery
@@ -1317,6 +1248,8 @@ void CP_create_workout_run_msg()
     t->state = CP_TX_PACKET_PENDING_SEND;
     g->state = CP_MCU_STAT_TX_COMPLETE;
 
+		// Get message length
+    t->msg_filling_offset = pmsg - t->msg;
     memcpy(&t->pkt.id, t->msg, t->msg_filling_offset);
 }
 
@@ -1435,11 +1368,7 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
     }
 
     // Epoch (4B)
-		filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&pkt[filling_offset], pminute->epoch);
-//    pkt[filling_offset++] = (pminute->epoch >> 24) & 0xff;
-//    pkt[filling_offset++] = (pminute->epoch >> 16) & 0xff;
-//    pkt[filling_offset++] = (pminute->epoch >> 8) & 0xff;
-//    pkt[filling_offset++] = pminute->epoch & 0xff;
+		filling_offset += BASE_dword_encode(pminute->epoch, pkt+filling_offset);
 
     RTC_get_local_clock(pminute->epoch, &local);
 
@@ -1582,7 +1511,7 @@ BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
 
             // Check epoch
             pminute_2->epoch &= 0x7fffffff;
-					
+
             // New entry has to have a larger epoch
             if (pminute_2->epoch <= pminute_1->epoch) {
                 N_SPRINTF("[CP] different epoch: %d, %d", pminute_2->epoch, pminute_1->epoch);
@@ -1844,19 +1773,11 @@ void CP_create_streaming_daily_msg( void )
     pkt[filling_offset++] = CP_MSG_TYPE_STREAMING_DAILY;
 
     // Epoch (4B)
-		filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&pkt[filling_offset], cling.time.time_since_1970);	
-//    pkt[filling_offset++] = (cling.time.time_since_1970 >> 24) & 0xff;
-//    pkt[filling_offset++] = (cling.time.time_since_1970 >> 16) & 0xff;
-//    pkt[filling_offset++] = (cling.time.time_since_1970 >> 8) & 0xff;
-//    pkt[filling_offset++] = (cling.time.time_since_1970 & 0xff);
+		filling_offset += BASE_dword_encode(cling.time.time_since_1970, pkt+filling_offset);
 
     // Steps (4B)
     steps = cling.activity.day.running + cling.activity.day.walking;
-		filling_offset += BD_BIG_EDIEN_SRTEAM_FROM_I32U(&pkt[filling_offset], steps);	
-//    pkt[filling_offset++] = (steps >> 24) & 0xff;
-//    pkt[filling_offset++] = (steps >> 16) & 0xff;
-//    pkt[filling_offset++] = (steps >> 8) & 0xff;
-//    pkt[filling_offset++] = (steps & 0xff);
+		filling_offset += BASE_dword_encode(steps, pkt+filling_offset);
 
     // skin temperature (2B)
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)		
