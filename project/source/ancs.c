@@ -26,6 +26,7 @@
 #include "device_manager.h"
 #include "app_error.h"
 
+#define _ANCE_LOG N_SPRINTF
 
 #ifdef _ENABLE_ANCS_
 
@@ -727,7 +728,7 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
 			break;
 		case BLE_ANCS_EVT_DISCOVER_COMPLETE:
 		{
-			Y_SPRINTF("[ANCS] Apple Notification Service discovered on the server.");			
+			_ANCE_LOG("[ANCS] Apple Notification Service discovered on the server.");			
 			// Enable ancs notifiction.
 			_apple_notification_setup();
 			
@@ -747,14 +748,14 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
 			
 			  cling.ancs.parse_time = CLK_get_system_time();	
 
-        Y_SPRINTF("[ANCS] Start sent request to access notify.");					
+        _ANCE_LOG("[ANCS] Start sent request to access notify.");					
 			}				
 			
       break;			
 		}
 		case BLE_ANCS_EVT_DISCOVER_FAILED:
     {    
-			Y_SPRINTF("[ANCS] Apple Notification Service not discovered on the server...");
+			_ANCE_LOG("[ANCS] Apple Notification Service not discovered on the server...");
 		
 			ancs_t_curr =  CLK_get_system_time();		
 	    ancs_t_diff = (ancs_t_curr - ancs_timer);
@@ -796,7 +797,7 @@ void ANCS_state_machine(void)
 		  if (CLK_get_system_time() > (a->dis_time + ANCS_START_SERVICE_DISCOVERY_DELAY_TIME)) {
 		    HAL_start_ancs_service_discovery();	
 			  a->state = BLE_ANCS_STATE_IDLE;
-				Y_SPRINTF("[ANCS] start ancs service discovery");
+				_ANCE_LOG("[ANCS] start ancs service discovery");
 		  }
 		  break;		
 		}		
@@ -809,7 +810,7 @@ void ANCS_state_machine(void)
 		}
 		case BLE_ANCS_STATE_STORE_NOTIF_ATTRIBUTE:
 		{
-			Y_SPRINTF("[ANCS] Start store the specific content of notify.");	
+			_ANCE_LOG("[ANCS] Start store the specific content of notify.");	
 			// Store notifiction data to nflash.
 		  _ancs_store_attrs_pro();	
 			a->state = BLE_ANCS_STATE_IDLE;
