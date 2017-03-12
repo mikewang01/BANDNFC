@@ -18,6 +18,8 @@
 
 //#define AUTO_AUTHENTICATE 1
 
+#define LINK_SPRINTF N_SPRINTF
+
 const I8U _bytesInFlash2[2] = {0xFF,0xDC};
 
 const I8U LINK_VERSION_STRING[]= ",1.0,";
@@ -564,7 +566,7 @@ void LINK_init()
 	
 	FLASH_Read_App(SYSTEM_LINK_SPACE_START, (I8U *)a, sizeof(PAIRING_CTX));
 	
-	Y_SPRINTF("[LINK] %x, %x, %x", a->authToken, a->crc, a->userID);
+	LINK_SPRINTF("[LINK] %x, %x, %x", a->authToken, a->crc, a->userID);
 	
 	// Initialize all communciation context
 	acc->error_code = NO_ERROR;

@@ -11,13 +11,15 @@
 #ifndef _CLING_PC_SIMULATION_
 #include "crc_abs.h"
 
+#define _OTA_LOG N_SPRINTF
+
 static void _start_OTA()
 {
     FILE_CTX *fc;
     I32U data;
     uint32_t *config;
 
-    Y_SPRINTF("[OTA] perform OTA, initialize all the parameters, and go reboot");
+    _OTA_LOG("[OTA] perform OTA, initialize all the parameters, and go reboot");
 
     // Clean up the setting page
     SYSFLASH_drv_page_erasure(255);
@@ -30,7 +32,7 @@ static void _start_OTA()
     if(crc16_origin == crc16_check) {
         N_SPRINTF("[OTA] nor flash crc checkout sucessfully");
     } else {
-        Y_SPRINTF("[OTA] failed to checkout flash crc ");
+        _OTA_LOG("[OTA] failed to checkout flash crc ");
         /*skip */
         goto failed;
     }
@@ -41,7 +43,7 @@ static void _start_OTA()
     SYSFLASH_drv_write(config, &data, 1);
 
     if(*config != data) {
-        Y_SPRINTF("[OTA] failed to write start address writed ");
+        _OTA_LOG("[OTA] failed to write start address writed ");
         /*skip following steps*/
         goto failed;
     }
@@ -52,11 +54,11 @@ static void _start_OTA()
     data = fc->size;
     SYSFLASH_drv_write(config, &data, 1);
     if(*config != data) {
-        Y_SPRINTF("[OTA] failed to write file length ");
+        _OTA_LOG("[OTA] failed to write file length ");
         /*skip following steps*/
         goto failed;
     }
-    Y_SPRINTF("[OTA] file length: %d", data);
+    _OTA_LOG("[OTA] file length: %d", data);
 
     FILE_fclose(fc);
 
@@ -69,14 +71,14 @@ static void _start_OTA()
     config = (uint32_t *)APP_UPDATE_FLAG_ENABLE;
     SYSFLASH_drv_write(config, &data, 1);
     if(*config != data) {
-        Y_SPRINTF("[OTA] failed to write start updating flag ");
+        _OTA_LOG("[OTA] failed to write start updating flag ");
         /*skip following steps*/
         goto failed;
     }
     // Release NOR flash power down before rebooting the device
     NOR_releasePowerDown();
 
-    Y_SPRINTF("[OTA] Reboot to upgrade firmware");
+    _OTA_LOG("[OTA] Reboot to upgrade firmware");
 
     BASE_delay_msec(100);
 
@@ -88,7 +90,7 @@ failed:
     FILE_delete((I8U *)"ota_start.txt");
     FILE_delete((I8U *)"app.bin");
 		NOR_releasePowerDown();
-		Y_SPRINTF("[OTA] upgrade failed, roll back to old firmware");
+		_OTA_LOG("[OTA] upgrade failed, roll back to old firmware");
 		BASE_delay_msec(100);
     SYSTEM_restart_from_reset_vector();
 }
@@ -107,12 +109,12 @@ void OTA_main()
 #ifndef _CLING_PC_SIMULATION_
     if (FILE_if_exists((I8U *)"ota_start.txt")) {
 
-        Y_SPRINTF("[MAIN] found: ota_start.txt");
+        _OTA_LOG("[MAIN] found: ota_start.txt");
 
         if (FILE_if_exists((I8U *)"app.bin") == TRUE) {
             // Auto update txt file is sent from iOS once all MCU binary pieces are correct, and
             // ready for self-update.
-            Y_SPRINTF("[MAIN] found: app.bin");
+            _OTA_LOG("[MAIN] found: app.bin");
 
             _start_OTA();
         } else if (FILE_if_exists((I8U *)"sd.bin") == TRUE) {

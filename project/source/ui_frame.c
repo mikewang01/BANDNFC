@@ -1099,7 +1099,7 @@ static void _middle_render_horizontal_workout_mode_switch()
 	if ((frame_index < UI_DISPLAY_WORKOUT)	|| (frame_index > UI_DISPLAY_WORKOUT_OTHERS))
 		return;
 	
-	workout_idx = frame_index - UI_DISPLAY_WORKOUT_RUNNING;
+	workout_idx = frame_index - UI_DISPLAY_WORKOUT_TREADMILL;
 		
 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)workout_name[language_type][workout_idx], 16, 128, TRUE);
 	
@@ -2468,8 +2468,6 @@ static void _top_render_vertical_batt_ble()
 	_rotate_270_degree(data_buf, 384);
 }
 
-
-
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _top_render_vertical_pm2p5()
 {
@@ -2509,7 +2507,7 @@ static void _top_render_vertical_heart_rate()
 #ifdef _CLINGBAND_UV_MODEL_
 static void _top_render_vertical_uv_index()
 {
-	_render_vertical_icon(ICON24_UV_INDEX_IDX);
+	_render_vertical_icon();
 }
 #endif
 
@@ -3656,7 +3654,7 @@ static void _middle_render_vertical_cycling_outdoor_distance()
 		b_ble_connected = TRUE;
 	
 	if (b_ble_connected) {
-		_vertical_core_run_distance(cling.run_stat.distance);
+		_vertical_core_run_distance(cling.train_stat.distance);
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
@@ -3682,7 +3680,7 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 		b_ble_connected = TRUE;
 	
 	if (b_ble_connected) {
-		_vertical_core_run_distance(17);
+		_vertical_core_run_distance(cling.train_stat.speed);
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
@@ -4124,7 +4122,7 @@ static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
 static void _display_frame_workout(I8U index, BOOLEAN b_render)
 {
 	switch (index) {
-		case UI_DISPLAY_WORKOUT_RUNNING:
+		case UI_DISPLAY_WORKOUT_TREADMILL:
 			_core_frame_display(UI_FRAME_PAGE_WORKOUT_RUNNING, b_render);
 			break;		
 		case UI_DISPLAY_WORKOUT_CYCLING:

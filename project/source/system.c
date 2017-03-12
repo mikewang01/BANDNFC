@@ -238,7 +238,7 @@ static BOOLEAN _critical_info_restored()
 	// If nothing gets restored from system
 	if (offset == 0) {
 		cling.batt.b_no_batt_restored = TRUE;
-		Y_SPRINTF("[SYSTEM] Notthing gets restored");
+		Y_SPRINTF("[SYSTEM] Nothing gets restored");
 		return FALSE;
 	}
 	
@@ -589,10 +589,7 @@ void SYSTEM_checksum(void *pdata, I32U size, I8U *checksum)
 
   while (size-- > 0) sum += *ptr++;
 
-	checksum[0] = (sum >> 24)&0xff;
-	checksum[1] = (sum >> 16)&0xff;
-	checksum[2] = (sum >> 8)&0xff;
-	checksum[3] = sum&0xff;
+	BASE_dword_encode(sum, checksum);
 }
 
 void SYSTEM_factory_reset()

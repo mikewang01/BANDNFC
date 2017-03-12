@@ -23,6 +23,7 @@
 #include "ui_matrix_uv.h"
 #endif
 
+#define UI_SPRINTF Y_SPRINTF
 
 /*------------------------------------------------------------------------------------------
 *  Function:	_is_regular_page(I8U frame_index)
@@ -163,7 +164,7 @@ static BOOLEAN _is_stopwatch_page(I8U frame_index)
 *------------------------------------------------------------------------------------------*/
 static BOOLEAN _is_workout_type_switch_page(I8U frame_index)
 {
-  if ((frame_index >= UI_DISPLAY_WORKOUT_RUNNING) && (frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
+  if ((frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
 		return TRUE;
 	else 
 		return FALSE;
@@ -299,7 +300,7 @@ static void _restore_perv_frame_index()
 	if (_is_smart_incoming_notifying_page(u->frame_index)) {
 		if (t_curr > (u->notif_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
 			// Filtering the old information, go back to previous UI page.
-			u->frame_index = UI_DISPLAY_PREVIOUS;				
+			u->frame_index = UI_DISPLAY_PREVIOUS;		
 		} else {
 			// Display this notification now.
       return; 
@@ -457,7 +458,6 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 #else
 		// Allways open home page. 
 	  regular_page_filtering |= 0x8000; 
-	  //regular_page_filtering = 0xffff;
 #endif
 
 		for (i=0;i<10;i++) {
@@ -996,13 +996,13 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	}
 
 #ifndef _CLINGBAND_PACE_MODEL_		
-	if ((u->frame_prev_idx >= UI_DISPLAY_WORKOUT_RUNNING) && (u->frame_prev_idx <= UI_DISPLAY_WORKOUT_OTHERS)) {
+	if ((u->frame_prev_idx >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_prev_idx <= UI_DISPLAY_WORKOUT_OTHERS)) {
 		if (u->frame_index == UI_DISPLAY_WORKOUT_RUN_READY) {
 			N_SPRINTF("[UI] Enter normal workout mode");	
       b_enter_workout_mode = TRUE;		
 		  // If user starts runing, turn on workout active mode
 		  cling.activity.b_workout_active = TRUE;
-		  cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR;			
+		  cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR+(u->frame_prev_idx-UI_DISPLAY_WORKOUT_TREADMILL);			
 		}
 	}
 
@@ -1248,7 +1248,7 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 		// Update all control.
     _update_all_feature_switch_control(u, p_matrix, gesture);
 		
-		Y_SPRINTF("[UI] finger touch: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
+		UI_SPRINTF("[UI] finger touch: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
 	} else {
 		// Animation is not needed
 		u->frame_next_idx = u->frame_index;
@@ -1294,7 +1294,7 @@ static void _perform_ui_with_a_swipe_touch(UI_ANIMATION_CTX *u, I8U gesture)
 		// Update all control.
     _update_all_feature_switch_control(u, p_matrix, gesture);
 		
-		Y_SPRINTF("[UI] swipe left: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
+		UI_SPRINTF("[UI] swipe left: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
 	} else {
 		// Animation is not needed
 		u->frame_next_idx = u->frame_index;
@@ -1333,7 +1333,7 @@ static void _perform_ui_with_button_single(UI_ANIMATION_CTX *u, I8U gesture)
 		// Update all control.
     _update_all_feature_switch_control(u, p_matrix, gesture);
 		
-		Y_SPRINTF("[UI] button single: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
+		UI_SPRINTF("[UI] button single: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
 	} else {
 		// Animation is not needed
 		u->frame_next_idx = u->frame_index;
@@ -1371,7 +1371,7 @@ static void _perform_ui_with_button_press_hold(UI_ANIMATION_CTX *u, I8U gesture)
 		// Update all control.
     _update_all_feature_switch_control(u, p_matrix, gesture);
 
-		Y_SPRINTF("[UI] botton hold: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
+		UI_SPRINTF("[UI] botton hold: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
 	} else {
 		// Animation is not needed
 		u->frame_next_idx = u->frame_index;
@@ -1552,15 +1552,16 @@ BOOLEAN UI_is_idle()
 *------------------------------------------------------------------------------------------*/
 BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 {
+	UI_ANIMATION_CTX *u = &cling.ui;	
   BOOLEAN b_panel_on = FALSE;;
 	
 	// 1. Turn on OLED panel	
 	b_panel_on = OLED_set_panel_on();
 
-	cling.ui.true_display = TRUE;
+	u->true_display = TRUE;
 	
 	// 2. Update touch stamp time 
-	cling.ui.touch_time_stamp = CLK_get_system_time()-time_offset;
+	u->touch_time_stamp = CLK_get_system_time()-time_offset;
 
 	// 3. Switch state
 	UI_switch_state(state, 0);
@@ -1568,7 +1569,7 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	// 4. Restore previous UI page
 	_restore_perv_frame_index();
 	
-	N_SPRINTF("[UI] State switch :%d, :%d", state, time_offset);
+	UI_SPRINTF("[UI] turn on display :%d, :%d", b_panel_on, cling.oled.state);
 	
 	return b_panel_on;
 }
@@ -1628,9 +1629,10 @@ void UI_state_machine()
 	
 	t_curr = CLK_get_system_time();
 
-	if (!u->display_active)
+	if (!u->display_active) {
 		return;
-
+	}
+	
   if (BATT_is_low_battery() && (!BATT_is_charging())) {
 		N_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
 		if (!u->b_low_power_switch) {
@@ -1774,6 +1776,7 @@ void UI_state_machine()
 				if (u->b_restore_notif) {
 					if (t_curr > u->notif_time_stamp + 3500) {
 					  u->state = UI_STATE_DARK;
+						UI_SPRINTF("[UI] Incoming notifying to dark at %d", t_curr);
 					}
 				} else {
 					if (t_curr > u->notif_time_stamp + 12000) {
@@ -1843,7 +1846,7 @@ void UI_state_machine()
 					TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
 				}
 #endif				
-			Y_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
+			UI_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
 			break;
 		}
 		default:

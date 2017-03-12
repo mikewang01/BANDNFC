@@ -117,6 +117,7 @@ typedef struct tagRUNNING_TRACK_CTX {
 
 typedef struct tagTRAINING_TRACK_CTX {
 	I32U distance;
+	I32U speed;
 	I32U time_start_in_ms;
 } TRAINING_TRACK_CTX;
 
@@ -203,6 +204,6 @@ I32U TRACKING_get_sleep_by_noon(BOOLEAN b_previous_day);
 void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_enter_low_power_mode(void);
-void TRACKING_get_daily_running(RUNNING_TRACK_CTX *run_stat);
+void TRACKING_get_cycling_stat(void);
 
 #endif  // __TRACKING_HEADER__
