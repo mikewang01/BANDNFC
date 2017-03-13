@@ -96,7 +96,7 @@ static BOOLEAN _is_workout_active_page(I8U frame_index)
 #ifndef _CLINGBAND_PACE_MODEL_	
   else if ((frame_index >= UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME) && (frame_index <= UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_STOP))
 		return TRUE;
-  else if ((frame_index >= UI_DISPLAY_WORKOUT_RUN_TIME) && (frame_index <= UI_DISPLAY_WORKOUT_RUN_END))
+  else if ((frame_index >= UI_DISPLAY_WORKOUT_RT_TIME) && (frame_index <= UI_DISPLAY_WORKOUT_RT_END))
 		return TRUE;	
 #endif	
 	else 
@@ -312,7 +312,7 @@ static void _restore_perv_frame_index()
 		if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) 
 			return;
 #ifndef _CLINGBAND_PACE_MODEL_			
-		if (u->frame_index == UI_DISPLAY_WORKOUT_RUN_READY) 
+		if (u->frame_index == UI_DISPLAY_WORKOUT_RT_READY) 
 			return;
 		if (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY) 
 			return;		
@@ -328,7 +328,7 @@ static void _restore_perv_frame_index()
 		}	
 #ifndef _CLINGBAND_PACE_MODEL_					
 		else if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
-			u->frame_index = UI_DISPLAY_WORKOUT_RUN_TIME;		
+			u->frame_index = UI_DISPLAY_WORKOUT_RT_TIME;		
 		}			
 		else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;		
@@ -399,7 +399,7 @@ static I16U _get_regular_page_enable_index(I8U frame_index)
 		return UI_FRAME_ENABLE_RUN_ANALYSIS;			
 #endif	
 	else 
-		return 0xffff;
+		return 0x0000;
 }
 
 /*-------------------------------------------------------------------------------
@@ -429,7 +429,7 @@ static I8U _get_running_analysis_page_enable_index(I8U frame_index)
 		return UI_FRAME_ENABLE_RUNNING_STOP_ANALYSIS;			
 #endif	
 	else 
-		return 0xff;
+		return 0x00;
 }
 
 /*-------------------------------------------------------------------------------
@@ -462,10 +462,25 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 
 		for (i=0;i<10;i++) {
 			u->frame_index = p_matrix[u->frame_index];
-		  regular_page_enable = _get_regular_page_enable_index(u->frame_index);
-			
-		  if (regular_page_enable & regular_page_filtering) 
-				break;
+			if (_is_regular_page(u->frame_index)) {
+				regular_page_enable = _get_regular_page_enable_index(u->frame_index);
+				if (regular_page_enable & regular_page_filtering) 
+					break;				
+			} else {
+#ifdef _CLINGBAND_PACE_MODEL_							
+				if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) {
+				  if (u->frame_prev_idx != UI_DISPLAY_TRAINING_STAT_RUN_START) {
+						u->frame_index = UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS;
+					} 
+				}
+				if (u->frame_index == UI_DISPLAY_RUNNING_STAT_DISTANCE) {
+				  if (u->frame_prev_idx != UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS) {
+						u->frame_index = UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS;
+					} 					
+				}
+#endif				
+				break;	
+			}
 		}
 		
 		u->frame_next_idx = u->frame_index;
@@ -483,10 +498,13 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 		
 		for (i=0;i<10;i++) {
 			u->frame_index = p_matrix[u->frame_index];
-		  run_analysis_page_enable = _get_running_analysis_page_enable_index(u->frame_index);		
-			
-		  if (run_analysis_page_enable & run_analysis_page_filtering) 
+			if (_is_running_analysis_page(u->frame_index)) {
+		    run_analysis_page_enable = _get_running_analysis_page_enable_index(u->frame_index);		
+		    if (run_analysis_page_enable & run_analysis_page_filtering) 
+				  break;								
+			} else {
 				break;
+			}
 		}		
 		
 	  u->frame_next_idx = u->frame_index;
@@ -729,7 +747,7 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 	char data[128];	
 	I8U max_frame_num = 0;
 
-	if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF){
+	if ((u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) && (u->frame_prev_idx == UI_DISPLAY_SMART_DETAIL_NOTIF)) {
 
 #ifdef _CLINGBAND_PACE_MODEL_			
 	  NOTIFIC_get_app_message_detail(0 ,data);
@@ -743,11 +761,11 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 		max_frame_num = FONT_get_string_display_depth(data);
 		
 		N_SPRINTF("[UI] max frame num : %d, notific detail index: %d", max_frame_num, u->notif_detail_index);
-		
-		// Update vertical Notific detail index
+
+	  // Update vertical Notific detail index
 		u->notif_detail_index++;
-			
-		if (u->notif_detail_index > max_frame_num) {
+		
+		if (u->notif_detail_index >= max_frame_num) {
 			u->notif_detail_index = 0;
 			u->notif_repeat_look_time++;
 		}
@@ -888,7 +906,12 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 {
 	I8U max_frame_num=0;
   BOOLEAN b_up;
-	
+
+	if ((u->frame_index != UI_DISPLAY_SMART_APP_NOTIF) && (u->frame_index != UI_DISPLAY_SMART_DETAIL_NOTIF)) {
+		u->app_notific_index = 0;
+		return;
+	}
+
   if (u->frame_index == UI_DISPLAY_SMART_APP_NOTIF) {
 #ifdef _ENABLE_ANCS_				
 		max_frame_num = NOTIFIC_get_message_total();		
@@ -922,9 +945,7 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 				u->app_notific_index --;
 			}
 		}
-	} else {
-		u->app_notific_index = 0;
-	}
+	} 
 }
 #endif
 
@@ -950,7 +971,7 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) 
 		||(u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)
-		||(u->frame_index == UI_DISPLAY_WORKOUT_RUN_HEART_RATE)	
+		||(u->frame_index == UI_DISPLAY_WORKOUT_RT_HEART_RATE)	
 		||(u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE)) {
 			
 			 b_ppg_switch_open = TRUE;
@@ -997,7 +1018,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if ((u->frame_prev_idx >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_prev_idx <= UI_DISPLAY_WORKOUT_OTHERS)) {
-		if (u->frame_index == UI_DISPLAY_WORKOUT_RUN_READY) {
+		if (u->frame_index == UI_DISPLAY_WORKOUT_RT_READY) {
 			N_SPRINTF("[UI] Enter normal workout mode");	
       b_enter_workout_mode = TRUE;		
 		  // If user starts runing, turn on workout active mode
@@ -1020,11 +1041,11 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		cling.ui.b_training_first_enter = TRUE;			
 		cling.ui.running_time_stamp = CLK_get_system_time();
 		cling.ui.b_training_alert = FALSE;
-		// Reset all training data
+		// Reset all training data - distance, time stamp, calories, and session ID
 		cling.train_stat.distance = 0;
 		cling.train_stat.time_start_in_ms = CLK_get_system_time();
-		// Running session ID
-		cling.run_stat.session_id = cling.time.time_since_1970;
+		cling.train_stat.session_id = cling.time.time_since_1970;
+		cling.train_stat.calories = 0;
 		// Running pace time stamp
 		cling.run_stat.pace_calc_ts = CLK_get_system_time();
 		cling.run_stat.last_10sec_distance = 0;
@@ -1037,7 +1058,11 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		}
 		
 		if (BTLE_is_connected()) {
-			CP_create_workout_run_msg();
+			if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
+					(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
+			{
+				CP_create_workout_rt_msg(cling.activity.workout_type);
+			}
 		}
 		return;
 	}
@@ -1130,6 +1155,50 @@ static void _update_phone_finder_control(UI_ANIMATION_CTX *u, I8U gesture)
 #endif
 
 /*------------------------------------------------------------------------------------------
+*  Function:	_update_music_control(UI_ANIMATION_CTX *u, I8U gesture)
+*
+*  Description: Music control. 
+*
+*------------------------------------------------------------------------------------------*/
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+static void _update_music_control(UI_ANIMATION_CTX *u, I8U gesture)
+{
+#ifdef __PLAYER_CONTROLLER_ENABLE__
+	CLASS(PlayerController)* media_player_obj_p = PlayerController_get_instance();
+	
+	if (!_is_music_page(u->frame_index))
+		return;
+	
+	if (u->frame_index == UI_DISPLAY_MUSIC_PLAY) {
+		if (gesture == TOUCH_FINGER_MIDDLE) {
+			media_player_obj_p->mute(media_player_obj_p);
+			N_SPRINTF("[UI] Play mute");
+		} else if (gesture == TOUCH_FINGER_LEFT) {
+			media_player_obj_p->play_pause(media_player_obj_p);
+			N_SPRINTF("[UI] Play pause");
+		}
+	} else if (u->frame_index == UI_DISPLAY_MUSIC_VOLUME) {
+		if (gesture == TOUCH_FINGER_MIDDLE) {
+			media_player_obj_p->volume_up(media_player_obj_p);
+			N_SPRINTF("[UI] Play UP UP");
+		} else if (gesture == TOUCH_FINGER_LEFT) {
+			media_player_obj_p->volume_down(media_player_obj_p);
+			N_SPRINTF("[UI] Play Down Down");
+		}
+	} else if (u->frame_index == UI_DISPLAY_MUSIC_SONG) {
+		if (gesture == TOUCH_FINGER_MIDDLE) {
+			media_player_obj_p->next_track(media_player_obj_p);
+			N_SPRINTF("[UI] Play Next");
+		} else if (gesture == TOUCH_FINGER_LEFT) {
+			media_player_obj_p->prev_track(media_player_obj_p);
+			N_SPRINTF("[UI] Play Previous");
+		}
+	}
+#endif
+}
+#endif
+
+/*------------------------------------------------------------------------------------------
 *  Function:	_update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture)
 *
 *  Description: Stopwatch control. 
@@ -1207,6 +1276,9 @@ static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 	// 12. Phone finder control.
 	_update_phone_finder_control(u, gesture);
+	
+	// 13. Music control.
+	_update_music_control(u, gesture);
 #endif	
 }
 
@@ -1491,8 +1563,9 @@ void UI_start_notifying(I8U frame_index, I8U notif_type)
 	// 2. Update notification type
 	u->notif_type = notif_type;
 
-	// 3. Record current notification received time
+	// 3. Record current notification received time£¬and update touch time stamp.
 	u->notif_time_stamp = CLK_get_system_time();
+  u->touch_time_stamp = CLK_get_system_time();
 	
 	// 4. If screen is dark, first turn on screen immediately.
 	if (UI_is_idle()) {
@@ -1779,7 +1852,7 @@ void UI_state_machine()
 						UI_SPRINTF("[UI] Incoming notifying to dark at %d", t_curr);
 					}
 				} else {
-					if (t_curr > u->notif_time_stamp + 12000) {
+					if (t_curr > u->notif_time_stamp + 10000) {
 						// Go back to previous UI page
 						u->frame_index = UI_DISPLAY_PREVIOUS;		
 					}						
@@ -1840,11 +1913,11 @@ void UI_state_machine()
 			}
 	    u->b_restore_notif = FALSE;
 #ifdef _ENABLE_TOUCH_				
-				if (cling.lps.b_low_power_mode) {
-					TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);
-				} else {
-					TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
-				}
+			if (cling.lps.b_low_power_mode) {
+				TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);
+			} else {
+				TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
+			}
 #endif				
 			UI_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
 			break;

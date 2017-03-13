@@ -112,13 +112,14 @@ typedef struct tagRUNNING_TRACK_CTX {
 	I8U last_10sec_pace_min;
 	I8U last_10sec_pace_sec;
 	I32U pace_calc_ts;
-	I32U session_id;
 } RUNNING_TRACK_CTX;
 
 typedef struct tagTRAINING_TRACK_CTX {
+	I32U session_id;
 	I32U distance;
 	I32U speed;
 	I32U time_start_in_ms;
+	I32U calories;
 } TRAINING_TRACK_CTX;
 
 typedef struct tagDAY_STREAMING_CTX {

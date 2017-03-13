@@ -107,8 +107,13 @@ void BATT_charging_init()
 	// LDO 3 -- ON
 	BATT_write_reg(0x0C, 0xbc);
 //	BATT_read_reg(0x0C, 1, &data[2]);
-	// LDO 4 -- OFF
+	// LDO 4 -- ON
+#ifdef _CLINGBAND_PACE_MODEL_		
 	BATT_write_reg(0x0D, 0x00);
+#endif
+#ifdef _CLINGBAND_2_PAY_MODEL_		
+	BATT_write_reg(0x0D, 0xbc);
+#endif	
 //	BATT_read_reg(0x0D, 1, &data[3]);
 //	Y_SPRINTF("BATT REG: 0x%02x, 0x%02x, 0x%02x, 0x%02x", data[0], data[1], data[2], data[3]);
 }
@@ -118,12 +123,12 @@ void BATT_charging_deinit()
 	// Turn off LDO 1/2/3/4
 	//BATT_write_reg(0x0A, 0x00); // LDO 1, POWER FOR CPU, TURN OFF AT LAST	
 	BATT_write_reg(0x0B, 0x00);
-	
-#ifndef _CLINGBAND_PACE_MODEL_	
-	BATT_write_reg(0x0C, 0x00);	
-#endif
-	
+
+//BATT_write_reg(0x0C, 0x00);
+
+#ifdef _CLINGBAND_PACE_MODEL_	
 	BATT_write_reg(0x0D, 0x00);
+#endif
 }
 #endif
 

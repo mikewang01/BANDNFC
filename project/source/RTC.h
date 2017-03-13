@@ -77,7 +77,8 @@ I32U RTC_get_last_minute_epoch(void);
 void RTC_timer_handler( void * p_context );
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
-void RTC_hw_init(void);
+void RTC_hw_config(void);
+void RTC_calibrate_current_epoch(void);
 I32U RTC_get_current_epoch(REALTIME_CTX *p_rt);
 void RTC_set_current_epoch(I32U time_since_1970);
 void RTC_minute_int_service(void);

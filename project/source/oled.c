@@ -235,7 +235,8 @@ void OLED_state_machine(void)
 				// Reset blinking state
 				cling.ui.clock_sec_blinking = TRUE;
 			  cling.ui.heart_rate_sec_blinking = TRUE;
-	      cling.ui.notif_time_stamp = CLK_get_system_time();
+	      cling.ui.notif_time_stamp = CLK_get_system_time();	
+	      cling.ui.touch_time_stamp = CLK_get_system_time();				
 #if 0
 				// If screen is turned, dismiss the secondary reminder vibration 
 				if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {

@@ -1217,7 +1217,7 @@ void CP_create_sos_msg()
 
 }
 
-void CP_create_workout_run_msg()
+void CP_create_workout_rt_msg(I8U workout_type)
 {
     CP_CTX *g = &cling.gcp;
     CP_TX_CTX *t = &g->tx;
@@ -1235,16 +1235,13 @@ void CP_create_workout_run_msg()
 
     // Filling up the message buffer
 		pmsg = t->msg;
-    *pmsg++ = CP_MSG_TYPE_WORKOUT_RUN_MESSAGE;
-    *pmsg++ = (cling.run_stat.session_id>>24)&0x0ff;
-    *pmsg++ = (cling.run_stat.session_id>>16)&0x0ff;
-    *pmsg++ = (cling.run_stat.session_id>>8)&0x0ff;
-    *pmsg++ = cling.run_stat.session_id&0x0ff;
+    *pmsg++ = CP_MSG_TYPE_WORKOUT_MESSAGE;
+		pmsg += BASE_dword_encode(cling.train_stat.session_id, pmsg);
     *pmsg++ = WORKOUT_RUN_OUTDOOR;
 
     // Create packet payload
     // Pending message delivery
-    t->msg_type = CP_MSG_TYPE_WORKOUT_RUN_MESSAGE;
+    t->msg_type = CP_MSG_TYPE_WORKOUT_MESSAGE;
     t->state = CP_TX_PACKET_PENDING_SEND;
     g->state = CP_MCU_STAT_TX_COMPLETE;
 

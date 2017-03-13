@@ -37,6 +37,7 @@
 
 
 /****************** 16 pixels high icon *******************/
+#define ICON16_NONE                        127
 #define ICON16_NORMAL_ALARM_CLOCK_IDX      128
 #define ICON16_NORMAL_ALARM_CLOCK_LEN      asset_len[256+128]
 #define ICON16_NORMAL_ALARM_CLOCK_POS      asset_pos[256+128]

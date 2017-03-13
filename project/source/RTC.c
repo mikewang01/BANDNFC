@@ -90,13 +90,9 @@ static BOOLEAN RTC_write_reg(I8U* reg_val, I8U number_of_bytes)
 #endif
 }
 
-void RTC_hw_init()
+void RTC_hw_config()
 {
 	I8U data[10];
-	I32U epoch, t_diff;
-	REALTIME_CTX rt;
-	
-	// Charging setup: 
 
 	// capacitor selection: 12.5 pf	
 	data[0] = 0x00;
@@ -108,6 +104,12 @@ void RTC_hw_init()
 	data[0] = 0x01;
 	data[1] = 0x20;
 	RTC_write_reg(data, 2);
+}
+
+void RTC_calibrate_current_epoch()
+{
+	I32U epoch, t_diff;
+	REALTIME_CTX rt;
 	
 	epoch = RTC_get_current_epoch(&rt);
 	
@@ -404,14 +406,6 @@ void RTC_timer_handler( void * p_context )
 			cling.user_data.idle_minutes_countdown --;
 		}
 		Y_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
-
-#if 0		
-		tick_diff = CLK_get_system_time() - cling.ui.touch_time_stamp;
-		
-		if (tick_diff > 300000) {
-			UI_reset_index();
-		}
-#endif
 		
 		// Once a minute, refresh reminder
 		REMINDER_set_sleep_reminder();
@@ -419,7 +413,11 @@ void RTC_timer_handler( void * p_context )
 		// Once a minute, send a workout active message to App
 		if (BTLE_is_connected()) {
 			if (cling.activity.b_workout_active) {
-				CP_create_workout_run_msg();
+				if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
+						(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
+				{
+					CP_create_workout_rt_msg(cling.activity.workout_type);
+				}
 			}
 		}
 	}	

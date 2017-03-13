@@ -819,6 +819,7 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	if (cling.activity.b_workout_active) {
 		// Update training stats
 		t->distance += denormalized_distance;
+		t->calories += minute->calories;
 			
 		if (minute->running > 99) {
 			r->time_min ++;
