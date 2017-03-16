@@ -875,7 +875,7 @@ static void _logging_per_minute()
 
 	if (!cling.activity.b_workout_active) {
 		// alert user if heart rate is approaching the limit
-		if ((minute.heart_rate > max_heart_rate) && (diff.running > 172) && !cling.ui.display_layer) {
+		if ((minute.heart_rate > max_heart_rate) && (diff.running > 172)) {
 			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				cling.hr.b_closing_to_skin = TRUE;

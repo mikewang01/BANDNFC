@@ -2125,6 +2125,7 @@ static void _right_render_horizontal_training_hr()
 	*p3++ = 0xff;
 }
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _right_render_horizontal_run_ok()
 {
 	_render_one_icon_16(ICON16_OK_LEN, 128+110, asset_content+ICON16_OK_POS);
@@ -2152,7 +2153,6 @@ static void _right_render_horizontal_cycling_outdoor_distance()
 	}
 }
 
-#ifndef _CLINGBAND_PACE_MODEL_
 static void _right_render_horizontal_cycling_outdoor_speed()
 {
 	I8U string[32];
@@ -3082,7 +3082,9 @@ static void _middle_render_vertical_alarm_clock_reminder()
 {
   _middle_render_vertical_reminder_core(TRUE);
 }
+#endif
 
+#ifdef _CLINGBAND_2_PAY_MODEL_
 static void _middle_render_vertical_alarm_clock_detail()
 {
   _middle_render_vertical_reminder_core(FALSE);
@@ -3883,6 +3885,7 @@ static void _bottom_render_vertical_tracker()
 }
 #endif
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_ok()
 {
 	I8U string[16];		
@@ -3893,6 +3896,7 @@ static void _bottom_render_vertical_ok()
 	string[1] = 0;
 	_render_vertical_local_character_core(string, 110, margin, b_24_size, FALSE);
 }
+#endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_button_hold()
@@ -3962,14 +3966,18 @@ static void _bottom_render_vertical_cycling_outdoor_speed()
 }
 #endif
 
-static void _frame_display_home(BOOLEAN b_render)
+void UI_frame_display_appear(I8U index, BOOLEAN b_render)
 {
-	_core_frame_display(UI_FRAME_PAGE_HOME_CLOCK, b_render);
-}
+	N_SPRINTF("[UI] frame appear: %d, %d", index, u->frame_cached_index);
 
-static void _frame_display_system(I8U index, BOOLEAN b_render)
-{
 	switch (index) {
+		
+		// 1. Home
+		case UI_DISPLAY_HOME:
+			_core_frame_display(UI_FRAME_PAGE_HOME_CLOCK, b_render);
+			break;
+		
+    // 2. System.
 		case UI_DISPLAY_SYSTEM_RESTART:
 			_core_frame_display(UI_FRAME_PAGE_RESTART_LOGO, b_render);
 			break;
@@ -3984,15 +3992,9 @@ static void _frame_display_system(I8U index, BOOLEAN b_render)
 			break;
 		case UI_DISPLAY_SYSTEM_BATT_POWER:		
 			_core_frame_display(UI_FRAME_PAGE_BATT_POWER, b_render);
-			break;	
-		default:
-			break;
-	}
-}
-
-static void _frame_display_tracker(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+			break;			
+		
+    // 3. Tracker.
 		case UI_DISPLAY_TRACKER_STEP:
 			_core_frame_display(UI_FRAME_PAGE_STEPS, b_render);
 			break;
@@ -4010,14 +4012,8 @@ static void _frame_display_tracker(I8U index, BOOLEAN b_render)
 			_core_frame_display(UI_FRAME_PAGE_UV_IDX, b_render);
 			break;			
 #endif		
-		default:
-			break;
-	}
-}
-
-static void _frame_display_smart(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+		
+		// 4. Smart
 		case UI_DISPLAY_SMART_WEATHER:
 		  _core_frame_display(UI_FRAME_PAGE_WEATHER, b_render);
 			break;
@@ -4057,15 +4053,9 @@ static void _frame_display_smart(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_SMART_APP_NOTIF:
 		  _core_frame_display(UI_FRAME_PAGE_APP_NOTIF, b_render);
 		  break;
-#endif		
-		default:
-			break;
-	}
-}
-
-static void _frame_display_vital(I8U index, BOOLEAN b_render)
-{	
-	switch (index) {
+#endif	
+		
+		// 5. Vital
 		case UI_DISPLAY_VITAL_HEART_RATE:
 			_core_frame_display(UI_FRAME_PAGE_HEART_RATE, b_render);
 			break;
@@ -4073,41 +4063,23 @@ static void _frame_display_vital(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_VITAL_SKIN_TEMP:
 			_core_frame_display(UI_FRAME_PAGE_SKIN_TEMP, b_render);
 			break;		
-#endif		
-		default:
-			break;
-	}
-}
-
-#ifndef _CLINGBAND_PACE_MODEL_
-static void _display_frame_setting(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+#endif				
+#ifndef _CLINGBAND_PACE_MODEL_	
+		
+    // 6. Setting		
 		case UI_DISPLAY_SETTING_VER:
 	    _core_frame_display(UI_FRAME_PAGE_SETTING, b_render);
-			break;
-		default:
-			break;
-	}
-}
-
-static void _display_frame_stopwatch(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+			break;		
+		
+    // 7. Stopwatch				
 		case UI_DISPLAY_STOPWATCH_START:
 			_core_frame_display(UI_FRAME_PAGE_STOPWATCH_START, b_render);
 			break;	
 		case UI_DISPLAY_STOPWATCH_STOP:
 			_core_frame_display(UI_FRAME_PAGE_STOPWATCH_STOP, b_render);
-			break;
-		default:				
-			break;
-	}
-}
-
-static void _display_frame_workout(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+			break;	
+		
+    // 8. Workout
 		case UI_DISPLAY_WORKOUT_TREADMILL:
 			_core_frame_display(UI_FRAME_PAGE_WORKOUT_TREADMILL, b_render);
 			break;		
@@ -4147,15 +4119,9 @@ static void _display_frame_workout(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_WORKOUT_RT_END:
 			_core_frame_display(UI_FRAME_PAGE_WORKOUT_RT_END, b_render);
 			break;		
-		default:
-			break;		
-	}
-}
 #endif
-
-static void _frame_display_running_stats(I8U index, BOOLEAN b_render)
-{	
-	switch (index) {
+		
+		// 8. Running analysis.
 #ifdef _CLINGBAND_PACE_MODEL_		
 		case UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS:
 			_core_frame_display(UI_FRAME_PAGE_RUNNING_ANALYSIS, b_render);
@@ -4186,15 +4152,9 @@ static void _frame_display_running_stats(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_RUNNING_STAT_STOP_ANALYSIS:
 			_core_frame_display(UI_FRAME_PAGE_RUNNING_STOP_ANALYSIS, b_render);
 			break;		
-#endif		
-		default:
-			break;
-	}
-}
-
-static void _frame_display_training_stats(I8U index, BOOLEAN b_render)
-{	
-	switch (index) {
+#endif				
+		
+		// 9. Training stats
 		case UI_DISPLAY_TRAINING_STAT_RUN_START:
 			_core_frame_display(UI_FRAME_PAGE_TRAINING_RUN_START, b_render);
 			break;		
@@ -4221,15 +4181,9 @@ static void _frame_display_training_stats(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_TRAINING_STAT_RUN_STOP:
 			_core_frame_display(UI_FRAME_PAGE_TRAINING_RUN_STOP, b_render);
 			break;				
-		default:
-			break;
-	}
-}
-
-#ifndef _CLINGBAND_PACE_MODEL_		
-static void _display_frame_cycling_outdoor_stats(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+		
+		// 10. Cycling outdoor
+#ifndef _CLINGBAND_PACE_MODEL_			
 		case UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_START:
 			_core_frame_display(UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_START, b_render);
 			break;				
@@ -4250,17 +4204,11 @@ static void _display_frame_cycling_outdoor_stats(I8U index, BOOLEAN b_render)
 			break;	
 		case UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_STOP:
 			_core_frame_display(UI_FRAME_PAGE_CYCLING_OUTDOOR_RUN_STOP, b_render);
-			break;				
-		default:
-			break;
-	}
-}
-#endif
-
+			break;			
+#endif		
+		
+		// 11. Music
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)		
-static void _display_frame_music(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
 		case UI_DISPLAY_MUSIC_PLAY:
 			_core_frame_display(UI_FRAME_PAGE_MUSIC_PLAY_PAUSE, b_render);
 			break;
@@ -4270,32 +4218,20 @@ static void _display_frame_music(I8U index, BOOLEAN b_render)
 		case UI_DISPLAY_MUSIC_SONG:
 			_core_frame_display(UI_FRAME_PAGE_MUSIC_TRACK, b_render);
 			break;
-		default:
-			break;
-	}
-}
-#endif
-
-#ifdef _CLINGBAND_2_PAY_MODEL_
-static void _display_frame_pay(I8U index, BOOLEAN b_render)
-{
-	switch (index) {
+#endif			
+		
+		// 12. Pay
+#ifdef 	_CLINGBAND_2_PAY_MODEL_
 		case UI_DISPLAY_PAY_BUS_CARD_BALANCE_ENQUIRY:
 			_core_frame_display(UI_FRAME_PAGE_PAY_BUS_CARD_BALANCE_ENQUIRY, b_render);
 			break;
 		case UI_DISPLAY_PAY_BANK_CARD_BALANCE_ENQUIRY:
 			_core_frame_display(UI_FRAME_PAGE_PAY_BANK_CARD_BALANCE_ENQUIRY, b_render);
-			break;		
-		default:
-			break;
-	}	
-}
-#endif
+			break;	
+#endif			
 
-#ifndef _CLINGBAND_PACE_MODEL_		
-static void _display_frame_carousel(I8U index, BOOLEAN b_render)
-{	
-	switch (index) {
+		// 13. carousel
+#ifndef _CLINGBAND_PACE_MODEL_				
 		case UI_DISPLAY_CAROUSEL_1:
 			_core_frame_display(UI_FRAME_PAGE_CAROUSEL_1, b_render);
 			break;
@@ -4310,63 +4246,10 @@ static void _display_frame_carousel(I8U index, BOOLEAN b_render)
 			_core_frame_display(UI_FRAME_PAGE_CAROUSEL_4, b_render);
 			break;		
 #endif		
+#endif			
 		default:
-			break;
-	}
-}
-#endif
-
-void UI_frame_display_appear(I8U index, BOOLEAN b_render)
-{
-	N_SPRINTF("[UI] frame appear: %d, %d", index, u->frame_cached_index);
-
-	if (index == UI_DISPLAY_HOME) {
-		_frame_display_home(b_render);
-	} else if ((index >= UI_DISPLAY_SYSTEM) && (index <= UI_DISPLAY_SYSTEM_END)) {
-	  _frame_display_system(index, b_render);
-	} else if ((index >= UI_DISPLAY_TRACKER) && (index <= UI_DISPLAY_TRACKER_END)) {
-		_frame_display_tracker(index, b_render);
-	} else if ((index >= UI_DISPLAY_SMART) && (index <= UI_DISPLAY_SMART_END)) {
-		_frame_display_smart(index, b_render);
-	} else if ((index >= UI_DISPLAY_VITAL) && (index <= UI_DISPLAY_VITAL_END)) {
-		_frame_display_vital(index, b_render);
+			break;		
 	} 
-#ifndef _CLINGBAND_PACE_MODEL_	
-	 else if ((index >= UI_DISPLAY_SETTING) && (index <= UI_DISPLAY_SETTING_END)) {
-		_display_frame_setting(index, b_render);
-	} else if ((index >= UI_DISPLAY_STOPWATCH) && (index <= UI_DISPLAY_STOPWATCH_END)) {
-		_display_frame_stopwatch(index, b_render);
-	} else if ((index >= UI_DISPLAY_WORKOUT) && (index <= UI_DISPLAY_WORKOUT_END)) {
-		_display_frame_workout(index, b_render);
-	}
-#endif
-	 else if ((index >= UI_DISPLAY_RUNNING_STATATISTICS) && (index <= UI_DISPLAY_RUNNING_STATATISTICS_END)) {
-		_frame_display_running_stats(index, b_render);
-	} else if ((index >= UI_DISPLAY_TRAINING_STATATISTICS) && (index <= UI_DISPLAY_TRAINING_STATATISTICS_END)) {
-		_frame_display_training_stats(index, b_render);
-	} 
-#ifndef _CLINGBAND_PACE_MODEL_		
-	  else if ((index >= UI_DISPLAY_CYCLING_OUTDOOR_STATATISTICS) && (index <= UI_DISPLAY_CYCLING_OUTDOOR_STATATISTICS_END)) {
-		_display_frame_cycling_outdoor_stats(index, b_render);
-	} 
-#endif		
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)		
-	  else if ((index >= UI_DISPLAY_MUSIC) && (index <= UI_DISPLAY_MUSIC_END)) {
-		_display_frame_music(index, b_render);
-	} 
-#endif		
-#ifdef 	_CLINGBAND_2_PAY_MODEL_
-	  else if ((index >= UI_DISPLAY_PAY) && (index <= UI_DISPLAY_PAY_END)) {
-		_display_frame_pay(index, b_render);
-	} 	
-#endif	
-#ifndef _CLINGBAND_PACE_MODEL_		
-	  else if ((index >= UI_DISPLAY_CAROUSEL) && (index <= UI_DISPLAY_CAROUSEL_END)) {
-		_display_frame_carousel(index, b_render);
-	} 
-#endif	
-	  else {
-	}
 }
 
 #ifdef _CLINGBAND_UV_MODEL_
