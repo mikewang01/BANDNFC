@@ -1300,10 +1300,12 @@ static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p
 	_update_phone_finder_control(u, gesture);
 #endif
 
-#ifdef _CLINGBAND_2_PAY_MODEL_
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 	// 13. Music control.
 	_update_music_control(u, gesture);
-	
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
 	// 14. Update balance display.
 	_update_get_bus_and_bank_card_balance(u);
 #endif	
