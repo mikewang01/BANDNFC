@@ -18,7 +18,7 @@
 
 //#define _JACOB_TESTING_
 
-#define CP_SPRINTF N_SPRINTF
+#define CP_SPRINTF Y_SPRINTF
 
 static void _sync_time_proc(I8U *data)
 {
@@ -936,6 +936,7 @@ static void _pending_process()
 				case CP_MSG_TYPE_WORKOUT_CYCLING_DATA: {
 						cling.train_stat.distance = BASE_dword_decode(p->msg+1);
 						cling.train_stat.speed = BASE_dword_decode(p->msg+5);
+					CP_SPRINTF("[CP] cycling: %d, %d", cling.train_stat.distance, cling.train_stat.speed);
 						break;
 				}
         default:
@@ -1237,7 +1238,7 @@ void CP_create_workout_rt_msg(I8U workout_type)
 		pmsg = t->msg;
     *pmsg++ = CP_MSG_TYPE_WORKOUT_MESSAGE;
 		pmsg += BASE_dword_encode(cling.train_stat.session_id, pmsg);
-    *pmsg++ = WORKOUT_RUN_OUTDOOR;
+    *pmsg++ = workout_type;
 
     // Create packet payload
     // Pending message delivery

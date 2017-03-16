@@ -77,6 +77,9 @@
 #define ICON16_RETURN_IDX                  141
 #define ICON16_RETURN_LEN                  asset_len[256+141]
 #define ICON16_RETURN_POS                  asset_pos[256+141]
+#define ICON16_OK_IDX                      142
+#define ICON16_OK_LEN                      asset_len[256+142]
+#define ICON16_OK_POS                      asset_pos[256+142]
 #define ICON16_CYCLING_OUTDOOR_SPEED_IDX   146
 #define ICON16_CYCLING_OUTDOOR_SPEED_LEN   asset_len[256+146]
 #define ICON16_CYCLING_OUTDOOR_SPEED_POS   asset_pos[256+146]

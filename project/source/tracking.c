@@ -16,6 +16,8 @@
 #include "fs_memcfg.h"
 #include "btle.h"
 
+#define TRACKING_SPRINTF N_SPRINTF
+
 void TRACKING_enter_low_power_mode()
 {
 #ifdef _USE_HW_MOTION_DETECTION_
@@ -32,7 +34,7 @@ void TRACKING_enter_low_power_mode()
 		TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);
 	}
 #endif
-	Y_SPRINTF("[ACTIVITY] ENTER -- low power mode (stop timer) -- ");
+	TRACKING_SPRINTF("[ACTIVITY] ENTER -- low power mode (stop timer) -- ");
 }
 
 void TRACKING_exit_low_power_mode(BOOLEAN b_force)
@@ -60,7 +62,7 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 	// Reset motion detection algorithm
 	cling.lps.b_low_power_mode = FALSE;
 	
-	Y_SPRINTF("[ACTIVITY] EXIT -- low power mode (force: %d)-- ", b_force);
+	TRACKING_SPRINTF("[ACTIVITY] EXIT -- low power mode (force: %d)-- ", b_force);
 #ifdef _ENABLE_TOUCH_
 	// Set Touch IC power mode accordingly
 	TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
@@ -138,7 +140,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 			// Average time for past 7 steps
 			pace = 7000.0;
 			pace /= (double)(steps_time_stamp[7] - steps_time_stamp[0]);
-			Y_SPRINTF("[TRACKING] running pace: %d, %d, %d", (I8U)(pace*10), steps_time_stamp[7], steps_time_stamp[0]);
+			TRACKING_SPRINTF("[TRACKING] running pace: %d, %d, %d", (I8U)(pace*10), steps_time_stamp[7], steps_time_stamp[0]);
 			
 			if (pace > 3.8) 
 				pace = 3.8;
@@ -146,7 +148,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 				pace = 2;
 		} else {
 			pace = 2;
-			Y_SPRINTF("[TRACKING] running fixed pace: %d", (I8U)(pace*10));
+			TRACKING_SPRINTF("[TRACKING] running fixed pace: %d", (I8U)(pace*10));
 		}
 		// Get reference rate
 		ref_rate = cling.user_data.profile.running_rate;
@@ -164,7 +166,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 		} else {
 			stride -= (ref_rate-pace)*37.6;
 		}
-		Y_SPRINTF("[TRACKING] running stride: %f, pace: %f", stride, pace);
+		TRACKING_SPRINTF("[TRACKING] running stride: %f, pace: %f", stride, pace);
 	} else {
 		// Walking pace is calculated based on the steps we took in last minute
 		pace = (double)(cling.run_stat.walk_per_60_second+cling.run_stat.run_per_60_second);
@@ -173,7 +175,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 			pace = 3.5;
 		if (pace < 1.88)
 			pace = 1.88;
-		Y_SPRINTF("[TRACKING] walking  pace: %d", (I8U)(pace*10));
+		TRACKING_SPRINTF("[TRACKING] walking  pace: %d", (I8U)(pace*10));
 		stride = 43.89*pace - 7.68;
 		// Get user defined stride length and perform a calibration
 		ratio = cling.user_data.profile.stride_in_cm;
@@ -183,7 +185,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 			ratio = 2;
 		else if (ratio < 0.5)
 			ratio = 0.5;
-		Y_SPRINTF("[TRACKING] walking stride: %f, ratio: %d", stride, (I16U)(ratio*100));
+		TRACKING_SPRINTF("[TRACKING] walking stride: %f, ratio: %d", stride, (I16U)(ratio*100));
 		// Normalization
 		stride *= ratio;
 	}
@@ -868,7 +870,7 @@ static void _logging_per_minute()
 		max_heart_rate *= cling.user_data.profile.max_hr_alert;
 		max_heart_rate /= 100;
 		
-		Y_SPRINTF("[TRACKING] Max heart rate: %d", max_heart_rate);
+		TRACKING_SPRINTF("[TRACKING] Max heart rate: %d", max_heart_rate);
 	}
 
 	if (!cling.activity.b_workout_active) {
@@ -1088,7 +1090,7 @@ static void _update_running_pace()
 	cling.run_stat.last_10sec_pace_min = min;
 	cling.run_stat.last_10sec_pace_sec = sec;
 	
-	Y_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_pace_min, cling.run_stat.last_10sec_pace_sec);
+	TRACKING_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_pace_min, cling.run_stat.last_10sec_pace_sec);
 	
 	cling.run_stat.pace_calc_ts = t_curr;
 	cling.run_stat.last_10sec_distance = 0;

@@ -7,6 +7,8 @@
 #define ADC_3P2_VOLTS 492
 #define ADC_3P0_VOLTS 462
 
+#define BATT_SPRINTF N_SPRINTF
+
 #define BATTERY_PERCENTAGE_LEVEL 60
 
 static const I16U battery_vol_tab[BATTERY_PERCENTAGE_LEVEL] = {
@@ -42,7 +44,7 @@ static EN_STATUSCODE BATT_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 	if (err_code == NRF_SUCCESS) {
 		N_SPRINTF("BATT: Read TX PASS: ");
 	} else {
-		Y_SPRINTF("BATT: Read TX FAIL - %d", err_code);
+		BATT_SPRINTF("BATT: Read TX FAIL - %d", err_code);
 		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
@@ -51,7 +53,7 @@ static EN_STATUSCODE BATT_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 		N_SPRINTF("BATT: Read RX PASS: ");
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("BATT: Read RX FAIL: %d", err_code);
+		BATT_SPRINTF("BATT: Read RX FAIL: %d", err_code);
 		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
@@ -80,7 +82,7 @@ static BOOLEAN BATT_write_reg(I8U cmdID, I8U regVal)
 		N_SPRINTF("BATT: Write PASS: 0x%02x  0x%02x", cmdID, regVal);
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("BATT: Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
+		BATT_SPRINTF("BATT: Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
 		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
@@ -115,7 +117,7 @@ void BATT_charging_init()
 	BATT_write_reg(0x0D, 0xbc);
 #endif	
 //	BATT_read_reg(0x0D, 1, &data[3]);
-//	Y_SPRINTF("BATT REG: 0x%02x, 0x%02x, 0x%02x, 0x%02x", data[0], data[1], data[2], data[3]);
+//	BATT_SPRINTF("BATT REG: 0x%02x, 0x%02x, 0x%02x, 0x%02x", data[0], data[1], data[2], data[3]);
 }
 
 void BATT_charging_deinit()
@@ -264,7 +266,7 @@ void BATT_interrupt_process(BOOLEAN b_init)
 	
 	BATT_read_reg(0x03, 1, &int_status);
 
-	Y_SPRINTF("BATT: int - 0x%02x", int_status);
+	BATT_SPRINTF("BATT: int - 0x%02x", int_status);
 	
 	if (int_status) {
 		// Clear register
@@ -350,14 +352,14 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 
 		// Disconnect BLE if device is connected.
 		if (BTLE_is_connected()) {
-			Y_SPRINTF("[RTC] disconnect, unauthorized device");
+			BATT_SPRINTF("[RTC] disconnect, unauthorized device");
 			// Disconnect BLE service
 			BTLE_disconnect(BTLE_DISCONN_REASON_SYSTEM_SHUTDOWN);
 		}
 
 		// No DC-in then, put device into a super-low power state
 		//
-		Y_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
+		BATT_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
 		
 		GPIO_system_powerdown();
 		
@@ -583,6 +585,6 @@ void BATT_start_first_measure()
 	cling.batt.b_initial_measuring = TRUE;
 	cling.batt.adc_state = CHARGER_ADC_ACQUIRED;
 	
-	Y_SPRINTF("[BATT] start first measure - adc: %d", cling.batt.volts_reading);
+	BATT_SPRINTF("[BATT] start first measure - adc: %d", cling.batt.volts_reading);
 #endif
 }

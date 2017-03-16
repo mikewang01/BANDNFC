@@ -433,10 +433,10 @@ void SYSTEM_init(void)
 	// If nothing got stored before, this is an unauthorized device, let's initialize time
 	//
 	b_valid_info = _critical_info_restored();
-	
+
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
-	// RTC hardware init with restored time zone info
-	RTC_hw_init();
+	// Make sure we have correct epoch.
+  RTC_calibrate_current_epoch();
 #endif
 	
 	// Restore activity info

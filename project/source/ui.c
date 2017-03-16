@@ -12,6 +12,7 @@
 #ifdef _CLINGBAND_2_PAY_MODEL_
 #include "ui_matrix_pay.h"
 #include "player_controller.h"
+#include "ble_pay_app.h"
 #elif defined _CLINGBAND_PACE_MODEL_
 #include "ui_matrix_pace.h"
 #elif defined _CLINGBAND_VOC_MODEL_
@@ -157,12 +158,12 @@ static BOOLEAN _is_stopwatch_page(I8U frame_index)
 }
 
 /*------------------------------------------------------------------------------------------
-*  Function:	_is_workout_type_switch_page(I8U frame_index)
+*  Function:	_is_gym_workout_type_switch_page(I8U frame_index)
 *
 *  Description: Determine whether the current page is workout type switch page.
 *
 *------------------------------------------------------------------------------------------*/
-static BOOLEAN _is_workout_type_switch_page(I8U frame_index)
+static BOOLEAN _is_gym_workout_type_switch_page(I8U frame_index)
 {
   if ((frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
 		return TRUE;
@@ -271,7 +272,7 @@ static void _stote_frame_cached_index()
 		u->frame_cached_index = u->frame_index;
 	}	
 
-	if (_is_workout_type_switch_page(u->frame_index)) {
+	if (_is_gym_workout_type_switch_page(u->frame_index)) {
 		u->frame_cached_index = u->frame_index;
 	}		
 #endif	
@@ -348,14 +349,7 @@ static void _restore_perv_frame_index()
 			u->frame_index = u->frame_cached_index;	
 	    if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) || (u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)) {	
 		    PPG_closing_to_skin_detect_init();
-		  } 
-#ifndef _CLINGBAND_PACE_MODEL_				
-			else if (_is_carousel_page(u->frame_index)) {
-				u->frame_index = UI_DISPLAY_HOME;
-			} else if (_is_workout_type_switch_page(u->frame_index)) {
-				u->frame_index = UI_DISPLAY_HOME;				
-			}
-#endif			
+		  } 		
 		}	
 	}
 }
@@ -1077,7 +1071,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	} 
 	
 #ifndef _CLINGBAND_PACE_MODEL_			
-	if (_is_carousel_page(u->frame_index) || _is_stopwatch_page(u->frame_index) || _is_workout_type_switch_page(u->frame_index)) {
+	if (_is_carousel_page(u->frame_index) || _is_stopwatch_page(u->frame_index) || _is_gym_workout_type_switch_page(u->frame_index)) {
     b_exit_workout_mode = TRUE;		
 	}
 #endif	
@@ -1140,7 +1134,7 @@ static void _update_notifying_switch_control(UI_ANIMATION_CTX *u)
 *  Description: Control send phone finder message to the App. 
 *
 *------------------------------------------------------------------------------------------*/
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+#ifdef _CLINGBAND_VOC_MODEL_ 
 static void _update_phone_finder_control(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	if (gesture != TOUCH_FINGER_MIDDLE)
@@ -1195,6 +1189,34 @@ static void _update_music_control(UI_ANIMATION_CTX *u, I8U gesture)
 		}
 	}
 #endif
+}
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+static int get_balance(uint32_t bus_balance, uint32_t shande_balance){
+	UI_ANIMATION_CTX *u = &cling.ui;
+	
+	u->bus_card_balance = bus_balance;
+	u->bank_card_balance = shande_balance;
+	return 1;
+}
+
+/*------------------------------------------------------------------------------------------
+*  Function:	_update_get_bus_and_bank_card_balance()
+*
+*  Description: Update balance display control. 
+*
+*------------------------------------------------------------------------------------------*/
+static void _update_get_bus_and_bank_card_balance(UI_ANIMATION_CTX *u)
+{
+	if (u->frame_prev_idx == UI_DISPLAY_CAROUSEL_4) {
+		
+		if ((u->frame_index == UI_DISPLAY_PAY_BUS_CARD_BALANCE_ENQUIRY) || (u->frame_index == UI_DISPLAY_PAY_BANK_CARD_BALANCE_ENQUIRY)) {
+	    
+			CLASS(cling_pay_app)*p =cling_pay_app_get_instance();		
+			p->get_balance(p, get_balance);	
+		}
+	}
 }
 #endif
 
@@ -1273,12 +1295,17 @@ static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p
 	_update_stopwatch_operation_control(u, gesture);
 #endif
 
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+#ifdef _CLINGBAND_VOC_MODEL_ 
 	// 12. Phone finder control.
 	_update_phone_finder_control(u, gesture);
-	
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
 	// 13. Music control.
 	_update_music_control(u, gesture);
+	
+	// 14. Update balance display.
+	_update_get_bus_and_bank_card_balance(u);
 #endif	
 }
 

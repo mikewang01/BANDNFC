@@ -93,7 +93,7 @@ static void _font_read_one_Chinese_characters(I8U *utf_8, I16U len, I8U *dataBuf
  *
  * b_center : display in the middle(TRUE),display from the top(FALSE). 
  */
-I8U FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center)
+I8U FONT_load_characters(I16U pin_in_offset, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center)
 {	
 	I8U  font_data[32];
 	I8U  *p0, *p1, *p2, *p3;	
@@ -101,7 +101,7 @@ I8U FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len
 	I8U  ptr, i; 	
 	I8U  line_len = 0;
 
-	p0 = p_in;
+	p0 = cling.ui.p_oled_up + pin_in_offset;
 	
 	// When OTA is in progress,do not operate nflash.
   if (OTA_if_enabled())
@@ -168,7 +168,7 @@ I8U FONT_load_characters(I8U *p_in, char *string, I8U height, I8U horizontal_len
 	
 	// Shift all the display to the middle
 	if (b_center) {
-		p0 = p_in;
+		p0 = cling.ui.p_oled_up + pin_in_offset;
 		p1 = p0+128;
 		ptr = (128 - offset)>>1;
 		
