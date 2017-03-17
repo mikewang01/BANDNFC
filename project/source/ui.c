@@ -1159,6 +1159,9 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 	if ((u->frame_index < UI_DISPLAY_STOPWATCH) || (u->frame_index > UI_DISPLAY_STOPWATCH_END)) {
 		u->stopwatch_time_stamp = 0;
 		u->b_stopwatch_first_enter = FALSE;		
+	  u->b_in_stopwatch_mode = FALSE;
+	} else {
+		u->b_in_stopwatch_mode = TRUE;
 	}
 }
 #endif	
@@ -1800,10 +1803,19 @@ void UI_state_machine()
 			
 			// If we don't see any gesture in 4 seconds, dark out screen
 			if (t_curr > (u->touch_time_stamp+t_threshold)) {
-				N_SPRINTF("[UI] gesture monitor time out - %d at %d", t_threshold, t_curr);
-				if (!cling.activity.b_workout_active || !cling.user_data.b_running_alwayson)
-				{
-					u->state = UI_STATE_DARK;
+				
+				if (cling.user_data.b_running_alwayson) {
+#ifdef _CLINGBAND_PACE_MODEL_							
+					if (!cling.activity.b_workout_active) {
+#else 
+					if ((!cling.activity.b_workout_active) && (!u->b_in_stopwatch_mode)) {
+#endif						
+						N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
+						u->state = UI_STATE_DARK;
+					}
+				} else {
+					N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
+					u->state = UI_STATE_DARK;					
 				}
 			}
 			break;

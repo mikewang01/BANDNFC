@@ -728,6 +728,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	
 	// Stopwatch flag
 	BOOLEAN b_stopwatch_first_enter;
+	BOOLEAN b_in_stopwatch_mode;
 	
 	// Rendering context
 	FRAME_RENDERING_CTX frm_render;
