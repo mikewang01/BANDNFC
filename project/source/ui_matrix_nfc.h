@@ -594,11 +594,11 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	// 0: Home
 	/* UI_DISPLAY_HOME */                          400,
 	// 1: System
-	/*UI_DISPLAY_SYSTEM_RESTART,*/                 2000,
+	/*UI_DISPLAY_SYSTEM_RESTART,*/                 1000,
 	/*UI_DISPLAY_SYSTEM_OTA,*/                     2000,
-	/*UI_DISPLAY_SYSTEM_LINKING,*/                 2000,
+	/*UI_DISPLAY_SYSTEM_LINKING,*/                 400,
 	/*UI_DISPLAY_SYSTEM_UNAUTHORIZED,*/            2000,		
-	/*UI_DISPLAY_SYSTEM_BATT_POWER,*/              2000,	
+	/*UI_DISPLAY_SYSTEM_BATT_POWER,*/              1000,	
 	// 2: a set of the typical use cases
 	/*UI_DISPLAY_TRACKER_STEP,*/                   400,  
 	/*UI_DISPLAY_TRACKER_DISTANCE,*/               400,
