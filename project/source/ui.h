@@ -37,8 +37,8 @@
 #define UI_FRAME_ENABLE_CALORIES                   0x0004
 #define UI_FRAME_ENABLE_ACTIVE_TIME                0x0008
 #define UI_FRAME_ENABLE_HEART_RATE                 0x0010
-#define UI_FRAME_ENABLE_SKIN_TEMP                  0x0020
-#define UI_FRAME_ENABLE_UV_INDEX                   0x0040
+#define UI_FRAME_ENABLE_SKIN_TEMP                  0x0400
+#define UI_FRAME_ENABLE_UV_INDEX                   0x0800
 #define UI_FRAME_ENABLE_HOME                       0xFFFF
 #endif
 
@@ -49,7 +49,7 @@
 #define UI_FRAME_ENABLE_CALORIES                   0x0004
 #define UI_FRAME_ENABLE_ACTIVE_TIME                0x0008
 #define UI_FRAME_ENABLE_HEART_RATE                 0x0010
-#define UI_FRAME_ENABLE_SKIN_TEMP                  0x0020
+#define UI_FRAME_ENABLE_SKIN_TEMP                  0x0400
 #define UI_FRAME_ENABLE_HOME                       0xFFFF
 #endif
 
@@ -60,7 +60,7 @@
 #define UI_FRAME_ENABLE_CALORIES                   0x0004
 #define UI_FRAME_ENABLE_ACTIVE_TIME                0x0008
 #define UI_FRAME_ENABLE_HEART_RATE                 0x0010
-#define UI_FRAME_ENABLE_SKIN_TEMP                  0x0020
+#define UI_FRAME_ENABLE_SKIN_TEMP                  0x0400
 #define UI_FRAME_ENABLE_HOME                       0xFFFF
 #endif
 
