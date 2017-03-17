@@ -128,7 +128,6 @@ static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 		return FALSE;
 }
 
-
 /*------------------------------------------------------------------------------------------
 *  Function:	_is_other_need_store_page(I8U frame_index)
 *
@@ -144,6 +143,18 @@ static BOOLEAN _is_other_need_store_page(I8U frame_index)
   else if ((frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
 		return TRUE;	
   else if ((frame_index >= UI_DISPLAY_STOPWATCH) && (frame_index <= UI_DISPLAY_STOPWATCH_END))
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SETTING_VER)
+		return TRUE;		
+	else if (frame_index == UI_DISPLAY_SMART_WEATHER)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_MESSAGE)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
 		return TRUE;	
 #endif	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	

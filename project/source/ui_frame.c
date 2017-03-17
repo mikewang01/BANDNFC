@@ -1276,7 +1276,11 @@ static void _middle_render_horizontal_training_start_run()
 	  offset = 34;
 #endif	
 	} else {
+#ifdef _CLINGBAND_PACE_MODEL_				
+	  offset = 28;	
+#else
 	  offset = 34;	
+#endif		
 	}
 	
 	FONT_load_characters(128+offset, (char *)run_start_name[language_type], 16, 128, FALSE);
@@ -1451,7 +1455,7 @@ static void _middle_render_horizontal_training_run_stop()
 #ifndef _CLINGBAND_PACE_MODEL_	
 	const char *run_stop_name[] = {"STOP RUN", "结束跑步 ", "结束跑步 "};
 #else	
-	const char *run_stop_name[] = {"STOP ", "结束运动 ", "結束運動 "};
+	const char *run_stop_name[] = {"STOP RUN", "结束运动 ", "結束運動 "};
 #endif	
 	I8U language_type = cling.ui.language_type;
 
@@ -2400,9 +2404,12 @@ static void _render_vertical_fonts_lib_invert_colors_core(I8U *string, I8U offse
 	memset(buf_fonts, 0, 256);
 	
 	line_len = FONT_load_characters(offset, (char *)string, 16, 128, FALSE);
-	memcpy(buf_fonts, cling.ui.p_oled_up+offset, line_len);
-	memcpy(buf_fonts+128, cling.ui.p_oled_up+offset+128, line_len);
 	
+	memcpy(buf_fonts, cling.ui.p_oled_up+offset, line_len);
+	memset(cling.ui.p_oled_up+offset, 0, line_len);
+	memcpy(buf_fonts+128, cling.ui.p_oled_up+offset+128, line_len);
+  memset(cling.ui.p_oled_up+offset+128, 0, line_len);	
+
 	for (i=0;i<32;i++) {
 		*(p0+i) = ~(*(p0+i));
 		*(p1+i) = ~(*(p1+i));	
@@ -3907,7 +3914,7 @@ static void _bottom_render_vertical_button_hold()
 	const	char *button_hold_name[] = {"HOLD", "长按", "長按"};	
 	I8U language_type = cling.ui.language_type;	
 	
-  _render_vertical_fonts_lib_invert_colors_core((I8U *)button_hold_name[language_type], 122);
+  _render_vertical_fonts_lib_invert_colors_core((I8U *)button_hold_name[language_type], 112);
 }
 #endif
 
@@ -4255,6 +4262,50 @@ void UI_frame_display_appear(I8U index, BOOLEAN b_render)
 	} 
 }
 
+#ifdef _CLINGBAND_PACE_MODEL_
+const I8U ui_matrix_horizontal_icon_16_idx[] = {
+  ICON16_NONE,                      /*UI_FRAME_PAGE_NONE*/	
+  ICON16_NONE,                      /*UI_FRAME_PAGE_HOME_CLOCK*/	
+  ICON16_NONE,                      /*UI_FRAME_PAGE_RESTART_LOGO*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_UNAUTHORIZED*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_LINKING*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_OTA*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_BATT_POWER*/
+	ICON16_STEPS_IDX,                 /*UI_FRAME_PAGE_STEPS*/
+  ICON16_DISTANCE_IDX,              /*UI_FRAME_PAGE_DISTANCE*/
+	ICON16_CALORIES_IDX,              /*UI_FRAME_PAGE_CALORIES*/
+	ICON16_ACTIVE_TIME_IDX,           /*UI_FRAME_PAGE_ACTIVE_TIME*/
+  ICON16_PM2P5_IDX,                 /*UI_FRAME_PAGE_PM2P5*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_WEATHER*/
+  ICON16_INCOMING_CALL_IDX,         /*UI_FRAME_PAGE_INCOMING_CALL*/
+  ICON16_MESSAGE_IDX,               /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_DETAIL_NOTIF*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  ICON16_NONE,                      /*UI_FRAME_PAGE_IDLE_ALERT*/
+	ICON16_HEART_RATE_IDX,            /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
+	ICON16_STEPS_IDX,                 /*UI_FRAME_PAGE_STEP_10K_ALERT*/
+	ICON16_HEART_RATE_IDX,            /*UI_FRAME_PAGE_HEART_RATE*/                          
+  ICON16_RUNNING_PACE_IDX,          /*UI_FRAME_PAGE_RUNNING_ANALYSIS*/
+  ICON16_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
+	ICON16_RUNNING_TIME_IDX,          /*UI_FRAME_PAGE_RUNNING_TIME*/
+	ICON16_RUNNING_PACE_IDX,          /*UI_FRAME_PAGE_RUNNING_PACE*/
+	ICON16_RUNNING_HR_IDX,            /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
+	ICON16_RUNNING_CALORIES_IDX,      /*UI_FRAME_PAGE_RUNNING_CALORIES*/
+	ICON16_RUNNING_CADENCE_IDX,       /*UI_FRAME_PAGE_RUNNING_CADENCE*/
+	ICON16_RUNNING_STRIDE_IDX,        /*UI_FRAME_PAGE_RUNNING_STRIDE*/
+	ICON16_RUNNING_STOP_IDX,          /*UI_FRAME_PAGE_RUNNING_STOP_ANALYSIS*/
+	ICON16_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_TRAINING_RUN_START*/
+	ICON16_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_TRAINING_READY*/
+	ICON16_RUNNING_TIME_IDX,          /*UI_FRAME_PAGE_TRAINING_TIME*/
+	ICON16_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
+	ICON16_RUNNING_PACE_IDX,          /*UI_FRAME_PAGE_TRAINING_PACE*/
+	ICON16_RUNNING_HR_IDX,            /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
+	ICON16_RUNNING_STOP_IDX,          /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
+};
+#endif
+
+	
+	
 #ifdef _CLINGBAND_UV_MODEL_
 const I8U ui_matrix_horizontal_icon_16_idx[] = {
   ICON16_NONE,                      /*UI_FRAME_PAGE_NONE*/	
@@ -4471,6 +4522,48 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
   ICON16_NONE,                      /*UI_FRAME_PAGE_CAROUSEL_2*/
   ICON16_NONE,                      /*UI_FRAME_PAGE_CAROUSEL_3*/
   ICON16_NONE,                      /*UI_FRAME_PAGE_CAROUSEL_4*/
+};
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_
+const I8U ui_matrix_vertical_icon_24_idx[] = {
+	ICON24_NONE,                      /*UI_FRAME_PAGE_NONE*/	
+  ICON24_NONE,                      /*UI_FRAME_PAGE_HOME_CLOCK*/	
+  ICON24_NONE,                      /*UI_FRAME_PAGE_RESTART_LOGO*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_UNAUTHORIZED*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_LINKING*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_OTA*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_BATT_POWER*/
+	ICON24_STEPS_IDX,                 /*UI_FRAME_PAGE_STEPS*/
+  ICON24_DISTANCE_IDX,              /*UI_FRAME_PAGE_DISTANCE*/
+	ICON24_CALORIES_IDX,              /*UI_FRAME_PAGE_CALORIES*/
+	ICON24_ACTIVE_TIME_IDX,           /*UI_FRAME_PAGE_ACTIVE_TIME*/
+  ICON24_PM2P5_IDX,                 /*UI_FRAME_PAGE_PM2P5*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_WEATHER*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_INCOMING_CALL*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_INCOMING_MESSAGE*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_DETAIL_NOTIF*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_ALARM_CLOCK_REMINDER*/
+  ICON24_NONE,                      /*UI_FRAME_PAGE_IDLE_ALERT*/
+	ICON24_HEART_RATE_IDX,            /*UI_FRAME_PAGE_HEART_RATE_ALERT*/
+	ICON24_STEPS_IDX,                 /*UI_FRAME_PAGE_STEP_10K_ALERT*/
+	ICON24_HEART_RATE_IDX,            /*UI_FRAME_PAGE_HEART_RATE*/
+  ICON24_RUNNING_PACE_IDX,          /*UI_FRAME_PAGE_RUNNING_ANALYSIS*/
+  ICON24_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_RUNNING_DISTANCE*/
+	ICON24_RUNNING_TIME_IDX,          /*UI_FRAME_PAGE_RUNNING_TIME*/
+	ICON24_RUNNING_PACE_IDX,          /*UI_FRAME_PAGE_RUNNING_PACE*/
+	ICON24_RUNNING_HR_IDX,            /*UI_FRAME_PAGE_RUNNING_HEART_RATE*/
+	ICON24_RUNNING_CALORIES_IDX,      /*UI_FRAME_PAGE_RUNNING_CALORIES*/
+	ICON24_RUNNING_CADENCE_IDX,       /*UI_FRAME_PAGE_RUNNING_CADENCE*/
+	ICON24_RUNNING_STRIDE_IDX,        /*UI_FRAME_PAGE_RUNNING_STRIDE*/
+	ICON24_RUNNING_STOP_IDX,          /*UI_FRAME_PAGE_RUNNING_STOP_ANALYSIS*/
+	ICON24_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_TRAINING_RUN_START*/
+	ICON24_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_TRAINING_READY*/
+	ICON24_RUNNING_TIME_IDX,          /*UI_FRAME_PAGE_TRAINING_TIME*/
+	ICON24_RUNNING_DISTANCE_IDX,      /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
+	ICON24_RUNNING_PACE_IDX,          /*UI_FRAME_PAGE_TRAINING_PACE*/
+	ICON24_RUNNING_HR_IDX,            /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
+	ICON24_RUNNING_STOP_IDX,          /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
 };
 #endif
 
