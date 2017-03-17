@@ -2236,7 +2236,6 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	I8U buf_fonts[256];	
 	I8U *p0, *p1, *p2;
 	I8U line_len;
-
 	p0 = buf_fonts;
 	p1 = p0 + 128;
 	p2 = p1 + 32;
@@ -2249,7 +2248,7 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	memset(cling.ui.p_oled_up+offset, 0, line_len);
 	if (height == 16) {
 	  memcpy(buf_fonts+128, cling.ui.p_oled_up+offset+128, line_len);
- 	  memset(cling.ui.p_oled_up+offset+128, 0, line_len);		
+		memset(cling.ui.p_oled_up+offset+128, 0, line_len);	
 	}
 
 	// Shift to the center
@@ -3829,9 +3828,9 @@ static void _bottom_render_vertical_home()
  	
 	_get_home_frame_stiring_core(string1, string2);
 	
-	_render_vertical_fonts_lib_character_core(string1, 8, 120);
-	
   _render_vertical_fonts_lib_character_core(string2, 16, 96);
+	
+	_render_vertical_fonts_lib_character_core(string1, 8, 120);	
 }
 
 static void _render_vertical_small_clock(I8U offset)
