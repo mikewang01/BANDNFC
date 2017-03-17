@@ -2880,6 +2880,7 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 		margin = 0;
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
+		string[len++] = 0;
 		_render_vertical_local_character_core(string, offset, margin, b_24_size, FALSE);
 		hr_result = 0;
 	}
@@ -3065,6 +3066,7 @@ static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder
 	if (b_invalid_alarm) {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
+		string[len++] = 0;
 		_render_vertical_local_character_core(string, 50, margin, b_24_size, FALSE);		
 	} else {
 	  // Rendering clock ...
@@ -3661,6 +3663,7 @@ static void _middle_render_vertical_cycling_outdoor_distance()
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
+		string[len++] = 0;
 		_render_vertical_local_character_core(string, 55, margin, b_24_size, FALSE);				
 	}
 }
@@ -3687,6 +3690,7 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 	} else {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
+		string[len++] = 0;
 		_render_vertical_local_character_core(string, 55, margin, b_24_size, FALSE);				
 	}
 }
@@ -4850,9 +4854,9 @@ static void _core_frame_display(I8U middle, BOOLEAN b_render)
 	cling.ui.frm_render.vertical_icon_24_idx = ui_matrix_vertical_icon_24_idx[middle];		
 
 	ui_render[middle].middle_row_render();
+	ui_render[middle].bottom_row_render();	
 	ui_render[middle].top_row_render();	
-	ui_render[middle].bottom_row_render();
-	
+
 	if (b_render) {
 		// Finally, we render the frame
 		UI_render_screen();
