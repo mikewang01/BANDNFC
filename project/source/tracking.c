@@ -584,7 +584,7 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 
 		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
 		
-		vital->skin_temperature = 0;
+		vital->skin_temperature = cling.therm.current_temperature;
 		vital->skin_touch_pads = 1;
 
 	if (!cling.hr.b_closing_to_skin) {
