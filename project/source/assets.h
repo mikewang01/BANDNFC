@@ -86,6 +86,9 @@
 #define ICON16_STOPWATCH_IDX               147
 #define ICON16_STOPWATCH_LEN               asset_len[256+147]
 #define ICON16_STOPWATCH_POS               asset_pos[256+147]
+#define ICON16_UV_INDEX_IDX                148
+#define ICON16_UV_INDEX_LEN                asset_len[256+148]
+#define ICON16_UV_INDEX_POS                asset_pos[256+148]
 #define ICON16_SKIN_TEMP_IDX               149
 #define ICON16_SKIN_TEMP_LEN               asset_len[256+149]
 #define ICON16_SKIN_TEMP_POS               asset_pos[256+149]
@@ -134,10 +137,13 @@
 
 
 /****************** 24 pixels high icon *******************/
-#define ICON24_NONE                        127
+#define ICON24_NONE                        125
 #define ICON24_WEATHER_RANGE_IDX           126
 #define ICON24_WEATHER_RANGE_LEN           asset_len[512+126]
 #define ICON24_WEATHER_RANGE_POS           asset_pos[512+126]
+#define ICON24_UV_INDEX_IDX                127
+#define ICON24_UV_INDEX_LEN                asset_len[512+127]
+#define ICON24_UV_INDEX_POS                asset_pos[512+127]
 #define ICON24_SKIN_TEMP_IDX               128
 #define ICON24_SKIN_TEMP_LEN               asset_len[512+128]
 #define ICON24_SKIN_TEMP_POS               asset_pos[512+128]

@@ -336,8 +336,6 @@ static void _day_stat_reset()
 	cling.run_stat.time_min = 0;
 	cling.run_stat.time_sec = 0;
 	cling.run_stat.accu_heart_rate = 0;
-	
-	Y_SPRINTF("Day rollover, reset activity");
 }
 
 void TRACKING_total_data_load_file()
@@ -1200,7 +1198,7 @@ void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 	TRACKING_CTX *t = &cling.activity;
 	BOOLEAN b_available = FALSE;
 	
-	Y_SPRINTF("Tracking: %d, %d, %d, %d", cling.activity.day.walking, cling.activity.day.running, cling.activity.day.calories>>4, cling.activity.day.distance>>4);
+	N_SPRINTF("Tracking: %d, %d, %d, %d, %d", cling.activity.day.sleep, cling.activity.day.walking, cling.activity.day.running, cling.activity.day.calories>>4, cling.activity.day.distance>>4);
 
 	if (index == 0) {
 		switch (mode) {
@@ -1222,7 +1220,7 @@ void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 				break;
 		}
 		
-		Y_SPRINTF("[TRACKING] index: %d, mode: %d, value: %d", index, mode, *value);
+		N_SPRINTF("[TRACKING] index: %d, mode: %d, value: %d", index, mode, value);
 		
 		b_available = TRUE;
 

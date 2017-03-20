@@ -4842,7 +4842,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_run_or_analysis,  _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_RUN_OR_ANALYSIS*/
   {_left_render_horizontal_training_ready,        _middle_render_horizontal_training_ready,            _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_READY*/ 
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_FRAME_PAGE_TRAINING_TIME*/
-  {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_distance,         _right_render_horizontal_running_distance},        /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
+  {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_distance,         _right_render_horizontal_running_distance},       /*UI_FRAME_PAGE_TRAINING_DISTANCE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_pace,             _right_render_horizontal_training_pace},           /*UI_FRAME_PAGE_TRAINING_PACE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_FRAME_PAGE_TRAINING_HEART_RATE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_run_stop,         _right_render_horizontal_run_ok},                  /*UI_FRAME_PAGE_TRAINING_RUN_STOP*/
