@@ -2537,7 +2537,7 @@ static void _middle_render_vertical_steps()
 	TRACKING_get_activity(cling.ui.vertical_index, TRACKING_STEPS, &stat);
 #endif
 	
-	N_SPRINTF("UI: vertical step - %d", stat);
+	Y_SPRINTF("UI: vertical step - %d (at %d day)", stat, cling.ui.vertical_index);
 	
 	if (stat > 99999) {
 		v_10000 = 9;

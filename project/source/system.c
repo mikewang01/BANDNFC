@@ -437,6 +437,13 @@ void SYSTEM_init(void)
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
 	// Make sure we have correct epoch.
   RTC_calibrate_current_epoch();
+#else
+	// Otherwise, we restore from critical info 
+	RTC_get_local_clock(cling.time.time_since_1970, &cling.time.local);
+
+	// Get current local minute
+	cling.time.local_day = cling.time.local.day;
+	cling.time.local_minute = cling.time.local.minute;
 #endif
 	
 	// Restore activity info
