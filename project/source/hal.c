@@ -47,7 +47,6 @@
 #endif
 #include "sysflash_rw.h"
 #include "wechat_port.h"
-
 #define _TOUCH_IC_PROGRAM_
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT     0                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
@@ -69,43 +68,41 @@
 //
 #if 1
 const I16U conn_param_active[4] = {
-    MSEC_TO_UNITS(20, UNIT_1_25_MS),          /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(20, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
     MSEC_TO_UNITS(40, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
-    4,                                        /**< Slave latency. */
+    4,                                          /**< Slave latency. */
     MSEC_TO_UNITS(2000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #else
 const I16U conn_param_active[4] = {
-    MSEC_TO_UNITS(380, UNIT_1_25_MS),         /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(400, UNIT_1_25_MS),         /**< Maximum acceptable connection interval (1 second). */
-    4,                                        /**< Slave latency. */
+    MSEC_TO_UNITS(380, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(400, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
+    4,                                          /**< Slave latency. */
     MSEC_TO_UNITS(6000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #endif
-
 #if 1
 const I16U conn_param_idle[4] = {
-    MSEC_TO_UNITS(250, UNIT_1_25_MS),         /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(400, UNIT_1_25_MS),         /**< Maximum acceptable connection interval (1 second). */
-    4,                                        /**< Slave latency. */
+    MSEC_TO_UNITS(250, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(400, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
+    4,                                          /**< Slave latency. */
     MSEC_TO_UNITS(6000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #else
 const I16U conn_param_idle[4] = {
-    MSEC_TO_UNITS(40, UNIT_1_25_MS),          /**< Minimum acceptable connection interval (40 milli-seconds). */
-    MSEC_TO_UNITS(250, UNIT_1_25_MS),         /**< Maximum acceptable connection interval (1 second). */
-    4,                                        /**< Slave latency. */
+    MSEC_TO_UNITS(40, UNIT_1_25_MS),           /**< Minimum acceptable connection interval (40 milli-seconds). */
+    MSEC_TO_UNITS(250, UNIT_1_25_MS),          /**< Maximum acceptable connection interval (1 second). */
+    4,                                          /**< Slave latency. */
     MSEC_TO_UNITS(6000, UNIT_10_MS)           /**< Connection supervisory timeout (4 seconds). */
 };
 #endif
-
 static dm_application_instance_t             m_app_handle;                              /**< Application identifier allocated by device manager */
 
 static ble_gap_adv_params_t                  m_adv_params;                              /**< Parameters to be passed to the stack when starting advertising. */
 #endif
 #ifndef _CLING_PC_SIMULATION_
 
-static dm_handle_t               m_peer_handle;                            /**< Identifies the peer that is currently connected. */
+static dm_handle_t               m_peer_handle __attribute__((unused));                            /**< Identifies the peer that is currently connected. */
 #endif
 #ifdef _ENABLE_ANCS_
 static  ble_db_discovery_t        m_ble_db_discovery;                       /**< Structure used to identify the DB Discovery module. */
@@ -198,8 +195,7 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
         dm_event_t const  * p_event,
         ret_code_t        event_result)
 {
-  I32U err_code;
-
+  I32U err_code __attribute__((unused));
 #ifdef _ENABLE_ANCS_		
 	if (cling.ancs.bond_flag == ANCS_BOND_STATE_FAIL_FLAG) {
 			
@@ -253,7 +249,7 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 
 void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
 {
-#if 1
+#if 0
 	BLE_CTX *r = &cling.ble;
 	I32U t_curr = CLK_get_system_time();
 	ble_gap_conn_params_t params;
@@ -272,7 +268,7 @@ void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
 #endif
 	cling.system.conn_params_update_ts = t_curr;
 
-	Y_SPRINTF("[HAL] disconnect BLE for a fast connection");
+	N_SPRINTF("[HAL] disconnect BLE for a fast connection");
 	r->adv_mode = BLE_FAST_ADV;
 
 #if 1
@@ -294,7 +290,7 @@ void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
     params.conn_sup_timeout = conn_param_active[3];
     //current_params = params;
     if(ble_conn_params_com_conn_params(params, true) == true) {
-        Y_SPRINTF("[HAL] STILL IN fast connection");
+        N_SPRINTF("[HAL] STILL IN fast connection");
         return ;
     }
     uint32_t err_code = ble_conn_params_change_conn_params(&params, swith_purpose);
@@ -305,8 +301,9 @@ void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose)
         sd_ble_tx_buffer_count_get(&r->tx_buf_available);
     }
 #endif
-}
 #endif
+}
+
 
 BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose)
 {
@@ -329,14 +326,14 @@ BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose)
 	r->adv_mode = BLE_SLOW_ADV;
 	cling.system.conn_params_update_ts = t_curr;
 
-	params.min_conn_interval = conn_param_idle[0];
-	params.max_conn_interval = conn_param_idle[1];
-	params.slave_latency = conn_param_idle[2];
-	params.conn_sup_timeout = conn_param_idle[3];
+	params.min_conn_interval = conn_param_active[0];
+	params.max_conn_interval = conn_param_active[1];
+	params.slave_latency = conn_param_active[2];
+	params.conn_sup_timeout = conn_param_active[3];
 
 	/*ckeck connection parameter*/
 	if(ble_conn_params_com_conn_params(params, false) == true) {
-		Y_SPRINTF("[HAL] still in slow connection");
+		N_SPRINTF("[HAL] still in slow connection");
 		return TRUE;
 	}
 
@@ -357,7 +354,7 @@ BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose)
 		r->b_conn_params_updated = TRUE;
 		Y_SPRINTF("[HAL] connection params updated -- SLOW --");
 		sd_ble_tx_buffer_count_get(&r->tx_buf_available);
-	} 
+	}
 #endif
 	
 	return TRUE;
@@ -484,7 +481,7 @@ static void _advertising_init(uint8_t       flags)
 
 	// Keep minimum set of data during advertising
 	advdata.flags				            = flags;
-	advdata.uuids_complete.uuid_cnt = 1;
+	advdata.uuids_complete.uuid_cnt = sizeof(adv_uuids) / sizeof(adv_uuids[0]);
 	advdata.uuids_complete.p_uuids  = adv_uuids;
 
 #ifdef _ENABLE_ANCS_

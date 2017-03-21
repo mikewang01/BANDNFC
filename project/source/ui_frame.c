@@ -26,11 +26,10 @@ void UI_render_screen()
 /***************************************************************************/
 /*********************** Horizontal display page ***************************/
 /***************************************************************************/
-static void _render_one_icon_8(I8U icon_8_idx, I16U offset)
+static void _render_one_icon_8(I8U icon_8_idx, I8U *p_out_0)
 {
   I8U len, i;	
 	const I8U *p_in;
-	I8U *p_out_0 = cling.ui.p_oled_up+offset;
 	
 	len = asset_len[icon_8_idx];
 	p_in = asset_content+asset_pos[icon_8_idx];
@@ -75,7 +74,7 @@ static void _render_one_icon_24(I8U icon_24_idx, I16U offset)
 	}	
 }
 
-static void _left_render_horizontal_batt_ble()
+static void _render_batt_ble_core(I8U *p_in)
 {	
   I8U *p0;	
 	I8U i;
@@ -85,14 +84,14 @@ static void _left_render_horizontal_batt_ble()
 	
 	if (BTLE_is_connected()) {
 		offset += (ICON8_BATT_CHARGING_LEN + 2);
-		_render_one_icon_8(ICON8_SMALL_BLE_IDX, offset);
+		_render_one_icon_8(ICON8_SMALL_BLE_IDX, p_in + offset);
 	} 
 
 	// Render the right side (offset set to 60 for steps comment)
 	if (BATT_is_charging()) {
-		_render_one_icon_8(ICON8_BATT_CHARGING_IDX, 0);
+		_render_one_icon_8(ICON8_BATT_CHARGING_IDX, p_in);
 	}	else {
-		_render_one_icon_8(ICON8_BATT_NOCHARGING_IDX, 0);		
+		_render_one_icon_8(ICON8_BATT_NOCHARGING_IDX, p_in);		
 	}
 	
 	// Filling up the percentage
@@ -105,10 +104,15 @@ static void _left_render_horizontal_batt_ble()
 		curr_batt_level = 9;
 	
 	// Note: the battery button icon is 9 pixels of length
-	p0 = cling.ui.p_oled_up+2;
+	p0 = p_in+2;
 	for (i = 0; i < curr_batt_level; i++) {
 		*p0++ |= p_v;
 	}
+}
+
+static void _left_render_horizontal_batt_ble()
+{
+  _render_batt_ble_core(cling.ui.p_oled_up);
 }
 
 static void _left_render_horizontal_16_icon()
@@ -1886,7 +1890,7 @@ static void _right_render_horizontal_button_hold()
 static void _right_render_horizontal_more()
 {	
   if (cling.ui.b_detail_page) {
-	 	_render_one_icon_8(ICON8_MORE_IDX, 384+120);	
+	 	_render_one_icon_8(ICON8_MORE_IDX, cling.ui.p_oled_up+384+115);	
   }
 }
 
@@ -2396,15 +2400,12 @@ static void _top_render_vertical_24_icon_core(I8U icon_24_idx)
 
 static void _top_render_vertical_batt_ble()
 {
-//	I8U data_buf[128];
+	I8U data_buf[128];
 
-	//memset(data_buf, 0, 128);
+	memset(data_buf, 0, 128);
 	
-  _left_render_horizontal_batt_ble();
-	//memcpy(data_buf, cling.ui.p_oled_up, 32);
-	_rotate_270_degree(cling.ui.p_oled_up, 384);
-	
-	memset(cling.ui.p_oled_up, 0, 24);
+  _render_batt_ble_core(data_buf);
+	_rotate_270_degree(data_buf, 384);
 }
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
@@ -3803,7 +3804,7 @@ static void _bottom_render_vertical_small_clock()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_more()
 {
-	_render_one_icon_8(ICON8_MORE_IDX, 128+128+120);
+	_render_one_icon_8(ICON8_MORE_IDX, cling.ui.p_oled_up+256+120);
 }
 
 static void _bottom_render_vertical_delta_data_backward()
@@ -3944,9 +3945,9 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
 	ICON16_ACTIVE_TIME_IDX,           /*UI_DISPLAY_ACTIVE_TIME*/
   ICON16_PM2P5_IDX,                 /*UI_DISPLAY_PM2P5*/
   ICON16_NONE,                      /*UI_DISPLAY_WEATHER*/
+  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON16_INCOMING_CALL_IDX,         /*UI_DISPLAY_INCOMING_CALL*/
   ICON16_MESSAGE_IDX,               /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON16_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON16_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
 	ICON16_HEART_RATE_IDX,            /*UI_DISPLAY_HEART_RATE_ALERT*/
@@ -3989,9 +3990,9 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
   ICON16_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON16_RETURN_IDX,                /*UI_DISPLAY_MESSAGE*/
   ICON16_RETURN_IDX,                /*UI_DISPLAY_APP_NOTIF*/
+  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON16_INCOMING_CALL_IDX,         /*UI_DISPLAY_INCOMING_CALL*/
   ICON16_MESSAGE_IDX,               /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON16_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON16_NORMAL_ALARM_CLOCK_IDX,    /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON16_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
@@ -4061,9 +4062,9 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
   ICON16_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON16_RETURN_IDX,                /*UI_DISPLAY_MESSAGE*/
   ICON16_RETURN_IDX,                /*UI_DISPLAY_APP_NOTIF*/
+  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON16_INCOMING_CALL_IDX,         /*UI_DISPLAY_INCOMING_CALL*/
   ICON16_MESSAGE_IDX,               /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON16_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON16_NORMAL_ALARM_CLOCK_IDX,    /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON16_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
@@ -4133,9 +4134,9 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
   ICON16_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON16_RETURN_IDX,                /*UI_DISPLAY_MESSAGE*/
   ICON16_RETURN_IDX,                /*UI_DISPLAY_APP_NOTIF*/
+  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON16_INCOMING_CALL_IDX,         /*UI_DISPLAY_INCOMING_CALL*/
   ICON16_MESSAGE_IDX,               /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON16_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON16_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON16_NORMAL_ALARM_CLOCK_IDX,    /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON16_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
@@ -4207,9 +4208,9 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 	ICON24_ACTIVE_TIME_IDX,           /*UI_DISPLAY_ACTIVE_TIME*/
   ICON24_PM2P5_IDX,                 /*UI_DISPLAY_PM2P5*/
   ICON24_NONE,                      /*UI_DISPLAY_WEATHER*/
+  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_CALL*/
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON24_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
 	ICON24_HEART_RATE_IDX,            /*UI_DISPLAY_HEART_RATE_ALERT*/
@@ -4252,9 +4253,9 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
   ICON24_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON24_NONE,                      /*UI_DISPLAY_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_APP_NOTIF*/
+  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_CALL*/
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON24_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
@@ -4324,9 +4325,9 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
   ICON24_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON24_NONE,                      /*UI_DISPLAY_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_APP_NOTIF*/
+  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_CALL*/
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON24_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
@@ -4396,9 +4397,9 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
   ICON24_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON24_NONE,                      /*UI_DISPLAY_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_APP_NOTIF*/
+  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/	
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_CALL*/
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_MESSAGE*/
-  ICON24_NONE,                      /*UI_DISPLAY_DETAIL_NOTIF*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   ICON24_NORMAL_ALARM_CLOCK_IDX,    /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON24_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
@@ -4474,9 +4475,9 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_DISPLAY_MESSAGE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_DISPLAY_APP_NOTIF*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/	
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_CALL*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_MESSAGE*/
-  {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/
   {_left_render_horizontal_alarm_clock_reminder,  _middle_render_horizontal_alarm_clock_reminder,      _right_render_horizontal_more},                    /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_alarm_clcok_detail,        _right_render_horizontal_reminder},                /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _RENDER_NONE},                                     /*UI_DISPLAY_IDLE_ALERT*/
@@ -4543,9 +4544,9 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_DISPLAY_MESSAGE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_DISPLAY_APP_NOTIF*/
-  {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                      /*UI_DISPLAY_INCOMING_CALL*/
-  {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                      /*UI_DISPLAY_INCOMING_MESSAGE*/
-  {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/	
+  {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_CALL*/
+  {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_MESSAGE*/
   {_left_render_horizontal_alarm_clock_reminder,  _middle_render_horizontal_alarm_clock_reminder,      _right_render_horizontal_more},                    /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_alarm_clcok_detail,        _right_render_horizontal_reminder},                /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_IDLE_ALERT*/

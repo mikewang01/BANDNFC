@@ -478,9 +478,9 @@ enum {
 	UI_DISPLAY_SMART,
 	UI_DISPLAY_SMART_PM2P5 = UI_DISPLAY_SMART, //10
 	UI_DISPLAY_SMART_WEATHER, //11
+	UI_DISPLAY_SMART_DETAIL_NOTIF, //14	
 	UI_DISPLAY_SMART_INCOMING_CALL, //12
 	UI_DISPLAY_SMART_INCOMING_MESSAGE, //13
-	UI_DISPLAY_SMART_DETAIL_NOTIF, //14
 	UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER, //15
 	UI_DISPLAY_SMART_IDLE_ALERT, //16	
 	UI_DISPLAY_SMART_HEART_RATE_ALERT, //17		
@@ -711,6 +711,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Notification
 	BOOLEAN b_detail_page;	    // Detail page.
 	BOOLEAN b_restore_notif;
+	BOOLEAN b_in_incoming_detail_page;
 	I8U notif_type;       	    // Notification type.
 	I8U notif_detail_index;     // Incoming message detail index.
   I8U string_pos_buf[5];	    // Incoming message detail index buff.

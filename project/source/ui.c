@@ -150,10 +150,10 @@ static BOOLEAN _is_other_need_store_page(I8U frame_index)
 		return TRUE;	
 	else if (frame_index == UI_DISPLAY_SMART_MESSAGE)
 		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF)
-		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
-		return TRUE;	
+//	else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF)
+//		return TRUE;	
+//	else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
+//		return TRUE;	
 	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
 		return TRUE;	
 #endif	
@@ -468,19 +468,21 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 }
 
 /*------------------------------------------------------------------------------------------
-*  Function:	_update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix)
+*  Function:	_update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
 *
 *  Description: Switch to next display frame. 
 *
 *------------------------------------------------------------------------------------------*/
-static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix)
+static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
 {
+#ifdef _CLINGBAND_PACE_MODEL_		
 	if (u->frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE) {				
 		if (!u->b_detail_page) {
 			u->frame_next_idx = u->frame_index;					
 			return;
 		}
 	}
+#endif
 	
 	_update_page_filtering_pro(u, p_matrix);
 	
@@ -493,6 +495,37 @@ static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 		}		
 	}
 #else	
+	if ((u->frame_index == UI_DISPLAY_SMART_MESSAGE) && (u->b_detail_page) && (gesture == TOUCH_FINGER_RIGHT)) {
+		u->frame_index = UI_DISPLAY_SMART_APP_NOTIF;
+		u->frame_next_idx = u->frame_index;		
+    return;		
+	}
+	
+	if ((u->frame_index == UI_DISPLAY_SMART_APP_NOTIF) && (u->b_detail_page) && (gesture == TOUCH_FINGER_RIGHT)) {
+		u->frame_index = UI_DISPLAY_SMART_DETAIL_NOTIF;
+		u->frame_next_idx = u->frame_index;		
+		u->b_in_incoming_detail_page = FALSE;
+    return;		
+	}
+
+	if ((u->frame_prev_idx == UI_DISPLAY_SMART_INCOMING_MESSAGE) && (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)) {
+		u->b_in_incoming_detail_page = TRUE;
+	}
+	
+	if ((u->frame_index != UI_DISPLAY_SMART_INCOMING_MESSAGE) && (u->frame_index != UI_DISPLAY_SMART_DETAIL_NOTIF)) {
+		u->b_in_incoming_detail_page = FALSE;		
+	}
+	
+	if ((gesture == TOUCH_SWIPE_LEFT) || (gesture == TOUCH_SWIPE_RIGHT)) {
+		if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
+			if (!u->b_in_incoming_detail_page) {
+				u->frame_index = UI_DISPLAY_SMART_APP_NOTIF;
+				u->frame_next_idx = u->frame_index;		
+				return;
+			}
+		}
+	}		
+	
 	if ((u->frame_prev_idx == UI_DISPLAY_CAROUSEL_1) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_RUN_START)) {
 		if (cling.run_stat.distance) {
 			u->frame_index = UI_DISPLAY_TRAINING_STAT_RUN_OR_ANALYSIS;
@@ -629,9 +662,12 @@ static void _update_notif_repeat_look_time(UI_ANIMATION_CTX *u)
 			break;
 		}
 		case UI_DISPLAY_SMART_DETAIL_NOTIF: {
-			if (u->notif_repeat_look_time >= UI_LOOK_MESSAGE_MAX_REPEAT_TIME) {
-				b_look_finished = TRUE;
-			}			
+			if (u->b_in_incoming_detail_page) {
+			  if (u->notif_repeat_look_time >= UI_LOOK_MESSAGE_MAX_REPEAT_TIME) {
+				  b_look_finished = TRUE;
+					u->b_in_incoming_detail_page = FALSE;
+			  }			
+		  }
 			break;
 		}		
 		case UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER: {
@@ -767,10 +803,10 @@ static void _update_vertical_detail_page(UI_ANIMATION_CTX *u, I8U gesture)
 		return;
 	}
 	
-	if (_ui_vertical_animation(u->frame_index)) {
+	if (_ui_vertical_animation(u->frame_index) && _ui_vertical_animation(u->frame_prev_idx)) {
 		if (!u->b_detail_page) {
 			u->b_detail_page = TRUE;
-			return;
+			//return;
 		}
 	} else {
 		u->b_detail_page = FALSE;
@@ -990,11 +1026,24 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
 		b_exit_workout_mode = TRUE;
 	} 
-	
-#ifndef _CLINGBAND_PACE_MODEL_			
-	if (_is_other_need_store_page(u->frame_index)) {
-	  b_exit_workout_mode = TRUE;		
-	}	
+		
+#ifndef _CLINGBAND_PACE_MODEL_	
+  if ((u->frame_index >= UI_DISPLAY_CAROUSEL) && (u->frame_index <= UI_DISPLAY_CAROUSEL_END))
+		b_exit_workout_mode = TRUE;	
+  else if ((u->frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
+		b_exit_workout_mode = TRUE;	
+  else if ((u->frame_index >= UI_DISPLAY_STOPWATCH) && (u->frame_index <= UI_DISPLAY_STOPWATCH_END))
+		b_exit_workout_mode = TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SETTING_VER)
+		b_exit_workout_mode = TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SMART_WEATHER)
+		b_exit_workout_mode = TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
+		b_exit_workout_mode = TRUE;	
+#endif	
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+  else if ((frame_index >= UI_DISPLAY_MUSIC) && (frame_index <= UI_DISPLAY_MUSIC_END))
+		b_exit_workout_mode = TRUE;	
 #endif	
 	
 	if (b_exit_workout_mode) {
@@ -1175,7 +1224,7 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U gesture)
 {
 	// 1. Update next frame index.		
-	_update_frame_index(u, p_matrix);
+	_update_frame_index(u, p_matrix, gesture);
 	
 	// 2. Enter or exit workout active mode.
 	_update_workout_active_control(u);	
