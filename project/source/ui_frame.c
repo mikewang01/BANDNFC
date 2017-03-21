@@ -891,13 +891,13 @@ static void _middle_render_horizontal_incoming_call_or_message()
 	NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 	dis_len = FONT_get_string_display_len((char *)string);
 
-	if (dis_len > 88) {
-		offset = 24;
-		max_dis_len = 88;
+	if (dis_len > 80) {
+		offset = 22;
+		max_dis_len = 80;
 
 	} else {
 		offset = 256;
-		max_dis_len = 88;		
+		max_dis_len = 80;		
 		b_display_center = TRUE;	
 	}
 
@@ -1763,7 +1763,15 @@ static void _middle_render_horizontal_carousel_3()
 #ifdef _CLINGBAND_2_PAY_MODEL_
 static void _middle_render_horizontal_carousel_4()
 {
-  _middle_render_horizontal_carousel_core(ICON24_BUS_CARD_IDX, ICON24_BANK_CARD_IDX, ICON24_SETTING_IDX);	
+  I8U offset = 128;
+	
+  _render_one_icon_24(ICON24_BUS_CARD_IDX, offset);	
+	offset += 48;
+
+  _render_one_icon_24(ICON24_BANK_CARD_IDX, offset);	
+	offset += 48;
+	
+  _render_one_icon_24(ICON24_SETTING_IDX, offset);			
 }
 #endif
 #endif
@@ -1878,7 +1886,7 @@ static void _right_render_horizontal_button_hold()
 static void _right_render_horizontal_more()
 {	
   if (cling.ui.b_detail_page) {
-	 	_render_one_icon_8(ICON8_MORE_IDX, 384+115);	
+	 	_render_one_icon_8(ICON8_MORE_IDX, 384+120);	
   }
 }
 
