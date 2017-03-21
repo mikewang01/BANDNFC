@@ -1396,6 +1396,21 @@ static void _perform_ui_with_button_press_hold(UI_ANIMATION_CTX *u, I8U gesture)
 #endif
 
 /*------------------------------------------------------------------------------------------
+*  Function:	_perform_ui_with_button_press_sos(UI_ANIMATION_CTX *u, I8U gesture)
+*
+*  Description: Display sos page.
+*
+*------------------------------------------------------------------------------------------*/
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
+static void _perform_ui_with_button_press_sos(UI_ANIMATION_CTX *u)
+{	
+  u->frame_index = UI_DISPLAY_SMART_SOS_ALERT;
+  u->frame_next_idx = u->frame_index;
+  u->touch_time_stamp = CLK_get_system_time();
+}
+#endif
+
+/*------------------------------------------------------------------------------------------
 *  Function:	_ui_touch_sensing()
 *
 *  Description: TOUCH button action master control.
@@ -1442,7 +1457,14 @@ static I8U _ui_touch_sensing()
 		{
 			_perform_ui_with_button_single(u, gesture);
 			break;
-		}				
+		}			
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)		
+		case TOUCH_BUTTON_PRESS_SOS:
+		{
+			_perform_ui_with_button_press_sos(u);
+			break;
+		}		
+#endif		
 		default:
 		{
 			gesture = TOUCH_NONE;
@@ -1799,6 +1821,10 @@ void UI_state_machine()
 						u->frame_index = UI_DISPLAY_PREVIOUS;		
 					}						
 				}
+			}
+			
+			if (u->frame_index == UI_DISPLAY_SMART_SOS_ALERT) {
+				t_threshold = 10000;
 			}
 			
 			// If we don't see any gesture in 4 seconds, dark out screen
