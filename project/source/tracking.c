@@ -582,10 +582,14 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 	
 	t_curr_sec = cling.time.system_clock_in_sec - cling.activity.step_detect_t_sec;
 
-		N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
-		
-		vital->skin_temperature = cling.therm.current_temperature;
-		vital->skin_touch_pads = 1;
+	N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
+	
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+	vital->skin_temperature = cling.therm.current_temperature;
+#else 
+	vital->skin_temperature = 0;	
+#endif	
+	vital->skin_touch_pads = 1;
 
 	if (!cling.hr.b_closing_to_skin) {
 		// if sensor is detached from skin, set both vital signals to 0

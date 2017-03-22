@@ -1059,7 +1059,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		b_exit_workout_mode = TRUE;	
 #endif	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
-  else if ((frame_index >= UI_DISPLAY_MUSIC) && (frame_index <= UI_DISPLAY_MUSIC_END))
+  else if ((u->frame_index >= UI_DISPLAY_MUSIC) && (u->frame_index <= UI_DISPLAY_MUSIC_END))
 		b_exit_workout_mode = TRUE;	
 #endif	
 	
@@ -1914,10 +1914,12 @@ void UI_state_machine()
 					}						
 				}
 			}
-			
+
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 			if (u->frame_index == UI_DISPLAY_SMART_SOS_ALERT) {
 				t_threshold = 10000;
 			}
+#endif
 			
 			// If we don't see any gesture in 4 seconds, dark out screen
 			if (t_curr > (u->touch_time_stamp+t_threshold)) {

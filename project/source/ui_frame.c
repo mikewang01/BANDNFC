@@ -1013,7 +1013,7 @@ static void _middle_render_horizontal_workout_mode_switch()
 		
 	FONT_load_characters(128, (char *)workout_name[language_type][workout_idx], 16, 128, TRUE);
 	
-	_render_middle_horizontal_section_core((I8U *)workout_indicator[workout_idx], 8, 5, 256+37, 0);
+	_render_middle_horizontal_section_core((I8U *)workout_indicator[workout_idx], 8, 7, 256+30, 0);
 }
 #endif
 
@@ -4516,10 +4516,10 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_distance,          _right_render_horizontal_running_distance},        /*UI_DISPLAY_RUNNING_DISTANCE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_time,              _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_TIME*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_pace,              _right_render_horizontal_running_pace},            /*UI_DISPLAY_RUNNING_PACE*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_stride,            _right_render_horizontal_running_stride},          /*UI_DISPLAY_RUNNING_STRIDE*/	
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_cadence,           _right_render_horizontal_running_cadence},         /*UI_DISPLAY_RUNNING_CADENCE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_hr,                _right_render_horizontal_running_hr},              /*UI_DISPLAY_RUNNING_HEART_RATE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_DISPLAY_RUNNING_CALORIES*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_cadence,           _right_render_horizontal_running_cadence},         /*UI_DISPLAY_RUNNING_CADENCE*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_stride,            _right_render_horizontal_running_stride},          /*UI_DISPLAY_RUNNING_STRIDE*/
   {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_start_run,        _right_render_horizontal_ok_middle},               /*UI_DISPLAY_TRAINING_RUN_START*/
   {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_run_or_analysis,  _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_RUN_OR_ANALYSIS*/
   {_left_render_horizontal_training_ready,        _middle_render_horizontal_training_ready,            _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_READY*/ 
@@ -4585,10 +4585,10 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_top_render_vertical_24_icon,                  _middle_render_vertical_running_distance,            _bottom_render_vertical_runnng_distance},          /*UI_DISPLAY_RUNNING_DISTANCE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_running_time,                _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_TIME*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_running_pace,                _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_PACE*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_running_stride,              _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_STRIDE*/	
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_running_cadence,             _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_CADENCE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_running_hr,                  _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_HEART_RATE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_running_calories,            _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_CALORIES*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_running_cadence,             _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_CADENCE*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_running_stride,              _RENDER_NONE},                                     /*UI_DISPLAY_RUNNING_STRIDE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_run_start,          _bottom_render_vertical_ok},                       /*UI_DISPLAY_TRAINING_RUN_START*/ 
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_run_or_analysis,    _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_RUN_OR_ANALYSIS*/ 
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_ready,              _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_READY*/ 
