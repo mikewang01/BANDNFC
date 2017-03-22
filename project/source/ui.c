@@ -1210,24 +1210,43 @@ static void _update_get_bus_and_bank_card_balance(UI_ANIMATION_CTX *u)
 #ifndef _CLINGBAND_PACE_MODEL_		
 static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture)
 {
+	BOOLEAN b_exit_stopwatch_mode = FALSE;
+	
 	// 1. Start stopwatch
 	if ((u->frame_prev_idx == UI_DISPLAY_CAROUSEL_2) && (u->frame_index == UI_DISPLAY_STOPWATCH_START)) {
 		u->stopwatch_time_stamp = 0;
 		u->b_stopwatch_first_enter = TRUE;
+		u->b_in_stopwatch_mode = TRUE;	
+    return;		
 	}
 
   // 2. Stop stopwatch
 	if ((u->frame_prev_idx == UI_DISPLAY_STOPWATCH_STOP) && (u->frame_index == UI_DISPLAY_CAROUSEL_2)) {
-		u->stopwatch_time_stamp = 0;
+		b_exit_stopwatch_mode = TRUE;
 	}
 	
-	// 3. Clear stopwatch data if in other page.
-	if ((u->frame_index < UI_DISPLAY_STOPWATCH) || (u->frame_index > UI_DISPLAY_STOPWATCH_END)) {
+	// 3. Clear stopwatch data if in other page.	
+	if (_is_regular_page(u->frame_index) || _is_running_active_mode_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
+		b_exit_stopwatch_mode = TRUE;
+	} 
+		
+#ifndef _CLINGBAND_PACE_MODEL_	
+  if ((u->frame_index >= UI_DISPLAY_CAROUSEL) && (u->frame_index <= UI_DISPLAY_CAROUSEL_END))
+		b_exit_stopwatch_mode = TRUE;	
+  else if ((u->frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
+		b_exit_stopwatch_mode = TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SETTING_VER)
+		b_exit_stopwatch_mode = TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SMART_WEATHER)
+		b_exit_stopwatch_mode = TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
+		b_exit_stopwatch_mode = TRUE;	
+#endif		
+	
+	if (b_exit_stopwatch_mode) {
 		u->stopwatch_time_stamp = 0;
 		u->b_stopwatch_first_enter = FALSE;		
-	  u->b_in_stopwatch_mode = FALSE;
-	} else {
-		u->b_in_stopwatch_mode = TRUE;
+	  u->b_in_stopwatch_mode = FALSE;		
 	}
 }
 #endif	
