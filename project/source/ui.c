@@ -974,7 +974,24 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
       b_enter_workout_mode = TRUE;		
 		  // If user starts runing, turn on workout active mode
 		  cling.activity.b_workout_active = TRUE;
-		  cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR+(u->frame_prev_idx-UI_DISPLAY_WORKOUT_TREADMILL);			
+			if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_TREADMILL)
+		    cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR;
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_CYCLING)
+		    cling.activity.workout_type = WORKOUT_CYCLING_INDOOR;
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_STAIRS)
+		    cling.activity.workout_type = WORKOUT_STAIRS_INDOOR;			
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_ELLIPTICAL)
+		    cling.activity.workout_type = WORKOUT_ELLIPTICAL_INDOOR;	
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_ROW)
+		    cling.activity.workout_type = WORKOUT_ROWING;	
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_AEROBIC)
+		    cling.activity.workout_type = WORKOUT_AEROBIC;		
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_PILOXING)
+		    cling.activity.workout_type = WORKOUT_PILOXING;		
+			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_OTHERS)
+		    cling.activity.workout_type = WORKOUT_OTHER;		
+      else			
+				cling.activity.workout_type = WORKOUT_OTHER;
 		}
 	}
 
