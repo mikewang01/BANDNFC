@@ -1228,10 +1228,12 @@ static void _middle_render_horizontal_running_calories()
 	_render_horizontal_calories_core(cling.run_stat.calories);
 }
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_training_calories()
 {
 	_render_horizontal_calories_core(cling.train_stat.calories);	
 }
+#endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_running_stop_analysis()
@@ -1432,16 +1434,14 @@ static void _middle_render_horizontal_training_hr()
 
 static void _middle_render_horizontal_training_run_stop()
 {
-#ifndef _CLINGBAND_PACE_MODEL_	
 	const char *run_stop_name[] = {"STOP RUN", "结束跑步 ", "结束跑步 "};
-#else	
-	const char *run_stop_name[] = {"STOP RUN", "结束运动 ", "結束運動 "};
-#endif	
+
 	I8U language_type = cling.ui.language_type;
 
 	FONT_load_characters(128+30, (char *)run_stop_name[language_type], 16, 128, FALSE);
 }
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_training_workout_stop()
 {
 	const char *run_stop_name[] = {"STOP NOW", "结束运动 ", "結束運動 "};
@@ -1450,6 +1450,7 @@ static void _middle_render_horizontal_training_workout_stop()
 
 	FONT_load_characters(128+30, (char *)run_stop_name[language_type], 16, 128, FALSE);
 }
+#endif
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_workout_ready()
@@ -1724,6 +1725,7 @@ static void _middle_render_horizontal_bank_card_balance_enquiry()
 }
 #endif
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_carousel_core(I8U left_idx, I8U middle_idx, I8U right_idx)
 {
   I8U offset = 128;
@@ -1737,7 +1739,6 @@ static void _middle_render_horizontal_carousel_core(I8U left_idx, I8U middle_idx
   _render_one_icon_24(right_idx, offset);	
 }
 
-#ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_carousel_1()
 {
   _middle_render_horizontal_carousel_core(ICON24_RUNNING_MODE_IDX, ICON24_CYCLING_OUTDOOR_MODE_IDX, ICON24_WORKOUT_MODE_IDX);
