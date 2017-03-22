@@ -806,7 +806,7 @@ static void _update_vertical_detail_page(UI_ANIMATION_CTX *u, I8U gesture)
 	if (_ui_vertical_animation(u->frame_index) && _ui_vertical_animation(u->frame_prev_idx)) {
 		if (!u->b_detail_page) {
 			u->b_detail_page = TRUE;
-			//return;
+			return;
 		}
 	} else {
 		u->b_detail_page = FALSE;
