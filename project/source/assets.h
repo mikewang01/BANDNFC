@@ -80,6 +80,12 @@
 #define ICON16_OK_IDX                      142
 #define ICON16_OK_LEN                      asset_len[256+142]
 #define ICON16_OK_POS                      asset_pos[256+142]
+#define ICON16_STOPWATCH_START_IDX         143
+#define ICON16_STOPWATCH_START_LEN         asset_len[256+143]
+#define ICON16_STOPWATCH_START_POS         asset_pos[256+143]
+#define ICON16_STOPWATCH_STOP_IDX          144
+#define ICON16_STOPWATCH_STOP_LEN          asset_len[256+144]
+#define ICON16_STOPWATCH_STOP_POS          asset_pos[256+144]
 #define ICON16_CYCLING_OUTDOOR_SPEED_IDX   146
 #define ICON16_CYCLING_OUTDOOR_SPEED_LEN   asset_len[256+146]
 #define ICON16_CYCLING_OUTDOOR_SPEED_POS   asset_pos[256+146]

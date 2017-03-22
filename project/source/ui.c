@@ -1220,16 +1220,23 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
     return;		
 	}
 
-  // 2. Stop stopwatch
-	if ((u->frame_prev_idx == UI_DISPLAY_STOPWATCH_STOP) && (u->frame_index == UI_DISPLAY_CAROUSEL_2)) {
-		b_exit_stopwatch_mode = TRUE;
+	// 2. Pause stopwatch
+	if ((u->frame_index == UI_DISPLAY_STOPWATCH_START) && (gesture == TOUCH_FINGER_RIGHT)) {
+		if (u->b_in_stopwatch_pause_mode) 
+		  u->b_in_stopwatch_pause_mode = FALSE;
+		else
+			u->b_in_stopwatch_pause_mode = TRUE;
 	}
-	
-	// 3. Clear stopwatch data if in other page.	
+		
+  // 3. Exit stopwatch
 	if (_is_regular_page(u->frame_index) || _is_running_active_mode_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
 		b_exit_stopwatch_mode = TRUE;
 	} 
-		
+	
+	if ((u->frame_prev_idx == UI_DISPLAY_STOPWATCH_STOP) && (u->frame_index == UI_DISPLAY_CAROUSEL_2)) {
+		b_exit_stopwatch_mode = TRUE;
+	}
+			
 #ifndef _CLINGBAND_PACE_MODEL_	
   if ((u->frame_index >= UI_DISPLAY_CAROUSEL) && (u->frame_index <= UI_DISPLAY_CAROUSEL_END))
 		b_exit_stopwatch_mode = TRUE;	

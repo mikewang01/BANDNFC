@@ -1526,29 +1526,37 @@ static void _middle_render_horizontal_stopwatch_start()
 {
 	I8U string[32];
 	I8U b_24_size = 24;
-	I8U margin = 3;
-	I32U t_diff = 0;
-	I8U hour = 0, min = 0, sec = 0;
-	I16U ms = 0;
+	I8U margin = 3;	
 	I8U offset = 0;
-	
+	I8U hour = 0, min = 0, sec = 0;
+	I16U ms = 0;		
+  I32U t_diff = 0;
+
   if (cling.ui.b_stopwatch_first_enter) {
-	  cling.ui.stopwatch_time_stamp = CLK_get_system_time();		
+  	cling.ui.stopwatch_time_stamp = CLK_get_system_time();				
+		cling.ui.b_in_stopwatch_pause_mode = FALSE;
 		cling.ui.b_stopwatch_first_enter = FALSE;
+		cling.ui.stopwatch_t_stop_stamp = 0;
 	} else {
-		t_diff = CLK_get_system_time();
-		t_diff -= cling.ui.stopwatch_time_stamp;
-		ms = t_diff % 1000;
-		t_diff /= 1000;
-		hour = t_diff / 3600;
-		t_diff -= hour*3600;
-		min = t_diff / 60;
-		t_diff -= min * 60;
-		sec = t_diff;
-		
-		ms /= 10;
+	  if (!cling.ui.b_in_stopwatch_pause_mode)  {
+      t_diff = CLK_get_system_time() - cling.ui.stopwatch_time_stamp;			
+	    cling.ui.stopwatch_t_stop_stamp = t_diff;			
+		} else {
+	    t_diff = cling.ui.stopwatch_t_stop_stamp;
+			cling.ui.stopwatch_time_stamp = CLK_get_system_time() - cling.ui.stopwatch_t_stop_stamp;
+		}
 	}
 
+	ms = t_diff % 1000;
+	t_diff /= 1000;
+	hour = t_diff / 3600;
+	t_diff -= hour*3600;
+	min = t_diff / 60;
+	t_diff -= min * 60;
+	sec = t_diff;
+	
+	ms /= 10;
+	
 	// Render the time	
 	if (hour) {
 		// Render the hour	
@@ -1578,7 +1586,7 @@ static void _middle_render_horizontal_stopwatch_start()
 	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);		
 		offset -= 128;
 		_middle_horizontal_alignment_center(offset);
-	}
+	}	
 }
 
 static void _middle_render_horizontal_stopwatch_stop()
@@ -1859,6 +1867,16 @@ static void _right_render_horizontal_small_clock()
  
 	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
 }
+
+#ifndef _CLINGBAND_PACE_MODEL_
+static void _right_render_horizontal_stopwatch_start()
+{
+	if (cling.ui.b_in_stopwatch_pause_mode)
+    _render_one_icon_16(ICON16_STOPWATCH_START_IDX, 110);
+	else
+    _render_one_icon_16(ICON16_STOPWATCH_STOP_IDX, 110);	
+}
+#endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _right_render_horizontal_button_hold()
@@ -4480,7 +4498,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_HEART_RATE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_skin_temp,                 _right_render_horizontal_small_clock},             /*UI_DISPLAY_SKIN_TEMP*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_DISPLAY_SETTING*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_DISPLAY_STOPWATCH_START*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _right_render_horizontal_stopwatch_start},         /*UI_DISPLAY_STOPWATCH_START*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_ok_middle},               /*UI_DISPLAY_STOPWATCH_STOP*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_TREADMILL*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_CYCLING*/
@@ -4549,7 +4567,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_DISPLAY_HEART_RATE*/
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_DISPLAY_SKIN_TEMP*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_DISPLAY_SETTING*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_DISPLAY_STOPWATCH_START*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _right_render_horizontal_stopwatch_start},         /*UI_DISPLAY_STOPWATCH_START*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_ok_middle},               /*UI_DISPLAY_STOPWATCH_STOP*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_TREADMILL*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_CYCLING*/

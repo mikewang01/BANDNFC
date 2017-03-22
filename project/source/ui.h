@@ -665,6 +665,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	I32U dark_time_stamp;      // Screen dark time stamp.
 	I32U notif_time_stamp;	   // Notification record time stamp. 	
 	I32U stopwatch_time_stamp; // Stopwatch record time stamp. 	
+	I32U stopwatch_t_stop_stamp; // Stopwatch record stop time stamp. 	
 	
 	// All the frame buffer related
 	I8U p_oled_up[512];
@@ -733,6 +734,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Stopwatch flag
 	BOOLEAN b_stopwatch_first_enter;
 	BOOLEAN b_in_stopwatch_mode;
+	BOOLEAN b_in_stopwatch_pause_mode;
 	
 	// Rendering context
 	FRAME_RENDERING_CTX frm_render;
