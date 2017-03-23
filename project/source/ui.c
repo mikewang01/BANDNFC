@@ -1053,12 +1053,17 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	}
 	
 	if (_is_regular_page(u->frame_index) || 
-		  _is_running_analysis_page(u->frame_index) || 
-	    _is_other_need_store_page(u->frame_index)) {
+		  _is_running_analysis_page(u->frame_index)) {
 				
 		b_exit_workout_mode = TRUE;
 	} 
-			
+
+#ifndef _CLINGBAND_PACE_MODEL_	
+  if (_is_other_need_store_page(u->frame_index)) {
+		b_exit_workout_mode = TRUE;
+	}
+#endif
+	
 	if (b_exit_workout_mode) {
 		cling.activity.b_workout_active = FALSE;		
 		cling.activity.workout_type = WORKOUT_NONE;
