@@ -93,15 +93,17 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 			cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 			cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_TRAINING_PACE;
 			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
-			notif_frame_index = UI_DISPLAY_TRAINING_STAT_PACE;	
+      if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR)
+			  notif_frame_index = UI_DISPLAY_TRAINING_STAT_PACE;		
 	    Y_SPRINTF("NOTIFIC - Running pace ALERT ");			
 			break;
 		}		
 		case NOTIFICATION_TYPE_RUNNING_HR_ALERT: {
 			cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 			cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_TRAINING_HR;
-			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
-			notif_frame_index = UI_DISPLAY_TRAINING_STAT_HEART_RATE;		
+			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;			
+      if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR)
+			  notif_frame_index = UI_DISPLAY_TRAINING_STAT_HEART_RATE;		
 	    Y_SPRINTF("NOTIFIC - Running heat rate ALERT ");					
 			break;
 		}

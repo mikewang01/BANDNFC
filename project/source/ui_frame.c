@@ -3901,7 +3901,7 @@ static void _bottom_render_vertical_training_distance()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_cycling_outdoor_distance()
 {
-	const char *run_cycling_name[] = {"RUN", "骑行", "騎行" };	
+	const char *run_cycling_name[] = {"BIKE", "骑行", "騎行" };	
 	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
  	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;

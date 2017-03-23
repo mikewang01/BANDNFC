@@ -150,10 +150,6 @@ static BOOLEAN _is_other_need_store_page(I8U frame_index)
 		return TRUE;	
 	else if (frame_index == UI_DISPLAY_SMART_MESSAGE)
 		return TRUE;	
-//	else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF)
-//		return TRUE;	
-//	else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
-//		return TRUE;	
 	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
 		return TRUE;	
 #endif	
@@ -293,8 +289,7 @@ static void _restore_perv_frame_index()
 		         (cling.activity.workout_type == WORKOUT_ROWING) ||
 		         (cling.activity.workout_type == WORKOUT_AEROBIC) ||
 		         (cling.activity.workout_type == WORKOUT_PILOXING) ||
-		         (cling.activity.workout_type == WORKOUT_OTHER) ||
-		         (cling.activity.workout_type == WORKOUT_CYCLING_INDOOR)) {
+		         (cling.activity.workout_type == WORKOUT_OTHER)) {
 							 
 			u->frame_index = UI_DISPLAY_WORKOUT_RT_TIME;		
 		}	else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
@@ -313,13 +308,22 @@ static void _restore_perv_frame_index()
 			u->frame_index = UI_DISPLAY_HOME;					
 		} else {
 			u->frame_index = u->frame_cached_index;	
+#ifdef _CLINGBAND_PACE_MODEL_						
 	    if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) || (u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)) {	
+#else
+			if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) 
+				||(u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)
+				||(u->frame_index == UI_DISPLAY_WORKOUT_RT_HEART_RATE)	
+				||(u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE)) {
+#endif					
+				
 		    PPG_closing_to_skin_detect_init();
 		  } 		
 		}	
 	}
 }
 
+			
 /*-------------------------------------------------------------------------------
 *  Function:	_get_regular_page_enable_index(I8U frame_index)
 *
@@ -1048,35 +1052,16 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		return;
 	}
 	
-	if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
+	if (_is_regular_page(u->frame_index) || 
+		  _is_running_analysis_page(u->frame_index) || 
+	    _is_other_need_store_page(u->frame_index)) {
+				
 		b_exit_workout_mode = TRUE;
 	} 
-		
-#ifndef _CLINGBAND_PACE_MODEL_	
-  if ((u->frame_index >= UI_DISPLAY_CAROUSEL) && (u->frame_index <= UI_DISPLAY_CAROUSEL_END))
-		b_exit_workout_mode = TRUE;	
-  else if ((u->frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
-		b_exit_workout_mode = TRUE;	
-  else if ((u->frame_index >= UI_DISPLAY_STOPWATCH) && (u->frame_index <= UI_DISPLAY_STOPWATCH_END))
-		b_exit_workout_mode = TRUE;	
-	else if (u->frame_index == UI_DISPLAY_SETTING_VER)
-		b_exit_workout_mode = TRUE;	
-	else if (u->frame_index == UI_DISPLAY_SMART_WEATHER)
-		b_exit_workout_mode = TRUE;	
-	else if (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
-		b_exit_workout_mode = TRUE;	
-#endif	
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
-  else if ((u->frame_index >= UI_DISPLAY_MUSIC) && (u->frame_index <= UI_DISPLAY_MUSIC_END))
-		b_exit_workout_mode = TRUE;	
-#endif	
-	
+			
 	if (b_exit_workout_mode) {
 		cling.activity.b_workout_active = FALSE;		
 		cling.activity.workout_type = WORKOUT_NONE;
- 	  cling.ui.run_ready_index = 0;
-		cling.ui.b_training_first_enter = TRUE;			
-		cling.ui.running_time_stamp = CLK_get_system_time();				
 	}
 }
 
@@ -1244,7 +1229,7 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 	if ((u->frame_prev_idx == UI_DISPLAY_STOPWATCH_STOP) && (u->frame_index == UI_DISPLAY_CAROUSEL_2)) {
 		b_exit_stopwatch_mode = TRUE;
 	}
-			
+	
 #ifndef _CLINGBAND_PACE_MODEL_	
   if ((u->frame_index >= UI_DISPLAY_CAROUSEL) && (u->frame_index <= UI_DISPLAY_CAROUSEL_END))
 		b_exit_stopwatch_mode = TRUE;	

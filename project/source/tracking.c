@@ -739,6 +739,9 @@ void _check_training_pace_and_hr_alert(I16U minute_distance)
 	
   if (!cling.activity.b_workout_active)
 		return;
+
+  if (cling.activity.workout_type != WORKOUT_RUN_OUTDOOR)
+		return;
 	
 	if (cling.user_data.profile.training_alert & 0x80) {
 		if (minute_distance) {
@@ -1100,6 +1103,22 @@ static void _update_running_pace()
 	cling.run_stat.last_10sec_distance = 0;
 }
 
+static void _workout_active_timeout()
+{
+	I32U t_curr = CLK_get_system_time();
+  I32U t_diff;
+
+  if (cling.activity.b_workout_active) {
+	  t_diff = CLK_get_system_time() - cling.train_stat.time_start_in_ms;		
+		// If workout active timeout, exit workout mode.
+		if (t_diff >= 36000000) {
+		  cling.ui.frame_index = UI_DISPLAY_HOME;	
+		  cling.activity.b_workout_active = FALSE;		
+		  cling.activity.workout_type = WORKOUT_NONE;
+		}		
+	}
+}
+
 void TRACKING_data_logging()
 {
 	// Activity update only for a device that is authenticated
@@ -1113,7 +1132,10 @@ void TRACKING_data_logging()
 	// On the minute update basis
 	if (cling.time.local_minute_updated) {
 		_logging_per_minute();
-
+		
+		// Stop workout if workout time is greater than 10 hours 
+    _workout_active_timeout();
+		
 		cling.time.local_minute_updated = FALSE;
 		N_SPRINTF("[TRACKING] time: %d", cling.time.time_since_1970);
 	}
@@ -1282,9 +1304,7 @@ void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 		}
 		
 		N_SPRINTF("[TRACKING] index: %d, mode: %d, value: %d, pos: %d", index, mode, value, pos);
-
 	}
-	
 }
 
 void TRACKING_get_daily_streaming_sleep(DAY_STREAMING_CTX *day_streaming)
