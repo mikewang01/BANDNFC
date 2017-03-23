@@ -286,10 +286,18 @@ static void _restore_perv_frame_index()
 			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
 		}	
 #ifndef _CLINGBAND_PACE_MODEL_					
-		else if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
+		else if ((cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) ||
+		    	   (cling.activity.workout_type == WORKOUT_CYCLING_INDOOR) ||
+		         (cling.activity.workout_type == WORKOUT_STAIRS_INDOOR) ||
+		         (cling.activity.workout_type == WORKOUT_ELLIPTICAL_INDOOR) ||
+		         (cling.activity.workout_type == WORKOUT_ROWING) ||
+		         (cling.activity.workout_type == WORKOUT_AEROBIC) ||
+		         (cling.activity.workout_type == WORKOUT_PILOXING) ||
+		         (cling.activity.workout_type == WORKOUT_OTHER) ||
+		         (cling.activity.workout_type == WORKOUT_CYCLING_INDOOR)) {
+							 
 			u->frame_index = UI_DISPLAY_WORKOUT_RT_TIME;		
-		}			
-		else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
+		}	else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;		
 		}	 
 #endif			
