@@ -3573,11 +3573,8 @@ static void _middle_render_vertical_training_hr()
 static void _middle_render_vertical_training_run_stop()
 {
 	const	char *run_stop_name_1[] = {"RUN", "结束 ", "結束 "};	
-#ifdef _CLINGBAND_PACE_MODEL_			
 	const	char *run_stop_name_2[] = {"STOP", "跑步 ", "跑步 "};		
-#else
-	const	char *run_stop_name_2[] = {"STOP", "运动 ", "運動 "};			
-#endif		
+
 	I8U language_type = cling.ui.language_type;		
 
 	_render_vertical_fonts_lib_character_core((I8U *)run_stop_name_1[language_type], 16, 50);

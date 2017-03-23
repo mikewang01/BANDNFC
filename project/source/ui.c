@@ -112,20 +112,14 @@ static BOOLEAN _is_running_active_mode_page(I8U frame_index)
 *------------------------------------------------------------------------------------------*/
 static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 {
-	if (frame_index == UI_DISPLAY_SMART_INCOMING_CALL)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_IDLE_ALERT)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_HEART_RATE_ALERT)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_STEP_10K_ALERT)
-		return TRUE;
-	else 
+	if ((frame_index >= UI_DISPLAY_SMART_INCOMING_CALL) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)) {
+		if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
+			return FALSE;
+		else 
+			return TRUE;
+	} else {
 		return FALSE;
+	}
 }
 
 /*------------------------------------------------------------------------------------------
@@ -144,14 +138,11 @@ static BOOLEAN _is_other_need_store_page(I8U frame_index)
 		return TRUE;	
   else if ((frame_index >= UI_DISPLAY_STOPWATCH) && (frame_index <= UI_DISPLAY_STOPWATCH_END))
 		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SETTING_VER)
+	else if ((frame_index == UI_DISPLAY_SETTING_VER) ||
+		       (frame_index == UI_DISPLAY_SMART_WEATHER) ||
+	         (frame_index == UI_DISPLAY_SMART_MESSAGE) ||
+	         (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL))
 		return TRUE;		
-	else if (frame_index == UI_DISPLAY_SMART_WEATHER)
-		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_MESSAGE)
-		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
-		return TRUE;	
 #endif	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
   else if ((frame_index >= UI_DISPLAY_MUSIC) && (frame_index <= UI_DISPLAY_MUSIC_END))
@@ -191,22 +182,11 @@ static BOOLEAN _ui_vertical_animation(I8U frame_index)
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if ((frame_index >= UI_DISPLAY_TRACKER) && (frame_index <= UI_DISPLAY_TRACKER_ACTIVE_TIME)) {
 		return TRUE;
-	} else if (frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE) {
-		return TRUE; 
-	} else if (frame_index == UI_DISPLAY_SMART_MESSAGE) {
-		return TRUE; 
-	} else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF) {
-		return TRUE; 
-	} else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
-		return TRUE;
-	} else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-		return TRUE;
-	} else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL) {
-		return TRUE;
-	} else if (frame_index == UI_DISPLAY_SMART_HEART_RATE_ALERT) {
-		return TRUE;
-	} else if (frame_index == UI_DISPLAY_SMART_STEP_10K_ALERT) {
-		return TRUE;
+	} else if ((frame_index >= UI_DISPLAY_SMART_MESSAGE) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)){
+		if (frame_index == UI_DISPLAY_SMART_INCOMING_CALL)
+			return FALSE;
+		else
+			return TRUE;
 	} else {
 		return FALSE;
 	}
@@ -281,24 +261,18 @@ static void _restore_perv_frame_index()
 		if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
 		}	
-#ifndef _CLINGBAND_PACE_MODEL_					
-		else if ((cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) ||
-		    	   (cling.activity.workout_type == WORKOUT_CYCLING_INDOOR) ||
-		         (cling.activity.workout_type == WORKOUT_STAIRS_INDOOR) ||
-		         (cling.activity.workout_type == WORKOUT_ELLIPTICAL_INDOOR) ||
-		         (cling.activity.workout_type == WORKOUT_ROWING) ||
-		         (cling.activity.workout_type == WORKOUT_AEROBIC) ||
-		         (cling.activity.workout_type == WORKOUT_PILOXING) ||
-		         (cling.activity.workout_type == WORKOUT_OTHER)) {
-							 
-			u->frame_index = UI_DISPLAY_WORKOUT_RT_TIME;		
-		}	else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
+#ifndef _CLINGBAND_PACE_MODEL_			
+	  else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;		
-		}	 
-#endif			
+		}	else {
+			u->frame_index = UI_DISPLAY_WORKOUT_RT_TIME;		
+		}
+#endif		
+#ifdef _CLINGBAND_PACE_MODEL_				
 		else {
 			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
 		} 	
+#endif		
 		return;
 	}	
 
@@ -974,8 +948,6 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
 		N_SPRINTF("[UI] Enter training workout mode");	
     b_enter_workout_mode = TRUE;		
-		// If user starts runing, turn on workout active mode
-		cling.activity.b_workout_active = TRUE;
 		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
 	}
 
@@ -984,8 +956,6 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		if (u->frame_index == UI_DISPLAY_WORKOUT_RT_READY) {
 			N_SPRINTF("[UI] Enter normal workout mode");	
       b_enter_workout_mode = TRUE;		
-		  // If user starts runing, turn on workout active mode
-		  cling.activity.b_workout_active = TRUE;
 			if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_TREADMILL)
 		    cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR;
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_CYCLING)
@@ -1010,13 +980,13 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	if ((u->frame_prev_idx == UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY)) {
 		N_SPRINTF("[UI] Enter CYCLING_OUTDOOR workout mode");	
     b_enter_workout_mode = TRUE;		
-		// If user starts runing, turn on workout active mode
-		cling.activity.b_workout_active = TRUE;
 		cling.activity.workout_type = WORKOUT_CYCLING_OUTDOOR;		
 	}
 #endif
 	
   if (b_enter_workout_mode) {
+		// If user starts runing, turn on workout active mode
+		cling.activity.b_workout_active = TRUE;		
  	  cling.ui.run_ready_index = 0;
 		cling.ui.b_training_first_enter = TRUE;			
 		cling.ui.running_time_stamp = CLK_get_system_time();
@@ -1236,16 +1206,11 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 	}
 	
 #ifndef _CLINGBAND_PACE_MODEL_	
-  if ((u->frame_index >= UI_DISPLAY_CAROUSEL) && (u->frame_index <= UI_DISPLAY_CAROUSEL_END))
-		b_exit_stopwatch_mode = TRUE;	
-  else if ((u->frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
-		b_exit_stopwatch_mode = TRUE;	
-	else if (u->frame_index == UI_DISPLAY_SETTING_VER)
-		b_exit_stopwatch_mode = TRUE;	
-	else if (u->frame_index == UI_DISPLAY_SMART_WEATHER)
-		b_exit_stopwatch_mode = TRUE;	
-	else if (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
-		b_exit_stopwatch_mode = TRUE;	
+  if (_is_other_need_store_page(u->frame_index)) {
+    if ((u->frame_index != UI_DISPLAY_STOPWATCH_START) && (u->frame_index != UI_DISPLAY_STOPWATCH_STOP)){
+		  b_exit_stopwatch_mode = TRUE;				
+		}
+	}		
 #endif		
 	
 	if (b_exit_stopwatch_mode) {
