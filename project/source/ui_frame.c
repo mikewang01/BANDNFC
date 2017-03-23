@@ -2220,6 +2220,13 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	  _rotate_270_degree(p1, 384+offset+8);
 }
 
+static void _middle_render_vertical_character_core(I8U *string1, I8U offset1, I8U *string2, I8U offset2)
+{
+  _render_vertical_fonts_lib_character_core(string1, 16, offset1);
+	
+	_render_vertical_fonts_lib_character_core(string2, 16, offset2);
+}
+
 static void _render_vertical_local_character_core(I8U *string, I8U offset, I8U margin, I8U b_24_size, BOOLEAN b_all_hold)
 {
 	I8U *p0, *p1, *p2;
@@ -2540,8 +2547,7 @@ static void _middle_render_vertical_steps()
 	}
 	
 	if ((step_unit_index) && (language_type == LANGUAGE_TYPE_ENGLISH)) {
-	  _render_vertical_fonts_lib_character_core((I8U *)step_name[0][1], 16, 75);
-		_render_vertical_fonts_lib_character_core((I8U *)step_name[0][0], 16, 95);
+		_middle_render_vertical_character_core((I8U *)step_name[0][1], 75, (I8U *)step_name[0][0], 95);
 	} else {
 		_render_vertical_fonts_lib_character_core((I8U *)step_name[language_type][step_unit_index], 16, 80);
 	}
@@ -2643,8 +2649,7 @@ static void _middle_render_vertical_calories()
 		calories_unit_index = 0;
 	
 	if (calories_unit_index) {
-	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][1], 16, 75);
-    _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 95);				
+		_middle_render_vertical_character_core((I8U *)unit_calories_display[language_type][1], 75, (I8U *)unit_calories_display[language_type][0], 95);
 	} else {
 	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 80);
 	}
@@ -2708,9 +2713,7 @@ static void _middle_render_vertical_training_run_start()
 	const	char *run_start_name_2[] = {"NOW", "跑步 ", "跑步 "};			
 	I8U language_type = cling.ui.language_type;		
 
-	_render_vertical_fonts_lib_character_core((I8U *)run_start_name_1[language_type], 16, 50);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)run_start_name_2[language_type], 16, 70);	
+	_middle_render_vertical_character_core((I8U *)run_start_name_1[language_type], 50, (I8U *)run_start_name_2[language_type], 70);	
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -2719,7 +2722,7 @@ static void _middle_render_vertical_training_run_or_analysis()
 	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
 	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
 	I8U language_type = cling.ui.language_type;	
-	
+
 	_render_vertical_fonts_lib_invert_colors_core((I8U *)start_name[language_type], 60);	
 		
 	_render_vertical_fonts_lib_invert_colors_core((I8U *)analysis_name[language_type], 100);	
@@ -2732,10 +2735,8 @@ static void _middle_render_vertical_running_analysis()
 	const	char *running_analysis_name_1[] = {"RUN", "训练 ", "訓練 "};	
 	const	char *running_analysis_name_2[] = {"DATA", "分析 ", "分析 "};	
 	I8U language_type = cling.ui.language_type;		
-	
-	_render_vertical_fonts_lib_character_core((I8U *)running_analysis_name_1[language_type], 16, 50);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)running_analysis_name_2[language_type], 16, 70);	
+
+	_middle_render_vertical_character_core((I8U *)running_analysis_name_1[language_type], 50, (I8U *)running_analysis_name_2[language_type], 70);		
 }
 #endif
 
@@ -3196,9 +3197,7 @@ static void _middle_render_vertical_running_pace()
 	I32U min, sec;
 	I8U language_type = cling.ui.language_type;	
 
-	_render_vertical_fonts_lib_character_core((I8U *)avg_name[language_type], 16, 28);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 46);
+	_middle_render_vertical_character_core((I8U *)avg_name[language_type], 28, (I8U *)pace_name[language_type], 46);		
 	
 	if (cling.run_stat.distance) {
 		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
@@ -3262,10 +3261,8 @@ static void _middle_render_vertical_running_hr()
 		_render_vertical_local_character_core(string, 86, margin, b_24_size, FALSE);
 	else
 		_render_vertical_local_character_core(string, 90, margin, b_24_size, FALSE);
-		
-	_render_vertical_fonts_lib_character_core((I8U *)avg_name[language_type], 16, 28);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)hate_rate_name[language_type], 16, 46);
+
+	_middle_render_vertical_character_core((I8U *)avg_name[language_type], 28, (I8U *)hate_rate_name[language_type], 46);		
 }
 
 static void _middle_render_vertical_running_calories()
@@ -3320,8 +3317,7 @@ static void _middle_render_vertical_running_calories()
 	}
 	
 	if (calories_unit_index) {
-	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][1], 16, 96);
-	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 112);		
+		_middle_render_vertical_character_core((I8U *)unit_calories_display[language_type][1], 96, (I8U *)unit_calories_display[language_type][0], 112);		
 	} else {
 	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 112);		
 	}
@@ -3415,9 +3411,7 @@ static void _middle_render_vertical_running_stop_analysis()
 	const	char *stop_analysis_name_2[] = {"END", "分析 ", "分析 "};				
 	I8U language_type = cling.ui.language_type;			
 
-	_render_vertical_fonts_lib_character_core((I8U *)stop_analysis_name_1[language_type], 16, 50);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)stop_analysis_name_2[language_type], 16, 70);
+	_middle_render_vertical_character_core((I8U *)stop_analysis_name_1[language_type], 50, (I8U *)stop_analysis_name_2[language_type], 70);		
 }
 #endif
 
@@ -3577,9 +3571,7 @@ static void _middle_render_vertical_training_run_stop()
 
 	I8U language_type = cling.ui.language_type;		
 
-	_render_vertical_fonts_lib_character_core((I8U *)run_stop_name_1[language_type], 16, 50);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)run_stop_name_2[language_type], 16, 70);
+	_middle_render_vertical_character_core((I8U *)run_stop_name_1[language_type],50, (I8U *)run_stop_name_2[language_type], 70);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -3589,9 +3581,7 @@ static void _middle_render_vertical_cycling_outdoor_run_start()
 	const	char *cycling_start_name_2[] = {"NOW", "骑行 ", "騎行 "};			
 	I8U language_type = cling.ui.language_type;		
 	
-	_render_vertical_fonts_lib_character_core((I8U *)cycling_start_name_1[language_type], 16, 50);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)cycling_start_name_2[language_type], 16, 70);	
+	_middle_render_vertical_character_core((I8U *)cycling_start_name_1[language_type], 50, (I8U *)cycling_start_name_2[language_type], 70);	
 }
 
 static void _middle_render_vertical_cycling_outdoor_run_stop()
@@ -3600,9 +3590,7 @@ static void _middle_render_vertical_cycling_outdoor_run_stop()
 	const	char *cycling_stop_name_2[] = {"STOP", "骑行", "騎行"};		
 	I8U language_type = cling.ui.language_type;		
 	
-	_render_vertical_fonts_lib_character_core((I8U *)cycling_stop_name_1[language_type], 16, 50);
-	
-	_render_vertical_fonts_lib_character_core((I8U *)cycling_stop_name_2[language_type], 16, 70);
+	_middle_render_vertical_character_core((I8U *)cycling_stop_name_1[language_type], 50, (I8U *)cycling_stop_name_2[language_type], 70);		
 }
 
 static void _middle_render_vertical_cycling_outdoor_distance()
@@ -3910,8 +3898,7 @@ static void _bottom_render_vertical_cycling_outdoor_distance()
 	if (BTLE_is_connected()) {
 		_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112);	
 	} else {
-	  _render_vertical_fonts_lib_character_core((I8U *)"无 ", 16, 92);
-		_render_vertical_fonts_lib_character_core((I8U *)"蓝牙", 16, 112);
+		_middle_render_vertical_character_core((I8U *)"无 ", 92, (I8U *)"蓝牙", 112);		
 	}
 }
 
@@ -3924,8 +3911,7 @@ static void _bottom_render_vertical_cycling_outdoor_speed()
   if (BTLE_is_connected()) {	
 	  _render_vertical_fonts_lib_character_core((I8U *)unit_speed_display[metric], 8, 120);
 	} else {
-	  _render_vertical_fonts_lib_character_core((I8U *)"无 ",  16, 92);
-		_render_vertical_fonts_lib_character_core((I8U *)"蓝牙", 16, 112);	
+		_middle_render_vertical_character_core((I8U *)"无 ", 92, (I8U *)"蓝牙", 112);		
 	}
 }
 #endif
