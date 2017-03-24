@@ -113,9 +113,11 @@ static BOOLEAN _is_running_active_mode_page(I8U frame_index)
 static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 {
 	if ((frame_index >= UI_DISPLAY_SMART_INCOMING_CALL) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)) {
+#ifndef _CLINGBAND_PACE_MODEL_			
 		if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
 			return FALSE;
 		else 
+#endif			
 			return TRUE;
 	} else {
 		return FALSE;
