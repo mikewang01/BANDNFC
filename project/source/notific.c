@@ -119,7 +119,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 	cling.notific.state = NOTIFIC_STATE_SETUP_VIBRATION;
 	
 	// Start ui notifying display.
-  UI_start_notifying(notif_frame_index, notif_type);
+  UI_start_notifying(notif_frame_index);
 }
 
 void NOTIFIC_state_machine()

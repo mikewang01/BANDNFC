@@ -242,7 +242,6 @@ static BOOLEAN _check_sleep_reminder()
 void REMINDER_state_machine()
 {
 	I32U t_curr = CLK_get_system_time();
-	I8U reminder_frame_index;
 	
 	if (OTA_if_enabled())
 		return;
@@ -264,8 +263,7 @@ void REMINDER_state_machine()
 				cling.reminder.second_vibrate_time = 0;
 				cling.reminder.ui_alarm_on = TRUE;
 				cling.reminder.repeat_time = SECOND_REMINDER_SLEEP_TIME;
-				reminder_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;
-				UI_start_notifying(reminder_frame_index, NOTIFICATION_TYPE_REMINDER);
+				UI_start_notifying(UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER);
 			} else if (_check_reminder()) {
 				N_SPRINTF("[REMINDER] Work reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 				cling.reminder.state = REMINDER_STATE_ON;
@@ -277,8 +275,7 @@ void REMINDER_state_machine()
 				cling.reminder.repeat_time = SECOND_REMINDER_NORMAL_TIME;
 				cling.ui.ui_alarm_hh = cling.reminder.hour;
 				cling.ui.ui_alarm_mm = cling.reminder.minute;				
-				reminder_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;
-				UI_start_notifying(reminder_frame_index, NOTIFICATION_TYPE_REMINDER);
+				UI_start_notifying(UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER);
 			} else {
 				if (cling.notific.state == NOTIFIC_STATE_IDLE) {
 					GPIO_vibrator_set(FALSE);

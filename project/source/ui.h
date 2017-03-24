@@ -762,7 +762,7 @@ void UI_init(void);
 
 BOOLEAN UI_is_idle(void);
 
-void UI_start_notifying(I8U frame_index, I8U notif_type);
+void UI_start_notifying(I8U frame_index);
 
 void UI_switch_state(I8U state, I32U interval);
 

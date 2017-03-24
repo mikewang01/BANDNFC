@@ -245,8 +245,7 @@ void OLED_state_machine(void)
 					cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
 				  cling.ui.ui_alarm_hh = cling.reminder.ui_hh;
 				  cling.ui.ui_alarm_mm = cling.reminder.ui_mm;							
-					ui_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;
-					UI_start_notifying(ui_frame_index, NOTIFICATION_TYPE_REMINDER);
+					UI_start_notifying(UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER);
 					Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
 				}
 #endif

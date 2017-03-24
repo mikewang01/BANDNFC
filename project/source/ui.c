@@ -1567,14 +1567,14 @@ static I8U _ui_touch_sensing()
 #endif
 
 /*----------------------------------------------------------------------------------
-*  Function:	UI_start_notifying(I8U frame_index, I8U notif_type)
+*  Function:	UI_start_notifying(I8U frame_index)
 *
 *  Description: Display received notification.
 *
 *  New features:Change the way of notifying.
 *
 *----------------------------------------------------------------------------------*/
-void UI_start_notifying(I8U frame_index, I8U notif_type)
+void UI_start_notifying(I8U frame_index)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 	
@@ -1582,7 +1582,7 @@ void UI_start_notifying(I8U frame_index, I8U notif_type)
 	u->frame_index = frame_index;
 	
 	// 2. Update notification type
-	u->notif_type = notif_type;
+	//u->notif_type = notif_type;
 
 	// 3. Record current notification received time£¬and update touch time stamp.
 	u->notif_time_stamp = CLK_get_system_time();
@@ -1599,7 +1599,7 @@ void UI_start_notifying(I8U frame_index, I8U notif_type)
 	}
 	
 	// 6. Stop reminder when inconming one new message.
-	if (u->notif_type != NOTIFICATION_TYPE_REMINDER) {
+	if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
 		// Reset alarm clock flag
 		cling.reminder.ui_alarm_on = FALSE;
 		// Stop reminder
