@@ -112,7 +112,11 @@ static BOOLEAN _is_running_active_mode_page(I8U frame_index)
 *------------------------------------------------------------------------------------------*/
 static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 {
-	if ((frame_index >= UI_DISPLAY_SMART_INCOMING_CALL) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)) {
+	UI_ANIMATION_CTX *u = &cling.ui;
+	
+	if ((u->b_in_incoming_detail_page) && (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF))
+		return TRUE;
+	else if ((frame_index >= UI_DISPLAY_SMART_INCOMING_CALL) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)) {
 #ifndef _CLINGBAND_PACE_MODEL_			
 		if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
 			return FALSE;

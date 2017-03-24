@@ -788,28 +788,21 @@ static void _middle_render_horizontal_app_notif()
 	I8U dis_len;
 	I8U string[128];
 	I16U offset = 0;
-	I8U max_dis_len = 0;
   BOOLEAN b_display_center = FALSE;
 	
 	len = NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
 	N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
 	
 	dis_len = FONT_get_string_display_len((char *)string);
-	
-	if (dis_len > 104) {
-		offset = 24;
-		max_dis_len = 80;
-	} else if (dis_len > 80) {
-		offset = 104 - dis_len;
-		offset += 256;
-		max_dis_len = 104;		
+
+	if (dis_len > 80) {
+		offset = 22;
 	} else {
 		offset = 256;
-		max_dis_len = 80;		
-		b_display_center = TRUE;
+		b_display_center = TRUE;	
 	}
-
-  FONT_load_characters(offset, (char *)string, 16, max_dis_len, b_display_center);		
+	
+  FONT_load_characters(offset, (char *)string, 16, 80, b_display_center);		
 		
 	len = sprintf((char *)string, "%02d", cling.ui.app_notific_index);
 	FONT_load_characters((128-len*8), (char *)string, 16, 128, FALSE);			
@@ -888,7 +881,6 @@ static void _middle_render_horizontal_incoming_call_or_message()
 	I8U string[128];
 	I16U dis_len=0;
 	I16U offset = 0;
-	I8U max_dis_len = 0;
   BOOLEAN b_display_center = FALSE;
 
 	cling.ui.app_notific_index = 0;	
@@ -897,15 +889,12 @@ static void _middle_render_horizontal_incoming_call_or_message()
 
 	if (dis_len > 80) {
 		offset = 22;
-		max_dis_len = 80;
-
 	} else {
 		offset = 256;
-		max_dis_len = 80;		
 		b_display_center = TRUE;	
 	}
 
-	FONT_load_characters(offset, (char *)string, 16, max_dis_len, b_display_center);
+	FONT_load_characters(offset, (char *)string, 16, 80, b_display_center);
 }
 
 static void _middle_render_horizontal_detail_notif()
@@ -3599,12 +3588,8 @@ static void _middle_render_vertical_cycling_outdoor_distance()
 	I8U len = 0;		
 	I8U margin = 2;
 	I8U b_24_size = 24;
-  BOOLEAN b_ble_connected = FALSE;
 
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	if (b_ble_connected) {
+	if (BTLE_is_connected()) {
 		_vertical_core_run_distance(cling.train_stat.distance, TRUE);
 	} else {
 		len = 0;
@@ -3621,17 +3606,13 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 	I8U len = 0;		
 	I8U margin = 2;
 	I8U b_24_size = 24;
-  BOOLEAN b_ble_connected = FALSE;
 	I8U language_type = cling.ui.language_type;		
 
 	if (cling.ui.clock_sec_blinking) {		
 	  _render_vertical_fonts_lib_character_core((I8U *)run_speed_name[language_type], 16, 28);
 	}
 
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	if (b_ble_connected) {
+	if (BTLE_is_connected()) {
 		_vertical_core_run_distance(cling.train_stat.speed, TRUE);
 	} else {
 		len = 0;
