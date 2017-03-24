@@ -2863,61 +2863,69 @@ static void _middle_render_vertical_stopwatch_start()
 	I32U t_diff = 0;
 	I8U hour = 0, min = 0, sec = 0;
 	I16U ms = 0;
-	
+
   if (cling.ui.b_stopwatch_first_enter) {
-	  cling.ui.stopwatch_time_stamp = CLK_get_system_time();		
+  	cling.ui.stopwatch_time_stamp = CLK_get_system_time();				
+		cling.ui.b_in_stopwatch_pause_mode = FALSE;
 		cling.ui.b_stopwatch_first_enter = FALSE;
+		cling.ui.stopwatch_t_stop_stamp = 0;
 	} else {
-		t_diff = CLK_get_system_time();
-		t_diff -= cling.ui.stopwatch_time_stamp;
-		ms = t_diff % 1000;
-		t_diff /= 1000;
-		hour = t_diff / 3600;
-		t_diff -= hour*3600;
-		min = t_diff / 60;
-		t_diff -= min * 60;
-		sec = t_diff;
-		
-		ms /= 10;
+	  if (!cling.ui.b_in_stopwatch_pause_mode)  {
+      t_diff = CLK_get_system_time() - cling.ui.stopwatch_time_stamp;			
+	    cling.ui.stopwatch_t_stop_stamp = t_diff;			
+		} else {
+	    t_diff = cling.ui.stopwatch_t_stop_stamp;
+			cling.ui.stopwatch_time_stamp = CLK_get_system_time() - cling.ui.stopwatch_t_stop_stamp;
+		}
 	}
+
+	ms = t_diff % 1000;
+	t_diff /= 1000;
+	hour = t_diff / 3600;
+	t_diff -= hour*3600;
+	min = t_diff / 60;
+	t_diff -= min * 60;
+	sec = t_diff;
+	
+	ms /= 10;	
 	
 	// Render the time	
 	if (hour) {
 	// Render the hour
 		if (hour > 9) hour = 9;
 	  sprintf((char *)string, " +%d", hour);
-    _render_vertical_local_character_core(string, 50, margin, b_24_size, TRUE);		
+    _render_vertical_local_character_core(string, 28, margin, b_24_size, TRUE);		
 		
 	  // Render the minute
 	  sprintf((char *)string, ":%02d", min);
-    _render_vertical_local_character_core(string, 76, margin, b_24_size, FALSE);		
+    _render_vertical_local_character_core(string, 56, margin, b_24_size, FALSE);		
 
 	  // Render the second
 	  sprintf((char *)string, ":%02d", sec);
-    _render_vertical_local_character_core(string, 104, margin, b_24_size, FALSE);			
+    _render_vertical_local_character_core(string, 84, margin, b_24_size, FALSE);			
 	} else {
     if (min > 9) {
 	    // Render the minute
 	    sprintf((char *)string, " %02d", min);
-      _render_vertical_local_character_core(string, 50, margin, b_24_size, FALSE);					
+      _render_vertical_local_character_core(string, 28, margin, b_24_size, FALSE);					
 		} else {
 	    // Render the minute
 	    sprintf((char *)string, "+ %d", min);
-      _render_vertical_local_character_core(string, 50, margin, b_24_size, FALSE);					
+      _render_vertical_local_character_core(string, 28, margin, b_24_size, FALSE);					
 		}
 
 		// Render the second
 	  sprintf((char *)string, ":%02d", sec);
-    _render_vertical_local_character_core(string, 80, margin, b_24_size, FALSE);			
+    _render_vertical_local_character_core(string, 56, margin, b_24_size, FALSE);			
 		
 		// Render the millisecond
 	  sprintf((char *)string, "  .   ");		
-		_render_vertical_local_character_core(string, 104, margin, b_24_size, FALSE);	
+		_render_vertical_local_character_core(string, 76, margin, b_24_size, FALSE);	
 		if (ms > 99)
 			ms = 99;
 		b_24_size = 16;
 	  sprintf((char *)string, "   %02d", ms);
-    _render_vertical_local_character_core(string, 112, margin, b_24_size, FALSE);		
+    _render_vertical_local_character_core(string, 84, margin, b_24_size, FALSE);		
 	}
 }
 
@@ -2926,7 +2934,7 @@ static void _middle_render_vertical_stopwatch_stop()
 	const char *stopwatch_stop_name[] = {"END", "结束 ", "結束 "};
 	I8U language_type = cling.ui.language_type;
 
-	_render_vertical_fonts_lib_character_core((I8U *)stopwatch_stop_name[language_type], 16, 50);
+	_render_vertical_fonts_lib_character_core((I8U *)stopwatch_stop_name[language_type], 16, 55);
 }
 #endif
 
@@ -3811,6 +3819,23 @@ static void _bottom_render_vertical_tracker()
 	if (cling.ui.b_detail_page) {
 		_bottom_render_vertical_more();	
 	}	
+}
+#endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+static void _bottom_render_vertical_stopwatch_start() 
+{
+ 	I8U string[16];		
+	I8U margin = 0;
+	I8U b_24_size = 16;
+
+	if (cling.ui.b_in_stopwatch_pause_mode)
+		string[0] = ICON16_STOPWATCH_START_IDX;
+	else
+		string[0] = ICON16_STOPWATCH_STOP_IDX;
+
+	string[1] = 0;
+	_render_vertical_local_character_core(string, 110, margin, b_24_size, FALSE); 
 }
 #endif
 
