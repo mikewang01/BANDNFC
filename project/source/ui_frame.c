@@ -3616,7 +3616,7 @@ static void _middle_render_vertical_cycling_outdoor_distance()
 
 static void _middle_render_vertical_cycling_outdoor_speed()
 {
-	const char *run_speed_name[] = {"PACE", "速度", "速度" };		
+	const char *run_speed_name[] = {"SPED", "速度", "速度" };		
 	I8U string[32];	
 	I8U len = 0;		
 	I8U margin = 2;
