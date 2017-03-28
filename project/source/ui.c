@@ -1701,18 +1701,11 @@ static void _update_frame_display_parameter()
 	if (cling.user_data.profile.metric_distance)
 		cling.user_data.profile.metric_distance = 1;
 	
-	if (cling.ui.clock_sec_blinking) {
-		cling.ui.clock_sec_blinking = FALSE;
+	if (cling.ui.icon_sec_blinking) {
+		cling.ui.icon_sec_blinking = FALSE;
 	} else {
-		cling.ui.clock_sec_blinking = TRUE;
+		cling.ui.icon_sec_blinking = TRUE;
 	}
-		
-	if (cling.ui.heart_rate_sec_blinking) {
-		cling.ui.heart_rate_sec_blinking = FALSE;
-	} else {
-		cling.ui.heart_rate_sec_blinking = TRUE;
-	}
-	
 }
 /*------------------------------------------------------------------------------------------
 *  Function:	UI_state_machine()

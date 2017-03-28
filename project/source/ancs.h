@@ -80,6 +80,9 @@ enum
 };
 
 typedef struct tagANCS_CONTEXT {
+  // dword variables	
+	I32U ancs_time_stamp;     
+	
   // Global state
   I8U  state;	
 
@@ -101,12 +104,8 @@ typedef struct tagANCS_CONTEXT {
   // Record time flag to filtering old notifications.
   BOOLEAN start_record_time;	
 	
-	I32U parse_time;
-	
 	// Pair state
 	BOOLEAN bond_flag;
-	
-	I32U dis_time;
 } ANCS_CONTEXT;
 
 

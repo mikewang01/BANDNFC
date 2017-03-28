@@ -19,8 +19,12 @@ void WEATHER_set_weather(I8U *data)
 	WEATHER_CTX *w = cling.weather;
 	I8U *pPM2P5;
 
-  memcpy(&w[0], data, 5*sizeof(WEATHER_CTX));
-
+#ifdef _CLINGBAND_PACE_MODEL_	
+  memcpy(&w[0], data, 1*sizeof(WEATHER_CTX));
+#else	
+  memcpy(&w[0], data, 5*sizeof(WEATHER_CTX));	
+#endif
+	
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[0].month, w[0].day, w[0].type, w[0].low_temperature, w[0].high_temperature);
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[1].month, w[1].day, w[1].type, w[1].low_temperature, w[1].high_temperature);
 	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[2].month, w[2].day, w[2].type, w[2].low_temperature, w[2].high_temperature);

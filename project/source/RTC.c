@@ -30,6 +30,7 @@ I8U const month_normal_in_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30
 // RTC IC I2C address: 0x51 (in 7-bit mode)
 #define RTC_I2C_ADDR 0xA2 
 
+
 static EN_STATUSCODE RTC_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 {
 #ifndef _CLING_PC_SIMULATION_
@@ -104,6 +105,22 @@ void RTC_hw_config()
 	data[0] = 0x01;
 	data[1] = 0x20;
 	RTC_write_reg(data, 2);
+}
+ 
+uint8_t store_one_byte_to_rtc_ram(uint8_t content)
+{
+	I8U data[10];
+
+	// capacitor selection: 12.5 pf	
+	data[0] = 0x03;
+	data[1] = content;	
+	return RTC_write_reg(data, 2);	
+
+}
+
+uint8_t load_one_byte_from_rtc_ram(uint8_t *content)
+{
+	return RTC_read_reg(0x03, 1, content);
 }
 
 void RTC_calibrate_current_epoch()

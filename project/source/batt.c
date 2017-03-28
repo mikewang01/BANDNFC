@@ -1,4 +1,8 @@
 #include "main.h"
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		 
+#include "exti_hal.h"
+#endif
+
 
 #define ADC_4P2_VOLTS 646
 #define ADC_4P0_VOLTS 616
@@ -7,7 +11,7 @@
 #define ADC_3P2_VOLTS 492
 #define ADC_3P0_VOLTS 462
 
-#define BATT_SPRINTF N_SPRINTF
+#define BATT_SPRINTF Y_SPRINTF
 
 #define BATTERY_PERCENTAGE_LEVEL 60
 
@@ -231,10 +235,23 @@ I8U _get_battery_perc()
 			// No DC-in then, put device into a super-low power state
 			//
 			N_SPRINTF("[BATT] low power shut-down (reading: %d, )", b->volts_reading);
-		
+			
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)					
+		  /*disable all interrupts on top of charger int*/
+			CLASS(HalExti)*	p_exti_instance = HalExti_get_instance();
+			p_exti_instance->set_low_power(p_exti_instance);
+#endif
+			
+			/*disconnect all gpio system*/
 			GPIO_system_powerdown();
 			// No need for a shutdown timer reconfiguration
 			// RTC_system_shutdown_timer();
+		}else{
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)							
+			/*enable all interrupts*/
+			CLASS(HalExti)*	p_exti_instance = HalExti_get_instance();
+			p_exti_instance->set_active(p_exti_instance);
+#endif			
 		}
 	}
 #endif
@@ -254,23 +271,34 @@ I8U _get_battery_perc()
 }
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		 
-void BATT_interrupt_process(BOOLEAN b_init)
+void BATT_interrupt_process(uint8_t b_init)
 {
 	I8U b_pin = nrf_gpio_pin_read(GPIO_CHARGER_INT);	
 	I8U int_status = 0;
-
+	/*check if this is a init process or interrrupt process*/
 	if (!b_init) {
 		// button released
-		if (b_pin)  return;
+		if (b_pin) {
+			return;
+		}else{
+				BATT_read_reg(0x03, 1, &int_status);
+		}
+	}else{
+			if(load_one_byte_from_rtc_ram(&int_status) != NRF_SUCCESS){
+					BATT_read_reg(0x03, 1, &int_status);
+			}
 	}
-	
-	BATT_read_reg(0x03, 1, &int_status);
-
-	BATT_SPRINTF("BATT: int - 0x%02x", int_status);
+	/*only plug and unplug evnts are the stuff we concerned*/
+	if((int_status&(0xa0)) != 0 ){
+			BATT_SPRINTF("BATT: stored int - 0x%02x", int_status&(0xa0));
+			/*key status is unneccesarry to be stored*/
+			store_one_byte_to_rtc_ram(int_status&(0xa0));
+	}
+	//BATT_SPRINTF("BATT: int - 0x%02x", int_status);
 	
 	if (int_status) {
 		// Clear register
-		BATT_write_reg(0x03, 0x00);
+		BATT_write_reg(0x03, 0);
 	}
 	
 	if (int_status & 0x80) {
@@ -360,6 +388,11 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 		// No DC-in then, put device into a super-low power state
 		//
 		BATT_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
+		
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)						
+		CLASS(HalExti)*	p_exti_instance = HalExti_get_instance();
+		p_exti_instance->set_low_power(p_exti_instance);
+#endif
 		
 		GPIO_system_powerdown();
 		

@@ -664,8 +664,10 @@ typedef struct tagUI_ANIMATION_CTX {
   I32U running_time_stamp;   // Running record time stamp.
 	I32U dark_time_stamp;      // Screen dark time stamp.
 	I32U notif_time_stamp;	   // Notification record time stamp. 	
+#ifndef _CLINGBAND_PACE_MODEL_			
 	I32U stopwatch_time_stamp; // Stopwatch record time stamp. 	
 	I32U stopwatch_t_stop_stamp; // Stopwatch record stop time stamp. 	
+#endif
 	
 	// All the frame buffer related
 	I8U p_oled_up[512];
@@ -694,8 +696,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U vertical_index;
 
 	// Icon flashing
-	BOOLEAN clock_sec_blinking;
-	BOOLEAN heart_rate_sec_blinking;
+	BOOLEAN icon_sec_blinking;
 	I8U linking_wave_index;
 	I8U heart_rate_wave_index;
 	
@@ -713,12 +714,13 @@ typedef struct tagUI_ANIMATION_CTX {
 	BOOLEAN b_detail_page;	    // Detail page.
 	BOOLEAN b_restore_notif;
 	BOOLEAN b_in_incoming_detail_page;
-	I8U notif_type;       	    // Notification type.
+	I8U notif_repeat_look_time; // Notification repeat look time.	
 	I8U notif_detail_index;     // Incoming message detail index.
-  I8U string_pos_buf[5];	    // Incoming message detail index buff.
-	I8U notif_repeat_look_time; // Notification repeat look time.
+  I8U string_pos_buf[5];	    // Incoming message detail index buff.	
+#ifndef _CLINGBAND_PACE_MODEL_			
 	I8U app_notific_index;	    // App notific index
-	
+#endif
+
 	// Running
 	I8U run_ready_index;    // Read go index.
 	BOOLEAN b_training_first_enter;
@@ -730,17 +732,21 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Training pace and hr alert
 	BOOLEAN b_training_alert;
 	I8U training_hr;
-	
+
+#ifndef _CLINGBAND_PACE_MODEL_		
 	// Stopwatch flag
 	BOOLEAN b_stopwatch_first_enter;
 	BOOLEAN b_in_stopwatch_mode;
 	BOOLEAN b_in_stopwatch_pause_mode;
-	
+#endif
+
 	// Rendering context
 	FRAME_RENDERING_CTX frm_render;
-	
+
+#ifdef _CLINGBAND_2_PAY_MODEL_		
 	I32U bus_card_balance;
   I32U bank_card_balance;
+#endif	
 } UI_ANIMATION_CTX;
 
 typedef enum {

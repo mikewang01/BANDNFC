@@ -222,7 +222,7 @@ static uint32_t _device_manager_evt_handler(dm_handle_t const * p_handle,
 	    if(cling.gcp.host_type == HOST_TYPE_IOS){
 				// Start do service discovery.
         cling.ancs.state = BLE_ANCS_STATE_START_DISCOVER;
-				cling.ancs.dis_time = CLK_get_system_time();
+				cling.ancs.ancs_time_stamp = CLK_get_system_time();
 	    }		
 #endif
 			break;

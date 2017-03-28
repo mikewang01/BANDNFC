@@ -303,7 +303,11 @@ static void _create_dev_info_msg()
     // Type
     t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_LOAD_DEVICE_INFO;
     // Touch panel version
+#ifdef _CLINGBAND_PACE_MODEL_				
+    t->msg[t->msg_filling_offset++] = 0;
+#else
     t->msg[t->msg_filling_offset++] = cling.whoami.touch_ver[2];
+#endif		
     // HW INFO
     t->msg[t->msg_filling_offset++] = 1;
     // BATTERY LEVEL

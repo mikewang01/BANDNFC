@@ -746,7 +746,7 @@ void ANCS_on_event_handling(ble_ancs_evt_type evt_type)
 				
 			  cling.ancs.state = BLE_ANCS_STATE_WAITING_PARSE_COMPLETE;			
 			
-			  cling.ancs.parse_time = CLK_get_system_time();	
+			  cling.ancs.ancs_time_stamp = CLK_get_system_time();	
 
         _ANCE_LOG("[ANCS] Start sent request to access notify.");					
 			}				
@@ -794,7 +794,7 @@ void ANCS_state_machine(void)
 			break;
 		case BLE_ANCS_STATE_START_DISCOVER:
 		{
-		  if (CLK_get_system_time() > (a->dis_time + ANCS_START_SERVICE_DISCOVERY_DELAY_TIME)) {
+		  if (CLK_get_system_time() > (a->ancs_time_stamp + ANCS_START_SERVICE_DISCOVERY_DELAY_TIME)) {
 		    HAL_start_ancs_service_discovery();	
 			  a->state = BLE_ANCS_STATE_IDLE;
 				_ANCE_LOG("[ANCS] start ancs service discovery");
@@ -803,7 +803,7 @@ void ANCS_state_machine(void)
 		}		
     case BLE_ANCS_STATE_WAITING_PARSE_COMPLETE:
 		{
-			if (CLK_get_system_time() > (a->parse_time + ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT)) {
+			if (CLK_get_system_time() > (a->ancs_time_stamp + ANCS_PARSE_NOTIF_ATTRIBUTE_TIMEOUT)) {
 				a->state = BLE_ANCS_STATE_IDLE;
 			}
       break;

@@ -69,9 +69,7 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 	// Turn on display if device is in a charging state
 	if (BATT_is_charging()) {
-		if (!NOTIFIC_is_user_viewing_message()) {
-			UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
-		}
+	  UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
 	}
 #ifndef _CLING_PC_SIMULATION_
 

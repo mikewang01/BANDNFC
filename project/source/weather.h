@@ -8,7 +8,11 @@
 #ifndef __WEATHER_HEADER__
 #define __WEATHER_HEADER__
 
+#ifdef _CLINGBAND_PACE_MODEL_		
+#define MAX_WEATHER_DAYS  1
+#else
 #define MAX_WEATHER_DAYS  5
+#endif
 
 typedef struct tagWEATHER_CTX {
 	I8U month;

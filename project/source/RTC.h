@@ -83,6 +83,8 @@ I32U RTC_get_current_epoch(REALTIME_CTX *p_rt);
 void RTC_set_current_epoch(I32U time_since_1970);
 void RTC_minute_int_service(void);
 BOOLEAN RTC_get_current_rtc(REALTIME_CTX *p_rt);
+uint8_t store_one_byte_to_rtc_ram(uint8_t content);
+uint8_t load_one_byte_from_rtc_ram(uint8_t *content);
 #endif
 
 #endif /* _RTC_H_ */

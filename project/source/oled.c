@@ -233,8 +233,7 @@ void OLED_state_machine(void)
 				N_SPRINTF("[0LED] ui to base: %d", cling.ui.display_to_base);
 				
 				// Reset blinking state
-				cling.ui.clock_sec_blinking = TRUE;
-			  cling.ui.heart_rate_sec_blinking = TRUE;
+				cling.ui.icon_sec_blinking = TRUE;
 	      cling.ui.notif_time_stamp = CLK_get_system_time();	
 	      cling.ui.touch_time_stamp = CLK_get_system_time();				
 #if 0

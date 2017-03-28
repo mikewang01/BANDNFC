@@ -168,7 +168,7 @@ static void _left_render_horizontal_weather()
 
 static void _left_render_horizontal_16_icon_blinking()
 {
-	if (cling.ui.heart_rate_sec_blinking) 
+	if (cling.ui.icon_sec_blinking) 
 		_left_render_horizontal_16_icon();
 }
 
@@ -347,7 +347,7 @@ static void _middle_render_horizontal_clock()
 	I8U margin = 3;
 	I16U offset = 20;	
 
-	if (cling.ui.clock_sec_blinking) {
+	if (cling.ui.icon_sec_blinking) {
 		sprintf((char *)string, "%02d:%02d", cling.time.local.hour, cling.time.local.minute);
 	} else {
 		sprintf((char *)string, "%02d %02d", cling.time.local.hour, cling.time.local.minute);
@@ -883,8 +883,10 @@ static void _middle_render_horizontal_incoming_call_or_message()
 	I16U offset = 0;
   BOOLEAN b_display_center = FALSE;
 
+#ifndef _CLINGBAND_PACE_MODEL_	
 	cling.ui.app_notific_index = 0;	
-	NOTIFIC_get_app_name(cling.ui.app_notific_index, (char *)string);
+#endif	
+	NOTIFIC_get_app_name(0, (char *)string);
 	dis_len = FONT_get_string_display_len((char *)string);
 
 	if (dis_len > 80) {
@@ -1849,7 +1851,7 @@ static void _right_render_horizontal_small_clock()
 	I8U string[16];
 	I8U len;
 
-	if (cling.ui.clock_sec_blinking) {
+	if (cling.ui.icon_sec_blinking) {
 		len = sprintf((char *)string, "%d:%02d",cling.time.local.hour, cling.time.local.minute);
 	} else {
 		len = sprintf((char *)string, "%d %02d",cling.time.local.hour, cling.time.local.minute);		
@@ -2445,7 +2447,7 @@ static void _top_render_vertical_weather()
 
 static void _top_render_vertical_24_icon_blinking()
 {
-	if (cling.ui.heart_rate_sec_blinking) 
+	if (cling.ui.icon_sec_blinking) 
 		_top_render_vertical_24_icon();
 }
 
@@ -2460,7 +2462,7 @@ static void _middle_render_vertical_clock()
 	_render_vertical_local_character_core(string, 24, margin, b_24_size, TRUE);
 	
 	// Render the clock sign
-	if (cling.ui.clock_sec_blinking) {
+	if (cling.ui.icon_sec_blinking) {
 		// Render the minute
 		sprintf((char *)string, ":%02d", cling.time.local.minute);
 	} else {
@@ -3138,7 +3140,7 @@ static void _middle_render_vertical_training_time()
 	I8U hour, min, sec;	
 	I8U language_type = cling.ui.language_type;
 
-	if (cling.ui.clock_sec_blinking) {
+	if (cling.ui.icon_sec_blinking) {
 		_render_vertical_fonts_lib_character_core((I8U *)running_time_name[language_type], 16, 28);
 	} 
 	
@@ -3486,7 +3488,7 @@ static void _middle_render_vertical_training_pace()
 	sprintf((char *)string, "%02d*", sec);
 	_render_vertical_local_character_core(string, 104, margin, b_24_size, TRUE);	
 	
-	if (cling.ui.clock_sec_blinking) {	
+	if (cling.ui.icon_sec_blinking) {	
 		_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 28);
 	}
 }
@@ -3501,7 +3503,7 @@ static void _middle_render_vertical_training_hr()
 	I8U *p0, *p1, *p2, *p3;
 	I8U language_type = cling.ui.language_type;		
 	
-	if (cling.ui.clock_sec_blinking) {		
+	if (cling.ui.icon_sec_blinking) {		
 		_render_vertical_fonts_lib_character_core((I8U *)hart_rate_name[language_type], 16, 28);
 	} 
 
@@ -3616,7 +3618,7 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 	I8U b_24_size = 24;
 	I8U language_type = cling.ui.language_type;		
 
-	if (cling.ui.clock_sec_blinking) {		
+	if (cling.ui.icon_sec_blinking) {		
 	  _render_vertical_fonts_lib_character_core((I8U *)run_speed_name[language_type], 16, 28);
 	}
 
@@ -3773,7 +3775,7 @@ static void _render_vertical_small_clock(I8U offset)
 {
 	I8U string[32];
 
-	if (cling.ui.clock_sec_blinking) {
+	if (cling.ui.icon_sec_blinking) {
 		sprintf((char *)string, "%d:%02d",cling.time.local.hour, cling.time.local.minute);
 	} else {
 		sprintf((char *)string, "%d %02d",cling.time.local.hour, cling.time.local.minute);		
@@ -3870,7 +3872,7 @@ static void _bottom_render_vertical_run_distance_core(BOOLEAN b_icon_blinking)
 	I8U metric = cling.user_data.profile.metric_distance;
 
 	if (b_icon_blinking) {
-	  if (cling.ui.clock_sec_blinking)
+	  if (cling.ui.icon_sec_blinking)
 	    _render_vertical_fonts_lib_character_core((I8U *)run_distance_name[language_type], 16, 28);
   } else {
 		_render_vertical_fonts_lib_character_core((I8U *)run_distance_name[language_type], 16, 28);
@@ -3897,7 +3899,7 @@ static void _bottom_render_vertical_cycling_outdoor_distance()
  	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;
 
-	if (cling.ui.clock_sec_blinking) {		
+	if (cling.ui.icon_sec_blinking) {		
 		_render_vertical_fonts_lib_character_core((I8U *)run_cycling_name[language_type], 16, 28);
 	}
 		

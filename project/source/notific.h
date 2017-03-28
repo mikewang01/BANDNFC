@@ -48,5 +48,4 @@ void NOTIFIC_smart_phone_notify(I8U* data);
 I8U NOTIFIC_get_message_total(void);
 I8U NOTIFIC_get_app_name(I8U index, char *app_name);
 I8U NOTIFIC_get_app_message_detail(I8U index, char *string);
-BOOLEAN NOTIFIC_is_user_viewing_message(void);
 #endif  // __NOTIFIC_HEADER__

@@ -407,25 +407,3 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	return title_len;
 #endif
 }
-
-BOOLEAN NOTIFIC_is_user_viewing_message()
-{
-#if 0	
-	// 1. see if device is receiving a notification message
-	if (cling.ui.state == UI_STATE_NOTIFICATIONS)
-		return TRUE;
-#endif
-	
-	// 1. see if device is in a active display state
-	if (UI_is_idle()) {
-		return FALSE;
-	}
-	
-	// 3. see if UI frame is displaying notification message
-	if ((cling.ui.frame_index >= UI_DISPLAY_SMART) && (cling.ui.frame_index <= UI_DISPLAY_SMART_END))
-	{
-		return TRUE;
-	}
-
-	return FALSE;
-}

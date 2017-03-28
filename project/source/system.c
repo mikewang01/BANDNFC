@@ -371,7 +371,9 @@ static void _startup_logging()
 	Y_SPRINTF("acc: 0x%02x, ", cling.whoami.accelerometer);
 	Y_SPRINTF("issp: 0x%02x, ", cling.whoami.hssp);
 	Y_SPRINTF("nor flash:0x%02x%02x, ", cling.whoami.nor[0], cling.whoami.nor[1]);
+#ifndef _CLINGBAND_PACE_MODEL_		
 	Y_SPRINTF("Touch dev: %d.%d.%d", cling.whoami.touch_ver[0], cling.whoami.touch_ver[1], cling.whoami.touch_ver[2]);
+#endif	
 	Y_SPRINTF("-----------------------");
 	Y_SPRINTF("[MAIN] SYSTEM init ...");
 #endif
