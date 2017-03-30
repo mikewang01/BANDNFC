@@ -56,9 +56,9 @@ static void _navigation_wrist_shaking(I8U jitter_counts)
 	}
 #endif
 }
-#if 0
 #ifndef __WIRST_DETECT_ENABLE__
-static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U t_curr, BOOLEAN b_motion)
+//static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U t_curr, BOOLEAN b_motion)
+static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U t_curr, BOOLEAN b_motion)
 {
 	I8U i;
 	I8U up_counts, side_counts;
@@ -86,7 +86,8 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 		G.y = 0;
 	}
 	
-	if ((G.z < -1600) && (x < 700) && (G.y < 200) && (G.y > -1200)) {
+	//if ((G.z < -1600) && (x < 700) && (G.y < 200) && (G.y > -1200)) {
+	if ( (G.z<G.x) && (((G.z<G.y) && (G.z < -1440) && (G.x>-400)) || ((G.y<G.x) &&(z<600) && (G.x>1200))) && ((G.y < 780) && (G.y > -500)) ){
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
@@ -116,12 +117,12 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 	
 	if (t_diff > 2000) {
 		N_SPRINTF("[SENSOR] -- return (no motion): %d ---", t_diff);
-		return;
+		return FALSE;
 	}
 	
 	if (currOrientation != FACE_UP) {
 		N_SPRINTF("[SENSOR] -- return (not face up orientation) ---");
-		return;
+		return FALSE;
 	}
 	
 	// Wrist flip detection
@@ -145,8 +146,8 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 			}
 		}
 	}
+	return TRUE;
 }
-#endif
 #endif
 #define STATIONARY_ENG_TH  48 /* 0.023 g */
 
@@ -248,13 +249,12 @@ static void _low_power_process_sw()
 static void _high_power_process_FIFO()
 {
 	I8U i, sample_count;
-	I8U jitter_counts, accCnt;// iSample,
+	I8U jitter_counts, iSample, accCnt;
 	ACC_AXIS xyz;
 	ACCELEROMETER_3D A;
 	ACCELEROMETER_3D G;
-	I32U x, y, t_curr;//,t_diff;
-	BOOLEAN b_motion = FALSE;
-	BOOLEAN b_turn_on_flag = FALSE;
+	I32U x, y, t_curr;
+	BOOLEAN b_motion = FALSE, b_wristFlip_flag = FALSE;
 #ifdef __WIRST_DETECT_ENABLE__
 	UNUSED_VARIABLE(b_motion);
 	UNUSED_VARIABLE(t_curr);
@@ -281,13 +281,12 @@ static void _high_power_process_FIFO()
 	G.x = 0;
 	G.y = 0;
 	G.z = 0;
-	#if 0
-	if (sample_count > 15) {
-		iSample = sample_count - 15;
+	
+	if (sample_count > 24) {//if (sample_count > 15) {
+		iSample = sample_count - 24;
 	} else {
 		iSample = 0;
 	}
-	#endif
 	accCnt = 0;
 
 	for (i = 0; i < sample_count; i++) {
@@ -312,9 +311,17 @@ static void _high_power_process_FIFO()
 			jitter_counts ++;
 		}
 		
-		// Set to 1.5g threshold for identifying a motion
-		if ((x > 2300) || (y > 2300)) {
+		// Set from 1.5g=2300 to 1g=1500 threshold for identifying a motion
+		if ((x > 1900) || (y > 1900)) {//if ((x > 2300) || (y > 2300)) {
 			b_motion = TRUE;
+		}
+		
+		// Accumulating gravity
+		if (i >= iSample) {
+			G.x += A.x;
+			G.y += A.y;
+			G.z += A.z;
+			accCnt ++;
 		}
 		
 		// Pedometer core data processing	
@@ -322,44 +329,17 @@ static void _high_power_process_FIFO()
 		
 		// Sleep monitoring module
 		SLEEP_algorithms_proc(&xyz);
-		
-		// Wrist flip
-		if(FALSE == b_turn_on_flag){
-			if(i>0){
-				G.x += A.x;// Accumulating gravity
-				G.y += A.y;
-				G.z += A.z;
-				accCnt ++;
-		
-				if(accCnt>=5){
-					G.x /= 5;
-					G.y /= 5;
-					G.z /= 5;
-					//if ((G.z<G.x&&G.z<G.y)&&(G.z < -1600) && (G.x-700&&G.x < 700) && (G.y < 200) && (G.y > -1200)) {
-					//if ((G.z<G.x&&G.z<G.y)&& (G.z < -1440) && (G.x>-500&&G.x < 1400) && ((G.y < 780) && (G.y > -400))){
-					//if ((G.z<G.x&&G.z<G.y)&& (G.z < -1440) && (G.x>-450&&G.x < 1500) && ((G.y < 780) && (G.y > -400))){
-					//if ((G.z<G.x&&G.z<G.y)&& (G.z < -1440) && (G.x>-450&&G.x < 1600) && ((G.y < 780) && (G.y > -400))){
-					//if ((G.z<G.x&&G.z<G.y)&& (G.z < -1440) && (G.x>-450&&G.x < 1900) && ((G.y < 780) && (G.y > -500))){//太灵敏，面向上稍微动下就会亮屏
-					if ((G.z<G.x&&G.z<G.y)&& (G.z < -1440) && (G.x>-400&&G.x < 1900) && ((G.y < 780) && (G.y > -500))){
-						if (LINK_is_authorized()) {
-							
-							if (OLED_panel_is_turn_off()) {
-								// Turn on screen
-								UI_turn_on_display(UI_STATE_TOUCH_SENSING, 20);
-								b_turn_on_flag = TRUE;
-							}
-						}
-					}
-					G.x -= A.x;
-					G.y -= A.y;
-					G.z -= A.z;
-				}
-		 }
-	 }
 #ifdef __WIRST_DETECT_ENABLE__
 		if(cling.user_data.b_screen_wrist_flip){
 			/*wrist detetction moudule*/
 			p_wrist_obj->gravity_obtain(p_wrist_obj, A.x, A.y, A.z,  CLK_get_system_time());
+		}
+#endif
+#ifndef __WIRST_DETECT_ENABLE__
+		if((FALSE == b_wristFlip_flag) && (accCnt>=3)){
+			if (cling.user_data.b_screen_wrist_flip) {
+				b_wristFlip_flag = _screen_activiation_wrist_flip(G, accCnt, t_curr, b_motion);
+			}
 		}
 #endif
 		 
@@ -370,23 +350,7 @@ static void _high_power_process_FIFO()
 	if (cling.user_data.b_navigation_wrist_shake) {
 		_navigation_wrist_shaking(jitter_counts);
 	}
-	// motion time stamp
-		if (b_motion) {
-			cling.activity.motion_ts = t_curr;
-			N_SPRINTF("[SENSOR] -- motion!!! ---");
-		}
-//	// Motion should be well detected within 2 seconds.
-//		t_diff = t_curr - cling.activity.motion_ts;
-//		
-//		if (t_diff > 2000) {
-//			N_SPRINTF("[SENSOR] -- return (no motion): %d ---", t_diff);
-//			return;
-//		}
-#if 0 //#ifndef __WIRST_DETECT_ENABLE__
-	if (cling.user_data.b_screen_wrist_flip) {
-		_screen_activiation_wrist_flip(G, accCnt, t_curr, b_motion);
-	}
-#endif
+
 }
 
 void SENSOR_accel_processing()
