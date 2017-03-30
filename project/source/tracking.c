@@ -29,7 +29,7 @@ void TRACKING_enter_low_power_mode()
 	cling.lps.ts = CLK_get_system_time();
 	cling.lps.int_count = 0;
 #ifdef _ENABLE_TOUCH_
-	if (UI_is_idle()) {
+	if (OLED_panel_is_turn_off()) {
 		// Set Touch IC power mode accordingly
 		TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);
 	}
@@ -265,7 +265,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			
 			if (cling.activity.b_workout_active) {
 		
-				if (UI_is_idle() && cling.user_data.b_running_alwayson) {
+				if (OLED_panel_is_turn_off() && cling.user_data.b_running_alwayson) {
 					UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
 				}
 				// Turn on PPG

@@ -148,7 +148,7 @@ void OTA_set_state(BOOLEAN b_enable)
     // Turn on OLED
     if (b_enable) {
 
-        if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] > 90) {
+        if (cling.system.mcu_reg[REGISTER_MCU_BATTERY] > 50) {
 
             // Turn on screen
             UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);

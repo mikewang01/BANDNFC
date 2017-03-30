@@ -676,9 +676,6 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U state;
 	BOOLEAN state_init;
 	
-	// Boolean variables
-	BOOLEAN display_active;
-	
 	BOOLEAN b_touch_light_up_screen;
 	
 	// Animation
@@ -700,8 +697,6 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U linking_wave_index;
 	I8U heart_rate_wave_index;
 	
-	// True display
-	BOOLEAN true_display;
 	BOOLEAN b_low_power_switch;
 	
 	// Fonts type
@@ -752,10 +747,8 @@ typedef struct tagUI_ANIMATION_CTX {
 typedef enum {
 	UI_STATE_IDLE = 0,
 	UI_STATE_CLING_START,
-	UI_STATE_HOME,
 	UI_STATE_AUTHORIZATION,
 	UI_STATE_FIRMWARE_OTA,
-	UI_STATE_CHARGING,
 	UI_STATE_TOUCH_SENSING,
 	UI_STATE_APPEAR,
 	UI_STATE_ANIMATING,
@@ -765,8 +758,6 @@ typedef enum {
 } UI_ANIMATION_STATE;
 
 void UI_init(void);
-
-BOOLEAN UI_is_idle(void);
 
 void UI_start_notifying(I8U frame_index);
 

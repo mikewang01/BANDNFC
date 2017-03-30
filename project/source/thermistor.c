@@ -120,7 +120,7 @@ void THERMISTOR_init(void)
 
 BOOLEAN _is_user_viewing_skin_temp()
 {
-	if (UI_is_idle()) {
+	if (OLED_panel_is_turn_off()) {
 		return FALSE;
 	}
 	

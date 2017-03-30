@@ -113,19 +113,30 @@ static BOOLEAN _is_running_active_mode_page(I8U frame_index)
 static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-	
+
+#ifdef _CLINGBAND_PACE_MODEL_		
+  if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
+		u->b_in_incoming_detail_page = TRUE;
+		return TRUE;
+	}
+#else
 	if ((u->b_in_incoming_detail_page) && (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF))
 		return TRUE;
-	else if ((frame_index >= UI_DISPLAY_SMART_INCOMING_CALL) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)) {
-#ifndef _CLINGBAND_PACE_MODEL_			
-		if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
-			return FALSE;
-		else 
-#endif			
-			return TRUE;
-	} else {
+#endif	
+  else if (u->frame_index == UI_DISPLAY_SMART_INCOMING_CALL)
+		return TRUE;
+	else if (u->frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE)
+		return TRUE;
+	else if (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER)
+		return TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SMART_IDLE_ALERT)
+		return TRUE;	
+	else if (u->frame_index == UI_DISPLAY_SMART_HEART_RATE_ALERT)
+		return TRUE;
+	else if (u->frame_index == UI_DISPLAY_SMART_STEP_10K_ALERT)
+		return TRUE;	
+	else
 		return FALSE;
-	}
 }
 
 /*------------------------------------------------------------------------------------------
@@ -137,19 +148,20 @@ static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 #ifndef _CLINGBAND_PACE_MODEL_	
 static BOOLEAN _is_other_need_store_page(I8U frame_index)
 {
-#ifndef _CLINGBAND_PACE_MODEL_	
   if ((frame_index >= UI_DISPLAY_CAROUSEL) && (frame_index <= UI_DISPLAY_CAROUSEL_END))
 		return TRUE;	
   else if ((frame_index >= UI_DISPLAY_WORKOUT_TREADMILL) && (frame_index <= UI_DISPLAY_WORKOUT_OTHERS))
 		return TRUE;	
   else if ((frame_index >= UI_DISPLAY_STOPWATCH) && (frame_index <= UI_DISPLAY_STOPWATCH_END))
 		return TRUE;	
-	else if ((frame_index == UI_DISPLAY_SETTING_VER) ||
-		       (frame_index == UI_DISPLAY_SMART_WEATHER) ||
-	         (frame_index == UI_DISPLAY_SMART_MESSAGE) ||
-	         (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL))
+	else if (frame_index == UI_DISPLAY_SETTING_VER) 
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_WEATHER) 
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_MESSAGE) 
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL) 
 		return TRUE;		
-#endif	
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
   else if ((frame_index >= UI_DISPLAY_MUSIC) && (frame_index <= UI_DISPLAY_MUSIC_END))
 		return TRUE;	
@@ -186,16 +198,28 @@ static BOOLEAN _ui_vertical_animation(I8U frame_index)
 #endif
 	
 #ifndef _CLINGBAND_PACE_MODEL_		
-	if ((frame_index >= UI_DISPLAY_TRACKER) && (frame_index <= UI_DISPLAY_TRACKER_ACTIVE_TIME)) {
+	if ((frame_index >= UI_DISPLAY_TRACKER) && (frame_index <= UI_DISPLAY_TRACKER_ACTIVE_TIME)) 
 		return TRUE;
-	} else if ((frame_index >= UI_DISPLAY_SMART_MESSAGE) && (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT)){
-		if (frame_index == UI_DISPLAY_SMART_INCOMING_CALL)
-			return FALSE;
-		else
-			return TRUE;
-	} else {
+	else if (frame_index == UI_DISPLAY_SMART_MESSAGE)
+		return TRUE;
+	else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF)
+		return TRUE;
+	else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
+		return TRUE;
+	else if (frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER)
+		return TRUE;		
+	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_IDLE_ALERT)
+		return TRUE;	
+	else if (frame_index == UI_DISPLAY_SMART_HEART_RATE_ALERT)
+		return TRUE;		
+	else if (frame_index == UI_DISPLAY_SMART_STEP_10K_ALERT)
+		return TRUE;		
+	else 
 		return FALSE;
-	}
 #endif	
 }
 
@@ -1581,30 +1605,30 @@ static I8U _ui_touch_sensing()
 void UI_start_notifying(I8U frame_index)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-	
-	// 1. Update display frame index
-	u->frame_index = frame_index;
-	
-	// 2. Update notification type
-	//u->notif_type = notif_type;
 
-	// 3. Record current notification received time£¬and update touch time stamp.
+	// 1. Start system timer.
+  RTC_start_operation_clk();
+	
+	// 2. Update display frame index
+	u->frame_index = frame_index;
+
+	// 3. Record current notification received time stamp and update touch time stamp.
 	u->notif_time_stamp = CLK_get_system_time();
   u->touch_time_stamp = CLK_get_system_time();
 	
-	// 4. If screen is dark, first turn on screen immediately.
-	if (UI_is_idle()) {
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
-		u->b_restore_notif = TRUE;
-	} else {
-	// 5. If screen is turn on, switch to touch sensing state.
+	if (OLED_panel_is_turn_on()) {
+		// 4. If screen is turn on, switch to touch sensing state.
 		UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 		u->b_restore_notif = FALSE;		
+	} else {
+		// 5. If screen is dark, first turn on screen immediately.
+		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+		u->b_restore_notif = TRUE;		
 	}
-	
+
 	// 6. Stop reminder when inconming one new message.
 	if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-		// Reset alarm clock flag
+		// Clear alarm clock flag
 		cling.reminder.ui_alarm_on = FALSE;
 		// Stop reminder
 		if (cling.reminder.state != REMINDER_STATE_IDLE) {
@@ -1632,17 +1656,6 @@ void UI_switch_state(I8U state, I32U interval)
 }
 
 /*------------------------------------------------------------------------------------------
-*  Function:	UI_is_idle()
-*
-*  Description: Used to determine whether the current screen is dark.
-*
-*------------------------------------------------------------------------------------------*/
-BOOLEAN UI_is_idle()
-{
-	return (cling.ui.state == UI_STATE_IDLE);
-}
-
-/*------------------------------------------------------------------------------------------
 *  Function:	UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 *
 *  Description: Initialize the UI.
@@ -1656,8 +1669,6 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	// 1. Turn on OLED panel	
 	b_panel_on = OLED_set_panel_on();
 
-	u->true_display = TRUE;
-	
 	// 2. Update touch stamp time 
 	u->touch_time_stamp = CLK_get_system_time()-time_offset;
 
@@ -1689,8 +1700,6 @@ void UI_init()
 #else 		
 	UI_switch_state(UI_STATE_CLING_START, 2000);		
 #endif
-	
-	cling.ui.true_display = TRUE;
 }
 
 static void _update_frame_display_parameter()
@@ -1720,7 +1729,7 @@ void UI_state_machine()
 	
 	t_curr = CLK_get_system_time();
 
-	if (!u->display_active) {
+	if (OLED_panel_is_turn_off()) {
 		return;
 	}
 	
@@ -1845,10 +1854,10 @@ void UI_state_machine()
 			
 			// 4 seconds screen dark expiration
 			// for heart rate measuring, double the Screen ON time.
-			if (u->true_display)
-				t_threshold = cling.user_data.screen_on_general; // in second
-			else
-				t_threshold = 2;
+			t_threshold = cling.user_data.screen_on_general; // in second
+			if ((!t_threshold) || (t_threshold == 0xff))
+        t_threshold = 4;
+				
 			t_threshold *= 1000; // second -> milli-second
 			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second
@@ -1933,7 +1942,6 @@ void UI_state_machine()
 			// Turn off OLED panel
 			OLED_set_panel_off();
 			u->state = UI_STATE_IDLE;
-			u->true_display = FALSE;
 			// Reset alarm clock flag
 			cling.reminder.ui_alarm_on = FALSE;
 			u->b_detail_page = FALSE;		

@@ -28,7 +28,7 @@ static void _set_data(I16U num, I8U *data)
 void OLED_power_on(void) 
 {
 #ifndef _CLING_PC_SIMULATION_
-	nrf_gpio_pin_set( GPIO_OLED_RST ); // reset driven high
+	nrf_gpio_pin_set(GPIO_OLED_RST); // reset driven high
 #endif
 }
 
@@ -60,18 +60,6 @@ void OLED_full_scree_show()
 #endif
 }
 
-void OLED_im_show(OLED_DISPLAY_MODE mode, I8U *pram, I8U offset)
-{
-#ifndef _CLING_PC_SIMULATION_
-	
-		_set_reg(0xb0+offset);
-		_set_reg(0x10);  // Starting address
-		_set_reg(0x02);  // 
-		// Set "A0" pin for data buffer refresh
-		_set_data(512,pram);
-#endif
-}
-
 void OLED_set_display(I8U on_off)
 {
 	if (on_off)
@@ -89,7 +77,6 @@ void OLED_set_contrast(I8U step)
 /**@brief Function for OLED init.
  *
  */
-
 void OLED_init(I8U contrast)
 {    
 #ifndef _CLING_PC_SIMULATION_
@@ -135,7 +122,6 @@ void OLED_set_panel_off()
 	CLING_OLED_CTX *o = &cling.oled;
 	
 	o->state = OLED_STATE_GOING_OFF;
-	cling.ui.display_active = FALSE;
 }
 
 BOOLEAN OLED_set_panel_on()
@@ -162,7 +148,7 @@ BOOLEAN OLED_set_panel_on()
 	return FALSE;
 }
 
-BOOLEAN OLED_is_panel_idle()
+BOOLEAN OLED_panel_is_turn_off()
 {
 	CLING_OLED_CTX *o = &cling.oled;
 	
@@ -173,9 +159,17 @@ BOOLEAN OLED_is_panel_idle()
 	return FALSE;
 }
 
-#if 0
-static I8U oledstate;
-#endif
+BOOLEAN OLED_panel_is_turn_on()
+{
+	CLING_OLED_CTX *o = &cling.oled;
+	
+	if (o->state == OLED_STATE_ON) {
+		return TRUE;
+	}
+	
+	return FALSE;
+}
+
 // This routine implements the main display state machine.  If someone wants to write something to the
 // display, it first issues the command SSD1306_SetDisplay(
 //static I8U oledstate;
@@ -224,9 +218,6 @@ void OLED_state_machine(void)
 		}
 		case OLED_STATE_INIT_UI:
 		{
-				// CLING screen timeout
-				cling.ui.display_active = TRUE;
-				
 				// Update display timeout base.
 				cling.ui.display_to_base = CLK_get_system_time();
 			
@@ -234,21 +225,10 @@ void OLED_state_machine(void)
 				
 				// Reset blinking state
 				cling.ui.icon_sec_blinking = TRUE;
+			
+			  // Update notif and touch time stamp.
 	      cling.ui.notif_time_stamp = CLK_get_system_time();	
 	      cling.ui.touch_time_stamp = CLK_get_system_time();				
-#if 0
-				// If screen is turned, dismiss the secondary reminder vibration 
-				if ((cling.reminder.state >= REMINDER_STATE_ON) && (cling.reminder.state <= REMINDER_STATE_SECOND_REMINDER)) {
-					cling.reminder.ui_hh = cling.time.local.hour;
-					cling.reminder.ui_mm = cling.time.local.minute;
-					cling.reminder.ui_alarm_on = TRUE; // Indicate this is a active alarm reminder
-				  cling.ui.ui_alarm_hh = cling.reminder.ui_hh;
-				  cling.ui.ui_alarm_mm = cling.reminder.ui_mm;							
-					UI_start_notifying(UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER);
-					Y_SPRINTF("[OLED] state reminder: %d, %d, %d", cling.reminder.state, cling.reminder.ui_hh, cling.reminder.ui_mm);
-				}
-#endif
-			
 				o->state = OLED_STATE_ON;
 			break;
 		}

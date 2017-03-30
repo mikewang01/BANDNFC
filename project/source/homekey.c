@@ -51,16 +51,16 @@ void HOMEKEY_check_on_hook_change()
 		// update the click time stamp
 		k->temp_st = stat;
 		k->ticks[stat] = t_curr;
-		Y_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
+		N_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
 		if (k->temp_st == ON_CLICK) {
 		
 			// Make sure OLED display panel is faced up.
 			if (LINK_is_authorized()) {
 					
-				Y_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
+				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
-				if (UI_is_idle()) {
+				if (OLED_panel_is_turn_off()) {
 					cling.ui.b_touch_light_up_screen = TRUE;
 				}
 				

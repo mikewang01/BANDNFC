@@ -520,10 +520,8 @@ void RTC_start_operation_clk()
 {
     I32U err_code;
 #ifndef _CLING_PC_SIMULATION_
-
-    cling.time.operation_clk_start_in_ms = CLK_get_system_time();
-
     if (!cling.time.operation_clk_enabled) {
+        cling.time.operation_clk_start_in_ms = CLK_get_system_time();			
         N_SPRINTF("[SYSCLK] OPERATION clk start, %d ", cling.time.operation_clk_start_in_ms);
         cling.time.operation_clk_enabled = TRUE;
         err_code = app_timer_start(m_operation_timer_id, SYSCLK_INTERVAL_20MS, NULL);

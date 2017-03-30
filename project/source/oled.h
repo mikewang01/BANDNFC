@@ -13,7 +13,7 @@
 // delay from power on is 100ms.  Set to 103 because time is slightly less than 1ms.
 
 #define OLED_POWER_START_DELAY_TIME 103
-#define OLED_POWER_OFF_DELAY_TIME 103
+#define OLED_POWER_OFF_DELAY_TIME   103
 
 typedef enum {
 	OLED_STATE_IDLE,
@@ -27,12 +27,6 @@ typedef enum {
 	OLED_STATE_OFF,			        // all power off and reset low
 } OLED_STATE_TYPE;
 
-typedef enum {
-	OLED_FULL_OFF,
-	OLED_FULL_ON,
-	OLED_IMG_SHOW
-} OLED_DISPLAY_MODE;
-
 typedef struct tagCLING_OLED_CTX {
 	I32U ts;
 	I8U state;
@@ -44,9 +38,8 @@ void OLED_set_display(I8U on_off);
 void OLED_state_machine(void);
 BOOLEAN OLED_set_panel_on(void);
 void OLED_set_panel_off(void);
-void OLED_im_show(OLED_DISPLAY_MODE mode, I8U *pram, I8U offset);
 void OLED_full_scree_show(void);
 void OLED_power_off(void);
-BOOLEAN OLED_is_panel_idle(void);
-
+BOOLEAN OLED_panel_is_turn_on(void);
+BOOLEAN OLED_panel_is_turn_off(void);
 #endif

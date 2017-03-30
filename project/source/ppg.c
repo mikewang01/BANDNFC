@@ -514,7 +514,7 @@ void PPG_init()
 BOOLEAN _is_user_viewing_heart_rate()
 {
 #if 1	
-	if (UI_is_idle()) {
+	if (OLED_panel_is_turn_off()) {
 
 		if (!cling.activity.b_workout_active) {
 			if (cling.hr.heart_rate_ready) {
@@ -535,7 +535,7 @@ BOOLEAN _is_user_viewing_heart_rate()
 	if (cling.activity.b_workout_active)
 		return TRUE;
 
-	if (UI_is_idle()) {
+	if (OLED_panel_is_turn_off()) {
 		cling.hr.heart_rate_ready  = FALSE;
 		return FALSE;
 	}	

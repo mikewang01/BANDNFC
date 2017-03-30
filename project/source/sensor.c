@@ -43,7 +43,7 @@ static void _navigation_wrist_shaking(I8U jitter_counts)
 #ifdef _ENABLE_TOUCH_
 	if (jitter_counts > 1) {
 		N_SPRINTF(" +++ jitter: %d +++\n", jitter_counts);
-		if (!UI_is_idle()) {
+		if (OLED_panel_is_turn_on()) {
 			if ((cling.ui.frame_index >= UI_DISPLAY_CAROUSEL) && (cling.ui.frame_index <= UI_DISPLAY_CAROUSEL_END)) {
 				cling.touch.b_valid_gesture = TRUE;
 				cling.touch.gesture = TOUCH_SWIPE_LEFT;
@@ -139,7 +139,7 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U 
 		
 		if (LINK_is_authorized()) {
 			
-			if (UI_is_idle()) {
+			if (OLED_panel_is_turn_off()) {
 				// Turn on screen
 				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 20);
 			}
@@ -343,7 +343,7 @@ static void _high_power_process_FIFO()
 					if ((G.z<G.x&&G.z<G.y)&& (G.z < -1440) && (G.x>-400&&G.x < 1900) && ((G.y < 780) && (G.y > -500))){
 						if (LINK_is_authorized()) {
 							
-							if (UI_is_idle()) {
+							if (OLED_panel_is_turn_off()) {
 								// Turn on screen
 								UI_turn_on_display(UI_STATE_TOUCH_SENSING, 20);
 								b_turn_on_flag = TRUE;
