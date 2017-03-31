@@ -551,7 +551,7 @@ const I8U ui_gesture_constrain[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_STOPWATCH_START,*/                S_F_BS_BH,		
 	/*UI_DISPLAY_STOPWATCH_STOP,*/                 S_F_BS_BH,
 	// 7: Workout mode  
-	/*UI_DISPLAY_WORKOUT_TREADMILL,*/                S_F_BS_BH,
+	/*UI_DISPLAY_WORKOUT_TREADMILL,*/              S_F_BS_BH,
 	/*UI_DISPLAY_WORKOUT_CYCLING,*/                S_F_BS_BH,	
 	/*UI_DISPLAY_WORKOUT_STAIRS,*/                 S_F_BS_BH,	
 	/*UI_DISPLAY_WORKOUT_ELLIPTICAL,*/             S_F_BS_BH,
@@ -602,7 +602,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/* UI_DISPLAY_HOME */                          400,
 	// 1: System
 	/*UI_DISPLAY_SYSTEM_RESTART,*/                 1000,
-	/*UI_DISPLAY_SYSTEM_OTA,*/                     2000,
+	/*UI_DISPLAY_SYSTEM_OTA,*/                     1000,
 	/*UI_DISPLAY_SYSTEM_LINKING,*/                 400,
 	/*UI_DISPLAY_SYSTEM_UNAUTHORIZED,*/            2000,		
 	/*UI_DISPLAY_SYSTEM_BATT_POWER,*/              1000,	

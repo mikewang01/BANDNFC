@@ -1,6 +1,8 @@
 
 #include "main.h"
 
+#define PPG_LOGGING N_SPRINTF
+
 static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 {
 #ifndef _CLING_PC_SIMULATION_
@@ -18,7 +20,7 @@ static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 	if (err_code == NRF_SUCCESS) {
 		N_SPRINTF("[PPG] Read TX PASS: ");
 	} else {
-		Y_SPRINTF("[PPG] Read TX FAIL - %d", err_code);
+		PPG_LOGGING("[PPG] Read TX FAIL - %d", err_code);
 		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
@@ -27,7 +29,7 @@ static EN_STATUSCODE ppg_read_reg(I8U cmdID, I8U bytes, I8U *pRegVal)
 		N_SPRINTF("[PPG] Read RX PASS: ");
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("[PPG] Read RX FAIL: %d", err_code);
+		PPG_LOGGING("[PPG] Read RX FAIL: %d", err_code);
 		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
@@ -56,7 +58,7 @@ static BOOLEAN ppg_write_reg(I8U cmdID, I8U regVal)
 		N_SPRINTF("[PPG] Write PASS: 0x%02x  0x%02x", cmdID, regVal);
 		return STATUSCODE_SUCCESS;
 	} else {
-		Y_SPRINTF("[PPG] Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
+		PPG_LOGGING("[PPG] Write FAIL(%d): 0x%02x  0x%02x", err_code, cmdID, regVal);
 		APP_ERROR_CHECK(err_code);
 		return STATUSCODE_FAILURE;
 	}
@@ -291,7 +293,8 @@ static void _skin_touch_detect(I16S sample)
 		h->m_sample_sum += sample;
 
 		sample_val = (h->m_sample_sum) >> 5;
-		if (sample_val>PPG_SAMPLE_AVERATE_THRESHOLD) {
+		N_SPRINTF("[PPG] sample_val: %d",sample_val);
+		if (sample_val>PPG_SAMPLE_AVERATE_THRESHOLD||sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) {//YLF2017.3.24
 			h->m_closing_to_skin_detection_timer = CLK_get_system_time();
 		}
 	}
@@ -579,6 +582,14 @@ void PPG_state_machine()
 			h->state = PPG_STAT_SAMPLE_READY;
 			N_SPRINTF("[PPG] duty on: %d", h->m_measuring_timer_in_s);
   	  _configure_sensor();			// initialize the PPG module
+			h->m_contineous_measuring_ms = PPG_CONTINEOUS_MEASURING_NORMAL_TH;
+			
+			if (h->heart_rate_ready) {
+				// Let's increase the time out threshold in order to avoid HR freeze during workout mode
+				if (cling.activity.b_workout_active) {
+					h->m_contineous_measuring_ms = PPG_CONTINEOUS_MEASURING_WORKOUT_TH;
+				}
+			}
 		}
 		break;
 
@@ -595,7 +606,7 @@ void PPG_state_machine()
 					if (h->heart_rate_ready) {
 						// If heart rate is ready, we should just keep measuring for no more than 5 sec
 						t_measuring_ms_diff = t_curr_ms - h->first_hr_measurement_in_ms;
-						if (t_measuring_ms_diff > 5000) {
+						if (t_measuring_ms_diff > h->m_contineous_measuring_ms) {
 							// If user is not viewing HR page, exit measuring state
 							// otherwise, simply just stop updating
 							if (!_is_user_viewing_heart_rate()) {
@@ -618,7 +629,7 @@ void PPG_state_machine()
 			}
 
 			if ((!h->b_closing_to_skin) && (!h->b_start_detect_skin_touch)) {
-				Y_SPRINTF("[PPG] not closing to skin.");				
+				PPG_LOGGING("[PPG] not closing to skin.");				
 				PPG_disable_sensor();
 				h->state = PPG_STAT_DUTY_OFF;
 			}
@@ -643,12 +654,12 @@ void PPG_state_machine()
 					h->state = PPG_STAT_DUTY_ON;
 					// We need initialize skin touch detection routine
 					PPG_closing_to_skin_detect_init();
-					Y_SPRINTF("[PPG] PPG State on (force)");
+					PPG_LOGGING("[PPG] PPG State on (force)");
 				}
 			} else if (_is_user_viewing_heart_rate() && (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch)) 
 			{
 				h->state = PPG_STAT_DUTY_ON;
-				Y_SPRINTF("[PPG] PPG State on (force)");
+				PPG_LOGGING("[PPG] PPG State on (force)");
 			} else {
 				if (t_step_diff_sec < PPG_MEASURING_PERIOD_BACKGROUND_NIGHT) {
 					t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_DAY;

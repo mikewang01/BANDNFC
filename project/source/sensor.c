@@ -311,7 +311,7 @@ static void _high_power_process_FIFO()
 			jitter_counts ++;
 		}
 		
-		// Set from 1.5g=2300 to 1g=1500 threshold for identifying a motion
+		// Set from 1.5g=2300 to 1g=1900 threshold for identifying a motion
 		if ((x > 1900) || (y > 1900)) {//if ((x > 2300) || (y > 2300)) {
 			b_motion = TRUE;
 		}

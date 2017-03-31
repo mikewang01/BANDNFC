@@ -725,7 +725,6 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U ui_alarm_mm;	
 	
 	// Training pace and hr alert
-	BOOLEAN b_training_alert;
 	I8U training_hr;
 
 #ifndef _CLINGBAND_PACE_MODEL_		

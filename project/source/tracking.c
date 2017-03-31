@@ -726,30 +726,20 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 *  Description: Check pace and hate rate when user in running mode.
 *
 *----------------------------------------------------------------------------------*/
-void _check_training_pace_and_hr_alert(I16U minute_distance)
+void _training_pace_and_hr_alert()
 {
-	UI_ANIMATION_CTX *u = &cling.ui;	
 	I16U pace_range_up = 0;
 	I8U hr_range_down = 0;
 	BOOLEAN b_pace_range_alert = FALSE;
 	BOOLEAN b_hr_range_alert = FALSE;
 	I32U input_pace_min, hr, hr_perc;
 	
-  if (!cling.activity.b_workout_active)
-		return;
-
   if (cling.activity.workout_type != WORKOUT_RUN_OUTDOOR)
 		return;
 	
 	if (cling.user_data.profile.training_alert & 0x80) {
-		if (minute_distance) {
-			// Get Pace in minute
-			input_pace_min = 100000;
-			input_pace_min /= minute_distance;
-			input_pace_min /= 100;
-		} else {
-			input_pace_min = 0;
-		}
+		// Get Pace in minute
+		input_pace_min = cling.run_stat.last_10sec_pace_min;
 
 	  pace_range_up = (cling.user_data.profile.training_alert & 0x7f);
 
@@ -770,32 +760,28 @@ void _check_training_pace_and_hr_alert(I16U minute_distance)
 	}	
 
 	if (b_pace_range_alert) {
+		// If input PACE is faster than PACE alert threshold, reset flag and time stamp
 		if (input_pace_min < pace_range_up) {
-			if (!u->b_training_alert) {
-				if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
-					cling.hr.alert_ts = cling.time.system_clock_in_sec;
-
-					u->b_training_alert = TRUE;
-					NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
-				}
-			}
+			// 
+			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 		} else {
-			u->b_training_alert = FALSE;
+			// If user is constantly slower than pre-defined PACE threshold
+			// Go start alerting
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 35) {
+				cling.hr.alert_ts = cling.time.system_clock_in_sec;
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
+			}
 		}
   } 
 	
 	if (b_hr_range_alert) {
 		if (hr_perc >= hr_range_down) {
-			if (!u->b_training_alert) {
-				if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
-					cling.hr.alert_ts = cling.time.system_clock_in_sec;
-					
-					u->b_training_alert = TRUE;
-					NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
-				}
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 60) {
+				cling.hr.alert_ts = cling.time.system_clock_in_sec;
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
 			}
 		} else {
-			u->b_training_alert = FALSE;
+			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 		}		
 	}
 }
@@ -846,9 +832,6 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	r->walk_per_60_second = minute->walking;
 	r->run_per_60_second = minute->running;
 	r->last_minute_distance = denormalized_distance;;
-	
-	// If pace is falling ... start alerting
-	_check_training_pace_and_hr_alert(r->last_minute_distance);
 }
 
 static void _logging_per_minute()
@@ -1159,6 +1142,9 @@ void TRACKING_data_logging()
 	if (cling.activity.b_workout_active) 
 	{
 		_update_running_pace();
+		
+		// Pace and HR alert during workout
+		_training_pace_and_hr_alert();
 	}
 }
 

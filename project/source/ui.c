@@ -1019,7 +1019,6 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
  	  cling.ui.run_ready_index = 0;
 		cling.ui.b_training_first_enter = TRUE;			
 		cling.ui.running_time_stamp = CLK_get_system_time();
-		cling.ui.b_training_alert = FALSE;
 		// Reset all training data - distance, time stamp, calories, and session ID
 		cling.train_stat.distance = 0;
 		cling.train_stat.time_start_in_ms = CLK_get_system_time();

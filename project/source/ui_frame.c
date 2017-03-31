@@ -185,13 +185,6 @@ static void _left_render_horizontal_idle_alert()
   _render_one_icon_24(ICON24_IDLE_ALERT_IDX, 0);	
 }
 
-#ifndef _CLINGBAND_PACE_MODEL_
-static void _left_render_horizontal_running_distance_24()
-{	
-	_render_one_icon_24(ICON24_RUNNING_DISTANCE_IDX, 0);
-}
-#endif
-
 static void _left_render_horizontal_training_ready()
 {
 	_render_one_icon_24(ICON24_RUNNING_DISTANCE_IDX, 128+10);
@@ -362,37 +355,19 @@ static void _middle_render_horizontal_ota()
 {
   const I8U font_content[] = {0x3c,0x42,0x42,0xbc,0x60,0x18,0x06,0x00,0x60,0x18,0x06,0x3d,0x42,0x42,0x3c,0x00};/*%*/
 	I8U string[32];
+	I8U b_24_size = 16;			
   I8U string_len=0;
-  I8U offset=0;
-	I8U bar_len=0,char_len=0;
+  I16U offset=0;
+	I8U bar_len=0;
   I8U margin=2;
 	I8U *p0,*p1;
-	I8U i,j;
-	const I8U *pin;
+	I8U i;
 
 	string_len = sprintf((char *)string, "%d", cling.ota.percent);
 	bar_len = cling.ota.percent;
 
   offset = 56 - string_len*4;
-
-	for (i = 0; i < string_len; i++) {
-	  p0 = cling.ui.p_oled_up+128+offset;
-	  p1 = p0+128;
-		if ((string[i] >= '0') && (string[i] <= '9')) {
-			pin = asset_content+asset_pos[256+string[i]];
-			char_len = asset_len[256+string[i]];
-			
-			for (j = 0; j < char_len; j++) {
-				*p0++ = (*pin++);
-				*p1++ = (*pin++);
-			}				
-		} 
-				
-		if (i != (string_len-1))
-			offset += char_len + margin;
-		else
-			offset += char_len;
-	}
+	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 
 	offset += 4;
 	p0 = cling.ui.p_oled_up+128+offset;
@@ -460,7 +435,7 @@ static void _middle_render_horizontal_ble_code()
 	I8U string[32];
 	SYSTEM_get_ble_code(string);
 	string[4] = 0;
-	
+
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)		
 	I8U b_24_size = 24;		
 	I8U margin = 3;	
@@ -471,7 +446,31 @@ static void _middle_render_horizontal_ble_code()
 #endif
 	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)			
-	FONT_load_characters(256, (char *)string, 16, 128, TRUE);
+	I8U string1[16];//, string2[16], string3[16], string4[16];
+	
+//	string1[0] = string[0];
+//	string2[0] = string[1];
+//	string3[0] = string[2];
+//	string4[0] = string[3];
+//	
+//	string1[1] = 0;
+//	string2[1] = 0;
+//	string3[1] = 0;
+//	string4[1] = 0;	
+//	
+//	FONT_load_characters(256+42, (char *)string1, 16, 128, FALSE);
+//	FONT_load_characters(256+54, (char *)string2, 16, 128, FALSE);
+//	FONT_load_characters(256+66, (char *)string3, 16, 128, FALSE);
+//	FONT_load_characters(256+78, (char *)string4, 16, 128, FALSE);
+  	string1[0] = string[0];
+  	string1[1] = ' ';		
+	  string1[2] = string[1];
+  	string1[3] = ' ';
+  	string1[4] = string[2];
+  	string1[5] = ' ';	
+  	string1[6] = string[3];
+  	string1[7] = 0;			
+  	FONT_load_characters(256, (char *)string1, 16, 128, TRUE);		
 #endif
 }
 
@@ -4515,8 +4514,8 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_cadence,           _right_render_horizontal_running_cadence},         /*UI_DISPLAY_RUNNING_CADENCE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_hr,                _right_render_horizontal_running_hr},              /*UI_DISPLAY_RUNNING_HEART_RATE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_running_calories,          _right_render_horizontal_running_calories},        /*UI_DISPLAY_RUNNING_CALORIES*/
-  {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_start_run,        _right_render_horizontal_ok_middle},               /*UI_DISPLAY_TRAINING_RUN_START*/
-  {_left_render_horizontal_running_distance_24,   _middle_render_horizontal_training_run_or_analysis,  _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_RUN_OR_ANALYSIS*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_training_start_run,        _right_render_horizontal_ok_middle},               /*UI_DISPLAY_TRAINING_RUN_START*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_training_run_or_analysis,  _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_RUN_OR_ANALYSIS*/
   {_left_render_horizontal_training_ready,        _middle_render_horizontal_training_ready,            _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_READY*/ 
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_TIME*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_distance,         _right_render_horizontal_running_distance},        /*UI_DISPLAY_TRAINING_DISTANCE*/
