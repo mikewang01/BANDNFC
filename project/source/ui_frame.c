@@ -191,11 +191,6 @@ static void _left_render_horizontal_training_ready()
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
-static void _left_render_horizontal_cycling_outdoor_24()
-{
-	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_IDX, 0);
-}
-
 static void _left_render_horizontal_cycling_outdoor_ready()
 {
 	_render_one_icon_24(ICON24_CYCLING_OUTDOOR_MODE_IDX, 128+10);
@@ -4521,7 +4516,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_pace,             _right_render_horizontal_training_pace},           /*UI_DISPLAY_TRAINING_PACE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_hr,               _right_render_horizontal_training_hr},             /*UI_DISPLAY_TRAINING_HEART_RATE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_run_stop,         _right_render_horizontal_ok_middle},               /*UI_DISPLAY_TRAINING_RUN_STOP*/
-  {_left_render_horizontal_cycling_outdoor_24,    _middle_render_horizontal_cycling_outdoor_start,     _right_render_horizontal_ok_middle},               /*UI_DISPLAY_CYCLING_OUTDOOR_RUN_START*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_cycling_outdoor_start,     _right_render_horizontal_ok_middle},               /*UI_DISPLAY_CYCLING_OUTDOOR_RUN_START*/
   {_left_render_horizontal_cycling_outdoor_ready, _middle_render_horizontal_cycling_outdoor_ready,     _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_READY*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_training_time,             _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_TIME*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_cycling_outdoor_distance,  _right_render_horizontal_cycling_outdoor_distance},/*UI_DISPLAY_CYCLING_OUTDOOR_DISTANCE*/
