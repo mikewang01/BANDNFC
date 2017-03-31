@@ -3915,7 +3915,6 @@ static void _bottom_render_vertical_cycling_outdoor_distance()
 static void _bottom_render_vertical_cycling_outdoor_speed()
 { 
 	const char *unit_speed_display[] = {"KM/H", "ML/H"};	
-//	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;	
 	
   if (BTLE_is_connected()) {	

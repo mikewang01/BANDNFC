@@ -47,7 +47,7 @@ static BOOLEAN _is_regular_page(I8U frame_index)
     return TRUE;
 	else if (frame_index == UI_DISPLAY_SMART_WEATHER)
     return TRUE;
-	else if (frame_index == UI_DISPLAY_TRAINING_STAT_RUN_START)
+	else if (frame_index == UI_DISPLAY_TRAINING_STAT_START)
     return TRUE;
 #endif	
 	else 
@@ -360,7 +360,7 @@ static I16U _get_regular_page_enable_index(I8U frame_index)
 		return UI_FRAME_ENABLE_WEATHER;			
 	else if (frame_index == UI_DISPLAY_SMART_PM2P5)
 		return UI_FRAME_ENABLE_PM2P5;		
-	else if (frame_index == UI_DISPLAY_TRAINING_STAT_RUN_START)
+	else if (frame_index == UI_DISPLAY_TRAINING_STAT_START)
 		return UI_FRAME_ENABLE_START_RUN;				
 	else if (frame_index == UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS)
 		return UI_FRAME_ENABLE_RUN_ANALYSIS;			
@@ -436,7 +436,7 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 			} else {
 #ifdef _CLINGBAND_PACE_MODEL_							
 				if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) {
-				  if (u->frame_prev_idx != UI_DISPLAY_TRAINING_STAT_RUN_START) {
+				  if (u->frame_prev_idx != UI_DISPLAY_TRAINING_STAT_START) {
 						u->frame_index = UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS;
 					} 
 				}
@@ -541,9 +541,9 @@ static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U ge
 		}
 	}		
 	
-	if ((u->frame_prev_idx == UI_DISPLAY_CAROUSEL_1) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_RUN_START)) {
+	if ((u->frame_prev_idx == UI_DISPLAY_CAROUSEL_1) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_START)) {
 		if (cling.run_stat.distance) {
-			u->frame_index = UI_DISPLAY_TRAINING_STAT_RUN_OR_ANALYSIS;
+			u->frame_index = UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS;
 			u->frame_next_idx = u->frame_index;			
 		}					
 	}
@@ -974,12 +974,20 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	BOOLEAN b_enter_workout_mode = FALSE;
 	BOOLEAN b_exit_workout_mode = FALSE;
 	
-	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
+	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
 		N_SPRINTF("[UI] Enter training workout mode");	
     b_enter_workout_mode = TRUE;		
 		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
 	}
 
+#ifndef _CLINGBAND_PACE_MODEL_		
+	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
+		N_SPRINTF("[UI] Enter training workout mode");	
+    b_enter_workout_mode = TRUE;		
+		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+	}
+#endif
+	
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if ((u->frame_prev_idx >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_prev_idx <= UI_DISPLAY_WORKOUT_OTHERS)) {
 		if (u->frame_index == UI_DISPLAY_WORKOUT_RT_READY) {
@@ -1006,7 +1014,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		}
 	}
 
-	if ((u->frame_prev_idx == UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_START) && (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY)) {
+	if ((u->frame_prev_idx == UI_DISPLAY_CYCLING_OUTDOOR_STAT_START) && (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY)) {
 		N_SPRINTF("[UI] Enter CYCLING_OUTDOOR workout mode");	
     b_enter_workout_mode = TRUE;		
 		cling.activity.workout_type = WORKOUT_CYCLING_OUTDOOR;		

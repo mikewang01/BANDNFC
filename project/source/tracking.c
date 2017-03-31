@@ -1084,24 +1084,12 @@ static void _update_running_pace()
 	cling.run_stat.last_10sec_distance = 0;
 }
 
-static void _workout_active_timeout()
+
+void TRACKING_data_logging()
 {
 	I32U t_curr = CLK_get_system_time();
   I32U t_diff;
 
-  if (cling.activity.b_workout_active) {
-	  t_diff = CLK_get_system_time() - cling.train_stat.time_start_in_ms;		
-		// If workout active timeout, exit workout mode.
-		if (t_diff >= 36000000) {
-		  cling.ui.frame_index = UI_DISPLAY_HOME;	
-		  cling.activity.b_workout_active = FALSE;		
-		  cling.activity.workout_type = WORKOUT_NONE;
-		}		
-	}
-}
-
-void TRACKING_data_logging()
-{
 	// Activity update only for a device that is authenticated
 	if (!LINK_is_authorized()) {
 		cling.time.local_minute_updated = FALSE;
@@ -1113,9 +1101,6 @@ void TRACKING_data_logging()
 	// On the minute update basis
 	if (cling.time.local_minute_updated) {
 		_logging_per_minute();
-		
-		// Stop workout if workout time is greater than 10 hours 
-    _workout_active_timeout();
 		
 		cling.time.local_minute_updated = FALSE;
 		N_SPRINTF("[TRACKING] time: %d", cling.time.time_since_1970);
@@ -1145,6 +1130,25 @@ void TRACKING_data_logging()
 		
 		// Pace and HR alert during workout
 		_training_pace_and_hr_alert();
+		
+	  t_diff = CLK_get_system_time() - cling.train_stat.time_start_in_ms;		
+		
+		// If workout active is greater than 10 hour, exit workout mode.
+		if (t_diff >= 36000000) {
+		  cling.ui.frame_index = UI_DISPLAY_HOME;	
+		  cling.activity.b_workout_active = FALSE;		
+		  cling.activity.workout_type = WORKOUT_NONE;
+		}	else {
+			// If user stays in low power mode for more than 30 minutes, exit workout mode
+			if (cling.lps.b_low_power_mode) {
+				t_diff = CLK_get_system_time() - cling.lps.ts;
+				if (t_diff > 1800000) { 
+					cling.ui.frame_index = UI_DISPLAY_HOME;	
+					cling.activity.b_workout_active = FALSE;		
+					cling.activity.workout_type = WORKOUT_NONE;
+				}
+			}
+		}
 	}
 }
 

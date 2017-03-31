@@ -281,7 +281,7 @@ BOOLEAN uv_Measure()
 	if (uv->max_uv < uv->uv_index)
 		uv->max_uv = uv->uv_index;
 	
-	if (UI_is_idle()) {
+	if (OLED_panel_is_turn_off()) {
 		uv->max_UI_uv = uv->uv_index;
 	} else {
 		if (uv->uv_index > uv->max_UI_uv)
@@ -319,7 +319,7 @@ I8U UV_get_max_index_per_minute()
 
 BOOLEAN _is_user_viewing_uv_index()
 {
-	if (UI_is_idle()) {
+	if (OLED_panel_is_turn_off()) {
 		return FALSE;
 	}
 	
