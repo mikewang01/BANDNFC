@@ -185,10 +185,12 @@ static void _left_render_horizontal_idle_alert()
   _render_one_icon_24(ICON24_IDLE_ALERT_IDX, 0);	
 }
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _left_render_horizontal_running_distance_24()
 {	
 	_render_one_icon_24(ICON24_RUNNING_DISTANCE_IDX, 0);
 }
+#endif
 
 static void _left_render_horizontal_training_ready()
 {
@@ -2397,7 +2399,7 @@ static void _top_render_vertical_24_icon()
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
 static void _top_render_vertical_24_icon_core(I8U icon_24_idx)
 {
-	I8U string[4];	
+	I8U string[16];	
 	I8U len = 0;	
 	I8U	margin = 2;
 	I8U b_24_size = 24;
@@ -2490,7 +2492,7 @@ static void _middle_render_vertical_steps()
 	TRACKING_get_activity(cling.ui.vertical_index, TRACKING_STEPS, &stat);
 #endif
 	
-	Y_SPRINTF("UI: vertical step - %d (at %d day)", stat, cling.ui.vertical_index);
+	N_SPRINTF("UI: vertical step - %d (at %d day)", stat, cling.ui.vertical_index);
 	
 	if (stat > 99999) {
 		v_10000 = 9;
@@ -3594,11 +3596,17 @@ static void _middle_render_vertical_cycling_outdoor_run_stop()
 
 static void _middle_render_vertical_cycling_outdoor_distance()
 {
+	const char *run_cycling_name[] = {"BIKE", "骑行", "騎行" };		
 	I8U string[32];	
 	I8U len = 0;		
 	I8U margin = 2;
 	I8U b_24_size = 24;
+ 	I8U language_type = cling.ui.language_type;	
 
+	if (cling.ui.icon_sec_blinking) {		
+		_render_vertical_fonts_lib_character_core((I8U *)run_cycling_name[language_type], 16, 28);
+	}
+	
 	if (BTLE_is_connected()) {
 		_vertical_core_run_distance(cling.train_stat.distance, TRUE);
 	} else {
@@ -3894,15 +3902,10 @@ static void _bottom_render_vertical_training_distance()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_cycling_outdoor_distance()
 {
-	const char *run_cycling_name[] = {"BIKE", "骑行", "騎行" };	
 	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
  	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;
 
-	if (cling.ui.icon_sec_blinking) {		
-		_render_vertical_fonts_lib_character_core((I8U *)run_cycling_name[language_type], 16, 28);
-	}
-		
 	if (BTLE_is_connected()) {
 		_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112);	
 	} else {

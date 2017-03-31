@@ -327,7 +327,6 @@ static void _restore_perv_frame_index()
 	}
 }
 
-			
 /*-------------------------------------------------------------------------------
 *  Function:	_get_regular_page_enable_index(I8U frame_index)
 *
