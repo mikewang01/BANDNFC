@@ -761,7 +761,7 @@ void _training_pace_and_hr_alert()
 
 	if (b_pace_range_alert) {
 		// If input PACE is faster than PACE alert threshold, reset flag and time stamp
-		if (input_pace_min < pace_range_up) {
+		if ((input_pace_min < pace_range_up) && (input_pace_min >= (pace_range_up-1))) {
 			// 
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 		} else {
@@ -775,13 +775,13 @@ void _training_pace_and_hr_alert()
   } 
 	
 	if (b_hr_range_alert) {
-		if (hr_perc >= hr_range_down) {
-			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 60) {
+		if ((hr_perc >= hr_range_down) && (hr_perc < (hr_range_down + 15))) {
+			cling.hr.alert_ts = cling.time.system_clock_in_sec;
+		} else {
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 35) {
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
 			}
-		} else {
-			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 		}		
 	}
 }
