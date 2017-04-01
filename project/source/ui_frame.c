@@ -434,10 +434,9 @@ static void _middle_render_horizontal_ble_code()
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)		
 	I8U b_24_size = 24;		
 	I8U margin = 3;	
-	I16U offset = 0;		
+	I16U offset = 33;		
 	
-	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 4);
-	_middle_horizontal_alignment_center(offset);
+	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 4);
 #endif
 	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)			
@@ -3629,107 +3628,56 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 #endif
 
 #ifndef _CLINGBAND_PACE_MODEL_
+static void _middle_render_vertical_carousel_core(I8U top_idx, I8U middle_idx, I8U bottom_idx)
+{
+	I8U string[32];		
+	I8U margin = 0;
+	I8U b_24_size = 24;
+	
+	string[0] = top_idx;
+	string[1] = 0;
+	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
+	
+	string[0] = middle_idx;
+	string[1] = 0;
+	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
+	
+	string[0] = bottom_idx;
+	string[1] = 0;
+	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+}
+
 static void _middle_render_vertical_carousel_1()
 {
-	I8U string[32];		
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = ICON24_RUNNING_MODE_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_CYCLING_OUTDOOR_MODE_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_WORKOUT_MODE_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _middle_render_vertical_carousel_core(ICON24_RUNNING_MODE_IDX, ICON24_CYCLING_OUTDOOR_MODE_IDX, ICON24_WORKOUT_MODE_IDX);	
 }
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 static void _middle_render_vertical_carousel_2()
 {
-	I8U string[32];		
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = ICON24_MUSIC_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_STOPWATCH_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_MESSAGE_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _middle_render_vertical_carousel_core(ICON24_MUSIC_IDX, ICON24_STOPWATCH_IDX, ICON24_MESSAGE_IDX);	
 }
 #endif
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	
 static void _middle_render_vertical_carousel_2()
 {
-	I8U string[32];	
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = ICON24_MESSAGE_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_STOPWATCH_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_WEATHER_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _middle_render_vertical_carousel_core(ICON24_MESSAGE_IDX, ICON24_STOPWATCH_IDX, ICON24_WEATHER_IDX);	
 }
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
 static void _middle_render_vertical_carousel_3()
 {
-	I8U string[32];		
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = ICON24_WEATHER_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_PM2P5_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_NORMAL_ALARM_CLOCK_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _middle_render_vertical_carousel_core(ICON24_WEATHER_IDX, ICON24_PM2P5_IDX, ICON24_NORMAL_ALARM_CLOCK_IDX);	
 }
 #endif
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	
 static void _middle_render_vertical_carousel_3()
 {
-	I8U string[32];		
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = ICON24_PM2P5_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_NORMAL_ALARM_CLOCK_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_SETTING_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _middle_render_vertical_carousel_core(ICON24_PM2P5_IDX, ICON24_NORMAL_ALARM_CLOCK_IDX, ICON24_SETTING_IDX);		
 }
 #endif
 
