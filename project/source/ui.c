@@ -1077,35 +1077,18 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 }
 
 /*------------------------------------------------------------------------------------------
-*  Function:	_update_notifying_switch_control()
+*  Function:	_update_vibrator_control(UI_ANIMATION_CTX *u)
 *
 *  Description: Include vibrator and reminder and notification control. 
 *
 *------------------------------------------------------------------------------------------*/
-static void _update_notifying_switch_control(UI_ANIMATION_CTX *u)
+static void _update_vibrator_control(UI_ANIMATION_CTX *u)
 {
 	if (_is_smart_incoming_notifying_page(u->frame_index)) {
-		// Stop vibration in notification state.
+	  // Stop notification
 		NOTIFIC_stop_notifying();
 	} 
 
-	if (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-		// Reset alarm clock flag
-		cling.reminder.ui_alarm_on = FALSE; 
-	}		
-	
-	// Stop reminder
-	if (cling.reminder.state != REMINDER_STATE_IDLE) {
-		N_SPRINTF("[UI] check for next reminder upon touch");
-		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-	}
-	
-	// Stop notification
-	if (cling.notific.state != NOTIFIC_STATE_IDLE) {
-		N_SPRINTF("[UI] stop notification vibrator");
-		cling.notific.state = NOTIFIC_STATE_STOPPED_EXTERNAL;
-	}	
-	
 	// If a valid gesture is detected, vibrate it for interaction
 	if (cling.user_data.profile.touch_vibration) {
 		GPIO_vibrator_on_block(UI_TOUCH_VIBRATION_ON_TIME_IN_MS);
@@ -1289,7 +1272,7 @@ static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p
 	_update_notif_repeat_look_time(u);
 
   // 8. Update notifying switch control.
-  _update_notifying_switch_control(u);
+  _update_vibrator_control(u);
 	
 #ifndef _CLINGBAND_PACE_MODEL_		
 	// 9. Update app notification display index.
@@ -1631,16 +1614,6 @@ void UI_start_notifying(I8U frame_index)
 		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
 		u->b_restore_notif = TRUE;		
 	}
-
-	// 6. Stop reminder when inconming one new message.
-	if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-		// Clear alarm clock flag
-		cling.reminder.ui_alarm_on = FALSE;
-		// Stop reminder
-		if (cling.reminder.state != REMINDER_STATE_IDLE) {
-			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-		}
-  }	
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1677,7 +1650,8 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 
 	// 2. Update touch stamp time 
 	u->touch_time_stamp = CLK_get_system_time()-time_offset;
-
+	u->notif_time_stamp = CLK_get_system_time();
+	
 	// 3. Switch state
 	UI_switch_state(state, 0);
 	
@@ -1721,6 +1695,24 @@ static void _update_frame_display_parameter()
 	} else {
 		cling.ui.icon_sec_blinking = TRUE;
 	}
+}
+
+static void _update_notifying_control()
+{
+	UI_ANIMATION_CTX *u = &cling.ui;	
+	
+	if (!_is_smart_incoming_notifying_page(u->frame_index)) {
+		NOTIFIC_stop_notifying();
+	}
+
+	if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
+		// Clear alarm clock flag
+		cling.reminder.ui_alarm_on = FALSE;
+		// Stop reminder
+		if (cling.reminder.state != REMINDER_STATE_IDLE) {
+			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+		}
+  }	
 }
 /*------------------------------------------------------------------------------------------
 *  Function:	UI_state_machine()
@@ -1808,6 +1800,7 @@ void UI_state_machine()
 			} else if (!LINK_is_authorized()) {
 				u->frame_index = UI_DISPLAY_SYSTEM_UNAUTHORIZED;	
 			}	else {
+				u->touch_time_stamp = t_curr;
 				u->frame_index = UI_DISPLAY_HOME;
 	      UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 			}
@@ -1885,7 +1878,7 @@ void UI_state_machine()
 						UI_SPRINTF("[UI] Incoming notifying to dark at %d", t_curr);
 					}
 				} else {
-					if (t_curr > u->notif_time_stamp + 10000) {
+					if (t_curr > u->notif_time_stamp + 12000) {
 						// Go back to previous UI page
 						u->frame_index = UI_DISPLAY_PREVIOUS;		
 					}						
@@ -1934,11 +1927,13 @@ void UI_state_machine()
 			_update_frame_display_parameter();
 			
 			UI_frame_display_appear(u->frame_index, TRUE);
-											
+										
 			// Get current frame blinking interval.
       t_blinking_interval	= ui_matrix_blinking_interval[u->frame_index];
 
       _stote_frame_cached_index();	
+			
+			_update_notifying_control();
 			
       UI_switch_state(UI_STATE_TOUCH_SENSING, t_blinking_interval);
 			break;
@@ -1954,11 +1949,16 @@ void UI_state_machine()
 			u->b_low_power_switch = FALSE;
 			_stote_frame_cached_index();		
 	    u->dark_time_stamp = t_curr;
-			if (!u->b_restore_notif) {
+			if (!_is_smart_incoming_notifying_page(u->frame_index)) {
 				// Go back to previous UI page
 				u->frame_index = UI_DISPLAY_PREVIOUS;		
+        u->b_restore_notif = FALSE;				
+			} else {
+				if (!u->b_restore_notif) {
+					// Go back to previous UI page
+					u->frame_index = UI_DISPLAY_PREVIOUS;									
+				}
 			}
-	    u->b_restore_notif = FALSE;
 #ifdef _ENABLE_TOUCH_				
 			if (cling.lps.b_low_power_mode) {
 				TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);

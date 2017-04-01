@@ -64,6 +64,7 @@ void HOMEKEY_check_on_hook_change()
 					cling.ui.b_touch_light_up_screen = TRUE;
 				}
 				
+				cling.ui.b_restore_notif = FALSE;							
 				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
 			} else {
 				RTC_start_operation_clk();
