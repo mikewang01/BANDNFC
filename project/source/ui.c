@@ -95,7 +95,7 @@ static BOOLEAN _is_running_active_mode_page(I8U frame_index)
   if ((frame_index >= UI_DISPLAY_TRAINING_STAT_TIME) && (frame_index <= UI_DISPLAY_TRAINING_STAT_RUN_STOP))
 		return TRUE;
 #ifndef _CLINGBAND_PACE_MODEL_	
-  else if ((frame_index >= UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME) && (frame_index <= UI_DISPLAY_CYCLING_OUTDOOR_STAT_RUN_STOP))
+  else if ((frame_index >= UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME) && (frame_index <= UI_DISPLAY_CYCLING_OUTDOOR_STAT_STOP))
 		return TRUE;
   else if ((frame_index >= UI_DISPLAY_WORKOUT_RT_TIME) && (frame_index <= UI_DISPLAY_WORKOUT_RT_END))
 		return TRUE;	

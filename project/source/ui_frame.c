@@ -441,31 +441,17 @@ static void _middle_render_horizontal_ble_code()
 #endif
 	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)			
-	I8U string1[16];//, string2[16], string3[16], string4[16];
+	I8U string1[16];
 	
-//	string1[0] = string[0];
-//	string2[0] = string[1];
-//	string3[0] = string[2];
-//	string4[0] = string[3];
-//	
-//	string1[1] = 0;
-//	string2[1] = 0;
-//	string3[1] = 0;
-//	string4[1] = 0;	
-//	
-//	FONT_load_characters(256+42, (char *)string1, 16, 128, FALSE);
-//	FONT_load_characters(256+54, (char *)string2, 16, 128, FALSE);
-//	FONT_load_characters(256+66, (char *)string3, 16, 128, FALSE);
-//	FONT_load_characters(256+78, (char *)string4, 16, 128, FALSE);
-  	string1[0] = string[0];
-  	string1[1] = ' ';		
-	  string1[2] = string[1];
-  	string1[3] = ' ';
-  	string1[4] = string[2];
-  	string1[5] = ' ';	
-  	string1[6] = string[3];
-  	string1[7] = 0;			
-  	FONT_load_characters(256, (char *)string1, 16, 128, TRUE);		
+	string1[0] = string[0];
+	string1[1] = ' ';		
+	string1[2] = string[1];
+	string1[3] = ' ';
+	string1[4] = string[2];
+	string1[5] = ' ';	
+	string1[6] = string[3];
+	string1[7] = 0;			
+	FONT_load_characters(256, (char *)string1, 16, 128, TRUE);		
 #endif
 }
 
@@ -978,8 +964,8 @@ static void _middle_render_horizontal_phone_finder()
 static void _middle_render_horizontal_workout_mode_switch()
 {
 	const char *workout_name[3][8] = {{"Treadmill", "Cycling", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
-	                           {"跑步机 ", "单车",  "爬楼梯 ", "椭圆机 ", "划船", "有氧操 ", "Piloxing", "其它"},
-	                           {"跑步机 ", "單車",  "爬樓梯 ", "橢圓機 ", "划船", "有氧操 ", "Piloxing", "其它"}};
+	                                  {"跑步机 ",   "单车",    "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"},
+	                                  {"跑步機 ",   "單車",    "爬樓梯 ", "橢圓機 ",    "劃船", "有氧操 ", "Piloxing", "其它"}};
 	const char *workout_indicator[] = {
 		"-,,,,,,,",
 		",-,,,,,,", 
@@ -1474,12 +1460,7 @@ static void _middle_render_horizontal_cycling_outdoor_ready()
 
 static void _middle_render_horizontal_cycling_outdoor_distance()
 {
-  BOOLEAN b_ble_connected = FALSE;
-	
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	if (b_ble_connected) {
+	if (BTLE_is_connected()) {
 		_horizontal_core_run_distance(cling.train_stat.distance, TRUE);
 	} else {
 		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_IDX, 128+40);
@@ -1488,12 +1469,7 @@ static void _middle_render_horizontal_cycling_outdoor_distance()
 
 static void _middle_render_horizontal_cycling_outdoor_speed()
 {
-  BOOLEAN b_ble_connected = FALSE;
-
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	if (b_ble_connected) {
+	if (BTLE_is_connected()) {
 		_horizontal_core_run_distance(cling.train_stat.speed, TRUE);
 	} else {
 		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_IDX, 128+40);
@@ -1949,13 +1925,22 @@ static void _right_render_horizontal_firmware_ver()
 	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
 }
 
+static void _right_render_horizontal_avg_name()
+{
+	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
+	I8U language_type = cling.ui.language_type;	
+
+	_right_render_horizontal_string_core(avg_name[language_type], NULL);	
+}
+
 static void _right_render_horizontal_running_pace()
 {	
-	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
 	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};
 	I8U language_type = cling.ui.language_type;	
 
-	_right_render_horizontal_string_core(avg_name[language_type], pace_name[language_type]);
+	_right_render_horizontal_avg_name();
+	
+	_right_render_horizontal_string_core(NULL, pace_name[language_type]);
 }
 
 static void _right_render_horizontal_running_calories()
@@ -1988,11 +1973,11 @@ static void _right_render_horizontal_running_stride()
 
 static void _right_render_horizontal_running_hr()
 {
-	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
 	const	char *hate_rate_name[] = {"HR", "心率 ", "心率 "};	
 	I8U language_type = cling.ui.language_type;
 
-	_right_render_horizontal_string_core(avg_name[language_type], hate_rate_name[language_type]);
+	_right_render_horizontal_avg_name();
+	_right_render_horizontal_string_core(NULL, hate_rate_name[language_type]);
 }
 
 static void _right_render_horizontal_training_pace()
@@ -2003,14 +1988,23 @@ static void _right_render_horizontal_training_pace()
 	_right_render_horizontal_string_core(pace_name[language_type], NULL);
 }
 
-static void _right_render_horizontal_running_distance()
+static void _right_render_horizontal_run_distance_name()
 {
-	const	char *distance_name[] = {"RUN", "里程", "裏程"};
 	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏" ,"英裏"}};	
 	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;	
 
-	_right_render_horizontal_string_core(distance_name[language_type], unit_distance_display[language_type][metric]);	
+	_right_render_horizontal_string_core(NULL, unit_distance_display[language_type][metric]);	
+}
+	
+static void _right_render_horizontal_running_distance()
+{
+	const	char *distance_name[] = {"RUN", "里程", "裏程"};
+	I8U language_type = cling.ui.language_type;	
+
+	_right_render_horizontal_string_core(distance_name[language_type], NULL);	
+	
+	_right_render_horizontal_run_distance_name();
 }
 
 static void _right_render_horizontal_training_hr()
@@ -2081,33 +2075,32 @@ static void _right_render_horizontal_ok_top()
 	_render_one_icon_16(ICON16_OK_IDX, 110);
 }
 
+static void _right_render_horizontal_cycling_outdoor_no_ble()
+{
+	const char *no_ble_name[] = {"NO BLE", "无蓝牙 ", "無藍牙 "};	
+	I8U language_type = cling.ui.language_type;	
+	
+	_right_render_horizontal_string_core(NULL, no_ble_name[language_type]);	
+}
+	
 static void _right_render_horizontal_cycling_outdoor_distance()
 {
-	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏" ,"英裏"}};	
-	I8U language_type = cling.ui.language_type;	
-	I8U metric = cling.user_data.profile.metric_distance;	
-  BOOLEAN b_ble_connected = FALSE;
-	
-	if (BTLE_is_connected())
-		b_ble_connected = TRUE;
-	
-	if (b_ble_connected) {
-	  _right_render_horizontal_string_core(NULL, unit_distance_display[language_type][metric]);			
+	if (BTLE_is_connected()) {
+		_right_render_horizontal_run_distance_name();
 	} else {
-		_right_render_horizontal_string_core(NULL, "无蓝牙 ");	
+		_right_render_horizontal_cycling_outdoor_no_ble();
 	}
 }
 
 static void _right_render_horizontal_cycling_outdoor_speed()
 {
 	const char *unit_speed_display[] = {"KM/H", "ML/H"};	
-//	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;	
 	
 	if (BTLE_is_connected()) {
 	  FONT_load_characters(384+104, (char *)unit_speed_display[metric], 8, 128, FALSE);	
 	} else {
-		FONT_load_characters(128+128+80, (char *)"无蓝牙 ", 16, 128, FALSE);
+		_right_render_horizontal_cycling_outdoor_no_ble();
 	}
 }
 #endif
@@ -3570,7 +3563,7 @@ static void _middle_render_vertical_training_run_stop()
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
-static void _middle_render_vertical_cycling_outdoor_run_start()
+static void _middle_render_vertical_cycling_outdoor_start()
 {
 	const	char *cycling_start_name_1[] = {"BIKE", "开始 ", "開始 "};	
 	const	char *cycling_start_name_2[] = {"NOW", "骑行 ", "騎行 "};			
@@ -3579,7 +3572,7 @@ static void _middle_render_vertical_cycling_outdoor_run_start()
 	_middle_render_vertical_character_core((I8U *)cycling_start_name_1[language_type], 50, (I8U *)cycling_start_name_2[language_type], 70);	
 }
 
-static void _middle_render_vertical_cycling_outdoor_run_stop()
+static void _middle_render_vertical_cycling_outdoor_stop()
 {
 	const	char *cycling_stop_name_1[] = {"BIKE", "结束", "結束"};	
 	const	char *cycling_stop_name_2[] = {"STOP", "骑行", "騎行"};		
@@ -3866,12 +3859,19 @@ static void _bottom_render_vertical_button_hold()
 }
 #endif
 
-static void _bottom_render_vertical_run_distance_core(BOOLEAN b_icon_blinking)
+static void _bottom_render_vertical_run_distance_name()
 {
-	const char *run_distance_name[] = {"RUN", "里程", "裏程" };	
 	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U language_type = cling.ui.language_type;		
 	I8U metric = cling.user_data.profile.metric_distance;
+	
+	_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112);		
+}
+	
+static void _bottom_render_vertical_run_distance_core(BOOLEAN b_icon_blinking)
+{
+	const char *run_distance_name[] = {"RUN", "里程", "裏程" };	
+	I8U language_type = cling.ui.language_type;		
 
 	if (b_icon_blinking) {
 	  if (cling.ui.icon_sec_blinking)
@@ -3880,7 +3880,7 @@ static void _bottom_render_vertical_run_distance_core(BOOLEAN b_icon_blinking)
 		_render_vertical_fonts_lib_character_core((I8U *)run_distance_name[language_type], 16, 28);
 	}
 	
-	_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112);		
+	_bottom_render_vertical_run_distance_name();
 }
 
 static void _bottom_render_vertical_runnng_distance()
@@ -3894,16 +3894,21 @@ static void _bottom_render_vertical_training_distance()
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
+static void _bottom_render_vertical_cycling_outdoor_no_ble()
+{
+	const char *no_ble_name_1[] = {"NO", "无 ", "無 "};		
+	const char *no_ble_name_2[] = {"BLE", "蓝牙 ", "藍牙 "};		
+ 	I8U language_type = cling.ui.language_type;	
+	
+  _middle_render_vertical_character_core((I8U *)no_ble_name_1[language_type], 92, (I8U *)no_ble_name_2[language_type], 112);			
+}
+
 static void _bottom_render_vertical_cycling_outdoor_distance()
 {
-	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
- 	I8U language_type = cling.ui.language_type;	
-	I8U metric = cling.user_data.profile.metric_distance;
-
 	if (BTLE_is_connected()) {
-		_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 112);	
+		_bottom_render_vertical_run_distance_name();
 	} else {
-		_middle_render_vertical_character_core((I8U *)"无 ", 92, (I8U *)"蓝牙", 112);		
+    _bottom_render_vertical_cycling_outdoor_no_ble();
 	}
 }
 
@@ -3915,7 +3920,7 @@ static void _bottom_render_vertical_cycling_outdoor_speed()
   if (BTLE_is_connected()) {	
 	  _render_vertical_fonts_lib_character_core((I8U *)unit_speed_display[metric], 8, 120);
 	} else {
-		_middle_render_vertical_character_core((I8U *)"无 ", 92, (I8U *)"蓝牙", 112);		
+		_bottom_render_vertical_cycling_outdoor_no_ble();	
 	}
 }
 #endif
@@ -4585,13 +4590,13 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_pace,               _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_PACE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_DISPLAY_TRAINING_HEART_RATE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_run_stop,           _bottom_render_vertical_ok},                       /*UI_DISPLAY_TRAINING_RUN_STOP*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_run_start,   _bottom_render_vertical_ok},                       /*UI_DISPLAY_CYCLING_OUTDOOR_RUN_START*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_ready,       _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_READY*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_TIME*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_distance,    _bottom_render_vertical_cycling_outdoor_distance}, /*UI_DISPLAY_CYCLING_OUTDOOR_DISTANCE*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_speed,       _bottom_render_vertical_cycling_outdoor_speed},    /*UI_DISPLAY_CYCLING_OUTDOOR_SPEED*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_HEART_RATE*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_run_stop,    _bottom_render_vertical_ok},                       /*UI_DISPLAY_CYCLING_OUTDOOR_STATATISTICS_END*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_start,       _bottom_render_vertical_ok},                       /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_START*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_ready,       _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_distance,    _bottom_render_vertical_cycling_outdoor_distance}, /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_DISTANCE*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_speed,       _bottom_render_vertical_cycling_outdoor_speed},    /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_SPEED*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_cycling_outdoor_stop,        _bottom_render_vertical_ok},                       /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_STOP*/
   {_RENDER_NONE,                                  _middle_render_vertical_carousel_1,                  _RENDER_NONE},                                     /*UI_DISPLAY_CAROUSEL_1*/
   {_RENDER_NONE,                                  _middle_render_vertical_carousel_2,                  _RENDER_NONE},                                     /*UI_DISPLAY_CAROUSEL_2*/
   {_RENDER_NONE,                                  _middle_render_vertical_carousel_3,                  _RENDER_NONE},                                     /*UI_DISPLAY_CAROUSEL_3*/	
