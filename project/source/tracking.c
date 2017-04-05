@@ -767,7 +767,7 @@ void _training_pace_and_hr_alert()
 		} else {
 			// If user is constantly slower than pre-defined PACE threshold
 			// Go start alerting
-			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 35) {
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 25) {//+35
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
 			}
@@ -778,7 +778,7 @@ void _training_pace_and_hr_alert()
 		if ((hr_perc >= hr_range_down) && (hr_perc < (hr_range_down + 15))) {
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 		} else {
-			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 35) {
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 25) {//+35
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
 			}
