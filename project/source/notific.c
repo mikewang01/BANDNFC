@@ -293,16 +293,11 @@ I8U NOTIFIC_get_app_name(I8U index, char *app_name)
 	I32U tmpBuf[32];	
 	I8U  *pdata = (I8U *)tmpBuf;
 	
-	if (cling.ancs.message_total == 0) {
-		title_len = sprintf(app_name, "No message!");
+	if ((cling.ancs.message_total == 0) || (index > (cling.ancs.message_total-1))) {
+		title_len = sprintf(app_name, "No message");
 		return title_len;
 	}
-	
-	if (index > (cling.ancs.message_total-1)) {
-		title_len = sprintf(app_name, "No message!");
-		return title_len;
-	}
-	
+
 	// Get the latest notification first.
 	index = cling.ancs.message_total - 1 - index;
 
@@ -359,12 +354,7 @@ I8U NOTIFIC_get_app_message_detail(I8U index, char *string)
 	I8U  *pdata_1 = (I8U *)tmpBuf_1;
   I8U  *pdata_2 = (I8U *)tmpBuf_2;
 	
-	if (cling.ancs.message_total == 0) {
-		title_len = sprintf(string, "No message!");
-		return title_len;
-	}
-	
-	if (index > (cling.ancs.message_total-1)) {
+	if ((cling.ancs.message_total == 0) || (index > (cling.ancs.message_total-1))){
 		title_len = sprintf(string, "No message!");
 		return title_len;
 	}
