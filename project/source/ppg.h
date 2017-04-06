@@ -184,8 +184,7 @@ void ppg_PS_ALS_Auto             (void);
 #define PPG_SAMPLE_PROCESSING_PERIOD                             1000
 #define PPG_HR_MEASURING_TIMEOUT                                25000
 #define PPG_NEXT_CHECK_LATENCY                                    180
-#define PPG_CONTINEOUS_MEASURING_WORKOUT_TH                     10000
-#define PPG_CONTINEOUS_MEASURING_NORMAL_TH                       5000
+#define PPG_CONTINEOUS_MEASURING_TH                             10000
 
 #define PPG_WEARING_DETECTION_LPS_INTERVAL                       5000     //   5 seconds
 #define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 3600000     // background idle for 300 seconds
@@ -230,7 +229,6 @@ typedef struct tagHEARTRATE_CTX{
 	I32U m_duty_on_time_in_ms;
 	I32U m_zero_point_timer;
 	I32U alert_ts;
-	I32U m_contineous_measuring_ms;
 	
 	BOOLEAN sample_ready;
 	BOOLEAN heart_rate_ready;

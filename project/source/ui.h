@@ -663,18 +663,14 @@ typedef struct tagUI_ANIMATION_CTX {
 	I32U touch_time_stamp;     // Touch event time stamp
   I32U running_time_stamp;   // Running record time stamp.
 	I32U dark_time_stamp;      // Screen dark time stamp.
-	I32U notif_time_stamp;	   // Notification record time stamp. 	
-#ifndef _CLINGBAND_PACE_MODEL_			
 	I32U stopwatch_time_stamp; // Stopwatch record time stamp. 	
 	I32U stopwatch_t_stop_stamp; // Stopwatch record stop time stamp. 	
-#endif
 	
 	// All the frame buffer related
 	I8U p_oled_up[512];
 	
 	// State machine
 	I8U state;
-	BOOLEAN state_init;
 	
 	BOOLEAN b_touch_light_up_screen;
 	
@@ -696,9 +692,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	BOOLEAN icon_sec_blinking;
 	I8U linking_wave_index;
 	I8U heart_rate_wave_index;
-	
-	BOOLEAN b_low_power_switch;
-	
+		
 	// Fonts type
 	BOOLEAN language_type;
 	
@@ -712,9 +706,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U notif_repeat_look_time; // Notification repeat look time.	
 	I8U notif_detail_index;     // Incoming message detail index.
   I8U string_pos_buf[5];	    // Incoming message detail index buff.	
-#ifndef _CLINGBAND_PACE_MODEL_			
 	I8U app_notific_index;	    // App notific index
-#endif
 
 	// Running
 	I8U run_ready_index;    // Read go index.
@@ -727,32 +719,28 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Training pace and hr alert
 	I8U training_hr;
 
-#ifndef _CLINGBAND_PACE_MODEL_		
 	// Stopwatch flag
 	BOOLEAN b_stopwatch_first_enter;
 	BOOLEAN b_in_stopwatch_mode;
 	BOOLEAN b_in_stopwatch_pause_mode;
-#endif
 
 	// Rendering context
 	FRAME_RENDERING_CTX frm_render;
 
-#ifdef _CLINGBAND_2_PAY_MODEL_		
 	I32U bus_card_balance;
   I32U bank_card_balance;
-#endif	
 } UI_ANIMATION_CTX;
 
 typedef enum {
 	UI_STATE_IDLE = 0,
-	UI_STATE_CLING_START,
+	UI_STATE_CLING_START,	
+  UI_STATE_HOME,	
+	UI_STATE_CHARGING_GLANCE,
 	UI_STATE_AUTHORIZATION,
 	UI_STATE_FIRMWARE_OTA,
 	UI_STATE_TOUCH_SENSING,
 	UI_STATE_APPEAR,
 	UI_STATE_ANIMATING,
-	UI_STATE_CLOCK_GLANCE,
-	UI_STATE_LOW_POWER,
 	UI_STATE_DARK,
 } UI_ANIMATION_STATE;
 
@@ -762,7 +750,7 @@ void UI_start_notifying(I8U frame_index);
 
 void UI_switch_state(I8U state, I32U interval);
 
-BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset);
+BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state);
 
 void UI_state_machine(void);
 #endif

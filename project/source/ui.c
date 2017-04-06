@@ -263,7 +263,7 @@ static void _restore_perv_frame_index()
 	
 	// 1. Check if it's old message or other reminder information.
 	if (_is_smart_incoming_notifying_page(u->frame_index)) {
-		if (t_curr > (u->notif_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
+		if (t_curr > (u->dark_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
 			// Filtering the old information, go back to previous UI page.
 			u->frame_index = UI_DISPLAY_PREVIOUS;		
 		} else {
@@ -1601,8 +1601,7 @@ void UI_start_notifying(I8U frame_index)
 	// 2. Update display frame index
 	u->frame_index = frame_index;
 
-	// 3. Record current notification received time stamp and update touch time stamp.
-	u->notif_time_stamp = CLK_get_system_time();
+	// 3. update touch time stamp.
   u->touch_time_stamp = CLK_get_system_time();
 	
 	if (OLED_panel_is_turn_on()) {
@@ -1611,7 +1610,7 @@ void UI_start_notifying(I8U frame_index)
 		u->b_restore_notif = FALSE;		
 	} else {
 		// 5. If screen is dark, first turn on screen immediately.
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+		UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 		u->b_restore_notif = TRUE;		
 	}
 }
@@ -1625,10 +1624,14 @@ void UI_start_notifying(I8U frame_index)
 void UI_switch_state(I8U state, I32U interval)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-	
-	u->state_init = TRUE;
+
+  //  1. Switch ui state	
 	u->state = state;
+	
+	// 2. Set frame display interval
 	u->frame_interval = interval;
+	
+	// 3. Update display base time satmp
 	u->display_to_base = CLK_get_system_time();
 	
 	N_SPRINTF("[UI] state switching: %d, %d, %d, %d", state, u->display_to_base, u->frame_index, u->frame_cached_index);
@@ -1640,7 +1643,7 @@ void UI_switch_state(I8U state, I32U interval)
 *  Description: Initialize the UI.
 *
 *------------------------------------------------------------------------------------------*/
-BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
+BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;	
   BOOLEAN b_panel_on = FALSE;;
@@ -1649,12 +1652,17 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state, I32U time_offset)
 	b_panel_on = OLED_set_panel_on();
 
 	// 2. Update touch stamp time 
-	u->touch_time_stamp = CLK_get_system_time()-time_offset;
-	u->notif_time_stamp = CLK_get_system_time();
+	u->touch_time_stamp = CLK_get_system_time();
 	
 	// 3. Switch state
-	UI_switch_state(state, 0);
-	
+	if (state != UI_STATE_CLING_START) {
+	  if (!OLED_panel_is_turn_on()) {
+	    UI_switch_state(UI_STATE_HOME, 0);
+		} else {
+	    UI_switch_state(state, 0);
+		} 			
+	}
+
 	// 4. Restore previous UI page
 	_restore_perv_frame_index();
 	
@@ -1675,45 +1683,9 @@ void UI_init()
 	OLED_set_panel_on();
 
 	// UI initial state
-#ifdef _CLINGBAND_PACE_MODEL_		
 	UI_switch_state(UI_STATE_CLING_START, 3000);		
-#else 		
-	UI_switch_state(UI_STATE_CLING_START, 2000);		
-#endif
 }
 
-static void _update_frame_display_parameter()
-{
-	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
-	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
-	
-	if (cling.user_data.profile.metric_distance)
-		cling.user_data.profile.metric_distance = 1;
-	
-	if (cling.ui.icon_sec_blinking) {
-		cling.ui.icon_sec_blinking = FALSE;
-	} else {
-		cling.ui.icon_sec_blinking = TRUE;
-	}
-}
-
-static void _update_notifying_control()
-{
-	UI_ANIMATION_CTX *u = &cling.ui;	
-	
-	if (!_is_smart_incoming_notifying_page(u->frame_index)) {
-		NOTIFIC_stop_notifying();
-	}
-
-	if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-		// Clear alarm clock flag
-		cling.reminder.ui_alarm_on = FALSE;
-		// Stop reminder
-		if (cling.reminder.state != REMINDER_STATE_IDLE) {
-			cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-		}
-  }	
-}
 /*------------------------------------------------------------------------------------------
 *  Function:	UI_state_machine()
 *
@@ -1723,32 +1695,22 @@ static void _update_notifying_control()
 void UI_state_machine()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-	I32U t_curr, t_diff, t_threshold, t_blinking_interval;
+	I32U t_curr, t_diff, t_threshold;
 	
 	t_curr = CLK_get_system_time();
 
-	if (OLED_panel_is_turn_off()) {
+	// Don't do anything if oled is turn off.
+	if (!OLED_panel_is_turn_on()) 
 		return;
-	}
 	
-  if (BATT_is_low_battery() && (!BATT_is_charging())) {
-		N_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
-		if (!u->b_low_power_switch) {
-		  u->state = UI_STATE_LOW_POWER;
-			u->b_low_power_switch = TRUE;
-			u->display_to_base = t_curr;
-	  }
-	} 
-
-	// Don't do anything if system is updating firmware
-	if (OTA_if_enabled()) {
+	// Only display ota if system is updating firmware
+	if (OTA_if_enabled()) 
 		u->state = UI_STATE_FIRMWARE_OTA;
-	}
-	
-	if (!LINK_is_authorized()) {
+
+	// Only display unauthorized page if is unauthorized device.
+	if (!LINK_is_authorized()) 
 		u->state = UI_STATE_AUTHORIZATION;
-	}
-		
+	
 	N_SPRINTF("[UI] new active state: %d @ %d", u->state, CLK_get_system_time());	
 
 	switch (u->state) {
@@ -1756,36 +1718,38 @@ void UI_state_machine()
 			break;
 		case UI_STATE_CLING_START:
 		{
-			if (u->state_init) {
-				u->state_init = FALSE;
-        UI_frame_display_appear(UI_DISPLAY_SYSTEM_RESTART, TRUE);					
-			} else if (t_curr > u->display_to_base + u->frame_interval) {
+			UI_frame_display_appear(UI_DISPLAY_SYSTEM_RESTART, TRUE);	
+			if (t_curr > (u->display_to_base + 3000)) {
+				u->touch_time_stamp = t_curr;								
 				u->frame_index = UI_DISPLAY_HOME;	
 				UI_switch_state(UI_STATE_APPEAR, 0);
-				u->touch_time_stamp = t_curr;
 			}
 			break;
 		}
-		case UI_STATE_CLOCK_GLANCE:
+		case UI_STATE_HOME:
 		{
-			if (u->state_init) {
-				u->state_init = FALSE;
-				if (BATT_is_charging()) {
-					N_SPRINTF("[UI] LOW BATTERY(or charging): %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
-					UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);	
-				} 
-				u->frame_index = UI_DISPLAY_HOME;	
-			  cling.activity.workout_type = WORKOUT_NONE;
-		    cling.activity.b_workout_active = FALSE;		
+      if (BATT_is_low_battery() && (!BATT_is_charging())) {
+			  UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);			
+				UI_switch_state(UI_STATE_CHARGING_GLANCE, 0);				
+			} else if (BATT_is_charging()) {
+			  UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);									
+				UI_switch_state(UI_STATE_CHARGING_GLANCE, 0);							
+			} else {
+				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);						
 			}
-#ifdef _CLINGBAND_PACE_MODEL_						
-			else if ((t_curr > u->display_to_base + 400) || HOMEKEY_new_gesture()) {
-#else 
-			else if ((t_curr > u->display_to_base + 400) || TOUCH_new_gesture()) {
-#endif				
-				N_SPRINTF("[UI] switch to sensing mode, %d, %d", t_curr, u->display_to_base);
-				UI_switch_state(UI_STATE_TOUCH_SENSING, 1000);
+	  	break;
+		}
+		case UI_STATE_CHARGING_GLANCE:
+		{
+			N_SPRINTF("[UI] LOW BATTERY(or charging): %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);			
+			UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);				
+			if (t_curr > u->display_to_base + 800) {
+			  // Exit running mode.			
+			  u->frame_index = UI_DISPLAY_HOME;	
+			  cling.activity.workout_type = WORKOUT_NONE;
+			  cling.activity.b_workout_active = FALSE;	
 				u->touch_time_stamp = t_curr;
+				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);				
 			}
 			break;
 		}
@@ -1794,7 +1758,7 @@ void UI_state_machine()
 			if (LINK_is_authorizing()) {
 				u->frame_index = UI_DISPLAY_SYSTEM_LINKING;
 				t_diff = t_curr - cling.link.link_ts;
-				if (t_diff > 60000) {
+				if (t_diff > 30000) {
 					cling.link.b_authorizing = FALSE;
 				}
 			} else if (!LINK_is_authorized()) {
@@ -1817,47 +1781,32 @@ void UI_state_machine()
 				u->frame_index = UI_DISPLAY_HOME; 
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 			} else {
-				if (u->state_init) {
-					u->state_init = FALSE;
-					UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
+				if (t_curr > (u->display_to_base+2000)) {
 					u->display_to_base = t_curr;
-				}	else {
-					if (t_curr > (u->display_to_base+2000)) {
-						u->display_to_base = t_curr;
-						UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
-					}
-				}				
+					UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
+				}		
 			}
 		  break;
 		}
-		case UI_STATE_LOW_POWER:
-		{
-			UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);	
-			
-      if (t_curr > (u->display_to_base + 2000)) {
-				u->frame_index = UI_DISPLAY_HOME;
-				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-			}			
-			break;
-		}
 		case UI_STATE_TOUCH_SENSING:
 		{
-      if (_ui_touch_sensing())  {
+      if (_ui_touch_sensing()) {
 				N_SPRINTF("[UI] new gesture --- %d", t_curr);
 				u->touch_time_stamp = t_curr;
 				// Record notification time stamp.
 			} else if (t_curr > u->display_to_base + u->frame_interval) {
 				N_SPRINTF("[UI] Go blinking the icon: %d", u->frame_index);
 				UI_switch_state(UI_STATE_APPEAR, 0);
-			}
-			
+			} 
+	
 			// 4 seconds screen dark expiration
 			// for heart rate measuring, double the Screen ON time.
 			t_threshold = cling.user_data.screen_on_general; // in second
 			if ((!t_threshold) || (t_threshold == 0xff))
-        t_threshold = 4;
+				t_threshold = 4;
 				
 			t_threshold *= 1000; // second -> milli-second
+			
 			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second
 				t_threshold *= 1000; // second -> milli-second
@@ -1873,12 +1822,9 @@ void UI_state_machine()
 			
 			if (_is_smart_incoming_notifying_page(u->frame_index)) {
 				if (u->b_restore_notif) {
-					if (t_curr > u->notif_time_stamp + 3500) {
-					  u->state = UI_STATE_DARK;
-						UI_SPRINTF("[UI] Incoming notifying to dark at %d", t_curr);
-					}
+					t_threshold = 3500;
 				} else {
-					if (t_curr > u->notif_time_stamp + 12000) {
+					if (t_curr > u->touch_time_stamp + 12000) {
 						// Go back to previous UI page
 						u->frame_index = UI_DISPLAY_PREVIOUS;		
 					}						
@@ -1920,53 +1866,70 @@ void UI_state_machine()
 		{
 			N_SPRINTF("[UI] appear time: %d, index: %d", t_curr, u->frame_index);
       
+			// 1. Restore frame index
       if (u->frame_index == UI_DISPLAY_PREVIOUS) {		
 			  _restore_perv_frame_index();
 			}
 			
-			_update_frame_display_parameter();
-			
+			// 2. Display current page
 			UI_frame_display_appear(u->frame_index, TRUE);
-										
-			// Get current frame blinking interval.
-      t_blinking_interval	= ui_matrix_blinking_interval[u->frame_index];
-
+			
+      // 3. Store frame cached index			
       _stote_frame_cached_index();	
-			
-			_update_notifying_control();
-			
-      UI_switch_state(UI_STATE_TOUCH_SENSING, t_blinking_interval);
+
+			// 4. Stop alarm clock reminder when in other page
+			if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
+				// Clear alarm clock flag
+				cling.reminder.ui_alarm_on = FALSE;
+				// Stop reminder
+				if (cling.reminder.state != REMINDER_STATE_IDLE) {
+					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+				}
+			}	
+	
+			// 5. Get current page blinking interval.			
+      UI_switch_state(UI_STATE_TOUCH_SENSING, ui_matrix_blinking_interval[u->frame_index]);
 			break;
 		}
 		case UI_STATE_DARK:
 		{
-			// Turn off OLED panel
+			UI_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
+
+			// 1. Turn off OLED panel
 			OLED_set_panel_off();
+
+			// 2. Switch state to idle
 			u->state = UI_STATE_IDLE;
-			// Reset alarm clock flag
+
+			// 3. Update screen dark time stamp
+			u->dark_time_stamp = t_curr;
+
+			// 4. Reset alarm clock flag
 			cling.reminder.ui_alarm_on = FALSE;
+
+			// 5. Clead detail flag
 			u->b_detail_page = FALSE;		
-			u->b_low_power_switch = FALSE;
-			_stote_frame_cached_index();		
-	    u->dark_time_stamp = t_curr;
+
+			// 6. Update message switch control
 			if (!_is_smart_incoming_notifying_page(u->frame_index)) {
 				// Go back to previous UI page
 				u->frame_index = UI_DISPLAY_PREVIOUS;		
-        u->b_restore_notif = FALSE;				
+				u->b_restore_notif = FALSE;				
 			} else {
 				if (!u->b_restore_notif) {
 					// Go back to previous UI page
 					u->frame_index = UI_DISPLAY_PREVIOUS;									
 				}
 			}
+			
+			// 7. Update touch power control
 #ifdef _ENABLE_TOUCH_				
 			if (cling.lps.b_low_power_mode) {
 				TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);
 			} else {
 				TOUCH_power_set(TOUCH_POWER_HIGH_20MS);
 			}
-#endif				
-			UI_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
+#endif	
 			break;
 		}
 		default:

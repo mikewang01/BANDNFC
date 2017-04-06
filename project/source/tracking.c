@@ -69,7 +69,7 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 	// Turn on display if device is in a charging state
 	if (BATT_is_charging()) {
-	  UI_turn_on_display(UI_STATE_TOUCH_SENSING, 0);
+	  UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 	}
 #ifndef _CLING_PC_SIMULATION_
 
@@ -266,7 +266,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			if (cling.activity.b_workout_active) {
 		
 				if (OLED_panel_is_turn_off() && cling.user_data.b_running_alwayson) {
-					UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
+					UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 				}
 				// Turn on PPG
 				if (cling.hr.state == PPG_STAT_DUTY_OFF) {
@@ -743,7 +743,7 @@ void _training_pace_and_hr_alert()
 
 	  pace_range_up = (cling.user_data.profile.training_alert & 0x7f);
 
-		if ((input_pace_min > 2) && (input_pace_min < 13))
+		if ((input_pace_min > 2) && (input_pace_min < 20))
 			b_pace_range_alert = TRUE;
 		else
 			b_pace_range_alert = FALSE;
@@ -767,7 +767,7 @@ void _training_pace_and_hr_alert()
 		} else {
 			// If user is constantly slower than pre-defined PACE threshold
 			// Go start alerting
-			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 25) {//+35
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 25) {
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_PACE_ALERT, 0);			
 			}
@@ -778,7 +778,7 @@ void _training_pace_and_hr_alert()
 		if ((hr_perc >= hr_range_down) && (hr_perc < (hr_range_down + 15))) {
 			cling.hr.alert_ts = cling.time.system_clock_in_sec;
 		} else {
-			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 25) {//+35
+			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 25) {
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_RUNNING_HR_ALERT, 0);					
 			}

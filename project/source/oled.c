@@ -1,34 +1,56 @@
 #include "main.h"
+#ifdef _CLINGBAND_2_PAY_MODEL_
+#include "spidev_hal.h"
+#endif
 
 extern I8U g_spi_tx_buf[];
 extern I8U g_spi_rx_buf[];
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+static void oled_tx_rx(spi_master_hw_instance_t   spi_master_instance,
+                          I8U * tx_data_buf, I16U tx_data_size,
+                          I8U * rx_data_buf, I16U rx_data_size, I8U pin_cs)
+{
+	(void)spi_master_instance;
+	(void)pin_cs;
+	CLASS(SpiDevHal)* p =  SpiDevHal_get_instance();
+	spi_dev_handle_t t = p->oled_open(p);
+	p->write_read(p, t, tx_data_buf, tx_data_size, rx_data_buf, rx_data_size);
+	p->close(p, t);
+}
+#endif
 
 /**@brief Function for OLED write command.
  *
  */
 static void _set_reg(uint8_t command)
 {    
-#ifndef _CLING_PC_SIMULATION_
 	g_spi_tx_buf[0] = command;
 
 	nrf_gpio_pin_clear(GPIO_OLED_A0);
-
-	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf, 0, GPIO_SPI_0_CS_OLED);
-#endif
+	
+#ifdef _CLINGBAND_2_PAY_MODEL_
+	oled_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf, 0, GPIO_SPI_0_CS_OLED);
+#else 
+	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf, 0, GPIO_SPI_0_CS_OLED);	
+#endif	
 }
 
 static void _set_data(I16U num, I8U *data)
 {
-#ifndef _CLING_PC_SIMULATION_
 	nrf_gpio_pin_set(GPIO_OLED_A0);
+	
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+	oled_tx_rx(SPI_MASTER_0, data, num,g_spi_rx_buf,0, GPIO_SPI_0_CS_OLED);  
+#else 
 	SPI_master_tx_rx(SPI_MASTER_0, data, num,g_spi_rx_buf,0, GPIO_SPI_0_CS_OLED);  
-#endif
+#endif	
 }
 
 void OLED_power_on(void) 
 {
 #ifndef _CLING_PC_SIMULATION_
-	nrf_gpio_pin_set(GPIO_OLED_RST); // reset driven high
+	nrf_gpio_pin_set( GPIO_OLED_RST ); // reset driven high
 #endif
 }
 
@@ -192,6 +214,9 @@ void OLED_state_machine(void)
 			break;
 		case OLED_STATE_APPLYING_POWER:
 		{
+#ifdef _CLINGBAND_2_PAY_MODEL_			
+			pm_stay_alive();
+#endif			
 			// turn on the power pins and wait the appropriate time
 			o->ts = CLK_get_system_time(); // stores time we start this
 			OLED_power_on();
@@ -226,9 +251,11 @@ void OLED_state_machine(void)
 				// Reset blinking state
 				cling.ui.icon_sec_blinking = TRUE;
 			
-			  // Update notif and touch time stamp.
-	      cling.ui.notif_time_stamp = CLK_get_system_time();	
-	      cling.ui.touch_time_stamp = CLK_get_system_time();				
+			  // Update touch time stamp.
+	      cling.ui.touch_time_stamp = CLK_get_system_time();			
+ 
+			  // Update ui display base time stamp.
+        cling.ui.display_to_base = CLK_get_system_time();  			
 				o->state = OLED_STATE_ON;
 			break;
 		}
@@ -240,6 +267,9 @@ void OLED_state_machine(void)
 			OLED_power_off();
 			o->ts = CLK_get_system_time(); // stores time we start this
 			o->state = OLED_STATE_OFF;
+#ifdef _CLINGBAND_2_PAY_MODEL_						
+		  pm_resume_sleep();
+#endif			
 			break;
 		}
 		case OLED_STATE_OFF:

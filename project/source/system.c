@@ -17,6 +17,7 @@
 #include "sysflash_rw.h"
 #include "crc_16.h"
 
+#define SYSTEM_LOG Y_SPRINTF
 
 I16U CRCCCITT(I8U *data, I32U length, unsigned short seed, unsigned short final)
 {
@@ -127,7 +128,7 @@ static void _notification_msg_init()
 	if (!LINK_is_authorized()) {
 		cling.ancs.message_total = 0;
 		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
-		Y_SPRINTF("[SYSTEM] message: 0 (unauthorized)");
+		SYSTEM_LOG("[SYSTEM] message: 0 (unauthorized)");
 		return ;
 	}
 
@@ -143,7 +144,7 @@ static void _notification_msg_init()
 		}
 		
 		if (p_byte_addr[0] >= 128) {
-			Y_SPRINTF("[SYSTEM] message (%d) wrong info - erased: %08x!", offset, dw_buf[0]);
+			SYSTEM_LOG("[SYSTEM] message (%d) wrong info - erased: %08x!", offset, dw_buf[0]);
 			// something wrong
 			cling.ancs.message_total = 0;
 			FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
@@ -159,12 +160,12 @@ static void _notification_msg_init()
 	
 	// If nothing gets restored from system
 	if (cling.ancs.message_total == 16) {
-		Y_SPRINTF("[SYSTEM] message buffer full - erased!");
+		SYSTEM_LOG("[SYSTEM] message buffer full - erased!");
 		cling.ancs.message_total = 0;
 		FLASH_erase_App(SYSTEM_NOTIFICATION_SPACE_START);
 	}
 	
-	Y_SPRINTF("[SYSTEM] message OVERALL: %d", cling.ancs.message_total);
+	SYSTEM_LOG("[SYSTEM] message OVERALL: %d", cling.ancs.message_total);
 
 }
 #endif
@@ -178,14 +179,14 @@ static void _activity_info_restored(BOOLEAN b_reset)
 		// Make sure the minute file has correct offset
 		a->tracking_flash_offset = TRACKING_get_daily_total(&a->day);
 		
-		Y_SPRINTF("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
+		SYSTEM_LOG("-- tracking offset (critical restored) ---: %d", a->tracking_flash_offset);
 
 		// Update stored total
 		a->day_stored.walking = a->day.walking;
 		a->day_stored.running = a->day.running;
 		a->day_stored.distance = a->day.distance;
 		a->day_stored.calories = a->day.calories;
-		Y_SPRINTF("[SYSTEM] activity: %d, %d, %d, %d", a->day.walking, a->day.running, a->day.distance, a->day.calories);
+		SYSTEM_LOG("[SYSTEM] activity: %d, %d, %d, %d", a->day.walking, a->day.running, a->day.distance, a->day.calories);
 		
 		// Get sleep seconds by noon
 		a->sleep_by_noon = TRACKING_get_sleep_by_noon(FALSE);
@@ -238,7 +239,7 @@ static BOOLEAN _critical_info_restored()
 	// If nothing gets restored from system
 	if (offset == 0) {
 		cling.batt.b_no_batt_restored = TRUE;
-		Y_SPRINTF("[SYSTEM] Nothing gets restored");
+		SYSTEM_LOG("[SYSTEM] Nothing gets restored");
 		return FALSE;
 	}
 	
@@ -284,7 +285,7 @@ static BOOLEAN _critical_info_restored()
 	cling.ancs.supported_categories = p_byte_addr[52];
   cling.ancs.supported_categories = (cling.ancs.supported_categories << 8) | p_byte_addr[53];	
 	
-	Y_SPRINTF("[SYSTEM] restored ANCS categories: %04x", cling.ancs.supported_categories);
+	SYSTEM_LOG("[SYSTEM] restored ANCS categories: %04x", cling.ancs.supported_categories);
 #endif
 #ifdef _ENABLE_TOUCH_
 	// Restore Skin touch
@@ -302,11 +303,11 @@ static BOOLEAN _critical_info_restored()
 	else 
 		cling.system.mcu_reg[REGISTER_MCU_BATTERY] = p_byte_addr[56];
 		
-	Y_SPRINTF("[SYSTEM] restore battery at: %d", p_byte_addr[56]);
+	SYSTEM_LOG("[SYSTEM] restore battery at: %d", p_byte_addr[56]);
 
 	cling.batt.non_charging_accumulated_active_sec = p_byte_addr[57];
 	cling.batt.non_charging_accumulated_steps = p_byte_addr[58];
-	Y_SPRINTF("[SYSTEM] restore charging param: %d, %d", p_byte_addr[57], p_byte_addr[58]);
+	SYSTEM_LOG("[SYSTEM] restore charging param: %d, %d", p_byte_addr[57], p_byte_addr[58]);
 
 	cling.ui.language_type = p_byte_addr[59];
 	cling.gcp.host_type = p_byte_addr[60];
@@ -342,7 +343,11 @@ static void _print_out_dev_name()
 	char dev_name[21];
 	memset(dev_name, 0, 21);
 	SYSTEM_get_dev_id((I8U *)dev_name);
-	Y_SPRINTF("####  system reboot  (%s)", dev_name);
+#ifdef _CLINGBAND_2_PAY_MODEL_
+	SYSTEM_LOG("####  CLINGBAND 2 reboot  (%s)", dev_name);
+#else
+	SYSTEM_LOG("####  system reboot  (%s)", dev_name);
+#endif
 }
 
 static void _print_out_dev_version()
@@ -354,28 +359,28 @@ static void _print_out_dev_version()
 	minor = cling.system.mcu_reg[REGISTER_MCU_REVH]&0x0f;
 	minor <<= 8;
 	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
-	Y_SPRINTF("#### ver: %d.%d ", major, minor);
+	SYSTEM_LOG("#### ver: %d.%d ", major, minor);
 
 }
 #endif
 static void _startup_logging()
 {
 #ifdef _ENABLE_UART_
-	Y_SPRINTF("  ");
-	Y_SPRINTF("####  ");
+	SYSTEM_LOG("  ");
+	SYSTEM_LOG("####  ");
 	_print_out_dev_name();
-	Y_SPRINTF("####  ");
+	SYSTEM_LOG("####  ");
 	_print_out_dev_version();
-	Y_SPRINTF("####  ");
-	Y_SPRINTF("[MAIN] WHO AM I -------- ");
-	Y_SPRINTF("acc: 0x%02x, ", cling.whoami.accelerometer);
-	Y_SPRINTF("issp: 0x%02x, ", cling.whoami.hssp);
-	Y_SPRINTF("nor flash:0x%02x%02x, ", cling.whoami.nor[0], cling.whoami.nor[1]);
+	SYSTEM_LOG("####  ");
+	SYSTEM_LOG("[MAIN] WHO AM I -------- ");
+	SYSTEM_LOG("acc: 0x%02x, ", cling.whoami.accelerometer);
+	SYSTEM_LOG("issp: 0x%02x, ", cling.whoami.hssp);
+	SYSTEM_LOG("nor flash:0x%02x%02x, ", cling.whoami.nor[0], cling.whoami.nor[1]);
 #ifndef _CLINGBAND_PACE_MODEL_		
-	Y_SPRINTF("Touch dev: %d.%d.%d", cling.whoami.touch_ver[0], cling.whoami.touch_ver[1], cling.whoami.touch_ver[2]);
+	SYSTEM_LOG("Touch dev: %d.%d.%d", cling.whoami.touch_ver[0], cling.whoami.touch_ver[1], cling.whoami.touch_ver[2]);
 #endif	
-	Y_SPRINTF("-----------------------");
-	Y_SPRINTF("[MAIN] SYSTEM init ...");
+	SYSTEM_LOG("-----------------------");
+	SYSTEM_LOG("[MAIN] SYSTEM init ...");
 #endif
 }
 
@@ -403,12 +408,12 @@ void SYSTEM_init(void)
 		if (LINK_is_authorized()) {
 			FLASH_erase_all(FALSE);
 			// Print out the amount of page that gets erased
-			Y_SPRINTF("[MAIN] No FAT, With Auth ");
+			SYSTEM_LOG("[MAIN] No FAT, With Auth ");
 		} else {
 			FLASH_erase_all(TRUE);
 			
 			// Print out the amount of page that gets erased
-			Y_SPRINTF("[MAIN] No FAT, No Auth");
+			SYSTEM_LOG("[MAIN] No FAT, No Auth");
 		}
 		
 		// Extra latency before initializing file system (Erasure latency: 50 ms)
@@ -423,9 +428,9 @@ void SYSTEM_init(void)
 			// Extra latency before initializing file system (Erasure latency: 50 ms)
 			BASE_delay_msec(50);
 			// Print out the amount of page that gets erased
-			Y_SPRINTF("[MAIN] YES FAT, No AUTH");		
+			SYSTEM_LOG("[MAIN] YES FAT, No AUTH");		
 	} else {
-		Y_SPRINTF("[MAIN] YES FAT, YES AUTH");
+		SYSTEM_LOG("[MAIN] YES FAT, YES AUTH");
 	}
 	
 	// Init the file system
@@ -605,7 +610,7 @@ void SYSTEM_factory_reset()
 {
 	BLE_CTX *r = &cling.ble;
 	
-	Y_SPRINTF("[SYSTEM] factory reset - BLE disconnect");
+	SYSTEM_LOG("[SYSTEM] factory reset - BLE disconnect");
 	
 	// Disconnect BLE service
 	if (BTLE_is_connected()) 
@@ -620,7 +625,7 @@ void SYSTEM_reboot()
 {
 	BLE_CTX *r = &cling.ble;
 	
-	Y_SPRINTF("[SYSTEM] rebooting ...");
+	SYSTEM_LOG("[SYSTEM] rebooting ...");
 	
 	if (BTLE_is_connected()) {
 		// Disconnect BLE service
@@ -640,7 +645,7 @@ void SYSTEM_format_disk(BOOLEAN b_erase_data)
 {
 	I16U page_erased = FLASH_erase_all(b_erase_data);
 	
-	Y_SPRINTF("[FS] system format disk ....");
+	SYSTEM_LOG("[FS] system format disk ....");
 	
 	// File system initialization
 	// clear FAT and root directory
@@ -652,23 +657,29 @@ void SYSTEM_format_disk(BOOLEAN b_erase_data)
 	// Re-initialize file system and user profile & milestone
 	FILE_init();
 
-	Y_SPRINTF("[SYSTEM] erase %d blocks", page_erased);
+	SYSTEM_LOG("[SYSTEM] erase %d blocks", page_erased);
 }
 
+#ifdef _CLINGBAND_2_PAY_MODEL_
+#include "exti_hal.h"
+#endif
 void SYSTEM_restart_from_reset_vector()
 {
-	Y_SPRINTF("[SYSTEM] restarting system");
+	SYSTEM_LOG("[SYSTEM] restarting system");
+	
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+	CLASS(HalExti) *p_exti_instance = HalExti_get_instance();
+	p_exti_instance->disable_all(p_exti_instance);
+#endif
 	
 	if (LINK_is_authorized()) {
 		// For an authorized device
 		// Backup system critical information before reboot
 		SYSTEM_backup_critical();
 	}
-#ifndef _CLING_PC_SIMULATION_
 	
 	// Reboot system.
 	sd_nvic_SystemReset();
-#endif
 }
 
 void SYSTEM_release_mutex(I8U value)

@@ -582,19 +582,12 @@ void PPG_state_machine()
 			h->state = PPG_STAT_SAMPLE_READY;
 			N_SPRINTF("[PPG] duty on: %d", h->m_measuring_timer_in_s);
   	  _configure_sensor();			// initialize the PPG module
-			h->m_contineous_measuring_ms = PPG_CONTINEOUS_MEASURING_NORMAL_TH;
-			
-			if (h->heart_rate_ready) {
-				// Let's increase the time out threshold in order to avoid HR freeze during workout mode
-				if (cling.activity.b_workout_active) {
-					h->m_contineous_measuring_ms = PPG_CONTINEOUS_MEASURING_WORKOUT_TH;
-				}
-			}
 		}
 		break;
 
 		case PPG_STAT_SAMPLE_READY:		
 		{						
+			t_step_diff_sec = t_curr_sec - cling.activity.step_detect_t_sec;
 		  RTC_start_operation_clk();
 		  if (h->sample_ready) {
 			  h->sample_ready = FALSE;
@@ -604,17 +597,28 @@ void PPG_state_machine()
 				t_ms_diff = t_curr_ms - h->m_duty_on_time_in_ms;
 				if (t_ms_diff > PPG_SAMPLE_PROCESSING_PERIOD) {
 					if (h->heart_rate_ready) {
-						// If heart rate is ready, we should just keep measuring for no more than 5 sec
-						t_measuring_ms_diff = t_curr_ms - h->first_hr_measurement_in_ms;
-						if (t_measuring_ms_diff > h->m_contineous_measuring_ms) {
-							// If user is not viewing HR page, exit measuring state
-							// otherwise, simply just stop updating
-							if (!_is_user_viewing_heart_rate()) {
-								PPG_disable_sensor();					       // Turn off ppg sensor module
-								h->state = PPG_STAT_DUTY_OFF;
-							}
-						} else {
+						if (cling.activity.b_workout_active && (t_step_diff_sec < 5)) {
 							_ppg_sample_proc();				    // Process current sample
+						} else {
+							// If heart rate is ready, we should just keep measuring for no more than 5 sec
+							t_measuring_ms_diff = t_curr_ms - h->first_hr_measurement_in_ms;
+							if (t_measuring_ms_diff > PPG_CONTINEOUS_MEASURING_TH) {
+								// If user is not viewing HR page, exit measuring state
+								// otherwise, simply just stop updating
+								if (!_is_user_viewing_heart_rate()) {
+									PPG_disable_sensor();					       // Turn off ppg sensor module
+									h->state = PPG_STAT_DUTY_OFF;
+								} else {
+									// If user is viewing HR page, but no steps for over 30 seconds, go 
+									// turn off sensors
+									if (t_step_diff_sec > 30) {
+										PPG_disable_sensor();					       // Turn off ppg sensor module
+										h->state = PPG_STAT_DUTY_OFF;
+									}
+								}
+							} else {
+								_ppg_sample_proc();				    // Process current sample
+							}
 						}
 					} else {
 						_ppg_sample_proc();				    // Process current sample

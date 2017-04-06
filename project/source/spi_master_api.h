@@ -25,6 +25,7 @@
 #ifndef _CLING_PC_SIMULATION_
 
 #include "standard_types.h"
+#include "nrf_drv_spi.h"
 
 #define SPIM0_SCK_PIN            GPIO_SPI_0_SCK                   /**< SPI clock GPIO pin number. */
 #define SPIM0_MOSI_PIN           GPIO_SPI_0_MOSI                  /**< SPI Master Out Slave In GPIO pin number. */
@@ -40,7 +41,7 @@ typedef enum
 
 void SPI_master_disable(void);
 
-void SPI_master_init(spi_master_hw_instance_t   spi_master_instance, BOOLEAN lsb);
+void SPI_master_init(spi_master_hw_instance_t   spi_master_instance, BOOLEAN lsb, nrf_drv_spi_mode_t mode);
 
 void SPI_master_tx_rx(spi_master_hw_instance_t   spi_master_instance,
                           I8U * tx_data_buf, I16U tx_data_size,

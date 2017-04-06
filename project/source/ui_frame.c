@@ -127,9 +127,9 @@ static void _left_render_horizontal_16_icon()
 
 static void _left_render_horizontal_pm2p5()
 {
-	char *air_display[3][6] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "hazardous"},
-	                       {"--","优质", "良好", "差 ", "很差", "极差"},
-												 {"--","優質", "良好", "差 ", "很差", "极差"}};
+	char *air_display[3][7] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "Poor", "hazardous"},
+	                       {"--","优质", "良好", "轻度", "中度", "重度", "严重"},
+												 {"--","優質", "良好", "輕度", "中度", "重度", "嚴重"}};
 
 	I8U level_idx;
 	I8U language_type = cling.ui.language_type;
@@ -145,14 +145,16 @@ static void _left_render_horizontal_pm2p5()
 		level_idx = 0;	
 	} else if (cling.pm2p5 < 50) {
 		level_idx = 1;
-	} else if (cling.pm2p5 < 150) {
+	} else if (cling.pm2p5 < 100) {
 		level_idx = 2;
-	} else if (cling.pm2p5 < 300) {
+	} else if (cling.pm2p5 < 150) {
 		level_idx = 3;
-	} else if (cling.pm2p5 < 500) {
+	} else if (cling.pm2p5 < 250) {
 		level_idx = 4;
-	} else {
+	} else if (cling.pm2p5 < 350) {
 		level_idx = 5;
+	} else {
+		level_idx = 6;
 	}
 	
 	FONT_load_characters(256, air_display[language_type][level_idx], 16, 128, FALSE);
@@ -2722,9 +2724,9 @@ static void _middle_render_vertical_running_analysis()
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
 static void _middle_render_vertical_pm2p5()
 {
-	const char *air_display[3][6] = {{"--","GOOD", "GOOD", "POOR", "POOR", "POOR"},
-	                       {"--","优质", "良好", "差 ", "很差", "极差"},
-												 {"--","優質", "良好", "差 ", "很差", "极差"}};
+	const char *air_display[3][7] = {{"--","GOOD", "GOOD", "POOR", "POOR", "POOR", "POOR"},
+	                       {"--","优质", "良好", "轻度", "中度", "重度", "严重"},
+												 {"--","優質", "良好", "輕度", "中度", "重度", "嚴重"}};
 
 	I8U level_idx;						
 	I8U string[32];	
@@ -2761,14 +2763,16 @@ static void _middle_render_vertical_pm2p5()
 		level_idx = 0;		
 	} else if (cling.pm2p5 < 50) {
 		level_idx = 1;
-	} else if (cling.pm2p5 < 150) {
+	} else if (cling.pm2p5 < 100) {
 		level_idx = 2;
-	} else if (cling.pm2p5 < 300) {
+	} else if (cling.pm2p5 < 150) {
 		level_idx = 3;
-	} else if (cling.pm2p5 < 500) {
+	} else if (cling.pm2p5 < 250) {
 		level_idx = 4;
-	} else {
+	} else if (cling.pm2p5 < 350) {
 		level_idx = 5;
+	} else {
+		level_idx = 6;
 	}
 	
 	_render_vertical_fonts_lib_character_core((I8U *)air_display[language_type][level_idx], 16, 84);
@@ -4553,6 +4557,18 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 {	
 	const UI_RENDER_CTX *ui_render;
 
+	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
+	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
+	
+	if (cling.user_data.profile.metric_distance)
+		cling.user_data.profile.metric_distance = 1;
+	
+	if (cling.ui.icon_sec_blinking) {
+		cling.ui.icon_sec_blinking = FALSE;
+	} else {
+		cling.ui.icon_sec_blinking = TRUE;
+	}
+	
 	// Set correct screen orientation
 	if (cling.ui.clock_orientation == 1) {
 		ui_render = horizontal_ui_render;  		

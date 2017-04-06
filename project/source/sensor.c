@@ -87,7 +87,16 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I3
 	}
 	
 	//if ((G.z < -1600) && (x < 700) && (G.y < 200) && (G.y > -1200)) {
-	if ( (G.z<G.x) && (((G.z<G.y) && (G.z < -1440) && (G.x>-400)) || ((G.y<G.x) &&(z<600) && (G.x>1200))) && ((G.y < 780) && (G.y > -500)) ){
+#ifdef _CLINGBAND_2_PAY_MODEL_
+	if ( (G.z<(-G.y)) && (((G.z<G.x) && (G.z < -1400) && (G.y < 400)) || ((G.x<(-G.y)) &&(G.z>-500||G.z<600) && (G.y<-1000))) && (x < 780)) {
+#endif		
+#ifdef _CLINGBAND_PACE_MODEL_
+	if ( (G.z<G.x) && (((G.z<G.y) && (G.z < -1440) && (G.x>-400)) || ((G.y<G.x) &&(z<600) && (G.x>1200))) && ((G.y < 780) && (G.y > -500))) {	
+#endif	
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+	if ( (G.z<G.x) && (((G.z<G.y) && (G.z < -1440) && (G.x>-400)) || ((G.y<G.x) &&(z<600) && (G.x>1200))) && ((G.y < 780) && (G.y > -500))) {	
+#endif	
+	
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
@@ -142,7 +151,7 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I3
 			
 			if (OLED_panel_is_turn_off()) {
 				// Turn on screen
-				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 20);
+				UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 			}
 		}
 	}
@@ -311,7 +320,7 @@ static void _high_power_process_FIFO()
 			jitter_counts ++;
 		}
 		
-		// Set from 1.5g=2300 to 1g=1900 threshold for identifying a motion
+		// Set from 1.5g=2300 to 1g=1500 threshold for identifying a motion
 		if ((x > 1900) || (y > 1900)) {//if ((x > 2300) || (y > 2300)) {
 			b_motion = TRUE;
 		}
@@ -397,7 +406,7 @@ void SENSOR_accel_processing()
 #ifdef __WIRST_DETECT_ENABLE__
 int wake_up_screen()
 {
-	UI_turn_on_display(UI_STATE_IDLE, 0);
+	UI_turn_on_display(UI_STATE_IDLE);
 	return TRUE;
 }
 #endif

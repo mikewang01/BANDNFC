@@ -902,15 +902,15 @@ void HAL_init(void)
 	
 #ifndef _CLING_PC_SIMULATION_
 	// Enable SPI 0
-  SPI_master_init(SPI_MASTER_0,FALSE);
+  SPI_master_init(SPI_MASTER_0,FALSE, NRF_DRV_SPI_MODE_0);
 	cling.system.b_spi_0_ON = TRUE;		
 	
 	// Enable TWI I2C 1
 	GPIO_twi_init(1);		
 #endif
 
-	// UV sensor initialization
 #ifdef _CLINGBAND_UV_MODEL_
+	// UV sensor initialization
 	UV_Init();
 #endif
 
@@ -950,10 +950,6 @@ void HAL_init(void)
 	TOUCH_init();
 #endif
 
-#if defined(_CLINGBAND_PACE_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)	
-  // TBD: workaround for GPIO_CHARGER_INT issue..
-  GPIO_init();        
-#endif	
 }
 
 /**

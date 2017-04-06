@@ -62,7 +62,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 			}		
 	    cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	    cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;			
-		  Y_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
+		  N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
 			break;
 		}
 		case NOTIFICATION_TYPE_IDLE_ALERT: {
@@ -70,7 +70,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 	    cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
 	    cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
 	    notif_frame_index = UI_DISPLAY_SMART_IDLE_ALERT;
-			Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+			N_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 			break;
 		}		
 		case NOTIFICATION_TYPE_NORMAL_HR_ALERT: {
@@ -78,7 +78,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 	    cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
 	    cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;		
 			notif_frame_index = UI_DISPLAY_SMART_HEART_RATE_ALERT;
-			Y_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+			N_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 			break;
 		}
 		case NOTIFICATION_TYPE_10K_STEP: {
@@ -86,7 +86,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 	    cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_10KS;
 	    cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
 	    notif_frame_index = UI_DISPLAY_SMART_STEP_10K_ALERT;		
-	    Y_SPRINTF("NOTIFIC - 10K step ALERT");
+	    N_SPRINTF("NOTIFIC - 10K step ALERT");
 			break;
 		}	
 		case NOTIFICATION_TYPE_RUNNING_PACE_ALERT: {
@@ -95,7 +95,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;
       if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR)
 			  notif_frame_index = UI_DISPLAY_TRAINING_STAT_PACE;		
-	    Y_SPRINTF("NOTIFIC - Running pace ALERT ");			
+	    N_SPRINTF("NOTIFIC - Running pace ALERT ");			
 			break;
 		}		
 		case NOTIFICATION_TYPE_RUNNING_HR_ALERT: {
@@ -104,7 +104,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;			
       if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR)
 			  notif_frame_index = UI_DISPLAY_TRAINING_STAT_HEART_RATE;		
-	    Y_SPRINTF("NOTIFIC - Running heat rate ALERT ");					
+	    N_SPRINTF("NOTIFIC - Running heat rate ALERT ");					
 			break;
 		}
     default:
@@ -135,6 +135,7 @@ void NOTIFIC_state_machine()
 	} 
 	
 	if (cling.notific.state != NOTIFIC_STATE_IDLE) {
+		N_SPRINTF("NOTIFIC STATE: %d", cling.notific.state);
 		RTC_start_operation_clk();
 	}
 	
@@ -199,6 +200,7 @@ void NOTIFIC_state_machine()
 		}
 		case NOTIFIC_STATE_STOPPED_EXTERNAL:
 		{
+			N_SPRINTF("[NOTIFIC] Notify stoped externally");
 			cling.notific.state = NOTIFIC_STATE_IDLE;
 			GPIO_vibrator_set(FALSE);
 			break;
@@ -244,7 +246,7 @@ void NOTIFIC_smart_phone_notify(I8U* data)
 		 
 		cling.ancs.message_total++;		
 #endif		
-		Y_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
+		N_SPRINTF("\n[NOTIFIC] *** SMART PHONE @ %d, %d, %d, %d, %s\n", mode, id, title_len, msg_len, data+4);
 	 
 		// title len, message len, ....
 #ifdef _CLINGBAND_PACE_MODEL_			 

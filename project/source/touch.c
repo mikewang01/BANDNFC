@@ -133,7 +133,7 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 				
 				cling.ui.b_restore_notif = FALSE;											
         // Turn on OLED panel
-        if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 60)) {
+        if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING)) {
             t->b_valid_gesture = TRUE;
 
             // Tap detection
@@ -177,7 +177,7 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 
 	  cling.ui.b_restore_notif = FALSE;						
 		// Turn on OLED panel
-		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING, 10)) {
+		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING)) {
 			t->b_valid_gesture = TRUE;
 		
 			N_SPRINTF("[TOUCH] ------------ VALID gesture --------");

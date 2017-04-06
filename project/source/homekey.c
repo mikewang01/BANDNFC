@@ -65,7 +65,7 @@ void HOMEKEY_check_on_hook_change()
 				}
 				
 				cling.ui.b_restore_notif = FALSE;							
-				UI_turn_on_display(UI_STATE_TOUCH_SENSING, 40);
+				UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 			} else {
 				RTC_start_operation_clk();
 			}
@@ -182,96 +182,4 @@ void HOMEKEY_click_check()
 		}
 	}
 }
-#if 0
-I32U time_key=0, sim_idx = 0, sim_started = 0;
-const I8U sim_key_tab[30] = {	
-	TOUCH_BUTTON_PRESS_HOLD,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_SWIPE_LEFT, // stop -> hr
-	TOUCH_SWIPE_LEFT,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_SWIPE_LEFT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_FINGER_RIGHT,
-	TOUCH_SWIPE_RIGHT,
-	TOUCH_SWIPE_RIGHT,
-	TOUCH_SWIPE_RIGHT,
-	TOUCH_SWIPE_RIGHT,
-	TOUCH_SWIPE_RIGHT,
-};
 
-const I8U sim_time_gap[30] = {	
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,      // Should get to stop watch stop page
-	3,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	3,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-	2,
-};
-
-void HOMEKEY_sim_kickoff()
-{
-	sim_started = 1;
-	time_key = 0;
-	cling.time.system_clock_in_sec = 0;
-}
-
-static void _sim_physical_touch()
-{
-		// Turn on OLED panel
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING, 50);
-}
-
-void HOMEKEY_sim()
-{
-	I32U t_gap;
-	#if 1
-	if (!sim_started)
-		return;
-	#endif
-	t_gap = time_key + sim_time_gap[sim_idx];
-	
-	if (cling.time.system_clock_in_sec > t_gap) {
-		
-		N_SPRINTF("[HOMEKEY] index: %d, key: %d", sim_idx, cling.touch.gesture);
-		_sim_physical_touch();
-		
-		time_key = cling.time.system_clock_in_sec;
-		
-		cling.touch.b_valid_gesture = TRUE;
-		cling.touch.gesture = sim_key_tab[sim_idx++];
-		
-		if (sim_idx >= 18)
-			sim_idx  = 0;
-		
-	}
-}
-#endif

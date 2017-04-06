@@ -82,12 +82,12 @@
 #ifdef _CLINGBAND_2_PAY_MODEL_
 #include "FM1280.h"
 #include "ble_pay_app.h"
+#include "sys_power_mgr.h"
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
 #include "nrf_gpiote.h"
 #include "nrf_drv_gpiote.h"
-#include "sys_power_mgr.h"
 #endif
 
 #define TWI_MASTER_UV       1
@@ -146,9 +146,7 @@ typedef struct tagWHOAMI_CONTEXT {
 	I8U accelerometer;
 	I8U hssp;
 	I8U nor[2];
-#ifndef _CLINGBAND_PACE_MODEL_			
 	I8U touch_ver[3];
-#endif	
 } WHOAMI_CTX;
 
 typedef struct tagSYSTEM_CTX {

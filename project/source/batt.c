@@ -481,7 +481,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 #endif
 			// When something goes very wrong, do not flip display
 			if (!b->b_toggle_lock) {
-				UI_turn_on_display(UI_STATE_CLOCK_GLANCE, 2000);
+				UI_turn_on_display(UI_STATE_HOME);
 			}
 		} else {
 			
@@ -551,7 +551,7 @@ static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 			}
 			// When something goes very wrong, do not flip display
 			if (!b->b_toggle_lock) {
-				UI_turn_on_display(UI_STATE_CLOCK_GLANCE, 2000);
+				UI_turn_on_display(UI_STATE_HOME);
 			}
 			// Exit low power mode when power is removed.
 			TRACKING_exit_low_power_mode(TRUE);

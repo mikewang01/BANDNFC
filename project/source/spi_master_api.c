@@ -63,6 +63,11 @@ static void _spi_master_clear_cs_pin()
 
 	nrf_gpio_cfg_output(GPIO_SPI_0_CS_NFLASH);
 	nrf_gpio_pin_set(GPIO_SPI_0_CS_NFLASH);
+	
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+	nrf_gpio_cfg_output(GPIO_SPI_0_CS_FM1280B);
+	nrf_gpio_pin_set(GPIO_SPI_0_CS_FM1280B);
+#endif	
 }
 
 /**@brief Handler for SPI0 master events.
@@ -85,7 +90,7 @@ void spi_master_0_event_handler(nrf_drv_spi_event_t event)
 
 /**@brief Function for initializing a SPI master driver.
  */
-void SPI_master_init(spi_master_hw_instance_t   spi_master_instance, BOOLEAN lsb)
+void SPI_master_init(spi_master_hw_instance_t   spi_master_instance, BOOLEAN lsb, nrf_drv_spi_mode_t mode)
 {
 	I32U err_code = NRF_SUCCESS;
 
@@ -98,7 +103,8 @@ void SPI_master_init(spi_master_hw_instance_t   spi_master_instance, BOOLEAN lsb
   config.irq_priority = APP_IRQ_PRIORITY_LOW;	
 	config.orc          = 0xCC;
 	config.frequency    = NRF_DRV_SPI_FREQ_8M;		
-	config.mode         = NRF_DRV_SPI_MODE_0;
+//config.mode         = NRF_DRV_SPI_MODE_0;
+	config.mode         = mode;
 	config.bit_order    = (lsb ?  NRF_DRV_SPI_BIT_ORDER_LSB_FIRST : NRF_DRV_SPI_BIT_ORDER_MSB_FIRST);
 
 	if (spi_master_instance == SPI_MASTER_0)
@@ -127,14 +133,14 @@ void SPI_master_tx_rx(spi_master_hw_instance_t   spi_master_instance,
 
 	if(!cling.system.b_spi_0_ON){
 		N_SPRINTF("[SPI] re-init: %d", cling.system.b_spi_0_ON);
-	  SPI_master_init(spi_master_instance,false);
+	  SPI_master_init(spi_master_instance,false, NRF_DRV_SPI_MODE_0);
 		cling.system.b_spi_0_ON = TRUE;				
 	}
 
 	if(!m_transfer_completed){
 		Y_SPRINTF("[SPI] transfer failed, disable SPI bus and re-init SPI");
 		nrf_drv_spi_uninit(&m_spi_master_0);
-	  SPI_master_init(spi_master_instance,false);	
+	  SPI_master_init(spi_master_instance,false, NRF_DRV_SPI_MODE_0);
 		// To ensure all cs pin pull up, prevent mutual interference.
 		_spi_master_clear_cs_pin();
 	}
@@ -148,7 +154,7 @@ void SPI_master_tx_rx(spi_master_hw_instance_t   spi_master_instance,
 		   break;
 	  else{
 			nrf_drv_spi_uninit(&m_spi_master_0);
-	    SPI_master_init(spi_master_instance,false);	
+	    SPI_master_init(spi_master_instance,false, NRF_DRV_SPI_MODE_0);
 		  BASE_delay_msec(20);
 	  }
 	}
