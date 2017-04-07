@@ -1603,6 +1603,7 @@ void UI_start_notifying(I8U frame_index)
 
 	// 3. update touch time stamp.
   u->touch_time_stamp = CLK_get_system_time();
+  u->dark_time_stamp = CLK_get_system_time();
 	
 	if (OLED_panel_is_turn_on()) {
 		// 4. If screen is turn on, switch to touch sensing state.
