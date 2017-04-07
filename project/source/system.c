@@ -255,11 +255,13 @@ static BOOLEAN _critical_info_restored()
 	// add 30 seconds to correct bias of time when system rebooting..
 	t->time_since_1970 += 30;
 
-	// Bytes: 4 - 38: reserved
-
+	// Bytes: 4 - 36: reserved
+	
 	// Pm2.5
-	cling.pm2p5 = p_byte_addr[39];
-	cling.pm2p5 = (cling.pm2p5 << 8) | p_byte_addr[40];
+	cling.weather.pm2p5_month = p_byte_addr[37];	
+	cling.weather.pm2p5_day   = p_byte_addr[38];
+	cling.weather.pm2p5_value = p_byte_addr[39];
+	cling.weather.pm2p5_value = (cling.weather.pm2p5_value << 8) | p_byte_addr[40];
 
 	// Running seconds
 	cling.run_stat.time_sec = p_byte_addr[41];
@@ -269,11 +271,11 @@ static BOOLEAN _critical_info_restored()
 	cling.hr.current_rate = p_byte_addr[43];
 	
 	// Restore weather info
-	cling.weather[0].day = p_byte_addr[44];
-	cling.weather[0].month = p_byte_addr[45];
-	cling.weather[0].type = p_byte_addr[46];
-	cling.weather[0].high_temperature = p_byte_addr[47];
-	cling.weather[0].low_temperature = p_byte_addr[48];
+	cling.weather.weather_info[0].day = p_byte_addr[44];
+	cling.weather.weather_info[0].month = p_byte_addr[45];
+	cling.weather.weather_info[0].type = p_byte_addr[46];
+	cling.weather.weather_info[0].high_temperature = p_byte_addr[47];
+	cling.weather.weather_info[0].low_temperature = p_byte_addr[48];
 
 	// Restoring the time zone info
 	t->time_zone = p_byte_addr[49];
@@ -478,7 +480,6 @@ void SYSTEM_init(void)
 	USER_device_specifics_init();
 }
 
-
 BOOLEAN SYSTEM_get_mutex(I8U value)
 {
 	BOOLEAN b_mutex_obtained = FALSE;
@@ -525,14 +526,16 @@ BOOLEAN SYSTEM_backup_critical()
 	// Reset critical buffer
 	memset(critical, 0, 64);
 
-	// Bytes: 4 - 38: reserved
+	// Bytes: 4 - 36: reserved
 	
 	// Store time
 	cbuf[0] = t->time_since_1970;
 
 	// Pm2.5
-	critical[39] = (I8U)((cling.pm2p5>>8) & 0xFF);
-	critical[40] = (I8U)(cling.pm2p5 & 0xFF);
+	critical[37] = cling.weather.pm2p5_month;
+	critical[38] = cling.weather.pm2p5_day;	
+	critical[39] = (I8U)((cling.weather.pm2p5_value>>8) & 0xFF);
+	critical[40] = (I8U)(cling.weather.pm2p5_value & 0xFF);
 
 	// Running
 	critical[41] = cling.run_stat.time_sec;
@@ -542,26 +545,29 @@ BOOLEAN SYSTEM_backup_critical()
 	critical[43] = cling.hr.current_rate;
 	
 	// Store weather info
-	critical[44] = cling.weather[0].day;
-	critical[45] = cling.weather[0].month;
-	critical[46] = cling.weather[0].type;
-	critical[47] = cling.weather[0].high_temperature;
-	critical[48] = cling.weather[0].low_temperature;
+	critical[44] = cling.weather.weather_info[0].day;
+	critical[45] = cling.weather.weather_info[0].month;
+	critical[46] = cling.weather.weather_info[0].type;
+	critical[47] = cling.weather.weather_info[0].high_temperature;
+	critical[48] = cling.weather.weather_info[0].low_temperature;
 	
 	// Store time zone info to prevent unexpected day rollover
 	critical[49] = t->time_zone;
 
 	// Store total reminders
 	critical[51] = cling.reminder.total;
+	
 #ifdef _ENABLE_ANCS_
 	// Store ancs supported set.
 	critical[52] = (I8U)((cling.ancs.supported_categories>>8) & 0xFF);
 	critical[53] = (I8U)(cling.ancs.supported_categories & 0xFF);
 #endif
+
 #ifdef _ENABLE_TOUCH_	
 	// Store skin touch type
 	critical[54] = cling.touch.b_skin_touch;
 #endif
+
 	// 55: Clock orientation
 	critical[55] = cling.ui.clock_orientation;
 	

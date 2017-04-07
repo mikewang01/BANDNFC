@@ -1,5 +1,5 @@
 #include "main.h"
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		 
+#ifdef _CLINGBAND_2_PAY_MODEL_	 
 #include "exti_hal.h"
 #endif
 
@@ -236,7 +236,7 @@ I8U _get_battery_perc()
 			//
 			N_SPRINTF("[BATT] low power shut-down (reading: %d, )", b->volts_reading);
 			
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)					
+#ifdef _CLINGBAND_2_PAY_MODEL_ 			
 		  /*disable all interrupts on top of charger int*/
 			CLASS(HalExti)*	p_exti_instance = HalExti_get_instance();
 			p_exti_instance->set_low_power(p_exti_instance);
@@ -247,7 +247,7 @@ I8U _get_battery_perc()
 			// No need for a shutdown timer reconfiguration
 			// RTC_system_shutdown_timer();
 		}else{
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)							
+#ifdef _CLINGBAND_2_PAY_MODEL_ 					
 			/*enable all interrupts*/
 			CLASS(HalExti)*	p_exti_instance = HalExti_get_instance();
 			p_exti_instance->set_active(p_exti_instance);
@@ -389,7 +389,7 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 		//
 		BATT_SPRINTF("[BATT] Unauthorized, SD (Level: %d, time: %d)", cling.system.mcu_reg[REGISTER_MCU_BATTERY], cling.batt.shut_down_time);
 		
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)						
+#ifdef _CLINGBAND_2_PAY_MODEL_				
 		CLASS(HalExti)*	p_exti_instance = HalExti_get_instance();
 		p_exti_instance->set_low_power(p_exti_instance);
 #endif

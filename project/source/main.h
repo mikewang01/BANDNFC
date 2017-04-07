@@ -174,8 +174,7 @@ typedef struct tagCLING_MAIN_CTX {
 	SYSTEM_CTX system;
 	
 	// weather context (5 days)
-	WEATHER_CTX weather[MAX_WEATHER_DAYS];
-	I16U pm2p5;
+	WEATHER_CTX weather;
 
 	// System diagonostic variables
 	WHOAMI_CTX whoami; 

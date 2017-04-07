@@ -1655,13 +1655,13 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state)
 	u->touch_time_stamp = CLK_get_system_time();
 	
 	// 3. Switch state
-	if (state != UI_STATE_CLING_START) {
-	  if (!OLED_panel_is_turn_on()) {
-	    UI_switch_state(UI_STATE_HOME, 0);
-		} else {
-	    UI_switch_state(state, 0);
-		} 			
-	}
+	if (!OLED_panel_is_turn_on()) {
+		UI_switch_state(UI_STATE_HOME, 0);
+	} else {
+		if ((u->state != UI_STATE_CHARGING_GLANCE) && (u->state != UI_STATE_HOME) && (u->state != UI_STATE_CLING_START)) {
+		  UI_switch_state(state, 0);
+		}
+	} 			
 
 	// 4. Restore previous UI page
 	_restore_perv_frame_index();
@@ -1743,7 +1743,7 @@ void UI_state_machine()
 		{
 			N_SPRINTF("[UI] LOW BATTERY(or charging): %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);			
 			UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);				
-			if (t_curr > u->display_to_base + 800) {
+			if (t_curr > u->display_to_base + 1500) {
 			  // Exit running mode.			
 			  u->frame_index = UI_DISPLAY_HOME;	
 			  cling.activity.workout_type = WORKOUT_NONE;
@@ -1781,7 +1781,7 @@ void UI_state_machine()
 				u->frame_index = UI_DISPLAY_HOME; 
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 			} else {
-				if (t_curr > (u->display_to_base+2000)) {
+				if (t_curr > (u->display_to_base+1000)) {
 					u->display_to_base = t_curr;
 					UI_frame_display_appear(UI_DISPLAY_SYSTEM_OTA, TRUE);			
 				}		

@@ -18,6 +18,9 @@
 #ifdef _ENABLE_TOUCH_
 #include "uicoTouch.h"
 #endif
+#ifdef _CLINGBAND_2_PAY_MODEL_
+#include "exti_hal.h"
+#endif
 
 //#define _POWER_TEST_
 //#define _NOR_FLASH_SPI_TEST_
@@ -217,6 +220,10 @@ void _nor_flash_spi_test()
 void _power_manager_process(void)
 {
 	I32U err_code;
+
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+	uint8_t enter_pm_sucess = false;
+#endif
 	
 	// Turn off operation clock also
 	RTC_stop_operation_clk();
@@ -232,13 +239,17 @@ void _power_manager_process(void)
 	
 	N_SPRINTF("[MAIN] EVT WAIT");
 	
-	if (LINK_is_authorized()) {
-		// Configure TWI to be input to reduce power consumption
-		GPIO_twi_disable(1);
-		
-		// Disable SPI bus
-		SPI_master_disable();
-	}
+
+	// Configure TWI to be input to reduce power consumption
+	GPIO_twi_disable(1);
+	
+	// Disable SPI bus
+#ifdef _CLINGBAND_2_PAY_MODEL_		
+	enter_pm_sucess = pm_sleep_enter();
+#else
+	SPI_master_disable();	
+#endif
+	
 #if 1
 	// Main power management process
 	err_code = sd_app_evt_wait();
@@ -248,6 +259,13 @@ void _power_manager_process(void)
 
 	__WFI();
 #endif
+
+#ifdef _CLINGBAND_2_PAY_MODEL_		
+	if(enter_pm_sucess == true){
+			pm_system_wake_up();
+	}
+#endif
+	
 	N_SPRINTF("[MAIN] ^^^^^ ms:%d", CLK_get_system_time());
 }
 
@@ -361,9 +379,11 @@ int main(void)
 {
     // Initialize Wristband firmware gloal structure
     _cling_global_init();
+	
 #ifdef _POWER_TEST_
     _power_test_powerdown(FALSE);
 #endif
+	
     // Hardware abstruct layer initialize.
     //
     // Including: UART, Keypad, Display, NOR flash, Physical IO, SPI, I2C, Sesnors

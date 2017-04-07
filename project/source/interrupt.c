@@ -69,9 +69,6 @@ void UART0_IRQHandler(void)
         tx_sucess_int ();
 
     }
-		
-
-		
 #endif
 }
 #endif

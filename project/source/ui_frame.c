@@ -133,28 +133,34 @@ static void _left_render_horizontal_pm2p5()
 
 	I8U level_idx;
 	I8U language_type = cling.ui.language_type;
-
+	WEATHER_CTX *w = &cling.weather;
+												 
   //  First render pm2.5 icon.	
 	_render_one_icon_16(ICON16_PM2P5_IDX, 0);
 	
-	if (cling.pm2p5 == 0xffff) {
+  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {
+		if (w->pm2p5_value == 0xffff) {
+			// AQI value Not available
+			level_idx = 0;
+		} else if (!w->pm2p5_value) {
+			// AQI value Not available
+			level_idx = 0;	
+		} else if (w->pm2p5_value < 50) {
+			level_idx = 1;
+		} else if (w->pm2p5_value < 100) {
+			level_idx = 2;
+		} else if (w->pm2p5_value < 150) {
+			level_idx = 3;
+		} else if (w->pm2p5_value < 250) {
+			level_idx = 4;
+		} else if (w->pm2p5_value < 350) {
+			level_idx = 5;
+		} else {
+			level_idx = 6;
+		}
+  } else {
 		// AQI value Not available
-		level_idx = 0;
-	} else if (!cling.pm2p5) {
-		// AQI value Not available
-		level_idx = 0;	
-	} else if (cling.pm2p5 < 50) {
-		level_idx = 1;
-	} else if (cling.pm2p5 < 100) {
-		level_idx = 2;
-	} else if (cling.pm2p5 < 150) {
-		level_idx = 3;
-	} else if (cling.pm2p5 < 250) {
-		level_idx = 4;
-	} else if (cling.pm2p5 < 350) {
-		level_idx = 5;
-	} else {
-		level_idx = 6;
+		level_idx = 0;		
 	}
 	
 	FONT_load_characters(256, air_display[language_type][level_idx], 16, 128, FALSE);
@@ -162,10 +168,13 @@ static void _left_render_horizontal_pm2p5()
 
 static void _left_render_horizontal_weather()
 {
-	WEATHER_CTX weather;
+	WEATHER_INFO_CTX weather_info;
 	
-	WEATHER_get_weather(0, &weather);
-	_render_one_icon_16(ICON16_WEATHER_IDX+weather.type, 0);
+	if (!WEATHER_get_weather_info(0, &weather_info)) {
+	  weather_info.type = 0;
+	}
+	
+	_render_one_icon_16(ICON16_WEATHER_IDX+weather_info.type, 0);
 }
 
 static void _left_render_horizontal_16_icon_blinking()
@@ -722,13 +731,13 @@ static void _middle_render_horizontal_weather()
 	I8U len = 0;
 	I16U offset = 10;
 	I8U margin = 5;
-	WEATHER_CTX weather;
+	WEATHER_INFO_CTX weather_info;
 
-	if (WEATHER_get_weather(0, &weather)) {
+	if (WEATHER_get_weather_info(0, &weather_info)) {
 		len = 0;
-		len += sprintf((char *)string+len, "%d", weather.low_temperature);
+		len += sprintf((char *)string+len, "%d", weather_info.low_temperature);
 		string[len++] = ICON24_WEATHER_RANGE_IDX;
-		len += sprintf((char *)string+len, "%d", weather.high_temperature);
+		len += sprintf((char *)string+len, "%d", weather_info.high_temperature);
 		string[len++] = ICON24_CELCIUS_IDX;
 		string[len++] = 0;
 	} else {
@@ -798,13 +807,18 @@ static void _middle_render_horizontal_pm2p5()
 	I8U b_24_size = 24;		
 	I16U offset = 0;
 	I8U margin = 3;
-
-	if (cling.pm2p5 == 0xffff) {
+	WEATHER_CTX *w = &cling.weather;
+												 
+  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {	
+		if (w->pm2p5_value == 0xffff) {
+			sprintf((char *)string, "0");
+		} else {
+			sprintf((char *)string, "%d", w->pm2p5_value);
+		}
+  } else {
 		sprintf((char *)string, "0");
-	} else {
-		sprintf((char *)string, "%d", cling.pm2p5);
 	}
-		
+	
 	offset = 80;
 	
 	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
@@ -2425,11 +2439,13 @@ static void _top_render_vertical_weather()
   I8U len = 0;
 	I8U margin = 2;;
 	I8U b_24_size = 24;
-	WEATHER_CTX weather;	
+	WEATHER_INFO_CTX weather_info;	
 
-	WEATHER_get_weather(0, &weather);
+	if (!WEATHER_get_weather_info(0, &weather_info)) {
+    weather_info.type = 0;
+	}
 	
-	string[len++] = ICON24_WEATHER_IDX+weather.type;
+	string[len++] = ICON24_WEATHER_IDX+weather_info.type;
 	string[len++] = 0;
 	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);	
 }
@@ -2730,49 +2746,56 @@ static void _middle_render_vertical_pm2p5()
 
 	I8U level_idx;						
 	I8U string[32];	
-	I32U stat = 0;
   I8U	margin = 2;
 	I8U b_24_size = 24;
 	I8U language_type = cling.ui.language_type;			
+
+	WEATHER_CTX *w = &cling.weather;
 												 
-  stat = cling.pm2p5;
-	
-	if (stat == 0xffff) {
-		sprintf((char *)string, "0");	
-	} else if (!stat) {
-		sprintf((char *)string, "0");			
-	} else if (stat > 999) {
-		stat = 999;
-		sprintf((char *)string, "%d", stat);
-		b_24_size = 16;
-	} else if (stat > 99) {
-		sprintf((char *)string, "%d", stat);
-		b_24_size = 16;
+  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {	
+		if (w->pm2p5_value == 0xffff) {
+			sprintf((char *)string, "0");	
+		} else if (!w->pm2p5_value) {
+			sprintf((char *)string, "0");			
+		} else if (w->pm2p5_value > 999) {
+			w->pm2p5_value = 999;
+			sprintf((char *)string, "%d", w->pm2p5_value);
+			b_24_size = 16;
+		} else if (w->pm2p5_value > 99) {
+			sprintf((char *)string, "%d", w->pm2p5_value);
+			b_24_size = 16;
+		} else {
+			sprintf((char *)string, "%d", w->pm2p5_value);
+		}
 	} else {
-		sprintf((char *)string, "%d", stat);
+		sprintf((char *)string, "0");	
 	}
 	
 	if (b_24_size == 24) 
 		_render_vertical_local_character_core(string, 42, margin, b_24_size, FALSE);
 	else
 		_render_vertical_local_character_core(string, 46, margin, b_24_size, FALSE);
-	
-	if (cling.pm2p5 == 0xffff) {
+
+  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {		
+		if (w->pm2p5_value == 0xffff) {
+			level_idx = 0;
+		} else if (!w->pm2p5_value) {
+			level_idx = 0;		
+		} else if (w->pm2p5_value < 50) {
+			level_idx = 1;
+		} else if (w->pm2p5_value < 100) {
+			level_idx = 2;
+		} else if (w->pm2p5_value < 150) {
+			level_idx = 3;
+		} else if (w->pm2p5_value < 250) {
+			level_idx = 4;
+		} else if (w->pm2p5_value < 350) {
+			level_idx = 5;
+		} else {
+			level_idx = 6;
+		}
+  } else {
 		level_idx = 0;
-	} else if (!cling.pm2p5) {
-		level_idx = 0;		
-	} else if (cling.pm2p5 < 50) {
-		level_idx = 1;
-	} else if (cling.pm2p5 < 100) {
-		level_idx = 2;
-	} else if (cling.pm2p5 < 150) {
-		level_idx = 3;
-	} else if (cling.pm2p5 < 250) {
-		level_idx = 4;
-	} else if (cling.pm2p5 < 350) {
-		level_idx = 5;
-	} else {
-		level_idx = 6;
 	}
 	
 	_render_vertical_fonts_lib_character_core((I8U *)air_display[language_type][level_idx], 16, 84);
@@ -2960,9 +2983,12 @@ static void _middle_render_vertical_weather()
 	I8U string[32];
 	I8U margin = 2;
 	I8U b_24_size = 24;
-	WEATHER_CTX weather;	
+	WEATHER_INFO_CTX weather_info;	
 
-	WEATHER_get_weather(0, &weather);
+	if (!WEATHER_get_weather_info(0, &weather_info)) {
+		weather_info.low_temperature = 15;
+		weather_info.high_temperature = 22;
+	}
 	
 	// - Temperature Range - 
 	string[0] = ICON24_WEATHER_RANGE_IDX;
@@ -2970,20 +2996,20 @@ static void _middle_render_vertical_weather()
 	_render_vertical_local_character_core(string, 55, margin, b_24_size, FALSE);
 	
 	// - Low temperature -
-	sprintf((char *)string, "%d", weather.low_temperature);
+	sprintf((char *)string, "%d", weather_info.low_temperature);
 	
-	if (weather.low_temperature < 0)
+	if (weather_info.low_temperature < 0)
 		margin = 1;
 	else
 		margin = 2;
 	_render_vertical_local_character_core(string, 32, margin, b_24_size, FALSE);
 		
 	// - High temperature;
-	if (weather.high_temperature < 0)
+	if (weather_info.high_temperature < 0)
 		margin = 1;
 	else
 		margin = 2;
-	sprintf((char *)string, "%d", weather.high_temperature);
+	sprintf((char *)string, "%d", weather_info.high_temperature);
 	_render_vertical_local_character_core(string, 74, margin, b_24_size, FALSE);
 	
 	// - Weather temperature unit - 

@@ -90,11 +90,12 @@ void GPIO_system_powerdown(void);
 // Interrupt handle 
 void GPIO_interrupt_handle(void);
 
-#ifdef _CLINGBAND_2_PAY_MODEL_
-// ISO7816 GPIO Control
-void GPIO_7816_POWER_ON(BOOLEAN b_on);
-void GPIO_7816_RST_Pin_Set(BOOLEAN b_on);
-void GPIO_7816_Data_Pin_Set(BOOLEAN b_on);
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+void intterrupt_mgr_init(void);
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_	
+void BATT_gpiote_init(void);
 #endif
 
 #endif

@@ -9,7 +9,53 @@
  ******************************************************************************/
 
 #include "main.h"
-			
+#ifdef _CLINGBAND_2_PAY_MODEL_			
+#include "exti_hal.h"
+
+typedef struct {
+		uint8_t event;
+		uint8_t owner;
+}element_t;
+
+struct queue_mgr{
+	element_t *p;
+	uint16_t count;	
+};
+typedef struct queue_mgr* queue_handle_t;
+struct queue_mgr  int_queue;
+#define INT_QUEUE_CREATE(_NAME, _LENTH)   ({static element_t inr_que##_NAME[_LENTH]; memset(inr_que##_NAME, 0xff, _LENTH*sizeof(element_t)); int_queue.p = inr_que##_NAME;  int_queue.count = _LENTH; &int_queue;})
+#define QUEUE_PUSH(_HANLE, ELEMNET)       ({memcpy(&_HANLE->p[0], &_HANLE->p[1], (_HANLE->count -1)*sizeof(element_t)); memcpy(&_HANLE->p[_HANLE->count -1], &ELEMNET, sizeof(element_t));})			
+#define QUEUE_POP(_HANLE, ELEMNET)       {	\
+																						memcpy(&ELEMNET, &_HANLE->p[_HANLE->count -1], sizeof(element_t));\
+																						for(int i = _HANLE->count ; i > 0; i-- ){\
+																							memcpy(&_HANLE->p[i -1], &_HANLE->p[i - 2], sizeof(element_t));\
+																				 	}\
+																						memset(&_HANLE->p[0], 0xff, sizeof(element_t));\
+																				}
+static CLASS(HalExti) *p_exti_instance = NULL;
+static queue_handle_t queue_hdl = NULL;
+																				
+																	
+void SFE_exti_callback(uint8_t pin)
+{
+        // Note: Do NOT logging in exti routine, in addition,
+        // Note: Use OS_TASK_NOTIFY_FROM_ISR for notification
+				element_t int_element;
+				int_element.owner = pin;
+				/*ADD INCOMING INT EVENT INTO CSPECIFIC QUEUE*/
+				QUEUE_PUSH(queue_hdl, int_element);						
+}
+
+
+void intterrupt_mgr_init(void)
+{
+				queue_hdl = INT_QUEUE_CREATE(INT_QUEUE, 16);
+        CLING_HW_EXTI_INIT(SFE_exti_callback);
+        p_exti_instance = HalExti_get_instance();
+        p_exti_instance->enable_all(p_exti_instance);
+}
+#endif
+
 static void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
 {
 #ifndef _CLING_PC_SIMULATION_
@@ -367,6 +413,53 @@ void GPIO_charger_reset()
 #endif
 }
 
+#ifdef _CLINGBAND_2_PAY_MODEL_			
+void GPIO_interrupt_handle()
+{
+	element_t int_source;
+	QUEUE_POP(queue_hdl, int_source);
+	while(int_source.owner != 0xff){
+			N_SPRINTF("[GPIO] INT GET FROM SOURCE %d", int_source.owner);
+			switch(int_source.owner){
+				case GPIO_SENSOR_INT_1: 
+						SENSOR_accel_processing();
+				break;
+#ifdef _ENABLE_TOUCH_				
+				case GPIO_TOUCH_INT: 
+					// Touch panel gesture check
+					TOUCH_gesture_check();
+				break;
+#endif						
+				case GPIO_CHARGER_INT:
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
+							BATT_interrupt_process(FALSE);
+#endif	
+				 break;
+#if __CLING_PAY_SUPPORTED__ 
+				case GPIO_FM1280B_IRQ: {
+							CLASS(cling_pay_app) *p_pay = cling_pay_app_get_instance();
+							p_pay->int_process(p_pay, GPIO_FM1280B_IRQ);
+				}
+				break;
+#endif
+#ifndef _CLINGBAND_2_PAY_MODEL_				
+				case GPIO_HOMEKEY:	HOMEKEY_check_on_hook_change();	
+				break;
+#endif
+				case GPIO_RTC_INT:
+#ifdef _CLINGBAND_2_PAY_MODEL_					
+				// RTC minute event service
+				RTC_minute_int_service();
+#endif							
+				break;
+			  default:break;
+			} 
+			QUEUE_POP(queue_hdl, int_source);
+	}
+}
+#endif
+
+#ifndef _CLINGBAND_2_PAY_MODEL_			
 void GPIO_interrupt_handle()
 {
 #ifndef _CLINGBAND_2_PAY_MODEL_	
@@ -374,7 +467,7 @@ void GPIO_interrupt_handle()
 	HOMEKEY_check_on_hook_change();	
 #endif
 	
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
+#ifdef _CLINGBAND_PACE_MODEL_ 
 	BATT_interrupt_process(FALSE);
 #endif	
 
@@ -386,39 +479,37 @@ void GPIO_interrupt_handle()
 	// Touch panel gesture check
 	TOUCH_gesture_check();
 #endif	
-}
 
-#ifdef _CLINGBAND_2_PAY_MODEL_
-void GPIO_7816_POWER_ON(BOOLEAN b_on)
-{
-#ifndef _CLING_PC_SIMULATION_	
-	if (b_on) {
-		_gpio_cfg_output(GPIO_7816_PWR_ON, TRUE);
-	} else {
-		_gpio_cfg_output(GPIO_7816_PWR_ON, FALSE);
-	}
-#endif	
 }
-
-void GPIO_7816_RST_Pin_Set(BOOLEAN b_on)
-{
-#ifndef _CLING_PC_SIMULATION_	
-	if (b_on) {
-		_gpio_cfg_output(GPIO_7816_RST, TRUE);
-	} else {
-		_gpio_cfg_output(GPIO_7816_RST, FALSE);
-	}
 #endif
+
+#ifdef _CLINGBAND_PACE_MODEL_ 
+void _batt_interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+{
+  if (action == NRF_GPIOTE_POLARITY_HITOLO) {
+    BATT_interrupt_process(FALSE);	
+  }
+  
+   //nrf_drv_gpiote_out_toggle(GPIO_CHARGER_INT);
 }
 
-void GPIO_7816_Data_Pin_Set(BOOLEAN b_on)
+void BATT_gpiote_init()
 {
-#ifndef _CLING_PC_SIMULATION_	
-	if (b_on) {
-		_gpio_cfg_output(GPIO_7816_DATA, TRUE);
-	} else {
-		_gpio_cfg_output(GPIO_7816_DATA, FALSE);
-	}
-#endif
+	ret_code_t err_code;
+
+	nrf_drv_gpiote_in_config_t in_config;
+	
+	in_config.sense = NRF_GPIOTE_POLARITY_HITOLO;
+	in_config.pull = NRF_GPIO_PIN_PULLUP;
+	in_config.hi_accuracy = FALSE;
+	in_config.is_watcher = FALSE;
+	
+	err_code = nrf_drv_gpiote_init();
+	APP_ERROR_CHECK(err_code);
+
+	err_code = nrf_drv_gpiote_in_init(GPIO_CHARGER_INT, &in_config, _batt_interrupt_handler);
+	APP_ERROR_CHECK(err_code);
+
+	nrf_drv_gpiote_in_event_enable(GPIO_CHARGER_INT, true);
 }
 #endif

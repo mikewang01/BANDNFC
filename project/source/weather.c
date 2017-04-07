@@ -16,32 +16,40 @@
 
 void WEATHER_set_weather(I8U *data)
 {
-	WEATHER_CTX *w = cling.weather;
+	WEATHER_CTX *w = &cling.weather;
 	I8U *pPM2P5;
 
-  memcpy(&w[0], data, 5*sizeof(WEATHER_CTX));	
+  memcpy(&w->weather_info[0], data, 5*sizeof(WEATHER_INFO_CTX));	
 	
-	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[0].month, w[0].day, w[0].type, w[0].low_temperature, w[0].high_temperature);
-	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[1].month, w[1].day, w[1].type, w[1].low_temperature, w[1].high_temperature);
-	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[2].month, w[2].day, w[2].type, w[2].low_temperature, w[2].high_temperature);
-	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[3].month, w[3].day, w[3].type, w[3].low_temperature, w[3].high_temperature);
-	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w[4].month, w[4].day, w[4].type, w[4].low_temperature, w[4].high_temperature);
+	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w->weather_info[0].month, w->weather_info[0].day, w->weather_info[0].type, w->weather_info[0].low_temperature, w->weather_info[0].high_temperature);
+	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w->weather_info[1].month, w->weather_info[1].day, w->weather_info[1].type, w->weather_info[1].low_temperature, w->weather_info[1].high_temperature);
+	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w->weather_info[2].month, w->weather_info[2].day, w->weather_info[2].type, w->weather_info[2].low_temperature, w->weather_info[2].high_temperature);
+	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w->weather_info[3].month, w->weather_info[3].day, w->weather_info[3].type, w->weather_info[3].low_temperature, w->weather_info[3].high_temperature);
+	N_SPRINTF("[WEATHR] %d, %d, %d, %d, %d", w->weather_info[4].month, w->weather_info[4].day, w->weather_info[4].type, w->weather_info[4].low_temperature, w->weather_info[4].high_temperature);
 
 	// Load PM2.5 read
-	pPM2P5 = data + 5*sizeof(WEATHER_CTX);
+	pPM2P5 = data + 5*sizeof(WEATHER_INFO_CTX);
 	
-	cling.pm2p5 = pPM2P5[0];
-	cling.pm2p5 <<= 8;
-	cling.pm2p5 |= pPM2P5[1];
+	w->pm2p5_value = pPM2P5[0];
+	w->pm2p5_value <<= 8;
+	w->pm2p5_value |= pPM2P5[1];
+	
+	// Update pm2.5 time
+  w->pm2p5_month = cling.time.local.month;
+	w->pm2p5_day = cling.time.local.day;
 }
 
-BOOLEAN WEATHER_get_weather(I8U index, WEATHER_CTX *wo)
+BOOLEAN WEATHER_get_weather_info(I8U index, WEATHER_INFO_CTX *wo)
 {
-	WEATHER_CTX *wi = cling.weather;
+	WEATHER_CTX *w = &cling.weather;
 
 #ifdef _CLINGBAND_PACE_MODEL_
-	memcpy(wo, &wi[0], sizeof(WEATHER_CTX));
-	return TRUE;
+	if ((w->weather_info[0].day == cling.time.local.day) && (w->weather_info[0].month == cling.time.local.month)) {
+  	memcpy(wo, &w->weather_info[0], sizeof(WEATHER_INFO_CTX));
+	  return TRUE;
+	} else {
+		return FALSE;
+	}
 #else
 	I8U i;
 	BOOLEAN b_available = FALSE;
@@ -50,8 +58,8 @@ BOOLEAN WEATHER_get_weather(I8U index, WEATHER_CTX *wo)
 	RTC_get_delta_clock_forward(&new_time, index);
 	
 	for (i = 0; i < MAX_WEATHER_DAYS; i++) {
-		if ((wi[i].day == new_time.day) && (wi[i].month == new_time.month)) {
-			memcpy(wo, &wi[i], sizeof(WEATHER_CTX));
+		if ((w->weather_info[i].day == new_time.day) && (w->weather_info[i].month == new_time.month)) {
+			memcpy(wo, &w->weather_info[i], sizeof(WEATHER_INFO_CTX));
 			b_available = TRUE;
 			break;
 		}
@@ -62,8 +70,8 @@ BOOLEAN WEATHER_get_weather(I8U index, WEATHER_CTX *wo)
 	// if no weather available, go return the first one
 	RTC_get_delta_clock_forward(&new_time, 0);
 	
-	if ((wi[0].day == new_time.day) && (wi[0].month == new_time.month)) {
-		memcpy(wo, &wi[0], sizeof(WEATHER_CTX));
+	if ((w->weather_info[0].day == new_time.day) && (w->weather_info[0].month == new_time.month)) {
+		memcpy(wo, &w->weather_info[0], sizeof(WEATHER_INFO_CTX));
 		return TRUE;
 	} else {
 		wo->high_temperature = 0;
