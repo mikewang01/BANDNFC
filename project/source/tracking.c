@@ -1032,7 +1032,7 @@ static void _update_running_pace()
 	t_diff = t_curr - cling.run_stat.pace_calc_ts;
 	
 	// Calculate pace on a basis of 10 seconds
-	if (t_diff < 10000)
+	if (t_diff < 1000)//change the interval of Pace_update from 10s to 1s.
 		return;
 	
 	// Take the average as a low pass filter
@@ -1060,14 +1060,15 @@ static void _update_running_pace()
 		}
 	}
 	
-	pace = sum_t * 100;
+	// Calculate pace on a basis of one second.
+	pace = sum_t * 1000;
 	pace /= 60;
 	pace /= sum_d;
 	
-	min = pace / 100;
-	sec = pace - min * 100;
+	min = pace / 1000;
+	sec = pace - min * 1000;
 	sec *= 60;
-	sec /= 100;
+	sec /= 1000;
 	
 	// The slowest pace is 24'00"
 	if (min >= 24) {
