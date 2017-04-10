@@ -743,7 +743,7 @@ void _training_pace_and_hr_alert()
 
 	  pace_range_up = (cling.user_data.profile.training_alert & 0x7f);
 
-		if ((input_pace_min > 2) && (input_pace_min < 20))
+		if ((input_pace_min > 2) && (input_pace_min < 13))
 			b_pace_range_alert = TRUE;
 		else
 			b_pace_range_alert = FALSE;

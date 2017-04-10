@@ -3050,11 +3050,11 @@ static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder
 	} else {
 	  // Rendering clock ...
 		sprintf((char *)string, " %02d", cling.ui.ui_alarm_hh);
-		_render_vertical_local_character_core(string, 40, margin, b_24_size, TRUE);		
+		_render_vertical_local_character_core(string, 38, margin, b_24_size, TRUE);		
 		
 		// Render the minute
 		sprintf((char *)string, ":%02d", cling.ui.ui_alarm_mm);
-		_render_vertical_local_character_core(string, 74, margin, b_24_size, FALSE);			
+		_render_vertical_local_character_core(string, 65, margin, b_24_size, FALSE);			
 		N_SPRINTF("[UI] normal ui_hh: %d, ui_mm: %d", cling.ui.ui_alarm_hh, cling.ui.ui_alarm_mm);		
 	}
 }
@@ -3768,7 +3768,7 @@ static void _bottom_render_vertical_home()
 	_render_vertical_fonts_lib_character_core(string1, 8, 120);	
 }
 
-static void _render_vertical_small_clock(I8U offset)
+static void _bottom_render_vertical_small_clock()
 {
 	I8U string[32];
 
@@ -3778,50 +3778,57 @@ static void _render_vertical_small_clock(I8U offset)
 		sprintf((char *)string, "%d %02d",cling.time.local.hour, cling.time.local.minute);		
 	}
 	
-  _render_vertical_fonts_lib_character_core(string, 8, offset);
+  _render_vertical_fonts_lib_character_core(string, 8, 120);
 }
 
-static void _bottom_render_vertical_small_clock()
+static void _bottom_render_vertical_more()
 {
-  _render_vertical_small_clock(120);
+	I8U string[16];
+  I8U b_24_size = 8;
+	I8U margin = 0;
+	
+  if (cling.ui.b_detail_page) {
+	  string[0] = ICON8_MORE_IDX;
+	  string[1] = 0;
+	  _render_vertical_local_character_core(string, 120, margin, b_24_size, FALSE); 	
+  }
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
-static void _bottom_render_vertical_more()
-{
-	_render_one_icon_8(ICON8_MORE_IDX, cling.ui.p_oled_up+256+120);
-}
-
-static void _bottom_render_vertical_delta_data_backward()
+static void _bottom_render_vertical_tracker()
 {
 	I8U string[32];
 	SYSTIME_CTX delta;
 
-	RTC_get_delta_clock_backward(&delta, cling.ui.vertical_index);	
-	sprintf((char *)string, "%d/%02d", delta.month, delta.day);
-
-	_render_vertical_fonts_lib_character_core(string, 8, 112);
-}
-
-static void _bottom_render_vertical_tracker()
-{
-	if (!cling.ui.vertical_index) {
-		if (cling.ui.b_detail_page) {
-			_render_vertical_small_clock(112);
-		} else {
-			_render_vertical_small_clock(120);
-		}
+	if (cling.ui.b_detail_page) {	
+		RTC_get_delta_clock_backward(&delta, cling.ui.vertical_index);	
+		sprintf((char *)string, "%d/%02d", delta.month, delta.day);
+		_render_vertical_fonts_lib_character_core(string, 8, 108);		
 	} else {
-		_bottom_render_vertical_delta_data_backward();
+	  _bottom_render_vertical_small_clock();
 	}
 	
-	if (cling.ui.b_detail_page) {
-		_bottom_render_vertical_more();	
-	}	
+  _bottom_render_vertical_more();	
 }
 #endif
 
 #ifdef _CLINGBAND_2_PAY_MODEL_
+static void _bottom_render_vertical_alarm_clock_detail()
+{
+	I8U string[16];
+  I8U b_24_size = 8;
+	I8U margin = 0;
+	
+	sprintf((char *)string, "%02d", cling.ui.vertical_index);
+	_render_vertical_fonts_lib_character_core(string, 16, 96);
+
+  if (cling.ui.b_detail_page) {
+	  string[0] = ICON8_MORE_IDX;
+	  string[1] = 0;
+	  _render_vertical_local_character_core(string, 120, margin, b_24_size, FALSE); 	
+  }
+}
+
 static void _bottom_render_vertical_stopwatch_start() 
 {
  	I8U string[16];		
@@ -4528,7 +4535,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/	
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_CALL*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_MESSAGE*/
-  {_left_render_horizontal_alarm_clock_reminder,  _middle_render_horizontal_alarm_clock_reminder,      _right_render_horizontal_more},                    /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
+  {_left_render_horizontal_alarm_clock_reminder,  _middle_render_horizontal_alarm_clock_reminder,      _bottom_render_vertical_more},                     /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_alarm_clcok_detail,        _right_render_horizontal_reminder},                /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_IDLE_ALERT*/
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_DISPLAY_HEART_RATE_ALERT*/
