@@ -2636,7 +2636,7 @@ static void _middle_render_vertical_calories()
 	}
 	
 	if (b_24_size == 24) 
-		_render_vertical_local_character_core(string, 42, margin, b_24_size, FALSE);
+		_render_vertical_local_character_core(string, 40, margin, b_24_size, FALSE);
 	else
 		_render_vertical_local_character_core(string, 46, margin, b_24_size, FALSE);
 
@@ -2646,9 +2646,9 @@ static void _middle_render_vertical_calories()
 		calories_unit_index = 0;
 	
 	if (calories_unit_index) {
-		_middle_render_vertical_character_core((I8U *)unit_calories_display[language_type][1], 75, (I8U *)unit_calories_display[language_type][0], 95);
+		_middle_render_vertical_character_core((I8U *)unit_calories_display[language_type][1], 70, (I8U *)unit_calories_display[language_type][0], 86);
 	} else {
-	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 80);
+	  _render_vertical_fonts_lib_character_core((I8U *)unit_calories_display[language_type][0], 16, 75);
 	}
 }
 
