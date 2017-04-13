@@ -13,23 +13,24 @@
 #include "main.h"
 
 
-#define NOTIFIC_ON_SHORT_TIME_IN_MS            40
-#define NOTIFIC_ON_LONG_TIME_IN_MS             100
-#define NOTIFIC_ON_VERY_LONG_TIME_IN_MS        140
-#define NOTIFIC_OFF_TIME_IN_MS                 400
-#define NOTIFIC_VIBRATION_REPEAT_TIME          3
-#define NOTIFIC_VIBRATION_SHORT_TIME           2
-#define NOTIFIC_VIBRATION_SINGLE_TIME          1
+#define NOTIFIC_ON_VERY_SHORT_TIME_IN_MS           40
+#define NOTIFIC_ON_VERY_LONG_TIME_IN_MS            140
+#define NOTIFIC_OFF_VERY_TIME_IN_MS                400
 
-#define NOTIFIC_MULTI_REMINDER_LATENCY         2000
-#define NOTIFIC_MULTI_REMINDER_TIME            15
-#define NOTIFIC_MULTI_REMINDER_INCOMING_CALL   3
-#define NOTIFIC_MULTI_REMINDER_OTHERS          1
-#define NOTIFIC_MULTI_REMINDER_IDLE_ALERT      3
-#define NOTIFIC_MULTI_REMINDER_HR              2
-#define NOTIFIC_MULTI_REMINDER_10KS            3
-#define NOTIFIC_MULTI_REMINDER_TRAINING_PACE   1
-#define NOTIFIC_MULTI_REMINDER_TRAINING_HR     1
+#define NOTIFIC_VIBRATION_REPEAT_TIME              3
+#define NOTIFIC_VIBRATION_SHORT_TIME               2
+#define NOTIFIC_VIBRATION_SINGLE_TIME              1
+
+#define NOTIFIC_MULTI_REMINDER_LATENCY             2000
+#define NOTIFIC_MULTI_REMINDER_INCOMING_CALL       3
+#define NOTIFIC_MULTI_REMINDER_OTHERS              1
+#define NOTIFIC_MULTI_REMINDER_IDLE_ALERT          3
+#define NOTIFIC_MULTI_REMINDER_HR                  2
+#define NOTIFIC_MULTI_REMINDER_10KS                3
+#define NOTIFIC_MULTI_REMINDER_TRAINING_PACE       1
+#define NOTIFIC_MULTI_REMINDER_TRAINING_HR         1
+#define NOTIFIC_MULTI_REMINDER_NORMAL_ALARM_CLOCK  3
+#define NOTIFIC_MULTI_REMINDER_SLEEP_ALARM_CLOCK   8
 
 void NOTIFIC_stop_notifying()
 {
@@ -43,10 +44,12 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 	I8U notif_frame_index;
   BOOLEAN	b_valid_type = TRUE;
 	
-	// Do not notify user if unit is in sleep state
-	if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
-		return;
-
+	if ((notif_type != NOTIFICATION_TYPE_NORMAL_ALARM_CLOCK) && (notif_type != NOTIFICATION_TYPE_SLEEP_ALARM_CLOCK)) {
+	  // Do not notify user if unit is in sleep state
+	  if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
+		  return;
+  }
+	
 	// Reset vibration times
 	cling.notific.vibrate_time = 0;
 	
@@ -61,14 +64,14 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 				notif_frame_index = UI_DISPLAY_SMART_INCOMING_MESSAGE;	
 			}		
 	    cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
-	    cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;			
+	    cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_SHORT_TIME_IN_MS;			
 		  N_SPRINTF("[NOTIFIC] start notification: %d", cat_id);
 			break;
 		}
 		case NOTIFICATION_TYPE_IDLE_ALERT: {
 			cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
 	    cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_IDLE_ALERT;
-	    cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;
+	    cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_SHORT_TIME_IN_MS;
 	    notif_frame_index = UI_DISPLAY_SMART_IDLE_ALERT;
 			N_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 			break;
@@ -76,7 +79,7 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 		case NOTIFICATION_TYPE_NORMAL_HR_ALERT: {
 		  cling.notific.first_reminder_max = NOTIFIC_VIBRATION_REPEAT_TIME;
 	    cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_HR;
-	    cling.notific.vibrate_on_time = NOTIFIC_ON_SHORT_TIME_IN_MS;		
+	    cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_SHORT_TIME_IN_MS;		
 			notif_frame_index = UI_DISPLAY_SMART_HEART_RATE_ALERT;
 			N_SPRINTF("NOTIFIC - IDLE ALERT @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 			break;
@@ -107,11 +110,27 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 	    N_SPRINTF("NOTIFIC - Running heat rate ALERT ");					
 			break;
 		}
+		case NOTIFICATION_TYPE_NORMAL_ALARM_CLOCK: {
+			cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
+			cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_NORMAL_ALARM_CLOCK;
+			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;		
+      notif_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;				
+	    N_SPRINTF("NOTIFIC - Normal alarm clock reminder");					
+			break;
+		}
+		case NOTIFICATION_TYPE_SLEEP_ALARM_CLOCK: {
+			cling.notific.first_reminder_max = NOTIFIC_VIBRATION_SHORT_TIME;
+			cling.notific.second_reminder_max = NOTIFIC_MULTI_REMINDER_SLEEP_ALARM_CLOCK;
+			cling.notific.vibrate_on_time = NOTIFIC_ON_VERY_LONG_TIME_IN_MS;		
+      notif_frame_index = UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER;					
+	    N_SPRINTF("NOTIFIC - Sleep alarm clock reminder");					
+			break;
+		}
     default:
 			b_valid_type = FALSE;
       break;			
 	}
- 
+	
 	if (!b_valid_type)
 		return;
 	
@@ -170,7 +189,7 @@ void NOTIFIC_state_machine()
 		}
 		case NOTIFIC_STATE_REPEAT:
 		{
-			if (t_curr > (cling.notific.ts + NOTIFIC_OFF_TIME_IN_MS)) {
+			if (t_curr > (cling.notific.ts + NOTIFIC_OFF_VERY_TIME_IN_MS)) {
 				if (cling.notific.vibrate_time >= cling.notific.first_reminder_max) {
 					cling.notific.state = NOTIFIC_STATE_SECOND_REMINDER;
 					cling.notific.second_reminder_time ++;

@@ -112,6 +112,7 @@ typedef struct tagRUNNING_TRACK_CTX {
 	I8U last_10sec_pace_min;
 	I8U last_10sec_pace_sec;
 	I32U pace_calc_ts;
+	I32U pace_visual_update_ts;
 } RUNNING_TRACK_CTX;
 
 typedef struct tagTRAINING_TRACK_CTX {

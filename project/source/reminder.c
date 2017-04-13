@@ -10,18 +10,8 @@
 
 #include <stdio.h>
 #include <string.h>
-
-
 #include "main.h"
 
-#define REMINDER_ON_TIME_IN_MS 200
-#define REMINDER_OFF_TIME_IN_MS 400
-
-#define REMINDER_SECOND_REMINDER_LATENCY 2000
-
-#define REMINDER_VIBRATION_REPEAT_TIME 2
-#define SECOND_REMINDER_NORMAL_TIME 3
-#define SECOND_REMINDER_SLEEP_TIME 8
 
 void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 {
@@ -80,10 +70,11 @@ void REMINDER_setup(I8U *msg, BOOLEAN b_daily)
 		pdata = (I8U *)data;
 		FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 128); // Maximum 32 entries
 	}
-	cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+	
+	cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;			
 }
 
-void REMINDER_set_next_reminder()
+void REMINDER_set_next_normal_reminder()
 {
 	I8U i, hour, minute, week, day;
 	BOOLEAN b_found = FALSE;
@@ -153,7 +144,6 @@ void REMINDER_set_next_reminder()
 		}
 	}
 	
-
 	if (b_found) {
 		cling.reminder.b_valid = TRUE;
 		cling.reminder.hour = hour;
@@ -175,13 +165,12 @@ void REMINDER_set_next_reminder()
 	N_SPRINTF("[REMINDER] Set next reminder - done");
 }
 
-static BOOLEAN _check_reminder()
+static BOOLEAN _check_normal_reminder()
 {
 	if (!cling.reminder.b_valid)
 		return FALSE;
 	
-	if ((cling.time.local.hour >= cling.reminder.hour) && (cling.time.local.minute >= cling.reminder.minute))
-	{
+	if ((cling.time.local.hour == cling.reminder.hour) && (cling.time.local.minute == cling.reminder.minute)) {
 		return TRUE;
 	} else {
 		return FALSE;
@@ -246,11 +235,6 @@ void REMINDER_state_machine()
 	if (OTA_if_enabled())
 		return;
 
-	if (cling.reminder.state != REMINDER_STATE_IDLE) {
-		// Start 20 ms timer 
-		RTC_start_operation_clk();
-	}
-	
 	switch (cling.reminder.state) {
 		case REMINDER_STATE_IDLE:
 		{
@@ -258,92 +242,39 @@ void REMINDER_state_machine()
 				// First setup alarm type
 				N_SPRINTF("[REMINDER] Sleep reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
 				cling.reminder.state = REMINDER_STATE_ON;
-				// Reset vibration times
-				cling.reminder.vibrate_time = 0;
-				cling.reminder.second_vibrate_time = 0;
-				cling.reminder.ui_alarm_on = TRUE;
-				cling.reminder.repeat_time = SECOND_REMINDER_SLEEP_TIME;
-				UI_start_notifying(UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER);
-			} else if (_check_reminder()) {
+				cling.reminder.ts = t_curr;
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_SLEEP_ALARM_CLOCK, 0);
+			} else if (_check_normal_reminder()) {
 				N_SPRINTF("[REMINDER] Work reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
+				cling.reminder.b_valid = FALSE;
 				cling.reminder.state = REMINDER_STATE_ON;
-				// Reset vibration times
-				cling.reminder.vibrate_time = 0;
-				cling.reminder.second_vibrate_time = 0;
-				cling.reminder.ui_alarm_on = TRUE;
+				cling.reminder.ts = t_curr;				
 				cling.reminder.alarm_type = NORMAL_ALARM_CLOCK;
-				cling.reminder.repeat_time = SECOND_REMINDER_NORMAL_TIME;
 				cling.ui.ui_alarm_hh = cling.reminder.hour;
 				cling.ui.ui_alarm_mm = cling.reminder.minute;				
-				UI_start_notifying(UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER);
-			} else {
-				if (cling.notific.state == NOTIFIC_STATE_IDLE) {
-					GPIO_vibrator_set(FALSE);
-				}
+				NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_ALARM_CLOCK, 0);
 			}
 			break;
 		}
 		case REMINDER_STATE_ON:
-		{
-			N_SPRINTF("[REMINDER] vibrator is ON, %d", t_curr);
-			cling.reminder.ts = t_curr;
-			GPIO_vibrator_on_block(REMINDER_ON_TIME_IN_MS);
-			cling.reminder.state = REMINDER_STATE_OFF;
-			break;
-		}
-		case REMINDER_STATE_OFF:
-		{
-			if (t_curr > (cling.reminder.ts + REMINDER_ON_TIME_IN_MS)) {
-				N_SPRINTF("[REMINDER] vibrator is OFF, %d", t_curr);
-				GPIO_vibrator_set(FALSE);
-				cling.reminder.state = REMINDER_STATE_REPEAT;
-				cling.reminder.ts = t_curr;
-				cling.reminder.vibrate_time ++;
-			}
-			break;
-		}
-		case REMINDER_STATE_REPEAT:
-		{
-			if (t_curr > (cling.reminder.ts + REMINDER_OFF_TIME_IN_MS)) {
-				if (cling.reminder.vibrate_time >= REMINDER_VIBRATION_REPEAT_TIME) {
-					cling.reminder.state = REMINDER_STATE_SECOND_REMINDER;
-					cling.reminder.second_vibrate_time ++;
-					N_SPRINTF("[REMINDER] go second reminder, %d, %d", cling.reminder.second_vibrate_time, cling.reminder.vibrate_time);
-				} else {
-					cling.reminder.state = REMINDER_STATE_ON;
-					N_SPRINTF("[REMINDER] vibrator repeat, %d, %d", cling.reminder.vibrate_time, t_curr);
-				}
-			}
-			break;
-		}
-		case REMINDER_STATE_SECOND_REMINDER:
-		{
-			if (t_curr > (cling.reminder.ts + REMINDER_SECOND_REMINDER_LATENCY)) {
-				if (cling.reminder.second_vibrate_time >= cling.reminder.repeat_time) {
-					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-					N_SPRINTF("[REMINDER] Go check next: %d", cling.reminder.second_vibrate_time);
-				} else {
-					N_SPRINTF("[REMINDER] second reminder on");
-					cling.reminder.state = REMINDER_STATE_ON;					
-					// Reset vibration times
-					cling.reminder.vibrate_time = 0;
-				}
-			}
-			break;
+		{					
+			if (cling.notific.state == NOTIFIC_STATE_IDLE) {
+				cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+			} else if (t_curr > (cling.reminder.ts + 60000)) {
+				cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
+			}				
+		  break;
 		}
 		case REMINDER_STATE_CHECK_NEXT_REMINDER:
 		{
-			REMINDER_set_next_reminder();
-			cling.reminder.state = REMINDER_STATE_IDLE;
-			N_SPRINTF("[REMINDER] STATE: CHECK NEXT");
-			break;
+		  REMINDER_set_next_normal_reminder();	
+		  cling.reminder.state = REMINDER_STATE_IDLE;		
 		}
 		default:
 		{
-			REMINDER_set_next_reminder();
-			cling.reminder.state = REMINDER_STATE_IDLE;
-			N_SPRINTF("[REMINDER] STATE: DEFAULT: %d", cling.reminder.state);
-			break;
+		  REMINDER_set_next_normal_reminder();				
+			cling.reminder.state = REMINDER_STATE_IDLE;			
+			break;		
 		}
 	}
 }
@@ -355,9 +286,6 @@ I8U REMINDER_get_time_at_index(I8U index)
 	I8U *data;
 	I8U alarm[64];
 	I8U *palarm;
-	
-	if (cling.reminder.ui_alarm_on)
-		return 0;
 		
 	// In case that no reminder is configure, go return
 	cling.reminder.ui_hh = 0xff;

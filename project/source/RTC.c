@@ -424,9 +424,9 @@ void RTC_timer_handler( void * p_context )
 		}
 		Y_SPRINTF("[RTC] min updated (%d)", cling.activity.day.walking);
 		
-		// Once a minute, refresh reminder
+		// Once a minute, refresh reminder.
 		REMINDER_set_sleep_reminder();
-
+		
 		// Once a minute, send a workout active message to App
 		if (BTLE_is_connected()) {
 			if (cling.activity.b_workout_active) {
@@ -445,7 +445,6 @@ void RTC_timer_handler( void * p_context )
 		
 		// Reset reminder
 		cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-		
 		Y_SPRINTF("[RTC] local day updated");
 	}
 

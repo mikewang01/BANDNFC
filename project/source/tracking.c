@@ -169,10 +169,11 @@ static I8U _get_stride_length(BOOLEAN b_running)
 		// Walking pace is calculated based on the steps we took in last minute
 		pace = (double)(cling.run_stat.walk_per_60_second+cling.run_stat.run_per_60_second);
 		pace /= 60.0;
-		if (pace > 3.5) 
-			pace = 3.5;
-		if (pace < 1.88)
-			pace = 1.88;
+		// Pace is centered around 1.88 steps per second
+		if (pace > 2.18) 
+			pace = 2.18;
+		if (pace < 1.58)
+			pace = 1.58;
 		TRACKING_SPRINTF("[TRACKING] walking  pace: %d", (I8U)(pace*10));
 		stride = 43.89*pace - 7.68;
 		// Get user defined stride length and perform a calibration
@@ -743,7 +744,7 @@ void _training_pace_and_hr_alert()
 
 	  pace_range_up = (cling.user_data.profile.training_alert & 0x7f);
 
-		if ((input_pace_min > 2) && (input_pace_min < 13))
+		if ((input_pace_min > 2) && (input_pace_min < 16))
 			b_pace_range_alert = TRUE;
 		else
 			b_pace_range_alert = FALSE;
@@ -1020,67 +1021,115 @@ static void _logging_midnight_local()
 	_day_stat_reset();	
 }
 
+#if 0
+static I32U ts_test, diff_test;
+#endif
+
 static void _update_running_pace()
 {
-	I32U t_curr, t_diff, min, sec;
-//	I32U t_backup;
-	I32U pace, sum_d, sum_t;
+	I32U t_curr, t_diff, min, sec, t_visual_diff;
+	double pace, sum_d, sum_t;
 	I16U d, t;
 	I8U i;
-	
+
+	// 1st - Calculate time elapsed
 	t_curr = CLK_get_system_time();
 	t_diff = t_curr - cling.run_stat.pace_calc_ts;
+#if 0
+	diff_test = t_curr - ts_test;
 	
-	// Calculate pace on a basis of 10 seconds
-	if (t_diff < 1000)//change the interval of Pace_update from 10s to 1s.
+	if (diff_test < 10000) {
+		
+		if (t_diff > 2000) {
+			t_diff = 2000;
+			cling.run_stat.last_10sec_distance = 6*16;
+		} else if (t_diff > 1600) {
+			cling.run_stat.last_10sec_distance = 5*16;
+		} else if (t_diff > 1300) {
+			cling.run_stat.last_10sec_distance = 4*16;
+		} else if (t_diff > 1000) {
+			cling.run_stat.last_10sec_distance = 3*16;
+		} else if (t_diff > 600) {
+			cling.run_stat.last_10sec_distance = 2*16;
+		} else if (t_diff > 300) {
+			cling.run_stat.last_10sec_distance = 1*16;
+		} else {
+			cling.run_stat.last_10sec_distance = 0;
+		}
+	} else if (diff_test > 20000) {
+		ts_test = t_curr;
+		cling.run_stat.last_10sec_distance = 0;
+	} else {
+		cling.run_stat.last_10sec_distance = 0;
+	}
+#endif
+	
+	// 2nd - Update pace in real time
+	sum_d = cling.run_stat.last_10sec_distance;
+	sum_t = t_diff;
+	for (i = 0; i < PACE_BUF_LENGTH; i++) {
+		d = cling.run_stat.last_d_buf[i];
+		t = cling.run_stat.last_t_buf[i];
+		if ((d != 0xffff) && (t != 0xffff)) {
+			sum_d += d;
+			sum_t += t;
+		}
+	}
+	
+	TRACKING_SPRINTF("--- sumup: %d, %d, %d, %d,", (I32U)sum_t, (I32U)sum_d, cling.run_stat.last_10sec_distance,t_diff);
+	TRACKING_SPRINTF("--- data: %d, %d, %d, %d,%d, %d, %d, %d,", 
+		cling.run_stat.last_d_buf[0],
+		cling.run_stat.last_t_buf[0], 
+		cling.run_stat.last_d_buf[1],
+		cling.run_stat.last_t_buf[1], 
+		cling.run_stat.last_d_buf[2],
+		cling.run_stat.last_t_buf[2], 
+		cling.run_stat.last_d_buf[3],
+		cling.run_stat.last_t_buf[3]);
+	
+	min = 0;
+	sec = 0;
+	
+	if (sum_d) {
+		
+		// Calculate pace on a basis of one second.
+		pace = sum_t;
+		pace *= 16; // Denormalize distance with 16 Meters
+		pace /= sum_d;
+		
+		min = (I32U)(pace/60);
+		sec = (I32U)(pace - min*60);
+		
+		// The slowest pace is 24'00"
+		if (min >= 24) {
+			min = 0;
+			sec = 0;
+		}
+	}
+	
+	t_visual_diff = t_curr - cling.run_stat.pace_visual_update_ts;
+	
+	// Lower sensitivity by increasing buffer length to 3 seconds and calculating time limit to 2 seconds	
+	if ((t_visual_diff > 1000) && (t_diff > 2000)) {
+		cling.run_stat.pace_visual_update_ts = t_curr;
+		cling.run_stat.last_10sec_pace_min = min;
+		cling.run_stat.last_10sec_pace_sec = sec;
+	}
+
+	TRACKING_SPRINTF("---PACE update: %d:%d (%d:%d)", min, sec, cling.run_stat.last_10sec_pace_min,cling.run_stat.last_10sec_pace_sec);
+	
+	// 3rd - Update distance circular buffer
+	if (t_diff < 3000) {//change the interval of Pace_update from 10s to 2s.
 		return;
-	
+	}
 	// Take the average as a low pass filter
 	if (cling.run_stat.pace_buf_idx >= PACE_BUF_LENGTH) {
 		cling.run_stat.pace_buf_idx = 0;
 	}
-	if (cling.run_stat.last_10sec_distance) {
-		cling.run_stat.last_d_buf[cling.run_stat.pace_buf_idx] = cling.run_stat.last_10sec_distance>>4;
-		cling.run_stat.last_t_buf[cling.run_stat.pace_buf_idx] = t_diff;
-	} else {
-		cling.run_stat.last_d_buf[cling.run_stat.pace_buf_idx] = 0xffff;
-		cling.run_stat.last_t_buf[cling.run_stat.pace_buf_idx] = 0xffff;
-	}
+	cling.run_stat.last_d_buf[cling.run_stat.pace_buf_idx] = cling.run_stat.last_10sec_distance; //>>4;
+	cling.run_stat.last_t_buf[cling.run_stat.pace_buf_idx] = t_diff;
 	cling.run_stat.pace_buf_idx ++;
-	sum_d = 0;
-	sum_t = 0;
-	for (i = 0; i < PACE_BUF_LENGTH; i++) {
-		d = cling.run_stat.last_d_buf[i];
-		t = cling.run_stat.last_t_buf[i];
-		if (d && t) {
-			if ((d != 0xffff) && (t != 0xffff)) {
-				sum_d += d;
-				sum_t += t;
-			}
-		}
-	}
-	
-	// Calculate pace on a basis of one second.
-	pace = sum_t * 1000;
-	pace /= 60;
-	pace /= sum_d;
-	
-	min = pace / 1000;
-	sec = pace - min * 1000;
-	sec *= 60;
-	sec /= 1000;
-	
-	// The slowest pace is 24'00"
-	if (min >= 24) {
-		min = 0;
-		sec = 0;
-	}
-	
-	cling.run_stat.last_10sec_pace_min = min;
-	cling.run_stat.last_10sec_pace_sec = sec;
-	
-	TRACKING_SPRINTF("TRACKING: pace %d'%d\"(%d, %d)", min, sec, cling.run_stat.last_10sec_pace_min, cling.run_stat.last_10sec_pace_sec);
-	
+		
 	cling.run_stat.pace_calc_ts = t_curr;
 	cling.run_stat.last_10sec_distance = 0;
 }
@@ -1090,7 +1139,7 @@ void TRACKING_data_logging()
 {
 	I32U t_curr = CLK_get_system_time();
   I32U t_diff;
-
+	
 	// Activity update only for a device that is authenticated
 	if (!LINK_is_authorized()) {
 		cling.time.local_minute_updated = FALSE;
@@ -1124,7 +1173,7 @@ void TRACKING_data_logging()
 		// Remove sleep initialization as it interrupt sleep
 //		SLEEP_init();
 	}
-	
+		
 	if (cling.activity.b_workout_active) 
 	{
 		_update_running_pace();

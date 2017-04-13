@@ -773,9 +773,6 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _update_alarm_clock_control(UI_ANIMATION_CTX *u, I8U gesture)
 {
-	if (cling.reminder.ui_alarm_on)
-	  return;
-	
 	if ((u->frame_prev_idx == UI_DISPLAY_CAROUSEL_3) && (u->frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)) {
 		N_SPRINTF("[UI] check on alarm clock");
 		// Always set to the first alarm clock
@@ -1614,6 +1611,10 @@ void UI_start_notifying(I8U frame_index)
 		UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 		u->b_restore_notif = TRUE;		
 	}
+	
+	if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
+		u->b_restore_notif = TRUE;				
+	}
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1667,7 +1668,7 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state)
 	// 4. Restore previous UI page
 	_restore_perv_frame_index();
 	
-	UI_SPRINTF("[UI] turn on display :%d, :%d", b_panel_on, cling.oled.state);
+//	UI_SPRINTF("[UI] turn on display :%d, :%d", b_panel_on, cling.oled.state);
 	
 	return b_panel_on;
 }
@@ -1869,7 +1870,10 @@ void UI_state_machine()
       
 			// 1. Restore frame index
       if (u->frame_index == UI_DISPLAY_PREVIOUS) {		
+				
 			  _restore_perv_frame_index();
+				
+				NOTIFIC_stop_notifying();
 			}
 			
 			// 2. Display current page
@@ -1877,18 +1881,8 @@ void UI_state_machine()
 			
       // 3. Store frame cached index			
       _stote_frame_cached_index();	
-
-			// 4. Stop alarm clock reminder when in other page
-			if (u->frame_index != UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-				// Clear alarm clock flag
-				cling.reminder.ui_alarm_on = FALSE;
-				// Stop reminder
-				if (cling.reminder.state != REMINDER_STATE_IDLE) {
-					cling.reminder.state = REMINDER_STATE_CHECK_NEXT_REMINDER;
-				}
-			}	
-	
-			// 5. Get current page blinking interval.			
+			
+			// 4. Get current page blinking interval.			
       UI_switch_state(UI_STATE_TOUCH_SENSING, ui_matrix_blinking_interval[u->frame_index]);
 			break;
 		}
@@ -1905,13 +1899,10 @@ void UI_state_machine()
 			// 3. Update screen dark time stamp
 			u->dark_time_stamp = t_curr;
 
-			// 4. Reset alarm clock flag
-			cling.reminder.ui_alarm_on = FALSE;
-
-			// 5. Clead detail flag
+			// 4. Clead detail flag
 			u->b_detail_page = FALSE;		
 
-			// 6. Update message switch control
+			// 5. Update message switch control
 			if (!_is_smart_incoming_notifying_page(u->frame_index)) {
 				// Go back to previous UI page
 				u->frame_index = UI_DISPLAY_PREVIOUS;		
@@ -1923,7 +1914,7 @@ void UI_state_machine()
 				}
 			}
 			
-			// 7. Update touch power control
+			// 6. Update touch power control
 #ifdef _ENABLE_TOUCH_				
 			if (cling.lps.b_low_power_mode) {
 				TOUCH_power_set(TOUCH_POWER_DEEP_SLEEP);

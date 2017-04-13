@@ -835,15 +835,15 @@ static void _middle_render_horizontal_reminder_core(BOOLEAN b_alarm_clock_remind
   BOOLEAN b_invalid_alarm = TRUE;
 
   if (b_alarm_clock_reminder) {
-		if ((cling.reminder.ui_alarm_on) || (cling.reminder.total) || (cling.reminder.b_sleep_total)) {
-			if ((cling.ui.ui_alarm_hh <= 24) && (cling.ui.ui_alarm_mm <= 60)) {
+		if ((cling.reminder.total) || (cling.reminder.b_sleep_total)) {
+			if ((cling.ui.ui_alarm_hh < 24) && (cling.ui.ui_alarm_mm < 60)) {
 				b_invalid_alarm = FALSE;
 				len = sprintf((char *)string, "%02d:%02d", cling.ui.ui_alarm_hh, cling.ui.ui_alarm_mm);		
 			}				
 		}			
 	} else {
 		if (cling.reminder.total) {
-			if ((cling.ui.ui_alarm_hh <= 24) && (cling.ui.ui_alarm_mm <= 60)) {
+			if ((cling.ui.ui_alarm_hh < 24) && (cling.ui.ui_alarm_mm < 60)) {
 				b_invalid_alarm = FALSE;
 				len = sprintf((char *)string, "%02d:%02d", cling.ui.ui_alarm_hh, cling.ui.ui_alarm_mm);				
 			}
@@ -1940,22 +1940,13 @@ static void _right_render_horizontal_firmware_ver()
 	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
 }
 
-static void _right_render_horizontal_avg_name()
-{
-	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
-	I8U language_type = cling.ui.language_type;	
-
-	_right_render_horizontal_string_core(avg_name[language_type], NULL);	
-}
-
 static void _right_render_horizontal_running_pace()
 {	
+	const	char *run_name[] = {"RUN", "运动 ", "運動 "};	
 	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};
 	I8U language_type = cling.ui.language_type;	
-
-	_right_render_horizontal_avg_name();
 	
-	_right_render_horizontal_string_core(NULL, pace_name[language_type]);
+	_right_render_horizontal_string_core(run_name[language_type], pace_name[language_type]);
 }
 
 static void _right_render_horizontal_running_calories()
@@ -1988,11 +1979,11 @@ static void _right_render_horizontal_running_stride()
 
 static void _right_render_horizontal_running_hr()
 {
+	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};		
 	const	char *hate_rate_name[] = {"HR", "心率 ", "心率 "};	
 	I8U language_type = cling.ui.language_type;
 
-	_right_render_horizontal_avg_name();
-	_right_render_horizontal_string_core(NULL, hate_rate_name[language_type]);
+	_right_render_horizontal_string_core(avg_name[language_type], hate_rate_name[language_type]);
 }
 
 static void _right_render_horizontal_training_pace()
@@ -3029,14 +3020,14 @@ static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder
   BOOLEAN b_invalid_alarm = TRUE;
 	
 	if (b_alarm_clock_reminder) {
-		if ((cling.reminder.ui_alarm_on) || (cling.reminder.total) || (cling.reminder.b_sleep_total)){
-	    if ((cling.ui.ui_alarm_hh <= 24) && (cling.ui.ui_alarm_mm <= 60)) {
+		if ((cling.reminder.total) || (cling.reminder.b_sleep_total)){
+	    if ((cling.ui.ui_alarm_hh < 24) && (cling.ui.ui_alarm_mm < 60)) {
 		    b_invalid_alarm = FALSE;
 	    }
 		} 		
 	} else {
 		if (cling.reminder.total){
-	    if ((cling.ui.ui_alarm_hh <= 24) && (cling.ui.ui_alarm_mm <= 60)) {
+	    if ((cling.ui.ui_alarm_hh < 24) && (cling.ui.ui_alarm_mm < 60)) {
 		    b_invalid_alarm = FALSE;
 	    }
 		} 
@@ -3201,7 +3192,7 @@ static void _middle_render_vertical_training_time()
 
 static void _middle_render_vertical_running_pace()
 {
-	const	char *avg_name[] = {"AVG", "平均 ", "平均 "};
+	const	char *run_name[] = {"RUN", "运动 ", "運動 "};	
 	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};		
 	I8U string[32];	
 	I8U margin = 1;
@@ -3210,7 +3201,7 @@ static void _middle_render_vertical_running_pace()
 	I32U min, sec;
 	I8U language_type = cling.ui.language_type;	
 
-	_middle_render_vertical_character_core((I8U *)avg_name[language_type], 28, (I8U *)pace_name[language_type], 46);		
+	_middle_render_vertical_character_core((I8U *)run_name[language_type], 28, (I8U *)pace_name[language_type], 46);		
 	
 	if (cling.run_stat.distance) {
 		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
