@@ -41,7 +41,11 @@ const LP_FILTER lpf_coeff[3] = {
 
 
 #define CONSTRAINS_SLEEP_STEP_TH 10
+#ifndef __YLF__
+#define CONSTRAINS_SLEEP_DIFF_TH 33400
+#else
 #define CONSTRAINS_SLEEP_DIFF_TH 34000
+#endif
 
 static I32U pedo_constrain_diff_th;
 static I8U  pedo_constrain_step_th;

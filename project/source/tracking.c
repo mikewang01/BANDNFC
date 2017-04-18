@@ -97,7 +97,7 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 }
 
-static I32U steps_time_stamp[8];
+static I32U steps_time_stamp[8]={0};
 
 static I8U _get_stride_length(BOOLEAN b_running)
 {
@@ -207,6 +207,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 	I8U act_motion;
 	I8U distance_per_step;
 //	REALTIME_CTX rt;
+	SLEEP_CTX *slp = &cling.sleep;
 	
 	// Go skip algorithms processing if device is not authorized
 	if (!LINK_is_authorized())
@@ -236,6 +237,12 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			N_SPRINTF("[ACTIVITY] --- Motion unknown ---");
 		}
 	} else if (PDM_STEP_DETECTED == (pdm_stat & PDM_STEP_DETECTED)) {
+#ifndef __YLF__	
+		if ((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM))
+		{
+			return;
+		}
+#endif
 		// For any position motion detected, we need to remeasure heart rate	
 		if (act_motion == MOTION_WALKING) {
 			//
@@ -475,6 +482,9 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 {
 	TRACKING_CTX *a = &cling.activity;
 	I8U calories_diff;
+#ifndef __YLF__
+	bool b_active_time_Update = false;
+#endif
 
 #ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
 	I16U denom_stats;
@@ -519,6 +529,9 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		
 		if ((diff->walking+diff->running) >= 40) {
 			a->day.active_time++;
+#ifndef __YLF__
+			b_active_time_Update = true;
+#endif
 		}
 
 		N_SPRINTF("[tracking] diff: %d, %d, %d", diff->walking, a->day.walking, a->day_stored.walking);
@@ -560,6 +573,19 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		}
 
 		if (b_minute_update) {
+#ifndef __YLF__
+			if ((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM))
+			{
+				diff->walking = 0;
+				diff->running = 0;
+				diff->distance = 0;
+				calories_diff = 18; // 1.1 for rest
+				a->day.walking = a->day_stored.walking;
+				a->day.running = a->day_stored.running;
+				a->day.distance = a->day_stored.distance;
+				if(b_active_time_Update == true){a->day.active_time --;}
+			}
+#endif
 			a->day.calories += calories_diff;
 
 			if ((diff->sleep_state == SLP_STAT_LIGHT) ||
@@ -631,6 +657,9 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->calories = diff->calories;
 	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m)
 	pminute->sleep_state = diff->sleep_state;
+#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
+	pminute->sleep_state = SLP_STAT_AWAKE; // Do not use this sleep for anything else but activity filtering
+#endif
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;
@@ -714,6 +743,15 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 			}
 		}
 	}
+#ifndef __YLF__
+	//reduce the steps for walking or running to Zero when the activity is less than 60 during NonSleep.
+	if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
+	//if(	((pminute->activity_count<50)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<80))) && (pminute->walking > 0 || pminute->running > 0) ){
+		pminute->walking = 0;
+		pminute->running = 0;
+		pminute->distance = 0;
+	}
+#endif
 	
 	N_SPRINTF("MINUTE UPDATE-2: %08x, %04x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %04x, %02x",
 		pminute->epoch, pminute->skin_temperature, pminute->walking, pminute->running, pminute->calories, 
@@ -1169,9 +1207,6 @@ void TRACKING_data_logging()
 		N_SPRINTF("slepp by noon: %d", cling.activity.sleep_by_noon);
 		cling.activity.sleep_by_noon = 0;
 		cling.activity.sleep_stored_by_noon = TRACKING_get_sleep_by_noon(TRUE);
-
-		// Remove sleep initialization as it interrupt sleep
-//		SLEEP_init();
 	}
 		
 	if (cling.activity.b_workout_active) 
