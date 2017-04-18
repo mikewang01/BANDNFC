@@ -61,10 +61,9 @@ void HOMEKEY_check_on_hook_change()
 				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
 				if (OLED_panel_is_turn_off()) {
-					cling.ui.b_touch_light_up_screen = TRUE;
+					cling.ui.b_first_light_up_from_dark = TRUE;
 				}
-				
-				cling.ui.b_restore_notif = FALSE;							
+									
 				UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 			} else {
 				RTC_start_operation_clk();

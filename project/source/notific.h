@@ -55,7 +55,7 @@ typedef struct tagNOTIFIC_CTX {
 void NOTIFIC_state_machine(void);
 void NOTIFIC_start_notifying(I8U notif_type,I8U cat_id);
 void NOTIFIC_stop_notifying(void);
-
+BOOLEAN NOTIFIC_is_idle(void);
 void NOTIFIC_smart_phone_notify(I8U* data);
 I8U NOTIFIC_get_message_total(void);
 I8U NOTIFIC_get_app_name(I8U index, char *app_name);

@@ -235,12 +235,22 @@ static void _stote_frame_cached_index()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 
-	if (_is_regular_page(u->frame_index) ||
-		  _is_running_analysis_page(u->frame_index) ||
-	    _is_running_active_mode_page(u->frame_index)) {
-		u->frame_cached_index = u->frame_index;	
-	} 
-			
+  // 1. Store regular page cached index
+	if (_is_regular_page(u->frame_index)) {
+		u->frame_cached_index = u->frame_index;			
+	}
+	
+	// 2. Store running analysis page cached index
+	if (_is_running_analysis_page(u->frame_index)) {
+		u->frame_cached_index = u->frame_index;					
+	}
+	
+	// 3. Store running active page cached index(In addition to running alarm page)
+	if (_is_running_active_mode_page(u->frame_index) && (!u->b_in_running_alarm_page)) {
+		 u->frame_cached_index = u->frame_index;			
+	}
+	
+	// 4. Store other needed page cached index
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if (_is_other_need_store_page(u->frame_index)) {
 		u->frame_cached_index = u->frame_index;	
@@ -253,41 +263,22 @@ static void _stote_frame_cached_index()
 *
 *  Description:  Go back to previous UI page.
 *
-*	 Priority: Notification page >>  Running mode page >> Other pervious page before screen dark.
+*	 Priority: Running mode page >> Notification page >>  Other pervious page before screen dark.
 *
 *--------------------------------------------------------------------------------------------*/
 static void _restore_perv_frame_index()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 	I32U t_curr = CLK_get_system_time();
-	
-	// 1. Check if it's old message or other reminder information.
-	if (_is_smart_incoming_notifying_page(u->frame_index)) {
-		if (t_curr > (u->dark_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
-			// Filtering the old information, go back to previous UI page.
-			u->frame_index = UI_DISPLAY_PREVIOUS;		
-		} else {
-			// Display this notification now.
-      return; 
-		}			
-	}
-	
-	// 2. Check if user in running mode.
+
+	// 1. Check if user in running active mode.
 	if (cling.activity.b_workout_active) {
-		if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) 
-			return;
-#ifndef _CLINGBAND_PACE_MODEL_			
-		if (u->frame_index == UI_DISPLAY_WORKOUT_RT_READY) 
-			return;
-		if (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY) 
-			return;		
-#endif		
-		if (_is_running_active_mode_page(u->frame_index)) 
-			return;
+	
 		if (_is_running_active_mode_page(u->frame_cached_index)) {
-			u->frame_index = u->frame_cached_index;	
-			return;		
-		}			
+			u->frame_index = u->frame_cached_index;				
+			return;
+		}
+		
 		if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
 		}	
@@ -305,10 +296,10 @@ static void _restore_perv_frame_index()
 #endif		
 		return;
 	}	
-
+	
 	// 3. Go back to previous UI page.
 	if (u->frame_index == UI_DISPLAY_PREVIOUS) {
-		if (t_curr > (u->dark_time_stamp + UI_STORE_FRAME_MAX_TIME_IN_MS)) {
+		if (t_curr > (u->page_store_time_stamp + UI_STORE_FRAME_MAX_TIME_IN_MS)) {
 			u->frame_index = UI_DISPLAY_HOME;					
 		} else {
 			u->frame_index = u->frame_cached_index;	
@@ -722,6 +713,9 @@ static void _update_notif_repeat_look_time(UI_ANIMATION_CTX *u)
 	if (b_look_finished) {
 	  // Go back to previous UI page		
 	  u->frame_index = UI_DISPLAY_PREVIOUS;
+		// Clear message store flag
+		u->b_notif_need_store = FALSE;
+		// Reset message look time
 		u->notif_repeat_look_time = 0;		
 	}	
 }
@@ -1306,13 +1300,6 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	const I8U *p_matrix = NULL;
 
-	// If user light up screen by touch button, Do not perform any action for the first time.
-	if (u->b_touch_light_up_screen) {
-		u->b_touch_light_up_screen = FALSE;
-		u->frame_next_idx = u->frame_index;
-		return;
-	}
-	
 	// Make sure current UI frame supports finger touch
 	if (ui_gesture_constrain[u->frame_index] & UFG_FINGER_IRIS) {
 		
@@ -1354,13 +1341,6 @@ static void _perform_ui_with_a_swipe_touch(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	const I8U *p_matrix = NULL;
 
-	// If user light up screen by touch button, Do not perform any action for the first time.
-	if (u->b_touch_light_up_screen) {
-		u->b_touch_light_up_screen = FALSE;
-		u->frame_next_idx = u->frame_index;
-		return;
-	}
-	
 	// Make sure the UI frame can take swipe gesture.
 	if (ui_gesture_constrain[u->frame_index] & UFG_SWIPE_PANNING) {
 		
@@ -1399,13 +1379,6 @@ static void _perform_ui_with_button_single(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	const I8U *p_matrix = NULL;
 
-	// If user light up screen by touch button, Do not perform any action for the first time.
-	if (u->b_touch_light_up_screen) {
-		u->b_touch_light_up_screen = FALSE;
-		u->frame_next_idx = u->frame_index;
-		return;
-	}
-	
 	// Make sure the UI frame can take button click gesture.
 	if (ui_gesture_constrain[u->frame_index] & UFG_BUTTON_SINGLE) {
 
@@ -1438,13 +1411,6 @@ static void _perform_ui_with_button_press_hold(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	const I8U *p_matrix = NULL;
 
-	// If user light up screen by touch button, Do not perform any action for the first time.
-	if (u->b_touch_light_up_screen) {
-		u->b_touch_light_up_screen = FALSE;
-		u->frame_next_idx = u->frame_index;
-		return;
-	}
-	
 	// Make sure the UI frame can take botton hold gesture.
 	if (ui_gesture_constrain[u->frame_index] & UFG_BUTTON_HOLD) {
 		// Get next button hold frame matrix.			
@@ -1495,6 +1461,13 @@ static I8U _ui_touch_sensing()
 	
 	gesture = TOUCH_get_gesture_panel();
 
+	// If user light up screen by touch button, Do not perform any action for the first time.
+	if ((gesture != TOUCH_NONE) && (u->b_first_light_up_from_dark)) {
+		u->b_first_light_up_from_dark = FALSE;
+		u->frame_next_idx = u->frame_index;
+		return FALSE;
+	}
+	
 	// UI state switching based on valid gesture from Cypress IC
 	switch (gesture) {
 		case TOUCH_NONE:
@@ -1554,6 +1527,13 @@ static I8U _ui_touch_sensing()
 	I8U gesture;
 	
 	gesture = HOMEKEY_get_gesture_panel();
+
+	// If user light up screen by touch button, Do not perform any action for the first time.
+	if ((gesture != HOMEKEY_BUTTON_NONE) && (u->b_first_light_up_from_dark)) {
+		u->b_first_light_up_from_dark = FALSE;
+		u->frame_next_idx = u->frame_index;
+		return FALSE;
+	}
 	
 	// UI state switching based on valid gesture from Cypress IC
 	switch (gesture) {
@@ -1598,22 +1578,25 @@ void UI_start_notifying(I8U frame_index)
 	// 2. Update display frame index
 	u->frame_index = frame_index;
 
-	// 3. update touch time stamp.
+	// 3. Update touch time stamp.
   u->touch_time_stamp = CLK_get_system_time();
-  u->dark_time_stamp = CLK_get_system_time();
+  u->page_store_time_stamp = CLK_get_system_time();
+
+	// 4. Turn on oled display.
+	UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 	
-	if (OLED_panel_is_turn_on()) {
-		// 4. If screen is turn on, switch to touch sensing state.
-		UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
-		u->b_restore_notif = FALSE;		
+	// 5. Store current incoming message(if not in running active mode).
+	if (_is_smart_incoming_notifying_page(u->frame_index) && (!cling.activity.b_workout_active)) {
+		u->b_notif_need_store = TRUE;		
 	} else {
-		// 5. If screen is dark, first turn on screen immediately.
-		UI_turn_on_display(UI_STATE_TOUCH_SENSING);
-		u->b_restore_notif = TRUE;		
-	}
+		u->b_notif_need_store = FALSE;
+  }
 	
-	if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER) {
-		u->b_restore_notif = TRUE;				
+	// 6. Update running alarm flag
+  if ((u->frame_index == UI_DISPLAY_TRAINING_STAT_PACE) || (u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)) {
+	  u->b_in_running_alarm_page = TRUE;
+	} else {
+		u->b_in_running_alarm_page = FALSE;
 	}
 }
 
@@ -1627,7 +1610,7 @@ void UI_switch_state(I8U state, I32U interval)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 
-  //  1. Switch ui state	
+  // 1. Switch ui state	
 	u->state = state;
 	
 	// 2. Set frame display interval
@@ -1665,10 +1648,7 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state)
 		}
 	} 			
 
-	// 4. Restore previous UI page
-	_restore_perv_frame_index();
-	
-//	UI_SPRINTF("[UI] turn on display :%d, :%d", b_panel_on, cling.oled.state);
+	N_SPRINTF("[UI] turn on display :%d, :%d", b_panel_on, cling.oled.state);
 	
 	return b_panel_on;
 }
@@ -1803,12 +1783,18 @@ void UI_state_machine()
 	
 			// 4 seconds screen dark expiration
 			// for heart rate measuring, double the Screen ON time.
-			t_threshold = cling.user_data.screen_on_general; // in second
+			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {		
+				t_threshold = cling.user_data.screen_on_heart_rate; // in second				
+			} else {
+			  t_threshold = cling.user_data.screen_on_general; // in second
+			}
+			
 			if ((!t_threshold) || (t_threshold == 0xff))
 				t_threshold = 4;
 				
 			t_threshold *= 1000; // second -> milli-second
-			
+	
+#if 0			
 			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second
 				t_threshold *= 1000; // second -> milli-second
@@ -1821,18 +1807,33 @@ void UI_state_machine()
 					}
 				}
 			}
+#endif
 			
 			if (_is_smart_incoming_notifying_page(u->frame_index)) {
-				if (u->b_restore_notif) {
-					t_threshold = 3500;
-				} else {
-					if (t_curr > u->touch_time_stamp + 12000) {
-						// Go back to previous UI page
-						u->frame_index = UI_DISPLAY_PREVIOUS;		
-					}						
-				}
+				// 1. Turn on display when the motor is vibrating.
+				if (!NOTIFIC_is_idle()) {
+					u->touch_time_stamp = t_curr;					
+				}	else {
+				  if (t_curr > (u->page_store_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
+            // 2. Filtering the old information, go back to previous UI page.						
+			      u->frame_index = UI_DISPLAY_PREVIOUS;		
+					  u->b_notif_need_store = FALSE;	
+		      } else if (t_curr > u->touch_time_stamp + 15000) {
+            // 3. Go back to previous UI page.						
+				    u->frame_index = UI_DISPLAY_PREVIOUS;		
+					  u->b_notif_need_store = FALSE;					
+				  }			
+			  }
+		  }
+			
+			if ((u->b_in_running_alarm_page) && (cling.activity.b_workout_active)) {
+        if (t_curr > u->touch_time_stamp + 10000) {
+					// Go back to previous UI page.						
+					u->frame_index = UI_DISPLAY_PREVIOUS;		
+					u->b_in_running_alarm_page = FALSE;					
+				}						
 			}
-
+					
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 			if (u->frame_index == UI_DISPLAY_SMART_SOS_ALERT) {
 				t_threshold = 10000;
@@ -1867,8 +1868,8 @@ void UI_state_machine()
 		case UI_STATE_APPEAR:
 		{
 			N_SPRINTF("[UI] appear time: %d, index: %d", t_curr, u->frame_index);
-      
-			// 1. Restore frame index
+			
+			// 1. Restore perv frame index
       if (u->frame_index == UI_DISPLAY_PREVIOUS) {		
 				
 			  _restore_perv_frame_index();
@@ -1896,24 +1897,16 @@ void UI_state_machine()
 			// 2. Switch state to idle
 			u->state = UI_STATE_IDLE;
 
-			// 3. Update screen dark time stamp
-			u->dark_time_stamp = t_curr;
+			// 3. Update page store time stamp
+			u->page_store_time_stamp = t_curr;
 
 			// 4. Clead detail flag
 			u->b_detail_page = FALSE;		
-
-			// 5. Update message switch control
-			if (!_is_smart_incoming_notifying_page(u->frame_index)) {
-				// Go back to previous UI page
-				u->frame_index = UI_DISPLAY_PREVIOUS;		
-				u->b_restore_notif = FALSE;				
-			} else {
-				if (!u->b_restore_notif) {
-					// Go back to previous UI page
-					u->frame_index = UI_DISPLAY_PREVIOUS;									
-				}
-			}
-			
+	
+			// 5. Go back to previous UI page
+	    if (!u->b_notif_need_store)
+			  u->frame_index = UI_DISPLAY_PREVIOUS;						
+	
 			// 6. Update touch power control
 #ifdef _ENABLE_TOUCH_				
 			if (cling.lps.b_low_power_mode) {

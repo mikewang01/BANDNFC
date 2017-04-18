@@ -32,6 +32,14 @@
 #define NOTIFIC_MULTI_REMINDER_NORMAL_ALARM_CLOCK  3
 #define NOTIFIC_MULTI_REMINDER_SLEEP_ALARM_CLOCK   8
 
+BOOLEAN NOTIFIC_is_idle()
+{
+	if (cling.notific.state == NOTIFIC_STATE_IDLE)
+		return TRUE;
+	else
+		return FALSE;
+}
+
 void NOTIFIC_stop_notifying()
 {
 	N_SPRINTF("[NOTIFIC] Stop notifying");
@@ -43,12 +51,14 @@ void NOTIFIC_start_notifying(I8U notif_type, I8U cat_id)
 {		
 	I8U notif_frame_index;
   BOOLEAN	b_valid_type = TRUE;
-	
+#ifndef USING_SLEEP_FOR_ACTIVITY_FILTERING
+	// Do not use sleep state as a condition to start notification
 	if ((notif_type != NOTIFICATION_TYPE_NORMAL_ALARM_CLOCK) && (notif_type != NOTIFICATION_TYPE_SLEEP_ALARM_CLOCK)) {
 	  // Do not notify user if unit is in sleep state
 	  if (SLEEP_is_sleep_state(SLP_STAT_SOUND) || SLEEP_is_sleep_state(SLP_STAT_LIGHT))
 		  return;
   }
+#endif
 	
 	// Reset vibration times
 	cling.notific.vibrate_time = 0;
