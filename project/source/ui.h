@@ -648,12 +648,12 @@ typedef struct tagFRAME_RENDERING_CTX {
 
 typedef struct tagUI_ANIMATION_CTX {
 	// All the dword variables
-	I32U display_to_base;      // Display timeout base
-	I32U frame_interval;       // Frame interval, i.e., the time interval that a particular frame stays on this frame
-	I32U touch_time_stamp;     // Touch event time stamp
-  I32U running_time_stamp;   // Running record time stamp.
-	I32U dark_time_stamp;      // Screen dark time stamp.
-	I32U stopwatch_time_stamp; // Stopwatch record time stamp. 	
+	I32U display_to_base;        // Display timeout base
+	I32U frame_interval;         // Frame interval, i.e., the time interval that a particular frame stays on this frame
+	I32U touch_time_stamp;       // Touch event time stamp
+  I32U running_time_stamp;     // Running record time stamp.
+	I32U page_store_time_stamp;  // Page store time stamp.
+	I32U stopwatch_time_stamp;   // Stopwatch record time stamp. 	
 	I32U stopwatch_t_stop_stamp; // Stopwatch record stop time stamp. 	
 	
 	// All the frame buffer related
@@ -662,18 +662,19 @@ typedef struct tagUI_ANIMATION_CTX {
 	// State machine
 	I8U state;
 	
-	BOOLEAN b_touch_light_up_screen;
+	BOOLEAN b_first_light_up_from_dark;
+	BOOLEAN b_in_running_alarm_page;
 	
 	// Animation
 	I8U animation_mode;
 	I8U direction;
 	I8U animation_index;
 	
-	// Horizontal frame switching
+	// Page frame index switching
 	I8U frame_index;
 	I8U frame_cached_index;
 	I8U frame_prev_idx;
-	I8U frame_next_idx;
+	I8U frame_next_idx;	
 	
 	// Vertical switching
 	I8U vertical_index;
@@ -691,7 +692,7 @@ typedef struct tagUI_ANIMATION_CTX {
 
 	// Notification
 	BOOLEAN b_detail_page;	    // Detail page.
-	BOOLEAN b_restore_notif;
+	BOOLEAN b_notif_need_store;
 	BOOLEAN b_in_incoming_detail_page;
 	I8U notif_repeat_look_time; // Notification repeat look time.	
 	I8U notif_detail_index;     // Incoming message detail index.

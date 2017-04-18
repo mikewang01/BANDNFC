@@ -128,10 +128,9 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
 				if (OLED_panel_is_turn_off()) {
-					cling.ui.b_touch_light_up_screen = TRUE;
+					cling.ui.b_first_light_up_from_dark = TRUE;
 				}
-				
-				cling.ui.b_restore_notif = FALSE;											
+													
         // Turn on OLED panel
         if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING)) {
             t->b_valid_gesture = TRUE;
@@ -172,10 +171,9 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
 		if (OLED_panel_is_turn_off()) {
-			cling.ui.b_touch_light_up_screen = TRUE;	
+			cling.ui.b_first_light_up_from_dark = TRUE;	
 		}
-
-	  cling.ui.b_restore_notif = FALSE;						
+				
 		// Turn on OLED panel
 		if (!UI_turn_on_display(UI_STATE_TOUCH_SENSING)) {
 			t->b_valid_gesture = TRUE;

@@ -3335,13 +3335,13 @@ static void _middle_vertical_run_calories_core(I32U run_calories, BOOLEAN icon_b
 
 static void _middle_render_vertical_running_calories()
 {
-   _middle_vertical_run_calories_core(cling.run_stat.calories, FALSE);	
+  _middle_vertical_run_calories_core(cling.run_stat.calories, FALSE);	
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_training_calories()
 {
-   _middle_vertical_run_calories_core(cling.train_stat.calories, TRUE);	
+  _middle_vertical_run_calories_core(cling.train_stat.calories, TRUE);	
 }
 #endif
 
