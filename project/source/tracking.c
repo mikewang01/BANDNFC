@@ -97,7 +97,7 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 }
 
-static I32U steps_time_stamp[8]={0};
+static I32U steps_time_stamp[8];
 
 static I8U _get_stride_length(BOOLEAN b_running)
 {
@@ -745,8 +745,8 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	}
 #ifndef __YLF__
 	//reduce the steps for walking or running to Zero when the activity is less than 60 during NonSleep.
-	if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
-	//if(	((pminute->activity_count<50)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<80))) && (pminute->walking > 0 || pminute->running > 0) ){
+	//if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
+	if(	((pminute->activity_count<20)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<70))) && (pminute->walking > 0 || pminute->running > 0) ){
 		pminute->walking = 0;
 		pminute->running = 0;
 		pminute->distance = 0;

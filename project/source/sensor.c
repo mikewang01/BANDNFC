@@ -65,8 +65,12 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, B
 	I32U t_diff;
 	DEVICE_ORIENTATION_TYPE currOrientation;	
 
-	//judge from procedure not location	
-	if( (G.y>-4500&&G.y <-850) && (G.z<-800)&&(G.x<680&&G.x>-700) ){
+	//judge from procedure not location
+#ifdef _CLINGBAND_PACE_MODEL_
+	if( (G.x>950&&G.x<4500) && (G.z<-800)&&(G.y<680&&G.y>-700)){
+#else
+		if( (G.y>-4500&&G.y <-850) && (G.z<-800)&&(G.x<680&&G.x>-700) ){
+#endif
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
@@ -293,16 +297,15 @@ static void _high_power_process_FIFO()
 		}
 #endif
 #ifndef __WIRST_DETECT_ENABLE__
-		if(FALSE == b_wristFlip_flag){
+		if((FALSE == b_wristFlip_flag)&&(cling.user_data.b_screen_wrist_flip)){
 			if(j>=2){ j = 0; }
 			if(i>3){
 				G.x = (buffer_X[0]+buffer_X[1]+ A.x)/3;
 				G.y = (buffer_y[0]+buffer_y[1]+ A.y)/3;
-				G.z = (buffer_z[0]+buffer_z[1]+ A.z)/3;
-				N_SPRINTF("[SENSOR] sample3mean: %d,%d,%d", G.x,G.y,G.z);					
-				if (cling.user_data.b_screen_wrist_flip) {
-					b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
-				}
+				G.z = (buffer_z[0]+buffer_z[1]+ A.z)/3;				
+				//if (cling.user_data.b_screen_wrist_flip) {
+				b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
+				//}
 			}
 			buffer_X[j] = A.x;
 			buffer_y[j] = A.y;
