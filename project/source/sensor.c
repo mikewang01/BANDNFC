@@ -57,53 +57,19 @@ static void _navigation_wrist_shaking(I8U jitter_counts)
 #endif
 }
 #ifndef __WIRST_DETECT_ENABLE__
-//static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U t_curr, BOOLEAN b_motion)
-static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I32U t_curr, BOOLEAN b_motion)
+
+static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOLEAN b_motion)
 {
 	I8U i;
-	I8U up_counts, side_counts;
-	I32U x, y, z, t_diff;
-	DEVICE_ORIENTATION_TYPE currOrientation;
+	I8U up_counts=0;
+	I32U t_diff;
+	DEVICE_ORIENTATION_TYPE currOrientation;	
 
-	N_SPRINTF("[SENSOR] face up: %d", face_up);
-	
-	if (accCnt) {
-		G.x /= accCnt;
-		G.y /= accCnt;
-		G.z /= accCnt;
-		
-		x = BASE_abs(G.x);
-		y = BASE_abs(G.y);
-		z = BASE_abs(G.z);
-		
-		N_SPRINTF("[SENSOR] orientation: %d, %d, %d", G.x, G.y, G.z);
-	} else {
-		x = 0;
-		y = 0;
-		z = 0;
-		G.z = 0;
-		G.x = 0;
-		G.y = 0;
-	}
-	
-	//if ((G.z < -1600) && (x < 700) && (G.y < 200) && (G.y > -1200)) {
-#ifdef _CLINGBAND_2_PAY_MODEL_
-	if ( (G.z<(-G.y)) && (((G.z<G.x) && (G.z < -1400) && (G.y < 400)) || ((G.x<(-G.y)) &&(G.z>-500||G.z<600) && (G.y<-1000))) && (x < 780)) {
-#endif		
-#ifdef _CLINGBAND_PACE_MODEL_
-	if ( (G.z<G.x) && (((G.z<G.y) && (G.z < -1440) && (G.x>-400)) || ((G.y<G.x) &&(z<600) && (G.x>1200))) && ((G.y < 780) && (G.y > -500))) {	
-#endif	
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
-	if ( (G.z<G.x) && (((G.z<G.y) && (G.z < -1440) && (G.x>-400)) || ((G.y<G.x) &&(z<600) && (G.x>1200))) && ((G.y < 780) && (G.y > -500))) {	
-#endif	
-	
+	//judge from procedure not location	
+	if( (G.y>-4500&&G.y <-850) && (G.z<-800)&&(G.x<680&&G.x>-700) ){
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
-	} else if ((z < 500) && ((x > 1600) || (y > 1600))) {
-		cling.activity.orientation[cling.activity.face_up_index] = FACE_SIDE;
-		currOrientation = FACE_SIDE;
-		N_SPRINTF("[SENSOR] --- FACE SIDE ---");
 	} else {
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UNKNOWN;
 		currOrientation = FACE_UNKNOWN;
@@ -136,19 +102,15 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I8U accCnt, I3
 	
 	// Wrist flip detection
 	up_counts = 0;
-	side_counts = 0;
 	for (i = 0; i < 5; i++) {
 		if (cling.activity.orientation[i] == FACE_UP)
 			up_counts ++;
-		if (cling.activity.orientation[i] == FACE_SIDE)
-			side_counts ++;
 	}
-	
-	if ((up_counts>= 1) && (up_counts <= 2)) {
+	//if ((up_counts>= 1) && (up_counts <= 2)) {
+	if ((up_counts>= 1)) {
 		N_SPRINTF("-------- [SENSOR] fliped !!!! -----\n");
 		
 		if (LINK_is_authorized()) {
-			
 			if (OLED_panel_is_turn_off()) {
 				// Turn on screen
 				UI_turn_on_display(UI_STATE_TOUCH_SENSING);
@@ -232,7 +194,7 @@ static void _low_power_process_sw()
 		if (mag_win[0] > mag_win[3]) {
 			diff = mag_win[0] - mag_win[3];
 		} else {
-			diff = mag_win[3] - mag_win[0];;
+			diff = mag_win[3] - mag_win[0];
 		}
 		
     if (diff > STATIONARY_ENG_TH) {
@@ -257,12 +219,13 @@ static void _low_power_process_sw()
 
 static void _high_power_process_FIFO()
 {
-	I8U i, sample_count;
-	I8U jitter_counts, iSample, accCnt;
+	I8U i, j=0, sample_count;
+	I8U jitter_counts;
 	ACC_AXIS xyz;
 	ACCELEROMETER_3D A;
 	ACCELEROMETER_3D G;
 	I32U x, y, t_curr;
+  I32S buffer_X[2]={0},buffer_y[2]={0},buffer_z[2]={0};
 	BOOLEAN b_motion = FALSE, b_wristFlip_flag = FALSE;
 #ifdef __WIRST_DETECT_ENABLE__
 	UNUSED_VARIABLE(b_motion);
@@ -291,13 +254,6 @@ static void _high_power_process_FIFO()
 	G.y = 0;
 	G.z = 0;
 	
-	if (sample_count > 24) {//if (sample_count > 15) {
-		iSample = sample_count - 24;
-	} else {
-		iSample = 0;
-	}
-	accCnt = 0;
-
 	for (i = 0; i < sample_count; i++) {
 		
 		LIS3DH_retrieve_data(&xyz);
@@ -321,16 +277,8 @@ static void _high_power_process_FIFO()
 		}
 		
 		// Set from 1.5g=2300 to 1g=1500 threshold for identifying a motion
-		if ((x > 1900) || (y > 1900)) {//if ((x > 2300) || (y > 2300)) {
+		if ((x > 1400) || (y > 1400)) {//if ((x > 2300) || (y > 2300)) {
 			b_motion = TRUE;
-		}
-		
-		// Accumulating gravity
-		if (i >= iSample) {
-			G.x += A.x;
-			G.y += A.y;
-			G.z += A.z;
-			accCnt ++;
 		}
 		
 		// Pedometer core data processing	
@@ -345,10 +293,21 @@ static void _high_power_process_FIFO()
 		}
 #endif
 #ifndef __WIRST_DETECT_ENABLE__
-		if((FALSE == b_wristFlip_flag) && (accCnt>=3)){
-			if (cling.user_data.b_screen_wrist_flip) {
-				b_wristFlip_flag = _screen_activiation_wrist_flip(G, accCnt, t_curr, b_motion);
+		if(FALSE == b_wristFlip_flag){
+			if(j>=2){ j = 0; }
+			if(i>3){
+				G.x = (buffer_X[0]+buffer_X[1]+ A.x)/3;
+				G.y = (buffer_y[0]+buffer_y[1]+ A.y)/3;
+				G.z = (buffer_z[0]+buffer_z[1]+ A.z)/3;
+				N_SPRINTF("[SENSOR] sample3mean: %d,%d,%d", G.x,G.y,G.z);					
+				if (cling.user_data.b_screen_wrist_flip) {
+					b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
+				}
 			}
+			buffer_X[j] = A.x;
+			buffer_y[j] = A.y;
+			buffer_z[j] = A.z;
+			j++;
 		}
 #endif
 		 
