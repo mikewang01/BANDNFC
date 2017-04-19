@@ -1238,15 +1238,15 @@ static void _middle_render_horizontal_training_start_run()
 	
 	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {		
 #ifdef _CLINGBAND_PACE_MODEL_		
-	  offset = 32;
+	  offset = 28;
 #else
-	  offset = 34;
+	  offset = 35;
 #endif	
 	} else {
 #ifdef _CLINGBAND_PACE_MODEL_				
-	  offset = 28;	
+	  offset = 24;	
 #else
-	  offset = 34;	
+	  offset = 31;	
 #endif		
 	}
 	
@@ -1426,7 +1426,7 @@ static void _middle_render_horizontal_training_run_stop()
 
 	I8U language_type = cling.ui.language_type;
 
-	FONT_load_characters(128+30, (char *)run_stop_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(128+31, (char *)run_stop_name[language_type], 16, 128, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -1436,7 +1436,7 @@ static void _middle_render_horizontal_training_workout_stop()
 
 	I8U language_type = cling.ui.language_type;
 
-	FONT_load_characters(128+30, (char *)run_stop_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(128+31, (char *)run_stop_name[language_type], 16, 128, FALSE);
 }
 #endif
 
@@ -1458,7 +1458,7 @@ static void _middle_render_horizontal_cycling_outdoor_start()
 	const char *cycling_start_name[] = {"BIKE NOW", "开始骑行 ", "開始騎行 "};
 	I8U language_type = cling.ui.language_type;
 
-	FONT_load_characters(128+32, (char *)cycling_start_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(128+31, (char *)cycling_start_name[language_type], 16, 128, FALSE);
 }
 
 static void _middle_render_horizontal_cycling_outdoor_ready()
