@@ -726,6 +726,15 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 		SLEEP_wake_up_by_force(TRUE);
 	}
 	
+#ifndef __YLF__
+	//reduce the steps for walking or running to Zero when the activity is less than 60 during NonSleep.
+	//if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
+	if(	((pminute->activity_count<20)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<70))) && (pminute->walking > 0 || pminute->running > 0) ){
+		pminute->walking = 0;
+		pminute->running = 0;
+		pminute->distance = 0;
+	}
+#endif
 	// For compatibility, we set activity count flag
 	pminute->activity_count |= 0x8000;
 	
@@ -743,15 +752,6 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 			}
 		}
 	}
-#ifndef __YLF__
-	//reduce the steps for walking or running to Zero when the activity is less than 60 during NonSleep.
-	//if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
-	if(	((pminute->activity_count<20)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<70))) && (pminute->walking > 0 || pminute->running > 0) ){
-		pminute->walking = 0;
-		pminute->running = 0;
-		pminute->distance = 0;
-	}
-#endif
 	
 	N_SPRINTF("MINUTE UPDATE-2: %08x, %04x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, %04x, %02x",
 		pminute->epoch, pminute->skin_temperature, pminute->walking, pminute->running, pminute->calories, 
