@@ -207,8 +207,9 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 	I8U act_motion;
 	I8U distance_per_step;
 //	REALTIME_CTX rt;
+#ifndef __YLF__
 	SLEEP_CTX *slp = &cling.sleep;
-	
+#endif
 	// Go skip algorithms processing if device is not authorized
 	if (!LINK_is_authorized())
 		return;
@@ -852,8 +853,11 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 		// Update training stats
 		t->distance += denormalized_distance;
 		t->calories += minute->calories;
-			
-		if (minute->running > 99) {
+#ifndef __YLF__
+		if ((minute->running + minute->walking) > 42) {//about 0.7 steps per second.
+#else		
+		if (minute->running > 99) {//about run 1.7 steps per second.
+#endif
 			r->time_min ++;
 			r->accu_heart_rate += minute->heart_rate;
 			r->time_sec = 0;
@@ -1522,7 +1526,6 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 				overall_heart_rate += minute->heart_rate;
 				overall_temperature += minute->skin_temperature;
 			}
-			
 		}
 		
 	}
@@ -1657,7 +1660,11 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 #endif
 				// Make sure we have activity work out type enabled
 				if (minute->uv_and_activity_type) { 
+#ifndef __YLF__
+					if((minute->walking + minute->running) >42){
+#else
 					if (minute->running > 99) {
+#endif
 						r->time_min ++;
 						r->accu_heart_rate += minute->heart_rate;
 						r->calories += minute->calories;
