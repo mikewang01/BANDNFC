@@ -242,21 +242,15 @@ void OLED_state_machine(void)
 			break;
 		}
 		case OLED_STATE_INIT_UI:
-		{
-				// Update display timeout base.
-				cling.ui.display_to_base = CLK_get_system_time();
-			
-				N_SPRINTF("[0LED] ui to base: %d", cling.ui.display_to_base);
+		{	
+			N_SPRINTF("[0LED] ui to base: %d", cling.ui.display_to_base);
 				
-				// Reset blinking state
-				cling.ui.icon_sec_blinking = TRUE;
-			
-			  // Update touch time stamp.
-	      cling.ui.touch_time_stamp = CLK_get_system_time();			
- 
-			  // Update ui display base time stamp.
-        cling.ui.display_to_base = CLK_get_system_time();  			
-				o->state = OLED_STATE_ON;
+			// Update touch time stamp.
+			cling.ui.touch_time_stamp = t_curr;			
+
+			// Update ui display base time stamp.
+			cling.ui.display_to_base = t_curr;  			
+			o->state = OLED_STATE_ON;
 			break;
 		}
 		case OLED_STATE_ON:
