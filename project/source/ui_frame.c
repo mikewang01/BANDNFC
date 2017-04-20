@@ -1056,7 +1056,7 @@ static void _middle_render_horizontal_training_distance()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_running_analysis()
 {
-	const char *running_analysis_name[] = {"RUN DATA", "训练分析 ", "訓練分析 "};
+	const char *running_analysis_name[] = {"RUN DATA", "当日跑步 ", "當日跑步 "};
 	I8U language_type = cling.ui.language_type;
 	
 	FONT_load_characters(128+24, (char *)running_analysis_name[language_type], 16, 128, FALSE);
@@ -2720,8 +2720,8 @@ static void _middle_render_vertical_training_run_or_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_running_analysis()
 {
-	const	char *running_analysis_name_1[] = {"RUN", "训练 ", "訓練 "};	
-	const	char *running_analysis_name_2[] = {"DATA", "分析 ", "分析 "};	
+	const	char *running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
+	const	char *running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
 	I8U language_type = cling.ui.language_type;		
 
 	_middle_render_vertical_character_core((I8U *)running_analysis_name_1[language_type], 50, (I8U *)running_analysis_name_2[language_type], 70);		
