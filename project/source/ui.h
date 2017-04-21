@@ -14,7 +14,7 @@
 #define FRAME_DEPTH_CALORIES                          7
 #define FRAME_DEPTH_ACTIVE_TIME                       7
 
-#define UI_STORE_NOTIFICATION_MAX_TIME_IN_MS          60000
+#define UI_STORE_NOTIFICATION_MAX_TIME_IN_MS          30000
 #define UI_STORE_FRAME_MAX_TIME_IN_MS                 300000
 #define UI_TOUCH_VIBRATION_ON_TIME_IN_MS              15
 #define UI_LOOK_MESSAGE_MAX_REPEAT_TIME               1
