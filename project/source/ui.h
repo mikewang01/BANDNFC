@@ -652,7 +652,8 @@ typedef struct tagUI_ANIMATION_CTX {
 	I32U frame_interval;         // Frame interval, i.e., the time interval that a particular frame stays on this frame
 	I32U touch_time_stamp;       // Touch event time stamp
   I32U running_time_stamp;     // Running record time stamp.
-	I32U page_store_time_stamp;  // Page store time stamp.
+	I32U notif_time_stamp;       // Notif time stamp.
+	I32U dark_time_stamp;        // Dark time stamp.	
 	I32U stopwatch_time_stamp;   // Stopwatch record time stamp. 	
 	I32U stopwatch_t_stop_stamp; // Stopwatch record stop time stamp. 	
 	
