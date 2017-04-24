@@ -299,7 +299,7 @@ static void _restore_perv_frame_index()
 	
 	// 3. Go back to previous UI page.
 	if (u->frame_index == UI_DISPLAY_PREVIOUS) {
-		if (t_curr > (u->page_store_time_stamp + UI_STORE_FRAME_MAX_TIME_IN_MS)) {
+		if (t_curr > (u->dark_time_stamp + UI_STORE_FRAME_MAX_TIME_IN_MS)) {
 			u->frame_index = UI_DISPLAY_HOME;					
 		} else {
 			u->frame_index = u->frame_cached_index;	
@@ -1578,9 +1578,9 @@ void UI_start_notifying(I8U frame_index)
 	// 2. Update display frame index
 	u->frame_index = frame_index;
 
-	// 3. Update touch time stamp.
+	// 3. Update touch time stamp and notif time stamp.
   u->touch_time_stamp = CLK_get_system_time();
-  u->page_store_time_stamp = CLK_get_system_time();
+  u->notif_time_stamp = CLK_get_system_time();
 
 	// 4. Turn on oled display.
 	UI_turn_on_display(UI_STATE_TOUCH_SENSING);
@@ -1812,9 +1812,10 @@ void UI_state_machine()
 			if (_is_smart_incoming_notifying_page(u->frame_index)) {
 				// 1. Turn on display when the motor is vibrating.
 				if (!NOTIFIC_is_idle()) {
-					u->touch_time_stamp = t_curr;					
+					u->touch_time_stamp = t_curr;		
+          u->notif_time_stamp	= t_curr;				
 				}	else {
-				  if (t_curr > (u->page_store_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
+				  if (t_curr > (u->notif_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
             // 2. Filtering the old information, go back to previous UI page.						
 			      u->frame_index = UI_DISPLAY_PREVIOUS;		
 					  u->b_notif_need_store = FALSE;	
@@ -1897,8 +1898,8 @@ void UI_state_machine()
 			// 2. Switch state to idle
 			u->state = UI_STATE_IDLE;
 
-			// 3. Update page store time stamp
-			u->page_store_time_stamp = t_curr;
+			// 3. Update dark time stamp
+			u->dark_time_stamp = t_curr;
 
 			// 4. Clead detail flag
 			u->b_detail_page = FALSE;		
