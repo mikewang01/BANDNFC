@@ -190,7 +190,7 @@ void ppg_PS_ALS_Auto             (void);
 #define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 3600000     // background idle for 300 seconds
 
 #define PPG_SAMPLE_COUNT_THRESHOLD                                 32
-#define PPG_SAMPLE_AVERATE_THRESHOLD                             2000
+#define PPG_SAMPLE_AVERATE_THRESHOLD                             5000//2000
 
 typedef enum {
 	PPG_BODY_NOT_WEAR, 

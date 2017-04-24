@@ -575,7 +575,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 
 		if (b_minute_update) {
 #ifndef __YLF__
-			if ((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM))
+			if ((diff->activity_count<63)&&((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM)) )
 			{
 				diff->walking = 0;
 				diff->running = 0;
@@ -730,7 +730,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 #ifndef __YLF__
 	//reduce the steps for walking or running to Zero when the activity is less than 60 during NonSleep.
 	//if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
-	if(	((pminute->activity_count<20)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<70))) && (pminute->walking > 0 || pminute->running > 0) ){
+	if(	((pminute->activity_count<75)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<63))) && (pminute->walking > 0 || pminute->running > 0) ){
 		pminute->walking = 0;
 		pminute->running = 0;
 		pminute->distance = 0;
@@ -788,15 +788,21 @@ void _training_pace_and_hr_alert()
 		else
 			b_pace_range_alert = FALSE;
 	} else {
-		hr = PPG_minute_hr_calibrate();
+#ifndef __YLF_ALERT__
+		if ( (cling.user_data.profile.training_alert & 0x80)) {
+#endif
+			hr = PPG_minute_hr_calibrate();
 
-		hr_perc = (hr * 100);
-		hr_perc /= (220-cling.user_data.profile.age);	
-		if (hr_perc > 98)
-			hr_perc = 98;
-		
-	  hr_range_down = cling.user_data.profile.max_hr_alert;
-    b_hr_range_alert = TRUE;
+			hr_perc = (hr * 100);
+			hr_perc /= (220-cling.user_data.profile.age);	
+			if (hr_perc > 98)
+				hr_perc = 98;
+			
+			hr_range_down = cling.user_data.profile.max_hr_alert;
+			b_hr_range_alert = TRUE;
+#ifndef __YLF_ALERT__
+		}
+#endif
 	}	
 
 	if (b_pace_range_alert) {

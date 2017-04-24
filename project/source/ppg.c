@@ -294,7 +294,11 @@ static void _skin_touch_detect(I16S sample)
 
 		sample_val = (h->m_sample_sum) >> 5;
 		N_SPRINTF("[PPG] sample_val: %d",sample_val);
-		if (sample_val>PPG_SAMPLE_AVERATE_THRESHOLD||sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) {//YLF2017.3.24
+#ifndef __YLF__
+		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)&&(sample_val<27000)) {
+#else
+		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)||(sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) ){//YLF2017.3.24
+#endif
 			h->m_closing_to_skin_detection_timer = CLK_get_system_time();
 		}
 	}
@@ -341,8 +345,11 @@ static void _ppg_sample_proc()
 	high_pass_filter_val = Butterworth_Filter_HP( (double) sample);
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
 	filt_sample = (I16S)low_pass_filter_val;
-	
-  if (t_ms_diff > 6000) {
+#ifndef __YLF__
+	if (t_ms_diff > 3000) {//3 Seconds
+#else
+	if (t_ms_diff > 6000) {
+#endif
 //if (TRUE) {
 		N_SPRINTF("%d  %d", filt_sample, sample);
 		N_SPRINTF("%d",      sample);
