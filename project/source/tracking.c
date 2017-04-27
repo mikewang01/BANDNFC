@@ -579,7 +579,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		if (b_minute_update) {
 #ifndef __YLF__
 			//if ((diff->activity_count<63)&&((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM)) )
-			if ((diff->activity_count<20) ||((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM)))
+			if ((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM))
 			{
 				diff->walking = 0;
 				diff->running = 0;
