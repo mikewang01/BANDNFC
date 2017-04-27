@@ -480,6 +480,9 @@ void SLEEP_init()
 	slp->b_step_flag = FALSE;
 	
 	slp->m_successive_stationary_mins = 0;
+#ifndef __YLF__
+	slp->sleep_wakeup_steps = 0;
+#endif
 }
 
 void SLEEP_algorithms_proc(ACC_AXIS *xyz)

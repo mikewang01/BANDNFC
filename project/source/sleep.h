@@ -95,6 +95,7 @@ typedef struct tagSLEEP_CTX {
   I8U  m_successive_stationary_mins;
 	I32U activity_status_per_min;
 	I32U sound_sleep_timestamp;
+	I8U sleep_wakeup_steps;
 } SLEEP_CTX;
 
 void SLEEP_init(void);

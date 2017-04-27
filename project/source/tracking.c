@@ -241,6 +241,9 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 #ifndef __YLF__	
 		if ((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM))
 		{
+			if ((act_motion == MOTION_WALKING) || (act_motion == MOTION_RUNNING)) {
+				cling.sleep.sleep_wakeup_steps ++;
+			}
 			return;
 		}
 #endif
@@ -575,7 +578,8 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 
 		if (b_minute_update) {
 #ifndef __YLF__
-			if ((diff->activity_count<63)&&((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM)) )
+			//if ((diff->activity_count<63)&&((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM)) )
+			if ((diff->activity_count<20) ||((diff->sleep_state == SLP_STAT_LIGHT)||(diff->sleep_state == SLP_STAT_SOUND)||(diff->sleep_state == SLP_STAT_REM)))
 			{
 				diff->walking = 0;
 				diff->running = 0;
@@ -723,19 +727,11 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 			}
 	}
 	
-	if ((pminute->running + pminute->walking) > 4) {
+	if (cling.sleep.sleep_wakeup_steps > 4) {
 		SLEEP_wake_up_by_force(TRUE);
 	}
+	cling.sleep.sleep_wakeup_steps = 0;
 	
-#ifndef __YLF__
-	//reduce the steps for walking or running to Zero when the activity is less than 60 during NonSleep.
-	//if(	((pminute->activity_count<60)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<85))) && (pminute->walking > 0 || pminute->running > 0) ){
-	if(	((pminute->activity_count<75)||((pminute->sleep_state == SLP_STAT_LIGHT)&&( pminute->activity_count<63))) && (pminute->walking > 0 || pminute->running > 0) ){
-		pminute->walking = 0;
-		pminute->running = 0;
-		pminute->distance = 0;
-	}
-#endif
 	// For compatibility, we set activity count flag
 	pminute->activity_count |= 0x8000;
 	
@@ -861,7 +857,7 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 		t->calories += minute->calories;
 #ifndef __YLF__
 		if ((minute->running + minute->walking) > 42) {//about 0.7 steps per second.
-#else		
+#else
 		if (minute->running > 99) {//about run 1.7 steps per second.
 #endif
 			r->time_min ++;
