@@ -949,6 +949,8 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 	}	else {
 		if (!cling.activity.b_workout_active) {
 			cling.hr.heart_rate_ready  = FALSE;
+			PPG_disable_sensor();
+			cling.hr.state = PPG_STAT_DUTY_OFF;
 		}
 	}		
 }

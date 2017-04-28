@@ -79,6 +79,9 @@ static void _calc_heart_rate()
 	I8S  non_num;
 	I8S  avg_epoch_num;
 	I8U  i;	
+#ifdef __YLF__
+	I16S epoch_max=0,epoch_min=0;
+#endif
 	
 	// current pulse width
 	epoch_num = 0;
@@ -96,32 +99,71 @@ static void _calc_heart_rate()
 	// 80bpm: 38 samples
 	// 90bpm: 33 samples
 	// 100bpm: 30 samples
-
+#ifndef __YLF__
+	for (i=5; i>0; i--)
+#else
 	for (i=7; i>0; i--)
+#endif
+		N_SPRINTF("[PPG] sample num: %dth,%d", i,h->m_epoch_num[i-1]);
 	  h->m_epoch_num[i] = h->m_epoch_num[i-1];
-
-//h->m_epoch_num[0] = epoch_num;
-	h->m_epoch_num[0] = Kalman_Filter(epoch_num);
+#ifndef __YLF__
+	if(h->m_epoch_cnt<3){
+		//if((h->m_epoch_num[0] - epoch_num)>300||(h->m_epoch_num[0] - epoch_num)<-300)
+		if((epoch_num>33) &&(epoch_num<47)){
+				h->m_epoch_num[0] = epoch_num;
+		}
+		h->m_epoch_cnt ++;
+	}else{
+		h->m_epoch_num[0] = epoch_num;
+	}
+#else
+	h->m_epoch_num[0] = epoch_num;
+#endif
+	
+	//h->m_epoch_num[0] = Kalman_Filter(epoch_num);
 
   //-------------------------------------------------------
 	// calculate average
 	sum = 0;
 	non_num = 0;
+#ifndef __YLF__
+	for (i=0; i<6; i++)
+#else
 	for (i=0; i<8; i++)
+#endif
 	{
 		if (h->m_epoch_num[i]!=0)
 		{
+#ifdef __YLF__
+			if(epoch_max < h->m_epoch_num[i])
+				epoch_max = h->m_epoch_num[i];
+			if(epoch_min > h->m_epoch_num[i])
+				epoch_min = h->m_epoch_num[i];
+#endif
 			non_num++;
 			sum += h->m_epoch_num[i];
 		}
 	}
-	
+#ifdef __YLF__	
+	if(epoch_max!=0){
+		sum -= epoch_max;
+		non_num--;
+	}
+	if(epoch_min!=0){
+		sum -= epoch_min;
+		non_num--;
+	}
+#endif
 	avg_epoch_num = 0;
 	while (sum>=0)
 	{
 		sum -= non_num;
 		avg_epoch_num++;
-	}	
+	}
+#ifndef __YLF__	
+	h->m_epoch_num[0] = Kalman_Filter(avg_epoch_num);
+	//h->m_epoch_num[0] = avg_epoch_num;
+#endif
   //-------------------------------------------------------
 	
   one_minute = 3000;
@@ -155,7 +197,12 @@ static void _reset_heart_rate_calculator()
 		pulse_width -= 20;
 		epoch_num++;
 	}
+#ifndef __YLF__
+	h->m_epoch_cnt = 0;
+	for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
+#else
 	for (i=0; i<8; i++) h->m_epoch_num[i] = epoch_num;
+#endif
 }
 
 static BOOLEAN _heart_rate_overflow(I16S epoch_num)
@@ -352,8 +399,6 @@ static void _ppg_sample_proc()
 #endif
 //if (TRUE) {
 		N_SPRINTF("%d  %d", filt_sample, sample);
-		N_SPRINTF("%d",      sample);
-
 		/* check whether current epoch ppg sample is zero-crossing */
   	_seek_cross_point(filt_sample);
 	}
@@ -518,7 +563,15 @@ void PPG_init()
 	h->minute_rate       = 70;
 	
 	h->m_zero_point_timer   = CLK_get_system_time();
+#ifndef __YLF__
+	h->b_training = FALSE;
+#endif
+#ifndef __YLF__
+  for (i=0; i<6; i++) h->m_epoch_num[i] = 42;
+	h->m_epoch_cnt = 0;
+#else
   for (i=0; i<8; i++) h->m_epoch_num[i] = 42;
+#endif
 }
 
 BOOLEAN _is_user_viewing_heart_rate()
@@ -661,6 +714,9 @@ void PPG_state_machine()
 			
 			if (cling.activity.b_workout_active) {
 				// Start PPG detection right away if the device is in motion
+#ifndef __YLF__
+				h->b_training = TRUE;
+#endif
 				if (!cling.lps.b_low_power_mode) {
 					h->state = PPG_STAT_DUTY_ON;
 					// We need initialize skin touch detection routine
@@ -714,38 +770,42 @@ void PPG_state_machine()
 	}
 }
 
-I8U PPG_minute_hr_calibrate()
+I8U PPG_minute_hr_calibrate(BOOLEAN b_training)
 {
 	I8U hr_diff;
 	I8U hr_rendering;
-	
-	if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {
-		hr_rendering = cling.hr.current_rate;
-	} else {
-		if (cling.hr.current_rate > cling.hr.minute_rate) {
-			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
-			if (hr_diff < 10) {
-				hr_rendering = cling.hr.current_rate;
-			} else {
-				hr_rendering = (cling.hr.minute_rate+(hr_diff&0x07));
-			} 
+#ifndef __YLF__
+	if(!b_training){
+		return (cling.hr.current_rate);
+	}else{
+		if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {
+			hr_rendering = cling.hr.current_rate;
 		} else {
-			hr_diff = cling.hr.minute_rate-cling.hr.current_rate;
-			
-			if (hr_diff < 16)
-				hr_rendering = cling.hr.current_rate;
-			else 
-				hr_rendering = (cling.hr.minute_rate - (hr_diff&0x07));
+			if (cling.hr.current_rate > cling.hr.minute_rate) {
+				hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
+				if (hr_diff < 10) {
+					hr_rendering = cling.hr.current_rate;
+				} else {
+					hr_rendering = (cling.hr.minute_rate+(hr_diff&0x07));
+				} 
+			} else {
+				hr_diff = cling.hr.minute_rate-cling.hr.current_rate;
+				
+				if (hr_diff < 16)
+					hr_rendering = cling.hr.current_rate;
+				else 
+					hr_rendering = (cling.hr.minute_rate - (hr_diff&0x07));
+			}
 		}
+		
+		if (hr_rendering < 60) {
+			if (cling.hr.minute_rate > cling.hr.current_rate)
+				hr_diff = cling.hr.minute_rate - cling.hr.current_rate;
+			else
+				hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
+			hr_rendering = 60 + (hr_diff & 0x07);
+		} 
+		return hr_rendering;
 	}
-	
-	if (hr_rendering < 60) {
-		if (cling.hr.minute_rate > cling.hr.current_rate)
-			hr_diff = cling.hr.minute_rate - cling.hr.current_rate;
-		else
-			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
-		hr_rendering = 60 + (hr_diff & 0x07);
-	}
-	
-	return hr_rendering;
+#endif
 }

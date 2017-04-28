@@ -190,7 +190,7 @@ void ppg_PS_ALS_Auto             (void);
 #define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 3600000     // background idle for 300 seconds
 
 #define PPG_SAMPLE_COUNT_THRESHOLD                                 32
-#define PPG_SAMPLE_AVERATE_THRESHOLD                             5000//2000
+#define PPG_SAMPLE_AVERATE_THRESHOLD                             4000//5000//2000
 
 typedef enum {
 	PPG_BODY_NOT_WEAR, 
@@ -253,8 +253,15 @@ typedef struct tagHEARTRATE_CTX{
 	I32U  m_pre_zero_point;
 	I16S  m_pre_ppg_sample;
 	I16U  m_pre_pulse_width;
-		
+#ifndef __YLF__
+	BOOLEAN b_training;
+#endif
+#ifndef __YLF__
+	I8U   m_epoch_num[6];
+	I8U m_epoch_cnt;
+#else
 	I8U   m_epoch_num[8];
+#endif
 	BUTT_CTX butterworth_filter_context;
 } HEARTRATE_CTX;
 
@@ -268,7 +275,11 @@ void PPG_disable_sensor(void);
 
 void PPG_init(void);
 void PPG_state_machine(void);
+#ifndef __YLF__
+I8U PPG_minute_hr_calibrate(BOOLEAN);
+#else
 I8U PPG_minute_hr_calibrate(void);
+#endif
 void PPG_closing_to_skin_detect_init(void);
 
 #endif // __PPG_H__

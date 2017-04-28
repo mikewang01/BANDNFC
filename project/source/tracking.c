@@ -662,9 +662,9 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->calories = diff->calories;
 	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m)
 	pminute->sleep_state = diff->sleep_state;
-#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
-	pminute->sleep_state = SLP_STAT_AWAKE; // Do not use this sleep for anything else but activity filtering
-#endif
+//#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
+//	pminute->sleep_state = SLP_STAT_AWAKE; // Do not use this sleep for anything else but activity filtering
+//#endif
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;
@@ -786,9 +786,10 @@ void _training_pace_and_hr_alert()
 	} else {
 #ifndef __YLF_ALERT__
 		if ( (cling.user_data.profile.training_alert & 0x80)) {
-#endif
+			hr = PPG_minute_hr_calibrate(TRUE);
+#else
 			hr = PPG_minute_hr_calibrate();
-
+#endif
 			hr_perc = (hr * 100);
 			hr_perc /= (220-cling.user_data.profile.age);	
 			if (hr_perc > 98)
