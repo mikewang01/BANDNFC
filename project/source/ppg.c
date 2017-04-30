@@ -79,9 +79,6 @@ static void _calc_heart_rate()
 	I8S  non_num;
 	I8S  avg_epoch_num;
 	I8U  i;	
-#ifdef __YLF__
-	I16S epoch_max=0,epoch_min=0;
-#endif
 	
 	// current pulse width
 	epoch_num = 0;
@@ -90,7 +87,6 @@ static void _calc_heart_rate()
   	pulse_width -= 20;        // 20 milliseconds per sample
 		epoch_num++;             // samples number in one heart rate pulse
 	}	
-	
 	N_SPRINTF("[PPG] sample num: %d", epoch_num);
 	
 	// 50bpm: 60 samples
@@ -108,7 +104,6 @@ static void _calc_heart_rate()
 	  h->m_epoch_num[i] = h->m_epoch_num[i-1];
 #ifndef __YLF__
 	if(h->m_epoch_cnt<3){
-		//if((h->m_epoch_num[0] - epoch_num)>300||(h->m_epoch_num[0] - epoch_num)<-300)
 		if((epoch_num>33) &&(epoch_num<47)){
 				h->m_epoch_num[0] = epoch_num;
 		}
@@ -134,26 +129,10 @@ static void _calc_heart_rate()
 	{
 		if (h->m_epoch_num[i]!=0)
 		{
-#ifdef __YLF__
-			if(epoch_max < h->m_epoch_num[i])
-				epoch_max = h->m_epoch_num[i];
-			if(epoch_min > h->m_epoch_num[i])
-				epoch_min = h->m_epoch_num[i];
-#endif
 			non_num++;
 			sum += h->m_epoch_num[i];
 		}
 	}
-#ifdef __YLF__	
-	if(epoch_max!=0){
-		sum -= epoch_max;
-		non_num--;
-	}
-	if(epoch_min!=0){
-		sum -= epoch_min;
-		non_num--;
-	}
-#endif
 	avg_epoch_num = 0;
 	while (sum>=0)
 	{
@@ -199,7 +178,15 @@ static void _reset_heart_rate_calculator()
 	}
 #ifndef __YLF__
 	h->m_epoch_cnt = 0;
-	for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
+	if(h->b_training){
+		for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
+	}else{
+		if((epoch_num>30) &&(epoch_num<50)){//Init epoch-array to last one when HR is during 60bpm~100bpm.
+			for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
+		}else{
+			for (i=0; i<6; i++) h->m_epoch_num[i] = 42;
+		}
+	}
 #else
 	for (i=0; i<8; i++) h->m_epoch_num[i] = epoch_num;
 #endif
@@ -711,11 +698,11 @@ void PPG_state_machine()
 				h->heart_rate_ready  = FALSE;
 				break;
 			}
-			
 			if (cling.activity.b_workout_active) {
 				// Start PPG detection right away if the device is in motion
 #ifndef __YLF__
-				h->b_training = TRUE;
+				if(!h->b_training)
+					h->b_training = TRUE;
 #endif
 				if (!cling.lps.b_low_power_mode) {
 					h->state = PPG_STAT_DUTY_ON;
@@ -770,12 +757,12 @@ void PPG_state_machine()
 	}
 }
 
-I8U PPG_minute_hr_calibrate(BOOLEAN b_training)
+I8U PPG_minute_hr_calibrate()
 {
 	I8U hr_diff;
 	I8U hr_rendering;
 #ifndef __YLF__
-	if(!b_training && !cling.hr.b_exceptional_hr_alert){
+	if(!cling.hr.b_training && !cling.hr.b_exceptional_hr_alert){
 		return (cling.hr.current_rate);
 	}else{
 		if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {

@@ -276,11 +276,8 @@ void PPG_disable_sensor(void);
 
 void PPG_init(void);
 void PPG_state_machine(void);
-#ifndef __YLF__
-I8U PPG_minute_hr_calibrate(BOOLEAN);
-#else
+
 I8U PPG_minute_hr_calibrate(void);
-#endif
 void PPG_closing_to_skin_detect_init(void);
 
 #endif // __PPG_H__

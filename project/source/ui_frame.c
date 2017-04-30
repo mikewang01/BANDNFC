@@ -669,11 +669,7 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 	
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
-#ifndef __YLF__
-			hr_result = PPG_minute_hr_calibrate(FALSE);
-#else
-		  hr_result = PPG_minute_hr_calibrate();
-#endif
+			hr_result = PPG_minute_hr_calibrate();
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
 			if (cling.ui.heart_rate_wave_index > 6) {
@@ -703,6 +699,9 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 
 static void _middle_render_horizontal_heart_rate()
 {
+#ifndef __YLF__
+	cling.hr.b_training = FALSE;
+#endif
   _render_middle_horizontal_hr_core(FALSE);
 }
 
@@ -1332,6 +1331,9 @@ static void _middle_render_horizontal_training_ready()
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
+#ifndef __YLF__
+		cling.hr.b_training = TRUE;
+#endif
 	}
 }
 
@@ -1412,9 +1414,7 @@ static void _middle_render_horizontal_training_hr()
 {
 	I32U hr_perc = 0;		
 	I8U hr_result = 0;
-
-  hr_result = _render_middle_horizontal_hr_core(TRUE);
-
+    hr_result = _render_middle_horizontal_hr_core(TRUE);
 	if (hr_result) {
 		hr_perc = (hr_result * 100)/(220-cling.user_data.profile.age);	
 		if (hr_perc > 98)
@@ -2812,11 +2812,7 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 		if (cling.hr.heart_rate_ready) {
 			if (b_training_mode)
 				b_all_hold = TRUE;
-#ifndef __YLF__
-			hr_result = PPG_minute_hr_calibrate(FALSE);
-#else
-		  hr_result = PPG_minute_hr_calibrate();
-#endif
+			hr_result = PPG_minute_hr_calibrate();
 			if (hr_result > 99) {
 				b_24_size = 16; 
 				margin = 1;
@@ -2861,7 +2857,9 @@ static void _middle_render_vertical_heart_rate()
 	I8U margin = 0;
 	I8U b_24_size = 16;
 	I8U hr_result = 0;
-
+#ifndef __YLF__
+	cling.hr.b_training = FALSE;
+#endif
 	hr_result = _render_middle_vertical_hr_core(50, FALSE);
 	
 	if (hr_result) {
@@ -3479,6 +3477,9 @@ static void _middle_render_vertical_training_ready()
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
+#ifndef __YLF__
+		cling.hr.b_training = TRUE;
+#endif
 	}
 }
 
@@ -3536,8 +3537,7 @@ static void _middle_render_vertical_training_hr()
 	
 	if (cling.ui.icon_sec_blinking) {		
 		_render_vertical_fonts_lib_character_core((I8U *)hart_rate_name[language_type], 16, 28);
-	} 
-
+	}
 	hr_result = _render_middle_vertical_hr_core(60, TRUE);
 	
   if (hr_result) {

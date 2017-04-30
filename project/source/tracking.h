@@ -168,7 +168,7 @@ typedef struct tagTRACKING_CTX {
 	I32U step_detect_t_sec;
 	
 	// Device direction
-	I32S z_mean;
+	//I32S z_mean;
 	
 	// Device tap timing
 	I32U tap_ts_ms;

@@ -662,9 +662,6 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->calories = diff->calories;
 	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m)
 	pminute->sleep_state = diff->sleep_state;
-//#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
-//	pminute->sleep_state = SLP_STAT_AWAKE; // Do not use this sleep for anything else but activity filtering
-//#endif
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;
@@ -786,10 +783,8 @@ void _training_pace_and_hr_alert()
 	} else {
 #ifndef __YLF_ALERT__
 		if ( (cling.user_data.profile.training_alert & 0x80)) {
-			hr = PPG_minute_hr_calibrate(TRUE);
-#else
-			hr = PPG_minute_hr_calibrate();
 #endif
+			hr = PPG_minute_hr_calibrate();
 			hr_perc = (hr * 100);
 			hr_perc /= (220-cling.user_data.profile.age);	
 			if (hr_perc > 98)
@@ -903,7 +898,6 @@ static void _logging_per_minute()
 		} else {
 			max_heart_rate = 226 - cling.user_data.profile.age;
 		}
-
 		// Alert range is set to the 90~99% of max heart rate
 		if (alert_percentage < 90)
 			alert_percentage = 90;
@@ -922,8 +916,8 @@ static void _logging_per_minute()
 			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				cling.hr.b_closing_to_skin = TRUE;
-				cling.hr.b_exceptional_hr_alert = TRUE;
 				cling.hr.heart_rate_ready = TRUE;
+				cling.hr.b_exceptional_hr_alert = TRUE;
 				N_SPRINTF("[TRACKING] HR alerting ...");
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_HR_ALERT, 0);
 			}
