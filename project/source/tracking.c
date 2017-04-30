@@ -887,6 +887,7 @@ static void _logging_per_minute()
 	I32U tracking_minute[4];
 	MINUTE_TRACKING_CTX minute;
 	I16U max_heart_rate;
+	I8U alert_percentage;
 
 	// Backup critical system information
 	SYSTEM_backup_critical();
@@ -895,13 +896,20 @@ static void _logging_per_minute()
 	TRACKING_get_whole_minute_delta(&minute, &diff);
 
 	max_heart_rate = 165;
+	alert_percentage = cling.user_data.profile.max_hr_alert;
 	if (cling.user_data.profile.age > 18) {
 		if (cling.user_data.profile.sex == SEX_MALE) {
 			max_heart_rate = 220 - cling.user_data.profile.age;
 		} else {
 			max_heart_rate = 226 - cling.user_data.profile.age;
 		}
-		max_heart_rate *= cling.user_data.profile.max_hr_alert;
+
+		// Alert range is set to the 90~99% of max heart rate
+		if (alert_percentage < 90)
+			alert_percentage = 90;
+		else if (alert_percentage > 99)
+			alert_percentage = 90;
+		max_heart_rate *= alert_percentage;
 		max_heart_rate /= 100;
 		
 		TRACKING_SPRINTF("[TRACKING] Max heart rate: %d", max_heart_rate);
@@ -909,10 +917,12 @@ static void _logging_per_minute()
 
 	if (!cling.activity.b_workout_active) {
 		// alert user if heart rate is approaching the limit
+		cling.hr.b_exceptional_hr_alert = FALSE;
 		if ((minute.heart_rate > max_heart_rate) && (diff.running > 172)) {
 			if (cling.time.system_clock_in_sec > cling.hr.alert_ts + 300) {
 				cling.hr.alert_ts = cling.time.system_clock_in_sec;
 				cling.hr.b_closing_to_skin = TRUE;
+				cling.hr.b_exceptional_hr_alert = TRUE;
 				cling.hr.heart_rate_ready = TRUE;
 				N_SPRINTF("[TRACKING] HR alerting ...");
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_HR_ALERT, 0);

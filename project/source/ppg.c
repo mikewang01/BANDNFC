@@ -775,7 +775,7 @@ I8U PPG_minute_hr_calibrate(BOOLEAN b_training)
 	I8U hr_diff;
 	I8U hr_rendering;
 #ifndef __YLF__
-	if(!b_training){
+	if(!b_training && !cling.hr.b_exceptional_hr_alert){
 		return (cling.hr.current_rate);
 	}else{
 		if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {

@@ -255,6 +255,7 @@ typedef struct tagHEARTRATE_CTX{
 	I16U  m_pre_pulse_width;
 #ifndef __YLF__
 	BOOLEAN b_training;
+	BOOLEAN b_exceptional_hr_alert;
 #endif
 #ifndef __YLF__
 	I8U   m_epoch_num[6];
