@@ -1030,6 +1030,14 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		cling.run_stat.last_10sec_distance = 0;
 		cling.run_stat.last_10sec_pace_min = 0;
 		cling.run_stat.last_10sec_pace_sec = 0;
+#ifdef __YLF__
+		//reset the run_stat
+		cling.run_stat.calories = 0;
+		cling.run_stat.distance = 0;
+		cling.run_stat.steps = 0;
+		cling.run_stat.time_min = 0;
+		cling.run_stat.accu_heart_rate = 0;
+#endif
 		cling.run_stat.pace_buf_idx = 0;
 		for (i = 0; i < PACE_BUF_LENGTH; i++) {
 			cling.run_stat.last_t_buf[i] = 0xffff;

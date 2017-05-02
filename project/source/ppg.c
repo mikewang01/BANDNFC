@@ -607,6 +607,8 @@ void PPG_state_machine()
 	I32U t_ms_diff, t_sec_diff, t_measuring_ms_diff;
 	
 	if (OTA_if_enabled()) {
+		h->state = PPG_STAT_IDLE;
+		PPG_disable_sensor();
 		return;
 	}
 	
