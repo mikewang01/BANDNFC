@@ -4657,9 +4657,10 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 
 #ifdef _CLINGBAND_PACE_MODEL_		
   I32U t_curr = CLK_get_system_time();
+	I32U t_delay_offset = 500;
 	
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS) {
-	  if (t_curr > cling.ui.conn_gps_stamp + 1000) {
+	  if (t_curr > (cling.ui.conn_gps_stamp + 1000 + t_delay_offset)) {
 		  if (!BTLE_is_connected()) {
 				// Change UI frame page to "Connect GPS fail" page.
 			  cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL;
@@ -4668,7 +4669,7 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 				Y_SPRINTF("[UI] CONN gps frame index to fail page");
 		  } 
 			
-			if (t_curr < cling.ui.conn_gps_stamp + 3500) {
+			if (t_curr < (cling.ui.conn_gps_stamp + 4000 + t_delay_offset)) {
 				if (cling.train_stat.app_positon_service_status == POSITION_GPS_STATUS_READY) {
 			    // Connect GPS successed, and change UI frame page to "Training state ready" page.
           cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;	
