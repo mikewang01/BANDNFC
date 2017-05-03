@@ -1,6 +1,7 @@
 #include "main.h"
 #ifdef _CLINGBAND_2_PAY_MODEL_
 #include "spidev_hal.h"
+#include "font.h"
 #endif
 
 extern I8U g_spi_tx_buf[];
@@ -139,6 +140,30 @@ void OLED_init(I8U contrast)
 #endif
 }
 
+#ifdef _CLINGBAND_2_PAY_MODEL_
+void OLED_hw_init()
+{
+  OLED_power_on();
+
+  // turn on the power pins and wait the appropriate time
+  BASE_delay_msec(100);	
+	
+	nrf_gpio_pin_clear(GPIO_OLED_RST);
+	// now pulse reset for at least 3us
+	BASE_delay_msec(2);
+	nrf_gpio_pin_set(GPIO_OLED_RST);	
+	
+  OLED_init(0xf0);
+
+  FONT_load_characters(128, (char *)"Cling Fitness", 16, 128, TRUE);	
+	
+	OLED_full_scree_show();
+
+	OLED_set_display(1);	
+}
+#endif
+
+
 void OLED_set_panel_off()
 {
 	CLING_OLED_CTX *o = &cling.oled;
@@ -225,7 +250,7 @@ void OLED_state_machine(void)
 		}
 		case OLED_STATE_RESET_OLED:
 		{
-			if ((t_curr - o->ts) > OLED_POWER_START_DELAY_TIME){
+			if ((t_curr - o->ts) > OLED_POWER_START_DELAY_TIME) {
 				// Pulse the reset low for the minimum time.
 				nrf_gpio_pin_clear(GPIO_OLED_RST);
 				// now pulse reset for at least 3us

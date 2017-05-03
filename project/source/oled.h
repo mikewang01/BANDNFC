@@ -42,4 +42,8 @@ void OLED_full_scree_show(void);
 void OLED_power_off(void);
 BOOLEAN OLED_panel_is_turn_on(void);
 BOOLEAN OLED_panel_is_turn_off(void);
+
+#ifdef _CLINGBAND_2_PAY_MODEL_
+void OLED_hw_init(void);
+#endif	
 #endif
