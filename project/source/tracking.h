@@ -43,6 +43,11 @@ enum {
 };
 
 enum {
+	POSITION_GPS_STATUS_READY = 0,
+	POSITION_NEWORK_STATUS_READY,
+	POSITION_NO_SERVICE
+};
+enum {
 	WORKOUT_PLACE_NONE,
 	WORKOUT_PLACE_INDOOR,
 	WORKOUT_PLACE_OUTDOOR
@@ -121,6 +126,7 @@ typedef struct tagTRAINING_TRACK_CTX {
 	I32U speed;
 	I32U time_start_in_ms;
 	I32U calories;
+	I8U  app_positon_service_status;
 } TRAINING_TRACK_CTX;
 
 typedef struct tagDAY_STREAMING_CTX {

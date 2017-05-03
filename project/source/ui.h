@@ -505,12 +505,15 @@ enum {
 	// 6: training Statistics
 	UI_DISPLAY_TRAINING_STATATISTICS,
   UI_DISPLAY_TRAINING_STAT_START = UI_DISPLAY_TRAINING_STATATISTICS, //29     	
-  UI_DISPLAY_TRAINING_STAT_READY, //30    
-	UI_DISPLAY_TRAINING_STAT_TIME, //31	
-	UI_DISPLAY_TRAINING_STAT_DISTANCE, //32
-	UI_DISPLAY_TRAINING_STAT_PACE, //33
-	UI_DISPLAY_TRAINING_STAT_HEART_RATE, //34
-	UI_DISPLAY_TRAINING_STAT_RUN_STOP, // 35	
+	UI_DISPLAY_TRAINING_STAT_CONNECT_GPS, //30
+	UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT, //31
+	UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL, //32	
+  UI_DISPLAY_TRAINING_STAT_READY, //33    
+	UI_DISPLAY_TRAINING_STAT_TIME, //34	
+	UI_DISPLAY_TRAINING_STAT_DISTANCE, //35
+	UI_DISPLAY_TRAINING_STAT_PACE, //36
+	UI_DISPLAY_TRAINING_STAT_HEART_RATE, //36
+	UI_DISPLAY_TRAINING_STAT_RUN_STOP, // 37	
 	UI_DISPLAY_TRAINING_STATATISTICS_END = UI_DISPLAY_TRAINING_STAT_RUN_STOP,
 	// 7: Remembered
 	UI_DISPLAY_PREVIOUS,
@@ -648,14 +651,15 @@ typedef struct tagFRAME_RENDERING_CTX {
 
 typedef struct tagUI_ANIMATION_CTX {
 	// All the dword variables
-	I32U display_to_base;        // Display timeout base
-	I32U frame_interval;         // Frame interval, i.e., the time interval that a particular frame stays on this frame
-	I32U touch_time_stamp;       // Touch event time stamp
-  I32U running_time_stamp;     // Running record time stamp.
-	I32U notif_time_stamp;       // Notif time stamp.
-	I32U dark_time_stamp;        // Dark time stamp.	
-	I32U stopwatch_time_stamp;   // Stopwatch record time stamp. 	
-	I32U stopwatch_t_stop_stamp; // Stopwatch record stop time stamp. 	
+	I32U display_to_base;           // Display timeout base
+	I32U frame_interval;            // Frame interval, i.e., the time interval that a particular frame stays on this frame
+	I32U touch_time_stamp;          // Touch event time stamp
+  I32U training_ready_time_stamp; // Running record time stamp.
+	I32U notif_time_stamp;          // Notif time stamp.
+	I32U dark_time_stamp;           // Dark time stamp.	
+	I32U stopwatch_time_stamp;      // Stopwatch record time stamp. 	
+	I32U stopwatch_t_stop_stamp;    // Stopwatch record stop time stamp. 	
+	I32U conn_gps_stamp;            // Connect gps time stamp. 	
 	
 	// All the frame buffer related
 	I8U p_oled_up[512];

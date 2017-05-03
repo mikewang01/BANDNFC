@@ -943,6 +943,11 @@ static void _pending_process()
 					CP_SPRINTF("[CP] cycling: %d, %d", cling.train_stat.distance, cling.train_stat.speed);
 						break;
 				}
+				case CP_MSG_TYPE_WORKOUT_GPS_STATUS: {
+						cling.train_stat.app_positon_service_status = (p->msg+1)[0];
+						CP_SPRINTF("[CP] cycling location current status: %d", cling.train_stat.app_positon_service_status);
+						break;
+				}
         default:
             break;
     }

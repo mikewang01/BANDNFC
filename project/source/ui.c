@@ -426,9 +426,9 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 					break;				
 			} else {
 #ifdef _CLINGBAND_PACE_MODEL_							
-				if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) {
+				if (u->frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS) {
 				  if (u->frame_prev_idx != UI_DISPLAY_TRAINING_STAT_START) {
-						u->frame_index = UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS;
+						u->frame_index = UI_DISPLAY_TRAINING_STAT_START;
 					} 
 				}
 				if (u->frame_index == UI_DISPLAY_RUNNING_STAT_DISTANCE) {
@@ -965,19 +965,22 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 {
 	I8U i;
 	BOOLEAN b_enter_workout_mode = FALSE;
-	BOOLEAN b_exit_workout_mode = FALSE;
-	
-	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
-		N_SPRINTF("[UI] Enter training workout mode");	
+
+#ifdef _CLINGBAND_PACE_MODEL_		
+	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS)) {
+		Y_SPRINTF("[UI] Enter outdoor running mode");	
     b_enter_workout_mode = TRUE;		
 		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
 	}
-
+#endif
+		
 #ifndef _CLINGBAND_PACE_MODEL_		
-	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY)) {
-		N_SPRINTF("[UI] Enter training workout mode");	
-    b_enter_workout_mode = TRUE;		
-		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) || (u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS)) {	
+	  if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) {
+		  Y_SPRINTF("[UI] Enter outdoor running mode");	
+      b_enter_workout_mode = TRUE;		
+		  cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+		}
 	}
 #endif
 	
@@ -1019,7 +1022,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		cling.activity.b_workout_active = TRUE;		
  	  cling.ui.run_ready_index = 0;
 		cling.ui.b_training_first_enter = TRUE;			
-		cling.ui.running_time_stamp = CLK_get_system_time();
+		cling.ui.training_ready_time_stamp = CLK_get_system_time();
 		// Reset all training data - distance, time stamp, calories, and session ID
 		cling.train_stat.distance = 0;
 		cling.train_stat.time_start_in_ms = CLK_get_system_time();
@@ -1048,33 +1051,34 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 			if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
 					(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
 			{
+				Y_SPRINTF("[UI] cp create workout rt msg");	
 				CP_create_workout_rt_msg(cling.activity.workout_type);
 			}
 		}
-		return;
-	}
 
-	if (_is_running_active_mode_page(u->frame_index)) {
-		cling.activity.b_workout_active = TRUE;
+#ifdef _CLINGBAND_PACE_MODEL_		
+		// Reset connect gps time stamp.
+    cling.ui.conn_gps_stamp = CLK_get_system_time();
+		// Clear app positon service status.
+		cling.train_stat.app_positon_service_status = POSITION_NO_SERVICE;
+#endif		
+		
 		return;
 	}
-	
-	if (_is_regular_page(u->frame_index) || 
-		  _is_running_analysis_page(u->frame_index)) {
-				
-		b_exit_workout_mode = TRUE;
-	} 
 
 #ifndef _CLINGBAND_PACE_MODEL_	
-  if (_is_other_need_store_page(u->frame_index)) {
-		b_exit_workout_mode = TRUE;
-	}
-#endif
-	
-	if (b_exit_workout_mode) {
+  if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index) || _is_other_need_store_page(u->frame_index)) {
 		cling.activity.b_workout_active = FALSE;		
 		cling.activity.workout_type = WORKOUT_NONE;
 	}
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_		
+	if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
+		cling.activity.b_workout_active = FALSE;		
+		cling.activity.workout_type = WORKOUT_NONE;
+	} 
+#endif
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1224,14 +1228,6 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 	if ((u->frame_prev_idx == UI_DISPLAY_STOPWATCH_STOP) && (u->frame_index == UI_DISPLAY_CAROUSEL_2)) {
 		b_exit_stopwatch_mode = TRUE;
 	}
-	
-#ifndef _CLINGBAND_PACE_MODEL_	
-  if (_is_other_need_store_page(u->frame_index)) {
-    if ((u->frame_index != UI_DISPLAY_STOPWATCH_START) && (u->frame_index != UI_DISPLAY_STOPWATCH_STOP)){
-		  b_exit_stopwatch_mode = TRUE;				
-		}
-	}		
-#endif		
 	
 	if (b_exit_stopwatch_mode) {
 		u->stopwatch_time_stamp = 0;
@@ -1582,15 +1578,15 @@ void UI_start_notifying(I8U frame_index)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 
+	I32U t_curr = CLK_get_system_time(); 
 	// 1. Start system timer.
   RTC_start_operation_clk();
 	
 	// 2. Update display frame index
 	u->frame_index = frame_index;
 
-	// 3. Update touch time stamp and notif time stamp.
-  u->touch_time_stamp = CLK_get_system_time();
-  u->notif_time_stamp = CLK_get_system_time();
+	// 3. Update notif time stamp.
+  u->notif_time_stamp = t_curr;
 
 	// 4. Turn on oled display.
 	UI_turn_on_display(UI_STATE_TOUCH_SENSING);

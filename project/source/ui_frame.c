@@ -1291,6 +1291,32 @@ static void _middle_render_horizontal_training_run_or_analysis()
 }
 #endif
 
+#ifdef _CLINGBAND_PACE_MODEL_		
+static void _middle_render_horizontal_training_connect_gps()
+{
+  const	char *conn_gps_name[] = {"连接手机 GPS", "连接手机 GPS", "连接手机 GPS"};	
+	I8U language_type = cling.ui.language_type;		
+
+ 	FONT_load_characters(128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
+}
+
+static void _middle_render_horizontal_training_connect_gps_timeout()
+{
+  const	char *conn_timeout_name[] = {"连接超时", "连接超时", "连接超时"};	
+	I8U language_type = cling.ui.language_type;		
+
+ 	FONT_load_characters(128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
+}
+
+static void _middle_render_horizontal_training_connect_gps_fail()
+{
+  const	char *conn_fail_name[] = {"连接失败", "连接失败", "连接失败"};	
+	I8U language_type = cling.ui.language_type;		
+
+ 	FONT_load_characters(128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
+}
+#endif
+
 static BOOLEAN _middle_render_horizontal_run_ready_core()
 {
 	const char *ready_indicator_name[] = {"3","2","1","GO"};
@@ -1302,8 +1328,8 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
   I32U t_curr = CLK_get_system_time();
 	BOOLEAN b_ready_finished = FALSE;	
 	
-	if (t_curr  > (cling.ui.running_time_stamp + 700)) {
-		cling.ui.running_time_stamp = t_curr;		
+	if (t_curr  > (cling.ui.training_ready_time_stamp + 700)) {
+		cling.ui.training_ready_time_stamp = t_curr;		
 		cling.ui.run_ready_index++;
 	}
 
@@ -1414,7 +1440,7 @@ static void _middle_render_horizontal_training_hr()
 {
 	I32U hr_perc = 0;		
 	I8U hr_result = 0;
-    hr_result = _render_middle_horizontal_hr_core(TRUE);
+  hr_result = _render_middle_horizontal_hr_core(TRUE);
 	if (hr_result) {
 		hr_perc = (hr_result * 100)/(220-cling.user_data.profile.age);	
 		if (hr_perc > 98)
@@ -2699,39 +2725,6 @@ static void _middle_render_vertical_uv_index()
 }
 #endif
 
-static void _middle_render_vertical_training_run_start()
-{
-	const	char *run_start_name_1[] = {"RUN", "开始 ", "開始 "};		
-	const	char *run_start_name_2[] = {"NOW", "跑步 ", "跑步 "};			
-	I8U language_type = cling.ui.language_type;		
-
-	_middle_render_vertical_character_core((I8U *)run_start_name_1[language_type], 50, (I8U *)run_start_name_2[language_type], 70);	
-}
-
-#ifndef _CLINGBAND_PACE_MODEL_
-static void _middle_render_vertical_training_run_or_analysis()
-{
-	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
-	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
-	I8U language_type = cling.ui.language_type;	
-
-	_render_vertical_fonts_lib_invert_colors_core((I8U *)start_name[language_type], 60);	
-		
-	_render_vertical_fonts_lib_invert_colors_core((I8U *)analysis_name[language_type], 100);	
-}
-#endif
-
-#ifdef _CLINGBAND_PACE_MODEL_
-static void _middle_render_vertical_running_analysis()
-{
-	const	char *running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
-	const	char *running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
-	I8U language_type = cling.ui.language_type;		
-
-	_middle_render_vertical_character_core((I8U *)running_analysis_name_1[language_type], 50, (I8U *)running_analysis_name_2[language_type], 70);		
-}
-#endif
-
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
 static void _middle_render_vertical_pm2p5()
 {
@@ -3432,6 +3425,39 @@ static void _middle_render_vertical_running_stride()
 	_render_vertical_fonts_lib_character_core((I8U *)unit_stride_display[language_type][metric], 16, 112);
 }
 
+static void _middle_render_vertical_training_run_start()
+{
+	const	char *run_start_name_1[] = {"RUN", "开始 ", "開始 "};		
+	const	char *run_start_name_2[] = {"NOW", "跑步 ", "跑步 "};			
+	I8U language_type = cling.ui.language_type;		
+
+	_middle_render_vertical_character_core((I8U *)run_start_name_1[language_type], 50, (I8U *)run_start_name_2[language_type], 70);	
+}
+
+#ifndef _CLINGBAND_PACE_MODEL_
+static void _middle_render_vertical_training_run_or_analysis()
+{
+	const	char *start_name[] = {"RUN ", "开始 ", "開始 "};	
+	const	char *analysis_name[] = {"MORE", "记录 ", "記錄 "};		
+	I8U language_type = cling.ui.language_type;	
+
+	_render_vertical_fonts_lib_invert_colors_core((I8U *)start_name[language_type], 60);	
+		
+	_render_vertical_fonts_lib_invert_colors_core((I8U *)analysis_name[language_type], 100);	
+}
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_
+static void _middle_render_vertical_running_analysis()
+{
+	const	char *running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
+	const	char *running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
+	I8U language_type = cling.ui.language_type;		
+
+	_middle_render_vertical_character_core((I8U *)running_analysis_name_1[language_type], 50, (I8U *)running_analysis_name_2[language_type], 70);		
+}
+#endif
+
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_running_stop_analysis()
 {
@@ -3440,6 +3466,40 @@ static void _middle_render_vertical_running_stop_analysis()
 	I8U language_type = cling.ui.language_type;			
 
 	_middle_render_vertical_character_core((I8U *)stop_analysis_name_1[language_type], 50, (I8U *)stop_analysis_name_2[language_type], 70);		
+}
+#endif
+
+#ifdef _CLINGBAND_PACE_MODEL_		
+static void _middle_render_horizontal_vertical_connect_gps()
+{
+  const	char *conn_name[] = {"连接", "连接", "连接"};	
+  const	char *phone_name[] = {"手机", "手机", "手机"};	
+  const	char *gps_name[] = {"GPS", "GPS", "GPS"};		
+	I8U language_type = cling.ui.language_type;		
+
+	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 20);
+	_render_vertical_fonts_lib_character_core((I8U *)phone_name[language_type], 16, 40);
+	_render_vertical_fonts_lib_character_core((I8U *)gps_name[language_type], 16, 75);
+}
+
+static void _middle_render_horizontal_vertical_connect_gps_timeout()
+{
+  const	char *conn_name[] = {"连接", "连接", "连接"};	
+  const	char *timeout_name[] = {"超时", "超时", "超时"};	
+	I8U language_type = cling.ui.language_type;		
+	
+	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
+	_render_vertical_fonts_lib_character_core((I8U *)timeout_name[language_type], 16, 75);
+}
+
+static void _middle_render_horizontal_vertical_connect_gps_fail()
+{
+  const	char *conn_name[] = {"连接", "连接", "连接"};	
+  const	char *fail_name[] = {"失败", "失败", "失败"};	
+	I8U language_type = cling.ui.language_type;		
+
+	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
+	_render_vertical_fonts_lib_character_core((I8U *)fail_name[language_type], 16, 75);
 }
 #endif
 
@@ -3452,8 +3512,8 @@ static BOOLEAN _middle_render_vertical_core_ready()
   I32U t_curr = CLK_get_system_time();
   BOOLEAN b_ready_finished = FALSE;	
 	
-	if (t_curr  > (cling.ui.running_time_stamp + 700)) {
-		cling.ui.running_time_stamp = t_curr;		
+	if (t_curr  > (cling.ui.training_ready_time_stamp + 700)) {
+		cling.ui.training_ready_time_stamp = t_curr;		
 		cling.ui.run_ready_index++;
 	}
 	
@@ -3950,6 +4010,9 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
 	ICON16_RUNNING_CALORIES_IDX,      /*UI_DISPLAY_RUNNING_CALORIES*/
 	ICON16_RUNNING_STOP_IDX,          /*UI_DISPLAY_RUNNING_STOP_ANALYSIS*/
 	ICON16_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_RUN_START*/
+	ICON16_NONE,                      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS*/
+	ICON16_GPS_CONN_TIMEOUT_IDX,      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT*/
+	ICON16_GPS_CONN_FAIL_IDX,         /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/
 	ICON16_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_READY*/
 	ICON16_RUNNING_TIME_IDX,          /*UI_DISPLAY_TRAINING_TIME*/
 	ICON16_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_DISTANCE*/
@@ -4213,6 +4276,9 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 	ICON24_RUNNING_CALORIES_IDX,      /*UI_DISPLAY_RUNNING_CALORIES*/
 	ICON24_RUNNING_STOP_IDX,          /*UI_DISPLAY_RUNNING_STOP_ANALYSIS*/
 	ICON24_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_RUN_START*/
+	ICON24_NONE,                      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS*/
+	ICON24_GPS_CONN_TIMEOUT_IDX,      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT*/
+	ICON24_GPS_CONN_FAIL_IDX,         /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/
 	ICON24_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_READY*/
 	ICON24_RUNNING_TIME_IDX,          /*UI_DISPLAY_TRAINING_TIME*/
 	ICON24_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_DISTANCE*/
@@ -4589,6 +4655,58 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 {	
 	const UI_RENDER_CTX *ui_render;
 
+#ifdef _CLINGBAND_PACE_MODEL_		
+  I32U t_curr = CLK_get_system_time();
+	
+	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS) {
+	  if (t_curr > cling.ui.conn_gps_stamp + 1000) {
+		  if (!BTLE_is_connected()) {
+				// Change UI frame page to "Connect GPS fail" page.
+			  cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL;
+				// Update connect gps time stamp.
+			  cling.ui.conn_gps_stamp = t_curr;
+				Y_SPRINTF("[UI] CONN gps frame index to fail page");
+		  } 
+			
+			if (t_curr < cling.ui.conn_gps_stamp + 3500) {
+				if (cling.train_stat.app_positon_service_status == POSITION_GPS_STATUS_READY) {
+			    // Connect GPS successed, and change UI frame page to "Training state ready" page.
+          cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;	
+			    // Update training ready time stamp.
+			    cling.ui.training_ready_time_stamp = t_curr;					
+				  Y_SPRINTF("[UI] CONN gps frame index to training ready page (conn successed)");
+				}
+			} else {
+				// Change UI frame page to "Connect GPS timeout" page.
+				cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT;
+				// Update connect gps time stamp.
+				cling.ui.conn_gps_stamp = t_curr;			
+        Y_SPRINTF("[UI] CONN gps frame index to timeout page");				
+			}
+	  }	
+	}
+
+	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT) {
+		if (t_curr > cling.ui.conn_gps_stamp + 1000) {
+			// Change UI frame page to "Training state ready" page.
+      cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;
+			// Update training ready time stamp.
+			cling.ui.training_ready_time_stamp = t_curr;			
+			Y_SPRINTF("[UI] CONN gps frame index to training ready page 1");
+		}			
+	}
+	
+	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL) {
+		if (t_curr > cling.ui.conn_gps_stamp + 1000) {
+			// Change UI frame page to "Training state ready" page.
+      cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;
+			// Update training ready time stamp.
+			cling.ui.training_ready_time_stamp = t_curr;
+			Y_SPRINTF("[UI] CONN gps frame index to training ready page 2");
+		}			
+	}
+#endif	
+	
 	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
 	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
 	
