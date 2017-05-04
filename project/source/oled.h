@@ -30,6 +30,7 @@ typedef enum {
 typedef struct tagCLING_OLED_CTX {
 	I32U ts;
 	I8U state;
+	BOOLEAN b_init_finished;
 } CLING_OLED_CTX;
 
 void OLED_init(I8U contrast);

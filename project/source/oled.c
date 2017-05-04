@@ -160,6 +160,8 @@ void OLED_hw_init()
 	OLED_full_scree_show();
 
 	OLED_set_display(1);	
+	
+	cling.oled.b_init_finished = TRUE;
 }
 #endif
 
@@ -234,6 +236,10 @@ void OLED_state_machine(void)
 		RTC_start_operation_clk();
 	}
 
+#ifndef _CLINGBAND_2_PAY_MODEL_	
+  o->b_init_finished = FALSE;
+#endif
+	
 	switch (o->state) {
 		case OLED_STATE_IDLE:
 			break;
@@ -243,26 +249,32 @@ void OLED_state_machine(void)
 			pm_stay_alive();
 #endif			
 			// turn on the power pins and wait the appropriate time
-			o->ts = CLK_get_system_time(); // stores time we start this
-			OLED_power_on();
+			o->ts = CLK_get_system_time(); // stores time we start this					
+			if (!o->b_init_finished) {	
+			  OLED_power_on();
+			}	
 			o->state = OLED_STATE_RESET_OLED;
 			break;
 		}
 		case OLED_STATE_RESET_OLED:
 		{
 			if ((t_curr - o->ts) > OLED_POWER_START_DELAY_TIME) {
-				// Pulse the reset low for the minimum time.
-				nrf_gpio_pin_clear(GPIO_OLED_RST);
-				// now pulse reset for at least 3us
-				BASE_delay_msec(2);
-				nrf_gpio_pin_set(GPIO_OLED_RST);
+			  if (!o->b_init_finished) {			
+				  // Pulse the reset low for the minimum time.
+				  nrf_gpio_pin_clear(GPIO_OLED_RST);
+				  // now pulse reset for at least 3us
+				  BASE_delay_msec(2);
+				  nrf_gpio_pin_set(GPIO_OLED_RST);
+				}
 				o->state = OLED_STATE_INIT_REGISTERS;
 			}
 			break;
 		}
 		case OLED_STATE_INIT_REGISTERS:
 		{
-			OLED_init(0xf0);
+			if (!o->b_init_finished) {	
+			  OLED_init(0xf0);
+			}
 			o->state = OLED_STATE_INIT_UI;
 			break;
 		}
@@ -274,7 +286,9 @@ void OLED_state_machine(void)
 			cling.ui.touch_time_stamp = t_curr;			
 
 			// Update ui display base time stamp.
-			cling.ui.display_to_base = t_curr;  			
+			cling.ui.display_to_base = t_curr;  
+
+      o->b_init_finished = FALSE;			
 			o->state = OLED_STATE_ON;
 			break;
 		}

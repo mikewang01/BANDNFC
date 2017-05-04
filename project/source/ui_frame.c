@@ -1453,10 +1453,16 @@ static void _middle_render_horizontal_training_hr()
 static void _middle_render_horizontal_training_run_stop()
 {
 	const char *run_stop_name[] = {"STOP RUN", "结束跑步 ", "结束跑步 "};
-
 	I8U language_type = cling.ui.language_type;
-
-	FONT_load_characters(128+31, (char *)run_stop_name[language_type], 16, 128, FALSE);
+  I8U offset;
+	
+#ifdef _CLINGBAND_PACE_MODEL_				
+	  offset = 24;	
+#else
+	  offset = 31;	
+#endif	
+	
+	FONT_load_characters(128+offset, (char *)run_stop_name[language_type], 16, 128, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -2617,9 +2623,9 @@ static void _middle_render_vertical_distance()
 	_render_vertical_fonts_lib_character_core((I8U *)unit_distance_display[language_type][metric], 16, 80);	
 }
 
+const char *unit_calories_display[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
 static void _middle_render_vertical_calories()
 {
-	const char *unit_calories_display[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
 	I8U string[32];
 	I32U stat = 0;
 	I8U margin = 2;
@@ -3271,7 +3277,7 @@ static void _middle_render_vertical_running_hr()
 static void _middle_vertical_run_calories_core(I32U run_calories, BOOLEAN icon_blinking)
 {
 	const	char *running_calories_name[] = {"BURN", "热量 ", "熱量 "};		
-	const char *unit_calories_display[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
+	//const char *unit_calories_display[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
 	I8U string[32];
 	I8U margin = 0;
 	I8U b_24_size = 16;
@@ -4660,6 +4666,8 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	I32U t_delay_offset = 500;
 	
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS) {
+		// Update touch time stamp.
+		cling.ui.touch_time_stamp = t_curr;
 	  if (t_curr > (cling.ui.conn_gps_stamp + 1000 + t_delay_offset)) {
 		  if (!BTLE_is_connected()) {
 				// Change UI frame page to "Connect GPS fail" page.
@@ -4688,6 +4696,8 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	}
 
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT) {
+		// Update touch time stamp.
+		cling.ui.touch_time_stamp = t_curr;		
 		if (t_curr > cling.ui.conn_gps_stamp + 1000) {
 			// Change UI frame page to "Training state ready" page.
       cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;
@@ -4698,6 +4708,8 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	}
 	
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL) {
+		// Update touch time stamp.
+		cling.ui.touch_time_stamp = t_curr;		
 		if (t_curr > cling.ui.conn_gps_stamp + 1000) {
 			// Change UI frame page to "Training state ready" page.
       cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;
