@@ -696,7 +696,16 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	if ((pminute->running + pminute->walking) > 60) {
 		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
 	}
-	
+#ifndef __YLF__
+	if(pminute->running>100 || ((pminute->running+pminute->walking)>140)){
+		cling.hr.b_runstate = TRUE;
+	}else if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
+		cling.hr.b_walkstate = TRUE;
+	}else{
+		cling.hr.b_runstate = FALSE;
+		cling.hr.b_walkstate = FALSE;
+	}
+#endif
 	adj = 0;
 	// Adjust heart rate in case of intense activity
 	if (cling.hr.b_closing_to_skin) {	
@@ -726,6 +735,18 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	
 	if (cling.sleep.sleep_wakeup_steps > 4) {
 		SLEEP_wake_up_by_force(TRUE);
+#ifdef __YLF__
+		if(pminute->activity_count < 20){
+			if(pminute->walking){
+				pminute->walking = 0;
+				cling.activity.day.walking = cling.activity.day_stored.walking;
+			}
+			if(pminute->running){
+				pminute->running = 0;
+				cling.activity.day.running = cling.activity.day_stored.running;
+			}
+		}
+#endif
 	}
 	cling.sleep.sleep_wakeup_steps = 0;
 	
@@ -782,7 +803,7 @@ void _training_pace_and_hr_alert()
 			b_pace_range_alert = FALSE;
 	} else {
 #ifndef __YLF_ALERT__
-		if ( (cling.user_data.profile.training_alert & 0x80)) {
+		if ( (cling.user_data.profile.max_hr_alert & 0x80)) {
 #endif
 			hr = PPG_minute_hr_calibrate();
 			hr_perc = (hr * 100);
@@ -790,7 +811,7 @@ void _training_pace_and_hr_alert()
 			if (hr_perc > 98)
 				hr_perc = 98;
 			
-			hr_range_down = cling.user_data.profile.max_hr_alert;
+			hr_range_down = (cling.user_data.profile.max_hr_alert & 0x7f);
 			b_hr_range_alert = TRUE;
 #ifndef __YLF_ALERT__
 		}
@@ -891,7 +912,7 @@ static void _logging_per_minute()
 	TRACKING_get_whole_minute_delta(&minute, &diff);
 
 	max_heart_rate = 165;
-	alert_percentage = cling.user_data.profile.max_hr_alert;
+	alert_percentage = (cling.user_data.profile.max_hr_alert & 0x7f);
 	if (cling.user_data.profile.age > 18) {
 		if (cling.user_data.profile.sex == SEX_MALE) {
 			max_heart_rate = 220 - cling.user_data.profile.age;

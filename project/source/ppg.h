@@ -190,8 +190,11 @@ void ppg_PS_ALS_Auto             (void);
 #define PPG_WEARING_DETECTION_BG_IDLE_INTERVAL                 3600000     // background idle for 300 seconds
 
 #define PPG_SAMPLE_COUNT_THRESHOLD                                 32
+#ifdef _CLINGBAND_PACE_MODEL_
+#define PPG_SAMPLE_AVERATE_THRESHOLD                             3000
+#else
 #define PPG_SAMPLE_AVERATE_THRESHOLD                             4000//5000//2000
-
+#endif
 typedef enum {
 	PPG_BODY_NOT_WEAR, 
 	PPG_BODY_WEAR, 
@@ -254,8 +257,9 @@ typedef struct tagHEARTRATE_CTX{
 	I16S  m_pre_ppg_sample;
 	I16U  m_pre_pulse_width;
 #ifndef __YLF__
-	BOOLEAN b_training;
 	BOOLEAN b_exceptional_hr_alert;
+	BOOLEAN b_walkstate;
+	BOOLEAN b_runstate;
 #endif
 #ifndef __YLF__
 	I8U   m_epoch_num[6];

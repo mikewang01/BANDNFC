@@ -699,9 +699,6 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 
 static void _middle_render_horizontal_heart_rate()
 {
-#ifndef __YLF__
-	cling.hr.b_training = FALSE;
-#endif
   _render_middle_horizontal_hr_core(FALSE);
 }
 
@@ -1358,9 +1355,6 @@ static void _middle_render_horizontal_training_ready()
 		cling.ui.b_enter_active_mode = TRUE;
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
-#ifndef __YLF__
-		cling.hr.b_training = TRUE;
-#endif
 	}
 }
 
@@ -2859,9 +2853,7 @@ static void _middle_render_vertical_heart_rate()
 	I8U margin = 0;
 	I8U b_24_size = 16;
 	I8U hr_result = 0;
-#ifndef __YLF__
-	cling.hr.b_training = FALSE;
-#endif
+	
 	hr_result = _render_middle_vertical_hr_core(50, FALSE);
 	
 	if (hr_result) {
@@ -3547,9 +3539,6 @@ static void _middle_render_vertical_training_ready()
     cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
-#ifndef __YLF__
-		cling.hr.b_training = TRUE;
-#endif
 	}
 }
 

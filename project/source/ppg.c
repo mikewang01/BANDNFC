@@ -178,14 +178,13 @@ static void _reset_heart_rate_calculator()
 	}
 #ifndef __YLF__
 	h->m_epoch_cnt = 0;
-	if(h->b_training){
-		for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
+	if((epoch_num<30)){
+		for (i=0; i<6; i++) h->m_epoch_num[i] = 35 -((30-epoch_num)& 0x05);
+	}else if(epoch_num>50){
+		for (i=0; i<6; i++) h->m_epoch_num[i] = 40 + ((epoch_num-50)& 0x05);
 	}else{
-		if((epoch_num>30) &&(epoch_num<50)){//Init epoch-array to last one when HR is during 60bpm~100bpm.
+		//Init epoch-array to last one when HR is during 60bpm~100bpm.
 			for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
-		}else{
-			for (i=0; i<6; i++) h->m_epoch_num[i] = 42;
-		}
 	}
 #else
 	for (i=0; i<8; i++) h->m_epoch_num[i] = epoch_num;
@@ -551,9 +550,6 @@ void PPG_init()
 	
 	h->m_zero_point_timer   = CLK_get_system_time();
 #ifndef __YLF__
-	h->b_training = FALSE;
-#endif
-#ifndef __YLF__
   for (i=0; i<6; i++) h->m_epoch_num[i] = 42;
 	h->m_epoch_cnt = 0;
 #else
@@ -702,10 +698,6 @@ void PPG_state_machine()
 			}
 			if (cling.activity.b_workout_active) {
 				// Start PPG detection right away if the device is in motion
-#ifndef __YLF__
-				if(!h->b_training)
-					h->b_training = TRUE;
-#endif
 				if (!cling.lps.b_low_power_mode) {
 					h->state = PPG_STAT_DUTY_ON;
 					// We need initialize skin touch detection routine
@@ -763,38 +755,33 @@ I8U PPG_minute_hr_calibrate()
 {
 	I8U hr_diff;
 	I8U hr_rendering;
-#ifndef __YLF__
-	if(!cling.hr.b_training && !cling.hr.b_exceptional_hr_alert){
-		return (cling.hr.current_rate);
-	}else{
-		if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {
-			hr_rendering = cling.hr.current_rate;
-		} else {
-			if (cling.hr.current_rate > cling.hr.minute_rate) {
-				hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
-				if (hr_diff < 10) {
-					hr_rendering = cling.hr.current_rate;
-				} else {
-					hr_rendering = (cling.hr.minute_rate+(hr_diff&0x07));
-				} 
+
+	if ((cling.hr.minute_rate < 90) && (cling.hr.current_rate < 90)) {
+		hr_rendering = cling.hr.current_rate;
+	} else {
+		if (cling.hr.current_rate > cling.hr.minute_rate) {
+			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
+			if (hr_diff < 10) {
+				hr_rendering = cling.hr.current_rate;
 			} else {
-				hr_diff = cling.hr.minute_rate-cling.hr.current_rate;
-				
-				if (hr_diff < 16)
-					hr_rendering = cling.hr.current_rate;
-				else 
-					hr_rendering = (cling.hr.minute_rate - (hr_diff&0x07));
-			}
+				hr_rendering = (cling.hr.minute_rate+(hr_diff&0x07));
+			} 
+		} else {
+			hr_diff = cling.hr.minute_rate-cling.hr.current_rate;
+			
+			if (hr_diff < 16)
+				hr_rendering = cling.hr.current_rate;
+			else 
+				hr_rendering = (cling.hr.minute_rate - (hr_diff&0x07));
 		}
-		
-		if (hr_rendering < 60) {
-			if (cling.hr.minute_rate > cling.hr.current_rate)
-				hr_diff = cling.hr.minute_rate - cling.hr.current_rate;
-			else
-				hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
-			hr_rendering = 60 + (hr_diff & 0x07);
-		} 
-		return hr_rendering;
 	}
-#endif
+	
+	if (hr_rendering < 60) {
+		if (cling.hr.minute_rate > cling.hr.current_rate)
+			hr_diff = cling.hr.minute_rate - cling.hr.current_rate;
+		else
+			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
+		hr_rendering = 60 + (hr_diff & 0x07);
+	} 
+	return hr_rendering;
 }
