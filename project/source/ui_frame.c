@@ -4724,38 +4724,6 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 #endif
 			// If user starts runing, turn on workout active mode
 			cling.activity.b_workout_active = TRUE;		
-			// Reset all training data - distance, time stamp, calories, and session ID
-			cling.train_stat.distance = 0;
-			cling.train_stat.time_start_in_ms = CLK_get_system_time();
-			cling.train_stat.session_id = cling.time.time_since_1970;
-			cling.train_stat.calories = 0;
-			// Running pace time stamp
-			cling.run_stat.pace_calc_ts = CLK_get_system_time();
-			cling.run_stat.last_10sec_distance = 0;
-			cling.run_stat.last_10sec_pace_min = 0;
-			cling.run_stat.last_10sec_pace_sec = 0;
-#ifdef __YLF__
-			//reset the run_stat
-			cling.run_stat.calories = 0;
-			cling.run_stat.distance = 0;
-			cling.run_stat.steps = 0;
-			cling.run_stat.time_min = 0;
-			cling.run_stat.accu_heart_rate = 0;
-#endif
-			cling.run_stat.pace_buf_idx = 0;
-			for (I8U i = 0; i < PACE_BUF_LENGTH; i++) {
-				cling.run_stat.last_t_buf[i] = 0xffff;
-				cling.run_stat.last_d_buf[i] = 0xffff;
-			}
-			
-			if (BTLE_is_connected()) {
-				if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
-						(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
-				{
-					Y_SPRINTF("[UI] cp create workout rt msg");	
-					CP_create_workout_rt_msg(cling.activity.workout_type);
-				}
-			}
 		}
   }
 		
