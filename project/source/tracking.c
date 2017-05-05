@@ -696,7 +696,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	if ((pminute->running + pminute->walking) > 60) {
 		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
 	}
-#ifndef __YLF__
+#ifdef __YLF__
 	if(pminute->running>100 || ((pminute->running+pminute->walking)>140)){
 		cling.hr.b_runstate = TRUE;
 	}else if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
