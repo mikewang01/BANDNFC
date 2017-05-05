@@ -1291,7 +1291,7 @@ static void _middle_render_horizontal_training_run_or_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_		
 static void _middle_render_horizontal_training_connect_gps()
 {
-  const	char *conn_gps_name[] = {"连接手机 GPS", "连接手机 GPS", "连接手机 GPS"};	
+  const	char *conn_gps_name[] = {"连接手机 GPS", "连接手机 GPS", "連接手機 GPS"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
@@ -1299,7 +1299,7 @@ static void _middle_render_horizontal_training_connect_gps()
 
 static void _middle_render_horizontal_training_connect_gps_timeout()
 {
-  const	char *conn_timeout_name[] = {"连接超时", "连接超时", "连接超时"};	
+  const	char *conn_timeout_name[] = {"连接超时", "连接超时", "連接超時"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
@@ -1307,7 +1307,7 @@ static void _middle_render_horizontal_training_connect_gps_timeout()
 
 static void _middle_render_horizontal_training_connect_gps_fail()
 {
-  const	char *conn_fail_name[] = {"连接失败", "连接失败", "连接失败"};	
+  const	char *conn_fail_name[] = {"连接失败", "连接失败", "連接失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
@@ -3473,8 +3473,8 @@ static void _middle_render_vertical_running_stop_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_		
 static void _middle_render_horizontal_vertical_connect_gps()
 {
-  const	char *conn_name[] = {"连接", "连接", "连接"};	
-  const	char *phone_name[] = {"手机", "手机", "手机"};	
+  const	char *conn_name[] = {"连接", "连接", "連接"};	
+  const	char *phone_name[] = {"手机", "手机", "手機"};	
   const	char *gps_name[] = {"GPS", "GPS", "GPS"};		
 	I8U language_type = cling.ui.language_type;		
 
@@ -3485,8 +3485,8 @@ static void _middle_render_horizontal_vertical_connect_gps()
 
 static void _middle_render_horizontal_vertical_connect_gps_timeout()
 {
-  const	char *conn_name[] = {"连接", "连接", "连接"};	
-  const	char *timeout_name[] = {"超时", "超时", "超时"};	
+  const	char *conn_name[] = {"连接", "连接", "連接"};	
+  const	char *timeout_name[] = {"超时", "超时", "超時"};	
 	I8U language_type = cling.ui.language_type;		
 	
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
@@ -3495,8 +3495,8 @@ static void _middle_render_horizontal_vertical_connect_gps_timeout()
 
 static void _middle_render_horizontal_vertical_connect_gps_fail()
 {
-  const	char *conn_name[] = {"连接", "连接", "连接"};	
-  const	char *fail_name[] = {"失败", "失败", "失败"};	
+  const	char *conn_name[] = {"连接", "连接", "連接"};	
+  const	char *fail_name[] = {"失败", "失败", "失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
