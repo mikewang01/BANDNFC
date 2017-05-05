@@ -668,7 +668,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	I8U state;
 	
 	BOOLEAN b_first_light_up_from_dark;
-	BOOLEAN b_in_running_alarm_page;
+	BOOLEAN b_in_running_alert_page;
 	
 	// Animation
 	I8U animation_mode;
@@ -707,6 +707,7 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Running
 	I8U run_ready_index;    // Read go index.
 	BOOLEAN b_training_first_enter;
+  BOOLEAN b_enter_active_mode;	
 	
 	// Alarm
 	I8U ui_alarm_hh;

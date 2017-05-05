@@ -523,9 +523,9 @@ static void _middle_render_horizontal_steps()
 	_middle_horizontal_alignment_center(offset);
 }
 
+const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};	
 static void _middle_render_horizontal_distance()
 {
-	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U string[32];
 	I8U b_24_size = 24;				
 	I8U len = 0;
@@ -1355,6 +1355,7 @@ static void _middle_render_horizontal_training_ready()
   b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
+		cling.ui.b_enter_active_mode = TRUE;
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
 #ifndef __YLF__
@@ -1484,6 +1485,7 @@ static void _middle_render_horizontal_workout_ready()
   b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
+		cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_WORKOUT_RT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
@@ -1504,6 +1506,7 @@ static void _middle_render_horizontal_cycling_outdoor_ready()
   b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
+		cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
@@ -2032,7 +2035,7 @@ static void _right_render_horizontal_training_pace()
 
 static void _right_render_horizontal_run_distance_name()
 {
-	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏" ,"英裏"}};	
+//	const char *unit_distance_display[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏" ,"英裏"}};	
 	I8U language_type = cling.ui.language_type;	
 	I8U metric = cling.user_data.profile.metric_distance;	
 
@@ -2579,7 +2582,7 @@ static void _middle_render_vertical_steps()
 
 static void _middle_render_vertical_distance()
 {	
-	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
+//	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U string[32];	
 	I32U stat = 0;
 	I8U margin = 2;
@@ -3541,6 +3544,7 @@ static void _middle_render_vertical_training_ready()
 	b_ready_finished = _middle_render_vertical_core_ready();
 	
 	if (b_ready_finished) {
+    cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
 #ifndef __YLF__
@@ -3557,6 +3561,7 @@ static void _middle_render_vertical_cycling_outdoor_ready()
 	b_ready_finished = _middle_render_vertical_core_ready();
 	
 	if (b_ready_finished) {
+    cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
 	}
@@ -3935,7 +3940,7 @@ static void _bottom_render_vertical_button_hold()
 
 static void _bottom_render_vertical_run_distance_uint()
 {
-	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
+//	const char *unit_distance_display[3][2] = {{"KM", "MILE"},{"公里", "英里"},{"公裏", "英裏"}};	
 	I8U language_type = cling.ui.language_type;		
 	I8U metric = cling.user_data.profile.metric_distance;
 	
@@ -4719,7 +4724,52 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 		}			
 	}
 #endif	
-	
+
+  if (cling.ui.b_enter_active_mode) {
+		// Clear enter active mode flag.
+		cling.ui.b_enter_active_mode = FALSE;
+#ifdef _CLINGBAND_PACE_MODEL_			
+		if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_TIME) {
+#else			
+		if ((cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_TIME) || (cling.ui.frame_index == UI_DISPLAY_WORKOUT_RT_TIME) || (cling.ui.frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME)) {		
+#endif
+			// If user starts runing, turn on workout active mode
+			cling.activity.b_workout_active = TRUE;		
+			// Reset all training data - distance, time stamp, calories, and session ID
+			cling.train_stat.distance = 0;
+			cling.train_stat.time_start_in_ms = CLK_get_system_time();
+			cling.train_stat.session_id = cling.time.time_since_1970;
+			cling.train_stat.calories = 0;
+			// Running pace time stamp
+			cling.run_stat.pace_calc_ts = CLK_get_system_time();
+			cling.run_stat.last_10sec_distance = 0;
+			cling.run_stat.last_10sec_pace_min = 0;
+			cling.run_stat.last_10sec_pace_sec = 0;
+#ifdef __YLF__
+			//reset the run_stat
+			cling.run_stat.calories = 0;
+			cling.run_stat.distance = 0;
+			cling.run_stat.steps = 0;
+			cling.run_stat.time_min = 0;
+			cling.run_stat.accu_heart_rate = 0;
+#endif
+			cling.run_stat.pace_buf_idx = 0;
+			for (I8U i = 0; i < PACE_BUF_LENGTH; i++) {
+				cling.run_stat.last_t_buf[i] = 0xffff;
+				cling.run_stat.last_d_buf[i] = 0xffff;
+			}
+			
+			if (BTLE_is_connected()) {
+				if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
+						(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
+				{
+					Y_SPRINTF("[UI] cp create workout rt msg");	
+					CP_create_workout_rt_msg(cling.activity.workout_type);
+				}
+			}
+		}
+  }
+		
 	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
 	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
 	

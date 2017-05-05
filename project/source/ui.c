@@ -246,7 +246,7 @@ static void _stote_frame_cached_index()
 	}
 	
 	// 3. Store running active page cached index(In addition to running alarm page)
-	if (_is_running_active_mode_page(u->frame_index) && (!u->b_in_running_alarm_page)) {
+	if (_is_running_active_mode_page(u->frame_index) && (!u->b_in_running_alert_page)) {
 		 u->frame_cached_index = u->frame_index;			
 	}
 	
@@ -963,14 +963,13 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 *------------------------------------------------------------------------------------------*/
 static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 {
-	I8U i;
-	BOOLEAN b_enter_workout_mode = FALSE;
-
+	BOOLEAN b_enter_active_mode = FALSE;
+	
 #ifdef _CLINGBAND_PACE_MODEL_		
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS)) {
 		Y_SPRINTF("[UI] Enter outdoor running mode");	
-    b_enter_workout_mode = TRUE;		
 		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+		b_enter_active_mode = TRUE;
 	}
 #endif
 		
@@ -978,8 +977,8 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) || (u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS)) {	
 	  if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) {
 		  Y_SPRINTF("[UI] Enter outdoor running mode");	
-      b_enter_workout_mode = TRUE;		
 		  cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+		  b_enter_active_mode = TRUE;			
 		}
 	}
 #endif
@@ -987,8 +986,8 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if ((u->frame_prev_idx >= UI_DISPLAY_WORKOUT_TREADMILL) && (u->frame_prev_idx <= UI_DISPLAY_WORKOUT_OTHERS)) {
 		if (u->frame_index == UI_DISPLAY_WORKOUT_RT_READY) {
+		  b_enter_active_mode = TRUE;			
 			N_SPRINTF("[UI] Enter normal workout mode");	
-      b_enter_workout_mode = TRUE;		
 			if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_TREADMILL)
 		    cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR;
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_CYCLING)
@@ -1012,60 +1011,23 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 
 	if ((u->frame_prev_idx == UI_DISPLAY_CYCLING_OUTDOOR_STAT_START) && (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY)) {
 		N_SPRINTF("[UI] Enter CYCLING_OUTDOOR workout mode");	
-    b_enter_workout_mode = TRUE;		
 		cling.activity.workout_type = WORKOUT_CYCLING_OUTDOOR;		
+		b_enter_active_mode = TRUE;		
 	}
 #endif
 	
-  if (b_enter_workout_mode) {
-		// If user starts runing, turn on workout active mode
-		cling.activity.b_workout_active = TRUE;		
- 	  cling.ui.run_ready_index = 0;
-		cling.ui.b_training_first_enter = TRUE;			
-		cling.ui.training_ready_time_stamp = CLK_get_system_time();
-		// Reset all training data - distance, time stamp, calories, and session ID
-		cling.train_stat.distance = 0;
-		cling.train_stat.time_start_in_ms = CLK_get_system_time();
-		cling.train_stat.session_id = cling.time.time_since_1970;
-		cling.train_stat.calories = 0;
-		// Running pace time stamp
-		cling.run_stat.pace_calc_ts = CLK_get_system_time();
-		cling.run_stat.last_10sec_distance = 0;
-		cling.run_stat.last_10sec_pace_min = 0;
-		cling.run_stat.last_10sec_pace_sec = 0;
-#ifdef __YLF__
-		//reset the run_stat
-		cling.run_stat.calories = 0;
-		cling.run_stat.distance = 0;
-		cling.run_stat.steps = 0;
-		cling.run_stat.time_min = 0;
-		cling.run_stat.accu_heart_rate = 0;
-#endif
-		cling.run_stat.pace_buf_idx = 0;
-		for (i = 0; i < PACE_BUF_LENGTH; i++) {
-			cling.run_stat.last_t_buf[i] = 0xffff;
-			cling.run_stat.last_d_buf[i] = 0xffff;
-		}
-		
-		if (BTLE_is_connected()) {
-			if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
-					(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
-			{
-				Y_SPRINTF("[UI] cp create workout rt msg");	
-				CP_create_workout_rt_msg(cling.activity.workout_type);
-			}
-		}
-
+	if (b_enter_active_mode) {
+	  cling.ui.run_ready_index = 0;
+	  cling.ui.b_training_first_enter = TRUE;			
+	  cling.ui.training_ready_time_stamp = CLK_get_system_time();		
 #ifdef _CLINGBAND_PACE_MODEL_		
 		// Reset connect gps time stamp.
-    cling.ui.conn_gps_stamp = CLK_get_system_time();
+		cling.ui.conn_gps_stamp = CLK_get_system_time();
 		// Clear app positon service status.
 		cling.train_stat.app_positon_service_status = POSITION_NO_SERVICE;
-#endif		
-		
-		return;
+#endif
 	}
-
+	
 #ifndef _CLINGBAND_PACE_MODEL_	
   if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index) || _is_other_need_store_page(u->frame_index)) {
 		cling.activity.b_workout_active = FALSE;		
@@ -1600,9 +1562,9 @@ void UI_start_notifying(I8U frame_index)
 	
 	// 6. Update running alarm flag
   if ((u->frame_index == UI_DISPLAY_TRAINING_STAT_PACE) || (u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)) {
-	  u->b_in_running_alarm_page = TRUE;
+	  u->b_in_running_alert_page = TRUE;
 	} else {
-		u->b_in_running_alarm_page = FALSE;
+		u->b_in_running_alert_page = FALSE;
 	}
 }
 
@@ -1833,11 +1795,11 @@ void UI_state_machine()
 			  }
 		  }
 			
-			if ((u->b_in_running_alarm_page) && (cling.activity.b_workout_active)) {
+			if ((u->b_in_running_alert_page) && (cling.activity.b_workout_active)) {
         if (t_curr > u->touch_time_stamp + 10000) {
 					// Go back to previous UI page.						
 					u->frame_index = UI_DISPLAY_PREVIOUS;		
-					u->b_in_running_alarm_page = FALSE;					
+					u->b_in_running_alert_page = FALSE;					
 				}						
 			}
 					
