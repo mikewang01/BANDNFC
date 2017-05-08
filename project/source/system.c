@@ -393,7 +393,7 @@ void SYSTEM_init(void)
 #if 0 // Enable it if wiping off everything on the Flash
 	FLASH_erase_all(TRUE);
 #endif
-	
+
 	// Start RTC timer
 	RTC_Start();
 			
@@ -403,6 +403,26 @@ void SYSTEM_init(void)
 	// Check whether this is a authenticated device
 	LINK_init();
 
+#ifdef _CLINGBAND_PACE_MODEL_ 
+	I8U pdata[2];
+	
+	cling.ui.b_pace_vibration_restart = FALSE;
+	
+	if (!LINK_is_authorized()) {
+		
+    FLASH_Read_App(SYSTEM_REMINDER_SPACE_START, pdata, 2);
+	
+	  if ((pdata[0] == 0x07) && (pdata[1] == 0x18)) {
+		  cling.ui.b_pace_vibration_restart = TRUE;
+			cling.ui.pace_restart_vibration_time = 0;
+	  }
+		
+		FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
+	}
+#else
+  cling.ui.b_pace_vibration_restart = FALSE;	
+#endif	
+	
 	// If our FAT file system is NOT mounted, please erase NOR flash, and create it
 	if(!FAT_chk_mounted())
 	{

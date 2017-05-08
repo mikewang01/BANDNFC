@@ -726,6 +726,9 @@ typedef struct tagUI_ANIMATION_CTX {
 
 	I32U bus_card_balance;
   I32U bank_card_balance;
+	
+	BOOLEAN b_pace_vibration_restart;
+	I8U pace_restart_vibration_time;
 } UI_ANIMATION_CTX;
 
 typedef enum {

@@ -1762,9 +1762,19 @@ void UI_state_machine()
 	      UI_switch_state(UI_STATE_TOUCH_SENSING, 0);
 			}
 
-      if (t_curr > u->display_to_base + 500) {	
+      if (t_curr > u->display_to_base + 300) {	
 				u->display_to_base = t_curr;
-				UI_frame_display_appear(u->frame_index, TRUE);		
+				UI_frame_display_appear(u->frame_index, TRUE);	
+#ifdef _CLINGBAND_PACE_MODEL_					
+        if (u->b_pace_vibration_restart) {		
+					u->pace_restart_vibration_time++;
+					if (u->pace_restart_vibration_time < 5) {
+				    GPIO_vibrator_on_block(50);
+					} else {
+						u->b_pace_vibration_restart = FALSE;
+					}
+				}
+#endif				
 			}
 			break;
 		}
@@ -1805,21 +1815,6 @@ void UI_state_machine()
 				
 			t_threshold *= 1000; // second -> milli-second
 	
-#if 0			
-			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {
-				t_threshold = cling.user_data.screen_on_heart_rate; // in second
-				t_threshold *= 1000; // second -> milli-second
-
-				if ((!cling.hr.b_closing_to_skin) && (!cling.hr.b_start_detect_skin_touch)) {
-					// if detection is done over 3 seconds, time out screen display
-					if (t_curr > (cling.hr.approximation_decision_ts + 3000)) {
-						t_threshold  = 1000;
-						N_SPRINTF("[UI] sensor is off skin at %d", t_curr);
-					}
-				}
-			}
-#endif
-			
 			if (_is_smart_incoming_notifying_page(u->frame_index)) {
 				// 1. Turn on display when the motor is vibrating.
 				if (!NOTIFIC_is_idle()) {
