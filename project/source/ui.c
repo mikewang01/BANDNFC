@@ -302,7 +302,13 @@ static void _restore_perv_frame_index()
 		if (t_curr > (u->dark_time_stamp + UI_STORE_FRAME_MAX_TIME_IN_MS)) {
 			u->frame_index = UI_DISPLAY_HOME;					
 		} else {
+#ifdef _CLINGBAND_PACE_MODEL_	
+      // Go back to Home clock page.			
+			u->frame_index = UI_DISPLAY_HOME;		
+#else			
+			// Go back to previous UI page.
 			u->frame_index = u->frame_cached_index;	
+#endif			
 #ifdef _CLINGBAND_PACE_MODEL_						
 	    if ((u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) || (u->frame_index == UI_DISPLAY_TRAINING_STAT_HEART_RATE)) {	
 #else

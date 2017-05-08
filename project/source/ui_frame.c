@@ -670,6 +670,9 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
 			hr_result = PPG_minute_hr_calibrate();
+#ifdef __YLF_BLE_HR__
+			heart_rate_meas_send(hr_result);
+#endif
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
 			if (cling.ui.heart_rate_wave_index > 6) {
@@ -1291,7 +1294,7 @@ static void _middle_render_horizontal_training_run_or_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_		
 static void _middle_render_horizontal_training_connect_gps()
 {
-  const	char *conn_gps_name[] = {"连接手机 GPS", "连接手机 GPS", "連接手機 GPS"};	
+  const	char *conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
@@ -1299,7 +1302,7 @@ static void _middle_render_horizontal_training_connect_gps()
 
 static void _middle_render_horizontal_training_connect_gps_timeout()
 {
-  const	char *conn_timeout_name[] = {"连接超时", "连接超时", "連接超時"};	
+  const	char *conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
@@ -1307,7 +1310,7 @@ static void _middle_render_horizontal_training_connect_gps_timeout()
 
 static void _middle_render_horizontal_training_connect_gps_fail()
 {
-  const	char *conn_fail_name[] = {"连接失败", "连接失败", "連接失敗"};	
+  const	char *conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
@@ -2809,6 +2812,9 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 			if (b_training_mode)
 				b_all_hold = TRUE;
 			hr_result = PPG_minute_hr_calibrate();
+#ifdef __YLF_BLE_HR__
+			heart_rate_meas_send(hr_result);
+#endif
 			if (hr_result > 99) {
 				b_24_size = 16; 
 				margin = 1;
@@ -3473,8 +3479,8 @@ static void _middle_render_vertical_running_stop_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_		
 static void _middle_render_horizontal_vertical_connect_gps()
 {
-  const	char *conn_name[] = {"连接", "连接", "連接"};	
-  const	char *phone_name[] = {"手机", "手机", "手機"};	
+  const	char *conn_name[] = {"Link", "连接", "連接"};	
+  const	char *phone_name[] = {"", "手机", "手機"};	
   const	char *gps_name[] = {"GPS", "GPS", "GPS"};		
 	I8U language_type = cling.ui.language_type;		
 
@@ -3485,8 +3491,8 @@ static void _middle_render_horizontal_vertical_connect_gps()
 
 static void _middle_render_horizontal_vertical_connect_gps_timeout()
 {
-  const	char *conn_name[] = {"连接", "连接", "連接"};	
-  const	char *timeout_name[] = {"超时", "超时", "超時"};	
+  const	char *conn_name[] = {"Link", "连接", "連接"};	
+  const	char *timeout_name[] = {"T/O", "超时", "超時"};
 	I8U language_type = cling.ui.language_type;		
 	
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
@@ -3495,8 +3501,8 @@ static void _middle_render_horizontal_vertical_connect_gps_timeout()
 
 static void _middle_render_horizontal_vertical_connect_gps_fail()
 {
-  const	char *conn_name[] = {"连接", "连接", "連接"};	
-  const	char *fail_name[] = {"失败", "失败", "失敗"};	
+  const	char *conn_name[] = {"Link", "连接", "連接"};	
+  const	char *fail_name[] = {"Fail", "失败", "失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
@@ -4012,7 +4018,7 @@ const I8U ui_matrix_horizontal_icon_16_idx[] = {
 	ICON16_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_RUN_START*/
 	ICON16_NONE,                      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS*/
 	ICON16_GPS_CONN_TIMEOUT_IDX,      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT*/
-	ICON16_GPS_CONN_FAIL_IDX,         /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/
+	ICON16_BLE_IDX,                   /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/
 	ICON16_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_READY*/
 	ICON16_RUNNING_TIME_IDX,          /*UI_DISPLAY_TRAINING_TIME*/
 	ICON16_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_DISTANCE*/
@@ -4278,7 +4284,7 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 	ICON24_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_RUN_START*/
 	ICON24_NONE,                      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS*/
 	ICON24_GPS_CONN_TIMEOUT_IDX,      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT*/
-	ICON24_GPS_CONN_FAIL_IDX,         /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/
+	ICON24_BLE_IDX,                   /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/
 	ICON24_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_READY*/
 	ICON24_RUNNING_TIME_IDX,          /*UI_DISPLAY_TRAINING_TIME*/
 	ICON24_RUNNING_DISTANCE_IDX,      /*UI_DISPLAY_TRAINING_DISTANCE*/
