@@ -783,6 +783,11 @@ void ANCS_state_machine(void)
 
 	if (OTA_if_enabled())
     return;
+
+  if (!LINK_is_authorized()) {
+    cling.gcp.host_type = HOST_TYPE_NONE;
+		return;
+	}
 	
 	// If it's not IOS phone,do nothing.
 	if(cling.gcp.host_type != HOST_TYPE_IOS)
