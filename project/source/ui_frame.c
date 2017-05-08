@@ -3563,6 +3563,21 @@ static void _middle_render_vertical_cycling_outdoor_ready()
 }
 #endif
 
+#ifndef _CLINGBAND_PACE_MODEL_
+static void _middle_render_vertical_workout_ready()
+{
+  BOOLEAN b_ready_finished = FALSE;	
+	
+	b_ready_finished = _middle_render_vertical_core_ready();
+	
+	if (b_ready_finished) {
+    cling.ui.b_enter_active_mode = TRUE;		
+		cling.ui.frame_index = UI_DISPLAY_WORKOUT_RT_TIME;
+		cling.ui.frame_next_idx = cling.ui.frame_index;	
+	}
+}
+#endif
+
 static void _middle_render_vertical_training_pace()
 {
 	const	char *pace_name[] = {"PACE", "配速 ", "配速 "};			
@@ -4625,7 +4640,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_AEROBIC*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_PILOXING*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_OTHERS*/
-  {_RENDER_NONE,                                  _middle_render_horizontal_workout_ready,             _RENDER_NONE},                                     /*UI_DISPLAY_WORKOUT_RT_READY*/
+  {_RENDER_NONE,                                  _middle_render_vertical_workout_ready,               _RENDER_NONE},                                     /*UI_DISPLAY_WORKOUT_RT_READY*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_time,               _RENDER_NONE},                                     /*UI_DISPLAY_WORKOUT_RTTIME*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_hr,                 _RENDER_NONE},                                     /*UI_DISPLAY_WORKOUT_RT_HEART_RATE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_training_calories,           _RENDER_NONE},                                     /*UI_DISPLAY_WORKOUT_RT_CALORIES*/
