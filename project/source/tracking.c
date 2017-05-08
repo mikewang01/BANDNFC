@@ -862,7 +862,8 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	denormalized_stat = minute->calories;
 	denormalized_stat <<= 4;
 	a->day_stored.calories += denormalized_stat;
-
+  a->day_stored.active_time = a->day.active_time;
+	
 	// Distance in meter
 	denormalized_distance = minute->distance;
 	denormalized_distance <<= 1;
