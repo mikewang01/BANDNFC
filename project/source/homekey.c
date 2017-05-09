@@ -36,25 +36,30 @@ void HOMEKEY_check_on_hook_change()
 	I32U t_curr;
 	I8U b_pin;
 	I8U stat = ON_CLICK;
-	
+
 	// Get a temporarily BUTTON status
 	b_pin = nrf_gpio_pin_read(GPIO_TOUCH_HOMEKEY_INT);	
 
+	t_curr = CLK_get_system_time();
+	
 	if (b_pin) {
-		stat = OFF_CLICK;
+		stat = OFF_CLICK;		
 	} 
-
+  
 	if (stat != k->temp_st) {
-
-		t_curr = CLK_get_system_time();
 		
 		// update the click time stamp
 		k->temp_st = stat;
 		k->ticks[stat] = t_curr;
 		N_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
-		if (k->temp_st == ON_CLICK) {
-		
+
+#ifdef _CLINGBAND_PACE_MODEL_
+		if (k->temp_st == OFF_CLICK) {
+#else			
+		if (k->temp_st == ON_CLICK) {	
+#endif
+			
 			// Make sure OLED display panel is faced up.
 			if (LINK_is_authorized()) {
 					
@@ -84,32 +89,59 @@ void HOMEKEY_check_on_hook_change()
 void HOMEKEY_click_check()
 {
 	HOMEKEY_CLICK_STAT *k = &cling.key;
-	I32U t_curr=0;
 	I32U offset = 0;
+	I32U t_curr = CLK_get_system_time();
 	I32U t_click_and_hold = CLICK_HOLD_TIME_LONG;
+#ifdef _CLINGBAND_PACE_MODEL_			
+	I32U t_sys_restart = CLICK_HOLD_TIME_RESTART;
+	I8U  pdata[2];
+#else
 	I32U t_sos = CLICK_HOLD_TIME_SOS;
-
+#endif
+	
 	// only update hook state machine when there is possible state switch 
 	if (k->stable_st == k->temp_st) {
 		
 		// If it is press and hold, go return
 		if (k->temp_st == ON_CLICK) {
-			
-			// Ignore SOS request if device is not authorized.
-			if (!LINK_is_authorized())
-				return;
-			
-			// Go ahead to check if SOS is pressed
-			
-			offset = CLK_get_system_time() - k->ticks[ON_CLICK];
-			
-			if (offset >= t_sos) {
+	
+			offset = t_curr - k->ticks[ON_CLICK];
+
+#ifdef _CLINGBAND_PACE_MODEL_					
+			if (offset >= t_sys_restart) {
 				
 				k->ticks[ON_CLICK] += 2000;
+	
+				if (!cling.system.b_powered_up) {
+
+          if (!LINK_is_authorized()) {					
+				  	pdata[0] = 0x07;
+					  pdata[1] = 0x18;
+
+            BATT_charging_init();
+						
+            FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
+						
+						BASE_delay_msec(50);
+					
+            FLASH_Write_App(SYSTEM_REMINDER_SPACE_START, pdata, 2);			
+						
+						N_SPRINTF("[HOMEKEY] Pace restart system and open vibration");	
+						
+            SYSTEM_restart_from_reset_vector();					
+					}	
+				}
+			}
+#else
+			// Go ahead to check if SOS is pressed			
+			if (offset >= t_sos) {
+
+			  // Ignore SOS request if device is not authorized.
+			  if (!LINK_is_authorized())
+				  return;
 			
-				// Increase the counter for "press + hold"
-				k->click_sos_num ++;
-				
+				k->ticks[ON_CLICK] += 2000;
+		
 				cling.touch.b_valid_gesture = TRUE;
 				cling.touch.gesture = TOUCH_BUTTON_PRESS_SOS;
 				N_SPRINTF("[HOMEKEY] +++ button (SOS), %d, %d, %d", t_curr, offset, t_sos);
@@ -117,8 +149,8 @@ void HOMEKEY_click_check()
 				// Send SOS message to the App
 				CP_create_sos_msg();
 			}
-			
-			return;
+#endif			
+		  return;
 		}
 	} 
 
@@ -126,35 +158,36 @@ void HOMEKEY_click_check()
 	if (k->temp_st == ON_CLICK) {
 
   		// Check how long we have been in "ON-CLICK" status
-		offset = CLK_get_system_time() - k->ticks[ON_CLICK];
+		offset = t_curr - k->ticks[ON_CLICK];
 		
 		// Debouncing
 		if (offset < HOMEKEY_CLICK_DEBOUNCE) 
 			return;
-
+			
 		if (offset >= t_click_and_hold) { 
 			// announce a stable state --> ON_CLICK
 			k->stable_st = ON_CLICK;
 			// clear possible hook flash flag
 			k->half_click = 0;
 
-			// Increase the counter for "press + hold"
-			k->click_hold_num ++;
-
+#ifdef _CLINGBAND_PACE_MODEL_						
+			k->b_valid_gesture = TRUE;
+			k->gesture = HOMEKEY_BUTTON_HOLD;
+#else			
 			cling.touch.b_valid_gesture = TRUE;
 			cling.touch.gesture = TOUCH_BUTTON_PRESS_HOLD;
-			N_SPRINTF("[HOMEKEY] +++ button press and hold: %d, %d, %d, %d", offset, t_curr, k->ticks[ON_CLICK], CLK_get_system_time());
 			
 			// if unauthorized, we should turn off screen, or turn it on
 			if (!cling.system.b_powered_up) {
 				SYSTEM_restart_from_reset_vector();
 			} else {
 				cling.batt.shut_down_time = BATTERY_SYSTEM_UNAUTH_POWER_DOWN;
-			}
+			}				
+#endif	
+			N_SPRINTF("[HOMEKEY] +++ button press and hold: %d, %d, %d, %d", offset, t_curr, k->ticks[ON_CLICK], CLK_get_system_time());		
 		} else {
 			// indicate a possible double click, no state update just yet!
 			k->half_click = 1;
-
 		} 
 	} else {
 		// Add debounce logic to prevent multiple button click
@@ -168,10 +201,14 @@ void HOMEKEY_click_check()
 		if(k->half_click && (offset < t_click_and_hold)) {
 			k->half_click = 0;
 
-			k->single_click_num ++;
-			
+#ifdef _CLINGBAND_PACE_MODEL_			
+			k->b_valid_gesture = TRUE;
+			k->gesture = HOMEKEY_BUTTON_SINGLE;
+#else			
 			cling.touch.b_valid_gesture = TRUE;
-			cling.touch.gesture = TOUCH_BUTTON_SINGLE;
+			cling.touch.gesture = TOUCH_BUTTON_SINGLE;		
+#endif
+			
 			N_SPRINTF("[HOMEKEY] +++ button single click");
 		}
 		else {
@@ -182,3 +219,16 @@ void HOMEKEY_click_check()
 	}
 }
 
+#ifdef _CLINGBAND_PACE_MODEL_
+I8U HOMEKEY_get_gesture_panel()
+{
+	HOMEKEY_CLICK_STAT *k = &cling.key;
+	
+	if (k->b_valid_gesture) {
+		k->b_valid_gesture = FALSE;
+		return k->gesture;
+	}
+	
+	return HOMEKEY_BUTTON_NONE;
+}
+#endif
