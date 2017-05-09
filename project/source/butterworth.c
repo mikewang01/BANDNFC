@@ -6,7 +6,13 @@ void Butterworth_Filter_Init()
 	I8U i;
 	
 	HEARTRATE_CTX *hr_ctx = &cling.hr;
-	
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+	hr_ctx->butterworth_filter_context.firstElement_hp = TRUE;
+	for (i=0; i<(BUTTORD+1); i++) {
+		hr_ctx->butterworth_filter_context.x_hp[i] = 0.0;
+		hr_ctx->butterworth_filter_context.y_hp[i] = 0.0;
+	}
+#else
 	hr_ctx->butterworth_filter_context.firstElement_lp = TRUE;
 	hr_ctx->butterworth_filter_context.firstElement_hp = TRUE;
 	
@@ -16,7 +22,7 @@ void Butterworth_Filter_Init()
 		hr_ctx->butterworth_filter_context.x_hp[i] = 0.0;
 		hr_ctx->butterworth_filter_context.y_hp[i] = 0.0;
 	}
-	
+#endif
 	hr_ctx->butterworth_filter_context.pre_guess  = 48;
 	hr_ctx->butterworth_filter_context.post_guess = 48;
 	hr_ctx->butterworth_filter_context.pre_error  = 1.0;

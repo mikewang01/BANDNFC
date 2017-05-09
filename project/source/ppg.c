@@ -371,6 +371,9 @@ static void _ppg_sample_proc()
 	I16S filt_sample = 0;
 	I32U t_curr_ms = CLK_get_system_time();
 	I32U t_ms_diff;
+#ifndef __YLF__
+	I16U t_ms_diff_threshold;
+#endif
 	
 	t_ms_diff = t_curr_ms - h->m_duty_on_time_in_ms;
 
@@ -386,7 +389,12 @@ static void _ppg_sample_proc()
 	filt_sample = (I16S)low_pass_filter_val;
 #endif
 #ifndef __YLF__
-	if (t_ms_diff > 3000) {//3 Seconds
+//	if (t_ms_diff > 3000) {//3 Seconds
+	t_ms_diff_threshold = 3000;//3 Seconds
+	if(h->measType == 2){
+		t_ms_diff_threshold = 6000;//6 Seconds
+	}
+	if(t_ms_diff > t_ms_diff_threshold){
 #else
 	if (t_ms_diff > 6000) {
 #endif
@@ -559,6 +567,7 @@ void PPG_init()
 #ifndef __YLF__
   for (i=0; i<6; i++) h->m_epoch_num[i] = 42;
 	h->m_epoch_cnt = 0;
+	h->measType = 0;//static HR for default
 #else
   for (i=0; i<8; i++) h->m_epoch_num[i] = 42;
 #endif
@@ -758,7 +767,9 @@ void PPG_state_machine()
 
 				// otherwise, using optical sensor to double check
 				h->state = PPG_STAT_DUTY_ON;
-				
+#ifndef __YLF_PPG__
+				h->measType = 2;//HR Measured at fixed time
+#endif				
 				// We need initialize skin touch detection routine
 				PPG_closing_to_skin_detect_init();
 			}

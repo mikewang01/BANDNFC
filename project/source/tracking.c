@@ -735,8 +735,8 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	
 	if (cling.sleep.sleep_wakeup_steps > 4) {
 		SLEEP_wake_up_by_force(TRUE);
-#ifdef __YLF__
-		if(pminute->activity_count < 20){
+#ifndef __YLF__
+		if(pminute->activity_count <= 20){
 			if(pminute->walking){
 				pminute->walking = 0;
 				cling.activity.day.walking = cling.activity.day_stored.walking;

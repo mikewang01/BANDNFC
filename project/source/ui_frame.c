@@ -670,9 +670,6 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
 			hr_result = PPG_minute_hr_calibrate();
-#ifdef __YLF_BLE_HR__
-			heart_rate_meas_send(hr_result);
-#endif
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
 			if (cling.ui.heart_rate_wave_index > 6) {
@@ -2812,9 +2809,6 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 			if (b_training_mode)
 				b_all_hold = TRUE;
 			hr_result = PPG_minute_hr_calibrate();
-#ifdef __YLF_BLE_HR__
-			heart_rate_meas_send(hr_result);
-#endif
 			if (hr_result > 99) {
 				b_24_size = 16; 
 				margin = 1;
