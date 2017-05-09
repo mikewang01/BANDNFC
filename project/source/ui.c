@@ -1044,6 +1044,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	  cling.run_stat.distance = 0;
 	  cling.run_stat.steps = 0;
 	  cling.run_stat.time_min = 0;
+		cling.run_stat.time_sec = 0;
 	  cling.run_stat.accu_heart_rate = 0;
 #endif
 	  cling.run_stat.pace_buf_idx = 0;

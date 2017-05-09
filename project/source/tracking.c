@@ -696,7 +696,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	if ((pminute->running + pminute->walking) > 60) {
 		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
 	}
-#ifdef __YLF__
+#ifndef __YLF__
 	if(pminute->running>100 || ((pminute->running+pminute->walking)>140)){
 		cling.hr.b_runstate = TRUE;
 	}else if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
@@ -1641,6 +1641,9 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	r->distance = 0;
 	r->steps = 0;
 	r->time_min = 0;
+#ifndef __YLF__
+	r->time_sec = 0;
+#endif
 	r->accu_heart_rate = 0;
 
 	day_total->walking = 0;
@@ -1695,6 +1698,9 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 					if (minute->running > 99) {
 #endif
 						r->time_min ++;
+#ifdef __YLF__
+						r->time_sec = 0;
+#endif
 						r->accu_heart_rate += minute->heart_rate;
 						r->calories += minute->calories;
 						r->steps += minute->walking + minute->running;

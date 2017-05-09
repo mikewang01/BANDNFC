@@ -361,9 +361,12 @@ static I16S _get_light_strength_register()
 static void _ppg_sample_proc()
 {
 	HEARTRATE_CTX *h = &cling.hr;
-
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+	double filter_val = 0.0;
+#else
 	double high_pass_filter_val = 0.0;
 	double low_pass_filter_val  = 0.0;
+#endif
 	I16S sample = 0;	
 	I16S filt_sample = 0;
 	I32U t_curr_ms = CLK_get_system_time();
@@ -374,10 +377,14 @@ static void _ppg_sample_proc()
 	sample = _get_light_strength_register();
 
 	_skin_touch_detect(sample);
-
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+	filter_val = Butterworth_Filter_BP( (double) sample);
+	filt_sample = (I16S)filter_val;
+#else
 	high_pass_filter_val = Butterworth_Filter_HP( (double) sample);
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
 	filt_sample = (I16S)low_pass_filter_val;
+#endif
 #ifndef __YLF__
 	if (t_ms_diff > 3000) {//3 Seconds
 #else
@@ -667,6 +674,14 @@ void PPG_state_machine()
 						}
 					} else {
 						_ppg_sample_proc();				    // Process current sample
+#ifdef __YLF__
+						if(t_ms_diff>30000 && _is_user_viewing_heart_rate()){
+							//PPG_disable_sensor();					       // Turn off ppg sensor module
+							h->b_closing_to_skin = FALSE;
+							h->b_start_detect_skin_touch = FALSE;
+							h->state = PPG_STAT_DUTY_OFF;
+						}
+#endif
 					}
         }
 
@@ -697,8 +712,12 @@ void PPG_state_machine()
 				break;
 			}
 			if (cling.activity.b_workout_active) {
+#ifndef __YLF_PPG__
+				if((!cling.lps.b_low_power_mode) || (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch)) {
+#else
 				// Start PPG detection right away if the device is in motion
 				if (!cling.lps.b_low_power_mode) {
+#endif
 					h->state = PPG_STAT_DUTY_ON;
 					// We need initialize skin touch detection routine
 					PPG_closing_to_skin_detect_init();
