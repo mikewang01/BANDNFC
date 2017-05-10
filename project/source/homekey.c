@@ -53,33 +53,30 @@ void HOMEKEY_check_on_hook_change()
 		k->ticks[stat] = t_curr;
 		N_SPRINTF("[HOMEKEY] --- BUTTON Event at %d---(%d)", t_curr, stat);
 
-
-#ifdef _CLINGBAND_PACE_MODEL_
-		if (k->temp_st == OFF_CLICK) {
+#ifdef _CLINGBAND_PACE_MODEL_		
+		if (OLED_panel_is_turn_on()) {
+		  if (k->temp_st != OFF_CLICK)
+        return;					
+		}				
 #else			
-		if (k->temp_st == ON_CLICK) {	
+		if (k->temp_st != ON_CLICK) 
+			return;	
 #endif
-			
-			// Make sure OLED display panel is faced up.
-			if (LINK_is_authorized()) {
-					
-				N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
 
-				if (OLED_panel_is_turn_off()) {
-					cling.ui.b_first_light_up_from_dark = TRUE;
-				}
-									
-				UI_turn_on_display(UI_STATE_TOUCH_SENSING);
-			} else {
-				RTC_start_operation_clk();
+		// Make sure OLED display panel is faced up.
+		if (LINK_is_authorized()) {
+				
+			N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
+
+			if (OLED_panel_is_turn_off()) {
+				cling.ui.b_first_light_up_from_dark = TRUE;
 			}
-		} 
-		return;
-	} else {
-		return;
-	}
-#else
-	return;
+								
+			UI_turn_on_display(UI_STATE_TOUCH_SENSING);
+		} else {
+			RTC_start_operation_clk();
+		}
+	} 
 #endif
 }
 
