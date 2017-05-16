@@ -127,7 +127,8 @@ static void _left_render_horizontal_16_icon()
 
 static void _left_render_horizontal_pm2p5()
 {
-	char *air_display[3][7] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "Poor", "hazardous"},
+	//quality
+	const char *air_display[3][7] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "Poor", "hazardous"},
 	                       {"--","优质", "良好", "轻度", "中度", "重度", "严重"},
 												 {"--","優質", "良好", "輕度", "中度", "重度", "嚴重"}};
 
@@ -163,7 +164,7 @@ static void _left_render_horizontal_pm2p5()
 		level_idx = 0;		
 	}
 	
-	FONT_load_characters(256, air_display[language_type][level_idx], 16, 128, FALSE);
+	FONT_load_characters(256, (char *)air_display[language_type][level_idx], 16, 128, FALSE);
 }
 
 static void _left_render_horizontal_weather()
@@ -669,7 +670,9 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 	
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
+#ifdef _ENABLE_PPG_				
 			hr_result = PPG_minute_hr_calibrate();
+#endif			
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
 			if (cling.ui.heart_rate_wave_index > 6) {
@@ -2808,7 +2811,9 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 		if (cling.hr.heart_rate_ready) {
 			if (b_training_mode)
 				b_all_hold = TRUE;
+#ifdef _ENABLE_PPG_							
 			hr_result = PPG_minute_hr_calibrate();
+#endif			
 			if (hr_result > 99) {
 				b_24_size = 16; 
 				margin = 1;

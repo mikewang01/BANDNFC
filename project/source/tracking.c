@@ -239,7 +239,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 		}
 	} else if (PDM_STEP_DETECTED == (pdm_stat & PDM_STEP_DETECTED)) {
 #ifndef __YLF__	
-		if ((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM))
+		if((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM))
 		{
 			if ((act_motion == MOTION_WALKING) || (act_motion == MOTION_RUNNING)) {
 				cling.sleep.sleep_wakeup_steps ++;
@@ -282,7 +282,9 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 				}
 				// Turn on PPG
 				if (cling.hr.state == PPG_STAT_DUTY_OFF) {
+#ifdef _ENABLE_PPG_							
 					PPG_closing_to_skin_detect_init();
+#endif					
 				}
 				
 				// Update running sec
@@ -805,7 +807,9 @@ void _training_pace_and_hr_alert()
 #ifndef __YLF_ALERT__
 		if ( (cling.user_data.profile.max_hr_alert & 0x80)) {
 #endif
+#ifdef _ENABLE_PPG_					
 			hr = PPG_minute_hr_calibrate();
+#endif			
 			hr_perc = (hr * 100);
 			hr_perc /= (220-cling.user_data.profile.age);	
 			if (hr_perc > 98)
@@ -886,7 +890,9 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 			r->distance += denormalized_distance;
 			// Turn on PPG
 			if (cling.hr.state == PPG_STAT_DUTY_OFF) {
+#ifdef _ENABLE_PPG_				
 				PPG_closing_to_skin_detect_init();
+#endif				
 			}
 		}
 	}

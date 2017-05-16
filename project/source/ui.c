@@ -317,8 +317,9 @@ static void _restore_perv_frame_index()
 				||(u->frame_index == UI_DISPLAY_WORKOUT_RT_HEART_RATE)	
 				||(u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE)) {
 #endif					
-				
+#ifdef _ENABLE_PPG_						
 		    PPG_closing_to_skin_detect_init();
+#endif					
 		  } 		
 		}	
 	}
@@ -918,6 +919,7 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 *  Description: Control ppg according current display page. 
 *
 *------------------------------------------------------------------------------------------*/
+#ifdef _ENABLE_PPG_	
 static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 {
 	BOOLEAN b_ppg_switch_open = FALSE;
@@ -958,8 +960,9 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 			PPG_disable_sensor();
 			cling.hr.state = PPG_STAT_DUTY_OFF;
 		}
-	}		
+	}	
 }
+#endif	
 
 /*------------------------------------------------------------------------------------------
 *  Function:	_update_workout_active_control(UI_ANIMATION_CTX *u)
@@ -1266,7 +1269,9 @@ static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p
 #endif
 
 	// 5. Open or close PPG According to the current frame.
+#ifdef _ENABLE_PPG_	
 	_update_ppg_switch_control(u);
+#endif
 	
 	// 6. Update incoming message detail index.
 	_update_message_detail_index(u);
