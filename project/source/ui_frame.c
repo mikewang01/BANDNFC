@@ -13,9 +13,8 @@
 
 #pragma diag_suppress 870
 
-#ifdef _CLINGBAND_PACE_MODEL_
-const	char *button_hold_name[] = {"HOLD", "长按", "長按"};	
-#endif
+
+const	char *const button_hold_name[] = {"HOLD", "长按", "長按"};	
 
 const char *const distance_unit_name[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};	
 
@@ -181,46 +180,6 @@ static void _left_render_horizontal_16_icon()
 	  return;
 	
 	_render_one_icon_16(horizontal_16_icon_idx, 0);
-}
-
-static void _left_render_horizontal_pm2p5()
-{
-	I8U level_idx;
-	I8U language_type = cling.ui.language_type;
-	WEATHER_CTX *w = &cling.weather;
-												 
-  //  First render pm2.5 icon.	
-	_render_one_icon_16(ICON16_PM2P5_IDX, 0);
-	
-  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {
-		if (w->pm2p5_value == 0xffff) {
-			// AQI value Not available
-			level_idx = 0;
-		} else if (!w->pm2p5_value) {
-			// AQI value Not available
-			level_idx = 0;	
-		} else if (w->pm2p5_value < 50) {
-			level_idx = 1;
-		} else if (w->pm2p5_value < 100) {
-			level_idx = 2;
-		} else if (w->pm2p5_value < 150) {
-			level_idx = 3;
-		} else if (w->pm2p5_value < 250) {
-			level_idx = 4;
-		} else if (w->pm2p5_value < 350) {
-			level_idx = 5;
-		} else {
-			level_idx = 6;
-		}
-  } else {
-		// AQI value Not available
-		level_idx = 0;		
-	}
-	
-	if (language_type != LANGUAGE_TYPE_ENGLISH)
-		language_type++;
-	
-	FONT_load_characters(256, (char *)air_level_name[language_type][level_idx], 16, 128, FALSE);
 }
 
 static void _left_render_horizontal_weather()
@@ -727,6 +686,9 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 #ifdef _ENABLE_PPG_				
 			hr_result = PPG_minute_hr_calibrate();
 #endif			
+#ifdef __YLF_BLE_HR__
+			heart_rate_meas_send(hr_result);
+#endif
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
 			if (cling.ui.heart_rate_wave_index > 6) {
@@ -858,28 +820,65 @@ static void _middle_render_horizontal_app_notif()
 }
 #endif
 
+static void _middle_render_pm2p5_core(I16U *pm2p5_out, I8U *level_idx_out)
+{
+	WEATHER_CTX *w = &cling.weather;
+	I8U level_idx_in = 0;
+	I16U pm2p5_in = 0;
+	
+  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {
+		if (w->pm2p5_value == 0xffff) {
+			// AQI value Not available
+			level_idx_in = 0;
+		} else if (!w->pm2p5_value) {
+			// AQI value Not available
+			level_idx_in = 0;	
+		} else if (w->pm2p5_value < 50) {
+			level_idx_in = 1;
+		} else if (w->pm2p5_value < 100) {
+			level_idx_in = 2;
+		} else if (w->pm2p5_value < 150) {
+			level_idx_in = 3;
+		} else if (w->pm2p5_value < 250) {
+			level_idx_in = 4;
+		} else if (w->pm2p5_value < 350) {
+			level_idx_in = 5;
+		} else {
+			level_idx_in = 6;
+		}
+  } 
+
+  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {	
+		if (w->pm2p5_value != 0xffff) {
+			pm2p5_in = w->pm2p5_value;
+		}
+	}
+
+	*pm2p5_out = pm2p5_in;
+	*level_idx_out = level_idx_in;
+}
+
 static void _middle_render_horizontal_pm2p5()
 {
-	I8U string[32];
+	I8U string[16];
+	I8U len = 0;
 	I8U b_24_size = 24;		
 	I16U offset = 0;
-	I8U margin = 3;
-	WEATHER_CTX *w = &cling.weather;
-												 
-  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {	
-		if (w->pm2p5_value == 0xffff) {
-			sprintf((char *)string, "0");
-		} else {
-			sprintf((char *)string, "%d", w->pm2p5_value);
-		}
-  } else {
-		sprintf((char *)string, "0");
-	}
+	I8U margin = 3;	
+	I8U level_idx = 0;
+	I16U pm2p5 = 0;
+	I8U language_type = cling.ui.language_type;
 	
-	offset = 80;
+  _middle_render_pm2p5_core(&pm2p5, &level_idx);
+
+	if (language_type != LANGUAGE_TYPE_ENGLISH)
+		language_type++;
 	
-	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
-	_middle_horizontal_alignment_center(offset);
+	FONT_load_characters(256, (char *)air_level_name[language_type][level_idx], 16, 128, FALSE);
+
+  len = sprintf((char *)string, "%d", pm2p5);	
+	offset = (118 -  len*13) ;
+	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 }
 
 static void _middle_render_horizontal_reminder_core(BOOLEAN b_alarm_clock_reminder)
@@ -2698,67 +2697,35 @@ static void _middle_render_vertical_uv_index()
 }
 #endif
 
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
 static void _middle_render_vertical_pm2p5()
-{
-	I8U level_idx;						
+{					
 	I8U string[32];	
-  I8U	margin = 2;
+  I8U	margin = 1;
 	I8U b_24_size = 24;
+	I8U level_idx = 0;
+	I16U pm2p5 = 0;	
 	I8U language_type = cling.ui.language_type;			
 
-	WEATHER_CTX *w = &cling.weather;
-												 
-  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {	
-		if (w->pm2p5_value == 0xffff) {
-			sprintf((char *)string, "0");	
-		} else if (!w->pm2p5_value) {
-			sprintf((char *)string, "0");			
-		} else if (w->pm2p5_value > 999) {
-			w->pm2p5_value = 999;
-			sprintf((char *)string, "%d", w->pm2p5_value);
-			b_24_size = 16;
-		} else if (w->pm2p5_value > 99) {
-			sprintf((char *)string, "%d", w->pm2p5_value);
-			b_24_size = 16;
-		} else {
-			sprintf((char *)string, "%d", w->pm2p5_value);
-		}
-	} else {
-		sprintf((char *)string, "0");	
-	}
+  _middle_render_pm2p5_core(&pm2p5, &level_idx);
+
+  if (pm2p5 > 999)  
+		pm2p5 = 999;
+		
+	if (pm2p5 > 99)
+		b_24_size = 16;
+	else
+		margin = 2;
+
+  sprintf((char *)string, "%d", pm2p5);
 	
 	if (b_24_size == 24) 
 		_render_vertical_local_character_core(string, 42, margin, b_24_size, FALSE);
 	else
 		_render_vertical_local_character_core(string, 46, margin, b_24_size, FALSE);
 
-  if ((w->pm2p5_month == cling.time.local.month) && (w->pm2p5_day == cling.time.local.day)) {		
-		if (w->pm2p5_value == 0xffff) {
-			level_idx = 0;
-		} else if (!w->pm2p5_value) {
-			level_idx = 0;		
-		} else if (w->pm2p5_value < 50) {
-			level_idx = 1;
-		} else if (w->pm2p5_value < 100) {
-			level_idx = 2;
-		} else if (w->pm2p5_value < 150) {
-			level_idx = 3;
-		} else if (w->pm2p5_value < 250) {
-			level_idx = 4;
-		} else if (w->pm2p5_value < 350) {
-			level_idx = 5;
-		} else {
-			level_idx = 6;
-		}
-  } else {
-		level_idx = 0;
-	}
-	
 	language_type ++;
 	_render_vertical_fonts_lib_character_core((I8U *)air_level_name[language_type][level_idx], 16, 84);
 }
-#endif
 
 static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 {
@@ -2778,6 +2745,9 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 #ifdef _ENABLE_PPG_							
 			hr_result = PPG_minute_hr_calibrate();
 #endif			
+#ifdef __YLF_BLE_HR__
+			heart_rate_meas_send(hr_result);
+#endif
 			if (hr_result > 99) {
 				b_24_size = 16; 
 				margin = 1;
@@ -4235,7 +4205,7 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 	ICON24_CALORIES_IDX,              /*UI_DISPLAY_CALORIES*/
 	ICON24_ACTIVE_TIME_IDX,           /*UI_DISPLAY_ACTIVE_TIME*/
 	ICON24_UV_INDEX_IDX,              /*UI_DISPLAY_UV_IDX*/		
-  ICON24_NONE,                      /*UI_DISPLAY_PM2P5*/
+  ICON24_PM2P5_IDX,                 /*UI_DISPLAY_PM2P5*/
   ICON24_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON24_NONE,                      /*UI_DISPLAY_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_APP_NOTIF*/
@@ -4307,7 +4277,7 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
   ICON24_DISTANCE_IDX,              /*UI_DISPLAY_DISTANCE*/
 	ICON24_CALORIES_IDX,              /*UI_DISPLAY_CALORIES*/
 	ICON24_ACTIVE_TIME_IDX,           /*UI_DISPLAY_ACTIVE_TIME*/
-  ICON24_NONE,                      /*UI_DISPLAY_PM2P5*/
+  ICON24_PM2P5_IDX,                 /*UI_DISPLAY_PM2P5*/
   ICON24_NONE,                      /*UI_DISPLAY_WEATHER*/
   ICON24_NONE,                      /*UI_DISPLAY_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_APP_NOTIF*/
@@ -4457,7 +4427,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_distance,                  _right_render_horizontal_tracker},                 /*UI_DISPLAY_DISTANCE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_calories,                  _right_render_horizontal_tracker},                 /*UI_DISPLAY_CALORIES*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_active_time,               _right_render_horizontal_tracker},                 /*UI_DISPLAY_ACTIVE_TIME*/
-  {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_DISPLAY_PM2P5*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_DISPLAY_PM2P5*/
   {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_DISPLAY_MESSAGE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_DISPLAY_APP_NOTIF*/
@@ -4526,7 +4496,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_top_render_vertical_24_icon,                  _middle_render_vertical_distance,                    _bottom_render_vertical_tracker},                  /*UI_DISPLAY_DISTANCE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_calories,                    _bottom_render_vertical_tracker},                  /*UI_DISPLAY_CALORIES*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_active_time,                 _bottom_render_vertical_tracker},                  /*UI_DISPLAY_ACTIVE_TIME*/
-  {_left_render_horizontal_pm2p5,                 _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_DISPLAY_PM2P5*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_pm2p5,                       _bottom_render_vertical_small_clock},              /*UI_DISPLAY_PM2P5*/
   {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_DISPLAY_MESSAGE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_DISPLAY_APP_NOTIF*/
