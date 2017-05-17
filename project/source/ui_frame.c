@@ -182,34 +182,10 @@ static void _left_render_horizontal_16_icon()
 	_render_one_icon_16(horizontal_16_icon_idx, 0);
 }
 
-static void _left_render_horizontal_weather()
-{
-	WEATHER_INFO_CTX weather_info;
-	
-	if (!WEATHER_get_weather_info(0, &weather_info)) {
-	  weather_info.type = 0;
-	}
-	
-	_render_one_icon_16(ICON16_WEATHER_IDX+weather_info.type, 0);
-}
-
 static void _left_render_horizontal_16_icon_blinking()
 {
 	if (cling.ui.icon_sec_blinking) 
 		_left_render_horizontal_16_icon();
-}
-
-static void _left_render_horizontal_alarm_clock_reminder()
-{
-	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK))
-		_render_one_icon_16(ICON16_SLEEP_ALARM_CLOCK_IDX, 0);				
-	else 
-		_render_one_icon_16(ICON16_NORMAL_ALARM_CLOCK_IDX, 0);
-}
-
-static void _left_render_horizontal_idle_alert()
-{
-  _render_one_icon_24(ICON24_IDLE_ALERT_IDX, 0);	
 }
 
 static void _left_render_horizontal_training_ready()
@@ -330,25 +306,32 @@ static I16U _render_middle_horizontal_section_core(I8U *string, I8U b_24_size, I
 	return offset;
 }
 
+static void _middle_render_firmware_ver_core(I8U *string)
+{
+	I16U major;
+	I16U minor;
+	
+	major = cling.system.mcu_reg[REGISTER_MCU_REVH]>>4;
+	minor = cling.system.mcu_reg[REGISTER_MCU_REVH]&0x0f;
+	minor <<= 8;
+	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
+	
+	sprintf((char *)string, "VER:%d.%d", major, minor);	
+}
+
 static void _middle_render_horizontal_system_restart()
 {
 	I8U string1[128];
 	I8U string2[16];
 	I8U string3[16];
 	I16U len;
-	I16U major;
-	I16U minor;
 	
 	USER_device_get_name(string1);
 	FONT_load_characters(0, (char *)string1, 16, 128, TRUE);
 	memset(cling.ui.p_oled_up+256, 0, 256);
 	
-	major = cling.system.mcu_reg[REGISTER_MCU_REVH]>>4;
-	minor = cling.system.mcu_reg[REGISTER_MCU_REVH]&0x0f;
-	minor <<= 8;
-	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
-
-	len = sprintf((char *)string2, "VER:%d.%d", major, minor);
+	_middle_render_firmware_ver_core(string2);
+//	len = strlen((char *)string);
 	FONT_load_characters(384+64, (char *)string2, 8, 128, FALSE);
 
 	len = sprintf((char *)string3, "ID:");
@@ -357,13 +340,16 @@ static void _middle_render_horizontal_system_restart()
 	FONT_load_characters(384+12, (char *)string3, 8, 128, FALSE);
 }
 
-static void _middle_render_horizontal_clock()
+static void _middle_render_horizontal_home()
 {
 	I8U string[32];
+	I8U len = 0;
 	I8U b_24_size = 24;		
 	I8U margin = 3;
 	I16U offset = 20;	
-
+	I8U language_type = cling.ui.language_type;	
+	I8U dow_index = cling.time.local.dow;
+	
 	if (cling.ui.icon_sec_blinking) {
 		sprintf((char *)string, "%02d:%02d", cling.time.local.hour, cling.time.local.minute);
 	} else {
@@ -371,6 +357,16 @@ static void _middle_render_horizontal_clock()
 	}
 	
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 3);
+	
+ 	if (BATT_is_charging()) {
+		len = sprintf((char *)string, "%d %%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);		
+	} else {
+	  len = sprintf((char *)string, "%d/%02d", cling.time.local.month, cling.time.local.day);
+	}
+	
+	FONT_load_characters((128 -  len*6), (char *)string, 8, 128, FALSE);
+	
+	FONT_load_characters(256+96, (char *)week_name[language_type][dow_index], 16, 128, FALSE);		
 }
 
 static void _middle_render_horizontal_ota()
@@ -454,7 +450,9 @@ static void _middle_render_horizontal_system_charging()
 
 static void _middle_render_horizontal_ble_code()
 {
-	I8U string[32];
+	I8U string[16];
+//	I8U len = 0;
+
 	SYSTEM_get_ble_code(string);
 	string[4] = 0;
 
@@ -479,6 +477,10 @@ static void _middle_render_horizontal_ble_code()
 	string1[7] = 0;			
 	FONT_load_characters(256, (char *)string1, 16, 128, TRUE);		
 #endif
+
+  _middle_render_firmware_ver_core(string);
+//	len = strlen((char *)string);
+	FONT_load_characters(70, (char *)string, 8, 128, FALSE);
 }
 
 static void _middle_render_horizontal_linking()
@@ -766,7 +768,11 @@ static void _middle_render_horizontal_weather()
 		len += sprintf((char *)string+len, "22");
 		string[len++] = ICON24_CELCIUS_IDX;
 		string[len++] = 0;
+		
+		weather_info.type = 0;
 	}
+
+	_render_one_icon_16(ICON16_WEATHER_IDX+weather_info.type, 0);
 	
 	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 
@@ -919,6 +925,11 @@ static void _middle_render_horizontal_reminder_core(BOOLEAN b_alarm_clock_remind
 
 static void _middle_render_horizontal_alarm_clock_reminder()
 {
+	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK))
+		_render_one_icon_16(ICON16_SLEEP_ALARM_CLOCK_IDX, 0);				
+	else 
+		_render_one_icon_16(ICON16_NORMAL_ALARM_CLOCK_IDX, 0);
+	
   _middle_render_horizontal_reminder_core(TRUE);
 }
 
@@ -986,6 +997,8 @@ static void _middle_render_horizontal_idle_alert()
 	const	char *idle_alart_name[] = {"time for move", "该活动一下了", "該活動一下了"};
 	I8U offset = 0;
 	I8U language_type = cling.ui.language_type;	
+
+  _render_one_icon_24(ICON24_IDLE_ALERT_IDX, 0);	
 	
 	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) 
 	  offset = 24;
@@ -1429,6 +1442,7 @@ static BOOLEAN _middle_render_horizontal_run_ready_core()
 	if (cling.ui.run_ready_index > 3) {
 		cling.ui.run_ready_index = 3;
 		b_ready_finished = TRUE;
+		cling.ui.b_enter_active_mode = TRUE;				
 	}
 	
 	if (cling.ui.run_ready_index == 3)
@@ -1448,7 +1462,6 @@ static void _middle_render_horizontal_training_ready()
   b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
-		cling.ui.b_enter_active_mode = TRUE;
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
@@ -1578,7 +1591,6 @@ static void _middle_render_horizontal_workout_ready()
   b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
-		cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_WORKOUT_RT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
@@ -1601,7 +1613,6 @@ static void _middle_render_horizontal_cycling_outdoor_ready()
   b_ready_finished = _middle_render_horizontal_run_ready_core();
 	
 	if (b_ready_finished) {
-		cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
 	  cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
@@ -1916,24 +1927,6 @@ static void _right_render_horizontal_delta_data_backward()
 }
 #endif
 
-static void _right_render_horizontal_home()
-{
-	I8U string[16];			
-	I8U len = 0;
-	I8U language_type = cling.ui.language_type;	
-	I8U dow_index = cling.time.local.dow;
-
- 	if (BATT_is_charging()) {
-		len = sprintf((char *)string, "%d %%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);		
-	} else {
-	  len = sprintf((char *)string, "%d/%02d", cling.time.local.month, cling.time.local.day);
-	}
-	
-	FONT_load_characters((128 -  len*6), (char *)string, 8, 128, FALSE);
-	
-	FONT_load_characters(256+96, (char *)week_name[language_type][dow_index], 16, 128, FALSE);	
-}
-
 static void _right_render_horizontal_small_clock()
 {
 	I8U string[16];
@@ -2018,27 +2011,6 @@ static void _right_render_horizontal_reminder()
 	_right_render_horizontal_more();
 }
 #endif
-
-static void _right_render_horizontal_firmware_ver()
-{
-	I8U string[16];
-	I16U len;
-	I16U major;
-	I16U minor;
-	
-	major = cling.system.mcu_reg[REGISTER_MCU_REVH]>>4;
-	minor = cling.system.mcu_reg[REGISTER_MCU_REVH]&0x0f;
-	minor <<= 8;
-	minor |= cling.system.mcu_reg[REGISTER_MCU_REVL];
-	
-//#ifdef _ENABLE_TOUCH_
-//	len = sprintf((char *)string, "VER:%d.%d(%d)", major, minor,cling.whoami.touch_ver[2]);
-//#else  
-	len = sprintf((char *)string, "VER:%d.%d", major, minor);
-//#endif	
-
-	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
-}
 
 static void _right_render_horizontal_running_calories()
 {
@@ -2394,20 +2366,6 @@ static void _top_render_vertical_24_icon()
 	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);
 }
 
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
-static void _top_render_vertical_24_icon_core(I8U icon_24_idx)
-{
-	I8U string[16];	
-	I8U len = 0;	
-	I8U	margin = 2;
-	I8U b_24_size = 24;
-
-	string[len++] = icon_24_idx;
-	string[len++] = 0;
-	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);
-}
-#endif
-
 static void _top_render_vertical_batt_ble()
 {
 	I8U data_buf[128];
@@ -2418,47 +2376,20 @@ static void _top_render_vertical_batt_ble()
 	_rotate_270_degree(data_buf, 384);
 }
 
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)	
-static void _top_render_vertical_reminder()
-{
-	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK))
-    _top_render_vertical_24_icon_core(ICON24_SLEEP_ALARM_CLOCK_IDX);		
-	else 
-    _top_render_vertical_24_icon_core(ICON24_NORMAL_ALARM_CLOCK_IDX);		
-}
-#endif
-
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
-static void _top_render_vertical_weather()
-{
-	I8U string[32];	
-  I8U len = 0;
-	I8U margin = 2;;
-	I8U b_24_size = 24;
-	WEATHER_INFO_CTX weather_info;	
-
-	if (!WEATHER_get_weather_info(0, &weather_info)) {
-    weather_info.type = 0;
-	}
-	
-	string[len++] = ICON24_WEATHER_IDX+weather_info.type;
-	string[len++] = 0;
-	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);	
-}
-#endif
-
 static void _top_render_vertical_24_icon_blinking()
 {
 	if (cling.ui.icon_sec_blinking) 
 		_top_render_vertical_24_icon();
 }
 
-static void _middle_render_vertical_clock()
+static void _middle_render_vertical_home()
 {
 	I8U string[32];	
 	I8U	margin = 1;
 	I8U b_24_size = 24;
-
+	I8U language_type = cling.ui.language_type;	
+	I8U dow_index = cling.time.local.dow;	
+	
 	// Render the hour
 	sprintf((char *)string, " %02d", cling.time.local.hour);
 	_render_vertical_local_character_core(string, 24, margin, b_24_size, TRUE);
@@ -2473,6 +2404,16 @@ static void _middle_render_vertical_clock()
 	}
 	
 	_render_vertical_local_character_core(string, 64, margin, b_24_size, FALSE);
+	
+ 	if (BATT_is_charging()) {
+		sprintf((char *)string, "%d %%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);		
+	} else {
+	  sprintf((char *)string, "%d/%02d", cling.time.local.month, cling.time.local.day);
+	}		
+ 	
+  _render_vertical_fonts_lib_character_core((I8U *)week_name[language_type][dow_index], 16, 96);
+	
+	_render_vertical_fonts_lib_character_core(string, 8, 120);	
 }
 
 static void _middle_render_vertical_steps()
@@ -2801,7 +2742,7 @@ static void _middle_render_vertical_heart_rate()
 	}
 }
 
-#ifdef _CLINGBAND_2_PAY_MODEL_
+#if defined(_CLINGBAND_NFC_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)
 static void _middle_render_vertical_stopwatch_start()
 {
 	I8U string[32];	
@@ -2906,7 +2847,7 @@ static void _middle_render_vertical_skin_temp()
 }
 #endif
 
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)
+//#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)
 static void _middle_render_vertical_weather()
 {
 	I8U string[32];
@@ -2917,7 +2858,12 @@ static void _middle_render_vertical_weather()
 	if (!WEATHER_get_weather_info(0, &weather_info)) {
 		weather_info.low_temperature = 15;
 		weather_info.high_temperature = 22;
+		weather_info.type = 0;
 	}
+
+	string[0] = ICON24_WEATHER_IDX+weather_info.type;
+	string[1] = 0;
+	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);	
 	
 	// - Temperature Range - 
 	string[0] = ICON24_WEATHER_RANGE_IDX;
@@ -2946,9 +2892,7 @@ static void _middle_render_vertical_weather()
 	string[1] = 0;
 	_render_vertical_local_character_core(string, 104, margin, b_24_size, FALSE);
 }
-#endif
 
-#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)
 static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder)
 {
 	I8U string[32];	
@@ -2959,18 +2903,18 @@ static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder
 	
 	if (b_alarm_clock_reminder) {
 		if ((cling.reminder.total) || (cling.reminder.b_sleep_total)){
-	    if ((cling.ui.ui_alarm_hh < 24) && (cling.ui.ui_alarm_mm < 60)) {
-		    b_invalid_alarm = FALSE;
-	    }
+			b_invalid_alarm = FALSE;
 		} 		
 	} else {
 		if (cling.reminder.total){
-	    if ((cling.ui.ui_alarm_hh < 24) && (cling.ui.ui_alarm_mm < 60)) {
-		    b_invalid_alarm = FALSE;
-	    }
+      b_invalid_alarm = FALSE;
 		} 
 	}
-	
+
+	if ((cling.ui.ui_alarm_hh >= 24) || (cling.ui.ui_alarm_mm >= 60)) {
+		b_invalid_alarm = TRUE;
+	}
+		
 	if (b_invalid_alarm) {
 		len = 0;
 		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
@@ -2984,22 +2928,25 @@ static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder
 		// Render the minute
 		sprintf((char *)string, ":%02d", cling.ui.ui_alarm_mm);
 		_render_vertical_local_character_core(string, 65, margin, b_24_size, FALSE);			
-		N_SPRINTF("[UI] normal ui_hh: %d, ui_mm: %d", cling.ui.ui_alarm_hh, cling.ui.ui_alarm_mm);		
 	}
 }
 
 static void _middle_render_vertical_alarm_clock_reminder()
 {
+	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK)) 
+    cling.ui.frm_render.vertical_icon_24_idx = ICON24_SLEEP_ALARM_CLOCK_IDX;
+	else 
+    cling.ui.frm_render.vertical_icon_24_idx = ICON24_NORMAL_ALARM_CLOCK_IDX;	
+
+	_top_render_vertical_24_icon();
+	
   _middle_render_vertical_reminder_core(TRUE);
 }
-#endif
 
-#ifdef _CLINGBAND_2_PAY_MODEL_
 static void _middle_render_vertical_alarm_clock_detail()
 {
   _middle_render_vertical_reminder_core(FALSE);
 }
-#endif
 
 static void _vertical_core_run_distance(I32U stat, BOOLEAN b_all_hold, I8U *string1, I8U *string2)
 {
@@ -3491,6 +3438,7 @@ static BOOLEAN _middle_render_vertical_core_ready()
 	if (cling.ui.run_ready_index > 3) {
 		cling.ui.run_ready_index = 3;
 		b_ready_finished = TRUE;
+    cling.ui.b_enter_active_mode = TRUE;			
 	}
 
 	sprintf((char *)string, "%s", ready_indicator_name[cling.ui.run_ready_index]);
@@ -3506,7 +3454,6 @@ static void _middle_render_vertical_training_ready()
 	b_ready_finished = _middle_render_vertical_core_ready();
 	
 	if (b_ready_finished) {
-    cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
 	}
@@ -3519,8 +3466,7 @@ static void _middle_render_vertical_cycling_outdoor_ready()
 	
 	b_ready_finished = _middle_render_vertical_core_ready();
 	
-	if (b_ready_finished) {
-    cling.ui.b_enter_active_mode = TRUE;		
+	if (b_ready_finished) {	
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
 	}
@@ -3535,7 +3481,6 @@ static void _middle_render_vertical_workout_ready()
 	b_ready_finished = _middle_render_vertical_core_ready();
 	
 	if (b_ready_finished) {
-    cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_WORKOUT_RT_TIME;
 		cling.ui.frame_next_idx = cling.ui.frame_index;	
 	}
@@ -3755,23 +3700,6 @@ static void _middle_render_vertical_carousel_4()
 }
 #endif
 
-static void _bottom_render_vertical_home()
-{						 
-	I8U string[16];			
-	I8U language_type = cling.ui.language_type;	
-	I8U dow_index = cling.time.local.dow;
-
- 	if (BATT_is_charging()) {
-		sprintf((char *)string, "%d %%", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);		
-	} else {
-	  sprintf((char *)string, "%d/%02d", cling.time.local.month, cling.time.local.day);
-	}		
- 	
-  _render_vertical_fonts_lib_character_core((I8U *)week_name[language_type][dow_index], 16, 96);
-	
-	_render_vertical_fonts_lib_character_core(string, 8, 120);	
-}
-
 static void _bottom_render_vertical_small_clock()
 {
 	I8U string[32];
@@ -3816,23 +3744,17 @@ static void _bottom_render_vertical_tracker()
 }
 #endif
 
-#ifdef _CLINGBAND_2_PAY_MODEL_
 static void _bottom_render_vertical_alarm_clock_detail()
 {
 	I8U string[16];
-  I8U b_24_size = 8;
-	I8U margin = 0;
 	
 	sprintf((char *)string, "%02d", cling.ui.vertical_index);
 	_render_vertical_fonts_lib_character_core(string, 16, 96);
 
-  if (cling.ui.b_detail_page) {
-	  string[0] = ICON8_MORE_IDX;
-	  string[1] = 0;
-	  _render_vertical_local_character_core(string, 120, margin, b_24_size, FALSE); 	
-  }
+	_bottom_render_vertical_more();
 }
 
+#if defined(_CLINGBAND_NFC_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)
 static void _bottom_render_vertical_stopwatch_start() 
 {
  	I8U string[16];		
@@ -4213,7 +4135,7 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_CALL*/
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
-  ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
+  ICON24_NORMAL_ALARM_CLOCK_IDX,    /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON24_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
 	ICON24_HEART_RATE_IDX,            /*UI_DISPLAY_HEART_RATE_ALERT*/
 	ICON24_STEPS_IDX,                 /*UI_DISPLAY_STEP_10K_ALERT*/
@@ -4285,7 +4207,7 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_CALL*/
   ICON24_NONE,                      /*UI_DISPLAY_INCOMING_MESSAGE*/
   ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
-  ICON24_NONE,                      /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
+  ICON24_NORMAL_ALARM_CLOCK_IDX,    /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
   ICON24_NONE,                      /*UI_DISPLAY_IDLE_ALERT*/
 	ICON24_HEART_RATE_IDX,            /*UI_DISPLAY_HEART_RATE_ALERT*/
 	ICON24_STEPS_IDX,                 /*UI_DISPLAY_STEP_10K_ALERT*/
@@ -4293,8 +4215,8 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 	ICON24_HEART_RATE_IDX,            /*UI_DISPLAY_HEART_RATE*/
 	ICON24_SKIN_TEMP_IDX,             /*UI_DISPLAY_SKIN_TEMP*/
   ICON24_NONE,                      /*UI_DISPLAY_SETTING*/
-  ICON24_NONE,                      /*UI_DISPLAY_STOPWATCH_START*/
-  ICON24_NONE,                      /*UI_DISPLAY_STOPWATCH_STOP*/
+  ICON24_STOPWATCH_IDX,             /*UI_DISPLAY_STOPWATCH_START*/
+  ICON24_STOPWATCH_IDX,             /*UI_DISPLAY_STOPWATCH_STOP*/
   ICON24_NONE,                      /*UI_DISPLAY_WORKOUT_TREADMILL*/
   ICON24_NONE,                      /*UI_DISPLAY_WORKOUT_CYCLING*/
   ICON24_NONE,                      /*UI_DISPLAY_WORKOUT_STAIRS*/
@@ -4417,26 +4339,26 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 /********************************************************** frame display **********************************************************************************************/
 /***********************************************************************************************************************************************************************/
 const UI_RENDER_CTX horizontal_ui_render[] = {
-  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_clock,                     _right_render_horizontal_home},                    /*UI_DISPLAY_HOME_CLOCK*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_home,                      _RENDER_NONE},                                     /*UI_DISPLAY_HOME_CLOCK*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},	                                    /*UI_DISPLAY_PACE_LOGO*/
   {_RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_DISPLAY_OTA*/	
   {_left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_DISPLAY_LINKING*/	
-  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _right_render_horizontal_firmware_ver},            /*UI_DISPLAY_UNAUTHORIZED*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _RENDER_NONE},                                     /*UI_DISPLAY_UNAUTHORIZED*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_DISPLAY_BATT_POWER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_steps,                     _right_render_horizontal_tracker},                 /*UI_DISPLAY_STEPS*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_distance,                  _right_render_horizontal_tracker},                 /*UI_DISPLAY_DISTANCE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_calories,                  _right_render_horizontal_tracker},                 /*UI_DISPLAY_CALORIES*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_active_time,               _right_render_horizontal_tracker},                 /*UI_DISPLAY_ACTIVE_TIME*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_pm2p5,                     _RENDER_NONE},                                     /*UI_DISPLAY_PM2P5*/
-  {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_DISPLAY_MESSAGE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_DISPLAY_APP_NOTIF*/
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/	
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_CALL*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_MESSAGE*/
-  {_left_render_horizontal_alarm_clock_reminder,  _middle_render_horizontal_alarm_clock_reminder,      _right_render_horizontal_more},                    /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_alarm_clock_reminder,      _right_render_horizontal_more},                    /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_alarm_clcok_detail,        _right_render_horizontal_reminder},                /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
-  {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _RENDER_NONE},                                     /*UI_DISPLAY_IDLE_ALERT*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_IDLE_ALERT*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_HEART_RATE_ALERT*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_steps,                     _right_render_horizontal_small_clock},             /*UI_DISPLAY_STEP_10K_ALERT*/
   {_RENDER_NONE,                                  _middle_render_horizontal_sos_alert,                 _RENDER_NONE},                                     /*UI_DISPLAY_SMART_SOS_ALERT*/	
@@ -4486,34 +4408,34 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 };
 
 const UI_RENDER_CTX vertical_ui_render[] = {
-  {_top_render_vertical_batt_ble,                 _middle_render_vertical_clock,                       _bottom_render_vertical_home},                     /*UI_DISPLAY_HOME_CLOCK*/
+  {_top_render_vertical_batt_ble,                 _middle_render_vertical_home,                        _RENDER_NONE},                                     /*UI_DISPLAY_HOME_CLOCK*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},	                                    /*UI_DISPLAY_PACE_LOGO*/
   {_RENDER_NONE,                                  _middle_render_horizontal_ota,                       _RENDER_NONE},                                     /*UI_DISPLAY_OTA*/	
   {_left_render_horizontal_batt_ble,              _middle_render_horizontal_linking,                   _RENDER_NONE},                                     /*UI_DISPLAY_LINKING*/	
-  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _right_render_horizontal_firmware_ver},            /*UI_DISPLAY_UNAUTHORIZED*/
+  {_left_render_horizontal_batt_ble,              _middle_render_horizontal_ble_code,                  _RENDER_NONE},                                     /*UI_DISPLAY_UNAUTHORIZED*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_charging,           _RENDER_NONE},                                     /*UI_DISPLAY_BATT_POWER*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_steps,                       _bottom_render_vertical_tracker},                  /*UI_DISPLAY_STEPS*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_distance,                    _bottom_render_vertical_tracker},                  /*UI_DISPLAY_DISTANCE*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_calories,                    _bottom_render_vertical_tracker},                  /*UI_DISPLAY_CALORIES*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_active_time,                 _bottom_render_vertical_tracker},                  /*UI_DISPLAY_ACTIVE_TIME*/
   {_top_render_vertical_24_icon,                  _middle_render_vertical_pm2p5,                       _bottom_render_vertical_small_clock},              /*UI_DISPLAY_PM2P5*/
-  {_left_render_horizontal_weather,               _middle_render_horizontal_weather,                   _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
+  {_RENDER_NONE,                                  _middle_render_vertical_weather,                     _RENDER_NONE},                                     /*UI_DISPLAY_WEATHER*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_message,                   _right_render_horizontal_more},                    /*UI_DISPLAY_MESSAGE*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_app_notif,                 _right_render_horizontal_app_notif},               /*UI_DISPLAY_APP_NOTIF*/
   {_RENDER_NONE,                                  _middle_render_horizontal_detail_notif,              _right_render_horizontal_more},                    /*UI_DISPLAY_DETAIL_NOTIF*/	
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_CALL*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_incoming_call_or_message,  _right_render_horizontal_ok_top},                  /*UI_DISPLAY_INCOMING_MESSAGE*/
-  {_left_render_horizontal_alarm_clock_reminder,  _middle_render_horizontal_alarm_clock_reminder,      _bottom_render_vertical_more},                     /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_alarm_clcok_detail,        _right_render_horizontal_reminder},                /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
-  {_left_render_horizontal_idle_alert,            _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_IDLE_ALERT*/
+  {_RENDER_NONE,                                  _middle_render_vertical_alarm_clock_reminder,        _bottom_render_vertical_more},                     /*UI_DISPLAY_ALARM_CLOCK_REMINDER*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_alarm_clock_detail,          _bottom_render_vertical_alarm_clock_detail},       /*UI_DISPLAY_ALARM_CLOCK_DETAIL*/
+  {_RENDER_NONE,                                  _middle_render_horizontal_idle_alert,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_IDLE_ALERT*/
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_DISPLAY_HEART_RATE_ALERT*/
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_steps,                       _bottom_render_vertical_small_clock},              /*UI_DISPLAY_STEP_10K_ALERT*/
   {_RENDER_NONE,                                  _middle_render_horizontal_sos_alert,                 _RENDER_NONE},                                     /*UI_DISPLAY_SMART_SOS_ALERT*/	
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_DISPLAY_HEART_RATE*/
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_DISPLAY_SKIN_TEMP*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_DISPLAY_SETTING*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _right_render_horizontal_stopwatch_start},         /*UI_DISPLAY_STOPWATCH_START*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_ok_middle},               /*UI_DISPLAY_STOPWATCH_STOP*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_stopwatch_start,             _bottom_render_vertical_stopwatch_start},          /*UI_DISPLAY_STOPWATCH_START*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_stopwatch_stop,              _bottom_render_vertical_ok},               /*UI_DISPLAY_STOPWATCH_STOP*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_TREADMILL*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_CYCLING*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_STAIRS*/

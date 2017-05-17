@@ -71,6 +71,9 @@
 #define ICON16_CYCLING_OUTDOOR_MODE_IDX    139   
 #define ICON16_CYCLING_OUTDOOR_MODE_LEN    asset_len[256+139]
 #define ICON16_CYCLING_OUTDOOR_MODE_POS    asset_pos[256+139]
+#define ICON24_SLEEP_ALARM_CLOCK_IDX       140
+#define ICON24_SLEEP_ALARM_CLOCK_LEN       asset_len[512+140]
+#define ICON24_SLEEP_ALARM_CLOCK_POS       asset_pos[512+140]
 #define ICON16_SETTING_IDX                 140
 #define ICON16_SETTING_LEN                 asset_len[256+140]
 #define ICON16_SETTING_POS                 asset_pos[256+140]
@@ -177,6 +180,9 @@
 #define ICON24_NORMAL_ALARM_CLOCK_IDX      139
 #define ICON24_NORMAL_ALARM_CLOCK_LEN      asset_len[512+139]
 #define ICON24_NORMAL_ALARM_CLOCK_POS      asset_pos[512+139]
+#define ICON24_SLEEP_ALARM_CLOCK_IDX       140
+#define ICON24_SLEEP_ALARM_CLOCK_LEN       asset_len[512+140]
+#define ICON24_SLEEP_ALARM_CLOCK_POS       asset_pos[512+140]
 #define ICON24_SETTING_IDX                 141
 #define ICON24_SETTING_LEN                 asset_len[512+141]
 #define ICON24_SETTING_POS                 asset_pos[512+141]
