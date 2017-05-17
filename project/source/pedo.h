@@ -22,7 +22,7 @@
 enum {
     MAIN_LPF_3P6HZ,
     MAIN_LPF_6HZ,
-    MAIN_LPF_8HZ,
+    MAIN_LPF_8HZ
 };
 
 enum {

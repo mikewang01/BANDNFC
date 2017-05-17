@@ -940,6 +940,10 @@ static void _pending_process()
 				case CP_MSG_TYPE_WORKOUT_CYCLING_DATA: {
 						cling.train_stat.distance = BASE_dword_decode(p->msg+1);
 						cling.train_stat.speed = BASE_dword_decode(p->msg+5);
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+					cling.train_stat.b_cycling_state = TRUE;
+#endif
 					CP_SPRINTF("[CP] cycling: %d, %d", cling.train_stat.distance, cling.train_stat.speed);
 						break;
 				}

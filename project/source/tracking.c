@@ -239,7 +239,7 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 		}
 	} else if (PDM_STEP_DETECTED == (pdm_stat & PDM_STEP_DETECTED)) {
 #ifndef __YLF__	
-		if ((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM))
+		if((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM))
 		{
 			if ((act_motion == MOTION_WALKING) || (act_motion == MOTION_RUNNING)) {
 				cling.sleep.sleep_wakeup_steps ++;
@@ -331,6 +331,9 @@ static void _day_stat_reset()
 	cling.activity.day.calories = 0;
 	cling.activity.day.distance = 0;
 	cling.activity.day.active_time = 0;
+#ifndef __YLF_RUN_HR__
+	cling.activity.hr_sport_minutes = 0;
+#endif
 
 	// Reset stored activity data buffer that is used for minute-based activity calculation
 	cling.activity.day_stored.walking = 0;
@@ -524,11 +527,23 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		// Update the activity minute granularity
 		diff->walking = a->day.walking - a->day_stored.walking;
 		diff->running = a->day.running - a->day_stored.running;
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+		if(cling.train_stat.b_cycling_state){
+			cling.train_stat.cycling_pre_distance = cling.train_stat.cycling_curr_distance;
+			cling.train_stat.cycling_curr_distance = cling.train_stat.distance;
+			diff->distance = (cling.train_stat.cycling_curr_distance - cling.train_stat.cycling_pre_distance)>>1;
+			cling.train_stat.b_cycling_state = FALSE;
+		}else{
+			diff->distance = (a->day.distance - a->day_stored.distance) >> 5;
+		}
+#else
 		// in 2 meters, normalized by 32
 		// Theoretical maximum distance in 1 minute is 255*2 = 510 meters
 		// Pace is about 1'57"
 		//
 		diff->distance = (a->day.distance - a->day_stored.distance) >> 5; 
+#endif
 		diff->sleep_state = cling.sleep.state;
 		
 		if ((diff->walking+diff->running) >= 40) {
@@ -649,7 +664,14 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 		
 	// Get activity difference
 	_get_activity_diff(diff, TRUE);
-	
+#ifndef __YLF_RUN_HR__
+	//Keep in sports(walking or running) above 3 minutes
+	if( (diff->walking+diff->running) >100){
+		cling.activity.hr_sport_minutes ++;
+	}else{
+		cling.activity.hr_sport_minutes = 0;
+	}
+#endif
 	// Get vital signal
 	_get_vital_minute(&vital);
 	

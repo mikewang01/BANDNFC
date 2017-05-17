@@ -127,6 +127,12 @@ typedef struct tagTRAINING_TRACK_CTX {
 	I32U time_start_in_ms;
 	I32U calories;
 	I8U  app_positon_service_status;
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+	BOOLEAN b_cycling_state;
+	I32U cycling_curr_distance;
+	I32U cycling_pre_distance;
+#endif
 } TRAINING_TRACK_CTX;
 
 typedef struct tagDAY_STREAMING_CTX {
@@ -197,6 +203,9 @@ typedef struct tagTRACKING_CTX {
 	I8U workout_type;
 	I8U workout_place;
 	BOOLEAN b_workout_active;
+#ifndef __YLF_RUN_HR__
+	I8U hr_sport_minutes;
+#endif
 } TRACKING_CTX;
 
 BOOLEAN TRACKING_is_not_active(void);

@@ -1033,6 +1033,12 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	  cling.train_stat.time_start_in_ms = CLK_get_system_time();
 	  cling.train_stat.session_id = cling.time.time_since_1970;
 	  cling.train_stat.calories = 0;
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+		cling.train_stat.cycling_curr_distance = 0;
+		cling.train_stat.cycling_pre_distance = 0;
+		cling.train_stat.b_cycling_state = FALSE;
+#endif
 	  // Running pace time stamp
 	  cling.run_stat.pace_calc_ts = CLK_get_system_time();
 	  cling.run_stat.last_10sec_distance = 0;

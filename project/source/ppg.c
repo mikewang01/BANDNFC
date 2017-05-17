@@ -78,7 +78,7 @@ static void _calc_heart_rate()
 	I32S sum;
 	I8S  non_num;
 	I8S  avg_epoch_num;
-	I8U  i;	
+	I8U  i;
 	
 	// current pulse width
 	epoch_num = 0;
@@ -96,7 +96,7 @@ static void _calc_heart_rate()
 	// 90bpm: 33 samples
 	// 100bpm: 30 samples
 #ifndef __YLF__
-	for (i=5; i>0; i--)
+	for (i=PPG_HR_SMOOTH_WINDOW_WIDTH-1; i>0; i--)
 #else
 	for (i=7; i>0; i--)
 #endif
@@ -109,7 +109,9 @@ static void _calc_heart_rate()
 		}
 		h->m_epoch_cnt ++;
 	}else{
-		h->m_epoch_num[0] = epoch_num;
+		if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
+			h->m_epoch_num[0] = epoch_num;
+		}
 	}
 #else
 	h->m_epoch_num[0] = epoch_num;
@@ -122,7 +124,7 @@ static void _calc_heart_rate()
 	sum = 0;
 	non_num = 0;
 #ifndef __YLF__
-	for (i=0; i<6; i++)
+	for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++)
 #else
 	for (i=0; i<8; i++)
 #endif
@@ -134,7 +136,7 @@ static void _calc_heart_rate()
 		}
 	}
 	avg_epoch_num = 0;
-	while (sum>=0)
+	while (sum>0)//while (sum>=0)
 	{
 		sum -= non_num;
 		avg_epoch_num++;
@@ -179,12 +181,16 @@ static void _reset_heart_rate_calculator()
 #ifndef __YLF__
 	h->m_epoch_cnt = 0;
 	if((epoch_num<30)){
-		for (i=0; i<6; i++) h->m_epoch_num[i] = 35 -((30-epoch_num)& 0x05);
+		if(h->b_runstate){
+			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 30 -((30-epoch_num)& 0x05);
+		}else{
+			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 35 -((30-epoch_num)& 0x05);
+		}
 	}else if(epoch_num>50){
-		for (i=0; i<6; i++) h->m_epoch_num[i] = 40 + ((epoch_num-50)& 0x05);
+		for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 40 + ((epoch_num-50)& 0x05);
 	}else{
 		//Init epoch-array to last one when HR is during 60bpm~100bpm.
-			for (i=0; i<6; i++) h->m_epoch_num[i] = epoch_num;
+			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = epoch_num;
 	}
 #else
 	for (i=0; i<8; i++) h->m_epoch_num[i] = epoch_num;
@@ -361,7 +367,7 @@ static I16S _get_light_strength_register()
 static void _ppg_sample_proc()
 {
 	HEARTRATE_CTX *h = &cling.hr;
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+#if defined(_CLINGBAND_PACE_MODEL_) || defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
 	double filter_val = 0.0;
 #else
 	double high_pass_filter_val = 0.0;
@@ -380,7 +386,7 @@ static void _ppg_sample_proc()
 	sample = _get_light_strength_register();
 
 	_skin_touch_detect(sample);
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+#if defined(_CLINGBAND_PACE_MODEL_) || defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
 	filter_val = Butterworth_Filter_BP( (double) sample);
 	filt_sample = (I16S)filter_val;
 #else
@@ -565,7 +571,7 @@ void PPG_init()
 	
 	h->m_zero_point_timer   = CLK_get_system_time();
 #ifndef __YLF__
-  for (i=0; i<6; i++) h->m_epoch_num[i] = 42;
+  for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 42;
 	h->m_epoch_cnt = 0;
 	h->measType = 0;//static HR for default
 #else
@@ -737,6 +743,15 @@ void PPG_state_machine()
 				h->state = PPG_STAT_DUTY_ON;
 				PPG_LOGGING("[PPG] PPG State on (force)");
 			} else {
+#ifndef __YLF_RUN_HR__
+				//Keep in sports(walking or running) above 3 minutes
+				if(cling.activity.hr_sport_minutes>3){//Running
+						cling.activity.hr_sport_minutes = 0;
+						h->state = PPG_STAT_DUTY_ON;
+						// We need initialize skin touch detection routine
+						PPG_closing_to_skin_detect_init();
+				}else{
+#endif
 				if (t_step_diff_sec < PPG_MEASURING_PERIOD_BACKGROUND_NIGHT) {
 					t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_DAY;
 				} else {
@@ -772,6 +787,9 @@ void PPG_state_machine()
 #endif				
 				// We need initialize skin touch detection routine
 				PPG_closing_to_skin_detect_init();
+#ifndef __YLF_RUN_HR__
+				}
+#endif
 			}
 		}
 		break;

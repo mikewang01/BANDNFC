@@ -195,6 +195,7 @@ void ppg_PS_ALS_Auto             (void);
 #else
 #define PPG_SAMPLE_AVERATE_THRESHOLD                             4000//5000//2000
 #endif
+#define PPG_HR_SMOOTH_WINDOW_WIDTH                               6
 typedef enum {
 	PPG_BODY_NOT_WEAR, 
 	PPG_BODY_WEAR, 
@@ -263,7 +264,7 @@ typedef struct tagHEARTRATE_CTX{
 	I8U measType;//0-static HR,1-training HR,2-fixed time HR measurement
 #endif
 #ifndef __YLF__
-	I8U   m_epoch_num[6];
+	I8U   m_epoch_num[PPG_HR_SMOOTH_WINDOW_WIDTH];
 	I8U m_epoch_cnt;
 #else
 	I8U   m_epoch_num[8];

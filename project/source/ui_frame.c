@@ -1491,6 +1491,10 @@ static void _middle_render_horizontal_cycling_outdoor_start()
 	I8U language_type = cling.ui.language_type;
 
 	FONT_load_characters(128+31, (char *)cycling_start_name[language_type], 16, 128, FALSE);
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+	cling.train_stat.b_cycling_state = FALSE;
+#endif
 }
 
 static void _middle_render_horizontal_cycling_outdoor_ready()
@@ -3552,7 +3556,7 @@ static void _middle_render_vertical_cycling_outdoor_ready()
 	if (b_ready_finished) {
     cling.ui.b_enter_active_mode = TRUE;		
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
-		cling.ui.frame_next_idx = cling.ui.frame_index;	
+		cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
 }
 #endif
@@ -3696,7 +3700,11 @@ static void _middle_render_vertical_cycling_outdoor_start()
 	const	char *cycling_start_name_2[] = {"NOW", "骑行 ", "騎行 "};			
 	I8U language_type = cling.ui.language_type;		
 	
-	_middle_render_vertical_character_core((I8U *)cycling_start_name_1[language_type], 50, (I8U *)cycling_start_name_2[language_type], 70);	
+	_middle_render_vertical_character_core((I8U *)cycling_start_name_1[language_type], 50, (I8U *)cycling_start_name_2[language_type], 70);
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+	cling.train_stat.b_cycling_state = FALSE;
+#endif
 }
 
 static void _middle_render_vertical_cycling_outdoor_stop()
@@ -3705,7 +3713,7 @@ static void _middle_render_vertical_cycling_outdoor_stop()
 	const	char *cycling_stop_name_2[] = {"STOP", "骑行", "騎行"};		
 	I8U language_type = cling.ui.language_type;		
 	
-	_middle_render_vertical_character_core((I8U *)cycling_stop_name_1[language_type], 50, (I8U *)cycling_stop_name_2[language_type], 70);		
+	_middle_render_vertical_character_core((I8U *)cycling_stop_name_1[language_type], 50, (I8U *)cycling_stop_name_2[language_type], 70);
 }
 
 static void _middle_render_vertical_cycling_outdoor_distance()
