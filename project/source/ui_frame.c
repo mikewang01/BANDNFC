@@ -2943,10 +2943,12 @@ static void _middle_render_vertical_alarm_clock_reminder()
   _middle_render_vertical_reminder_core(TRUE);
 }
 
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_alarm_clock_detail()
 {
   _middle_render_vertical_reminder_core(FALSE);
 }
+#endif
 
 static void _vertical_core_run_distance(I32U stat, BOOLEAN b_all_hold, I8U *string1, I8U *string2)
 {
@@ -3742,7 +3744,6 @@ static void _bottom_render_vertical_tracker()
 	
   _bottom_render_vertical_more();	
 }
-#endif
 
 static void _bottom_render_vertical_alarm_clock_detail()
 {
@@ -3753,6 +3754,7 @@ static void _bottom_render_vertical_alarm_clock_detail()
 
 	_bottom_render_vertical_more();
 }
+#endif
 
 #if defined(_CLINGBAND_NFC_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)
 static void _bottom_render_vertical_stopwatch_start() 
