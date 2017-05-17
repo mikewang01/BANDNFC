@@ -282,7 +282,9 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 				}
 				// Turn on PPG
 				if (cling.hr.state == PPG_STAT_DUTY_OFF) {
+#ifdef _ENABLE_PPG_							
 					PPG_closing_to_skin_detect_init();
+#endif					
 				}
 				
 				// Update running sec
@@ -827,7 +829,9 @@ void _training_pace_and_hr_alert()
 #ifndef __YLF_ALERT__
 		if ( (cling.user_data.profile.max_hr_alert & 0x80)) {
 #endif
+#ifdef _ENABLE_PPG_					
 			hr = PPG_minute_hr_calibrate();
+#endif			
 			hr_perc = (hr * 100);
 			hr_perc /= (220-cling.user_data.profile.age);	
 			if (hr_perc > 98)
@@ -908,7 +912,9 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 			r->distance += denormalized_distance;
 			// Turn on PPG
 			if (cling.hr.state == PPG_STAT_DUTY_OFF) {
+#ifdef _ENABLE_PPG_				
 				PPG_closing_to_skin_detect_init();
+#endif				
 			}
 		}
 	}
