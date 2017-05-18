@@ -4065,8 +4065,8 @@ const I8U ui_matrix_vertical_icon_24_idx[] = {
 	ICON24_HEART_RATE_IDX,            /*UI_DISPLAY_HEART_RATE*/
 	ICON24_SKIN_TEMP_IDX,             /*UI_DISPLAY_SKIN_TEMP*/
   ICON24_NONE,                      /*UI_DISPLAY_SETTING*/
-  ICON24_NONE,                      /*UI_DISPLAY_STOPWATCH_START*/
-  ICON24_NONE,                      /*UI_DISPLAY_STOPWATCH_STOP*/
+  ICON24_STOPWATCH_IDX,             /*UI_DISPLAY_STOPWATCH_START*/
+  ICON24_STOPWATCH_IDX,             /*UI_DISPLAY_STOPWATCH_STOP*/
   ICON24_NONE,                      /*UI_DISPLAY_WORKOUT_TREADMILL*/
   ICON24_NONE,                      /*UI_DISPLAY_WORKOUT_CYCLING*/
   ICON24_NONE,                      /*UI_DISPLAY_WORKOUT_STAIRS*/
