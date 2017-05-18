@@ -14,10 +14,12 @@
 #pragma diag_suppress 870
 
 
-const	char *const button_hold_name[] = {"HOLD", "长按", "長按"};	
+const	char *const button_hold_name[3] = {"HOLD", "长按", "長按"};	
 
 const char *const distance_unit_name[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};	
 
+const char *const vertical_step_name[3][3] = {{"STEP", "K", "K"},{"步 ", "千步", "万步"},{"步 ", "千步", "萬步"}};
+	
 const char *const active_time_name[3] = {"MIN","分钟","分鍾"};		
  
 const	char *const pace_name[3] = {"PACE", "配速 ", "配速 "};
@@ -25,24 +27,24 @@ const	char *const avg_name[3] = {"AVG", "平均 ", "平均 "};
 const	char *const heart_rate_name[3] = {"HR", "心率 ", "心率 "};	
 
 const	char *const cadence_rate_name[3] = {"RATE", "步频", "步頻"};	
-const	char *const cadence_spm_name[3] = {"SPM", "步分 ", "步分 "};		
+const	char *const cadence_spm_name[3] = {"SPM", "步分", "步分"};		
 	
 const	char *const stride_name[3] = {"STRIDE", "步幅", "步幅"};
 const char *const stride_unit_name[3][2] = {{"CM", "IN"},{"厘米", "英寸"},{"厘米", "英寸"}};		
 
-const	char *const calories_name[3] = {"BURN", "热量 ", "熱量 "};		
+const	char *const calories_name[3] = {"BURN", "热量", "熱量"};		
 const	char *const calories_unit_horizontal_name[3] = {"CALS", "大卡", "大卡"};
 const char *const calories_unit_vertical_name[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
 
 const	char *const running_time_name[3] = {"TIME", "耗时", "耗時"};
 const char *const running_distance_name[3] = {"RUN", "里程", "裏程" };	
 
-const	char *const stop_run_name[3] = {"STOP", "结束", "結束"};	
-const	char *const start_run_name[3] = {"NOW", "开始 ", "開始 "};	
+const	char *const stop_run_name[3] = {"STOP ", "结束 ", "結束 "};	
+const	char *const start_run_name[3] = {"NOW ", "开始 ", "開始 "};	
 	
-const	char *const training_run_name[3] = {"RUN", "跑步 ", "跑步 "};	
-const	char *const gym_workout_run_name[3] = {"RUN", "运动 ", "運動 "};			
-const	char *const cycling_run_name[3] = {"BIKE", "骑行", "騎行"};	
+const	char *const training_run_name[3] = {"RUN ", "跑步 ", "跑步 "};	
+const	char *const gym_workout_run_name[3] = {"RUN ", "运动 ", "運動 "};			
+const	char *const cycling_run_name[3] = {"BIKE ", "骑行 ", "騎行 "};	
 	
 const char *const ready_indicator_name[4] = {"3","2","1","GO"};
 
@@ -51,13 +53,15 @@ const char *const speed_unit_name[2] = {"KM/H", "ML/H"};
 
 const char *const no_ble_horizontal_name[3] = {"NO BLE", "无蓝牙 ", "無藍牙 "};	
 
-const char *const no_ble_vertical_name_1[] = {"NO", "无 ", "無 "};		
-const char *const no_ble_vertical_name_2[] = {"BLE", "蓝牙 ", "藍牙 "};		
+const char *const no_ble_vertical_name_1[3] = {"NO", "无 ", "無 "};		
+const char *const no_ble_vertical_name_2[3] = {"BLE", "蓝牙 ", "藍牙 "};		
 
 const char *const stopwatch_stop_name[3] = {"END", "结束 ", "結束 "};
 
 const	char *const run_start_name[3] = {"RUN ", "开始 ", "開始 "};	
 const	char *const run_analysis_name[3] = {"MORE", "记录 ", "記錄 "};		
+
+const	char *const idle_alart_name[] = {"time for move", "该活动一下了", "該活動一下了"};
 	
 const char *const week_name[3][7] = {{"MON",  "TUE",  "WED",  "THU",  "FRI",  "SAT",  "SUN"},
 	                                   {"周一", "周二", "周三", "周四", "周五", "周六", "周日"},
@@ -69,7 +73,19 @@ const char *const air_level_name[4][7] = {{"--","Good", "Moderate", "Unhealthy",
 	                                        {"--","优质", "良好",     "轻度",      "中度", "重度", "严重"},
 												                  {"--","優質", "良好",     "輕度",      "中度", "重度", "嚴重"}};
 
-
+const char *const horizontal_workout_name[3][8] = {{"Treadmill", "Cycling", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
+	                                  {"跑步机 ",   "单车",    "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"},
+	                                  {"跑步機 ",   "單車",    "爬樓梯 ", "橢圓機 ",    "劃船", "有氧操 ", "Piloxing", "其它"}};
+	
+const char *const horizontal_ware_indicator[] = {"-,,,,,,,",
+	                                             	 ",-,,,,,,", 
+	                                               ",,-,,,,,", 
+		                                             ",,,-,,,,", 
+		                                             ",,,,-,,,", 
+		                                             ",,,,,-,,", 
+		                                             ",,,,,,-,", 
+		                                             ",,,,,,,-"};
+	
 static void _core_frame_display(I8U middle, BOOLEAN b_render);
 static void _RENDER_NONE() { }
 
@@ -668,14 +684,6 @@ static void _middle_render_horizontal_uv_index()
 
 static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 {
-	const char *heart_rate_wave_indicator[] = {
-		"-,,,,,,",
-		",-,,,,,", 
-		",,-,,,,", 
-		",,,-,,,", 
-		",,,,-,,", 
-		",,,,,-,", 
-		",,,,,,-"};	
 	I8U string[32];
 	I8U b_24_size = 24;				
 	I8U len = 0;
@@ -693,10 +701,10 @@ static I8U _render_middle_horizontal_hr_core(BOOLEAN b_training_mode)
 #endif
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
-			if (cling.ui.heart_rate_wave_index > 6) {
+			if (cling.ui.heart_rate_wave_index > 7) {
 				cling.ui.heart_rate_wave_index = 0;
 			}
-			len = sprintf((char *)string, "%s", heart_rate_wave_indicator[cling.ui.heart_rate_wave_index]);
+			len = sprintf((char *)string, "%s", horizontal_ware_indicator[cling.ui.heart_rate_wave_index]);
 			_render_middle_horizontal_section_core(string, 8, 5, 128+40, 0);
 			cling.ui.heart_rate_wave_index ++;
 			return 0;
@@ -994,7 +1002,6 @@ static void _middle_render_horizontal_detail_notif()
 
 static void _middle_render_horizontal_idle_alert()
 {
-	const	char *idle_alart_name[] = {"time for move", "该活动一下了", "該活動一下了"};
 	I8U offset = 0;
 	I8U language_type = cling.ui.language_type;	
 
@@ -1047,18 +1054,6 @@ static void _middle_render_horizontal_phone_finder()
 #ifndef _CLINGBAND_PACE_MODEL_			
 static void _middle_render_horizontal_workout_mode_switch()
 {
-	const char *workout_name[3][8] = {{"Treadmill", "Cycling", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
-	                                  {"跑步机 ",   "单车",    "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"},
-	                                  {"跑步機 ",   "單車",    "爬樓梯 ", "橢圓機 ",    "劃船", "有氧操 ", "Piloxing", "其它"}};
-	const char *workout_indicator[] = {
-		"-,,,,,,,",
-		",-,,,,,,", 
-		",,-,,,,,", 
-		",,,-,,,,", 
-		",,,,-,,,", 
-		",,,,,-,,", 
-		",,,,,,-,", 
-		",,,,,,,-"};
 	I8U workout_idx=0, frame_index=0;	
 	I8U language_type = cling.ui.language_type;
 	
@@ -1068,9 +1063,9 @@ static void _middle_render_horizontal_workout_mode_switch()
 	
 	workout_idx = frame_index - UI_DISPLAY_WORKOUT_TREADMILL;
 		
-	FONT_load_characters(128, (char *)workout_name[language_type][workout_idx], 16, 128, TRUE);
+	FONT_load_characters(128, (char *)horizontal_workout_name[language_type][workout_idx], 16, 128, TRUE);
 	
-	_render_middle_horizontal_section_core((I8U *)workout_indicator[workout_idx], 8, 7, 256+30, 0);
+	_render_middle_horizontal_section_core((I8U *)horizontal_ware_indicator[workout_idx], 8, 7, 256+30, 0);
 }
 #endif
 
@@ -1342,29 +1337,6 @@ static void _middle_render_horizontal_running_stop_analysis()
 }
 #endif
 
-static void _middle_render_horizontal_training_start_run()
-{
-	const char *training_start_name[] = {"RUN NOW", "开始跑步 ", "開始跑步 "};
-	I8U language_type = cling.ui.language_type;
-  I8U offset = 0;
-	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {		
-#ifdef _CLINGBAND_PACE_MODEL_		
-	  offset = 28;
-#else
-	  offset = 35;
-#endif	
-	} else {
-#ifdef _CLINGBAND_PACE_MODEL_				
-	  offset = 24;	
-#else
-	  offset = 31;	
-#endif		
-	}
-	
-	FONT_load_characters(128+offset, (char *)training_start_name[language_type], 16, 128, FALSE);
-}
-
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_training_run_or_analysis()
 {
@@ -1401,7 +1373,7 @@ static void _middle_render_horizontal_training_run_or_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_		
 static void _middle_render_horizontal_training_connect_gps()
 {
-  const	char *conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};	
+  const	char *const conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
@@ -1409,7 +1381,7 @@ static void _middle_render_horizontal_training_connect_gps()
 
 static void _middle_render_horizontal_training_connect_gps_timeout()
 {
-  const	char *conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
+  const	char *const conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
@@ -1417,7 +1389,7 @@ static void _middle_render_horizontal_training_connect_gps_timeout()
 
 static void _middle_render_horizontal_training_connect_gps_fail()
 {
-  const	char *conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};	
+  const	char *const conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
  	FONT_load_characters(128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
@@ -1557,29 +1529,71 @@ static void _middle_render_horizontal_training_hr()
 	cling.ui.training_hr = (I8U)hr_perc;
 }
 
+static void _middle_render_horizontal_run_or_stop_core(I8U *string1, I8U *string2, I8U *string_out)
+{
+	I8U len = 0;
+	I8U language_type = cling.ui.language_type;
+	
+	len = sprintf((char *)string_out, "%s", string1);
+	if (language_type != LANGUAGE_TYPE_ENGLISH) {
+		len --;
+	}
+	
+	sprintf((char *)&string_out[len], "%s", string2);	
+}
+
+static void _middle_render_horizontal_training_start_run()
+{
+	I8U string[32];
+	I8U language_type = cling.ui.language_type;
+#ifdef _CLINGBAND_PACE_MODEL_			
+  I8U offset = 0;
+
+	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH) {		
+	  offset = 28;
+	} else {		
+	  offset = 24;	
+	}
+#endif
+	
+	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH)
+	  _middle_render_horizontal_run_or_stop_core((I8U *)training_run_name[language_type], (I8U *)start_run_name[language_type], string);
+	else
+	  _middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)training_run_name[language_type], string);
+
+#ifdef _CLINGBAND_PACE_MODEL_		
+	FONT_load_characters(128+offset, (char *)string, 16, 128, FALSE);	
+#else	
+	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
+#endif	
+}
+
 static void _middle_render_horizontal_training_run_stop()
 {
-	const char *run_stop_name[] = {"STOP RUN", "结束跑步 ", "结束跑步 "};
-	I8U language_type = cling.ui.language_type;
-  I8U offset;
+	I8U string[32];
+  I8U offset;	
+	I8U language_type = cling.ui.language_type;	
 	
+	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)training_run_name[language_type], string);
+
 #ifdef _CLINGBAND_PACE_MODEL_				
 	  offset = 24;	
 #else
 	  offset = 31;	
 #endif	
 	
-	FONT_load_characters(128+offset, (char *)run_stop_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(128+offset, (char *)string, 16, 128, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_horizontal_training_workout_stop()
 {
-	const char *run_stop_name[] = {"STOP NOW", "结束运动 ", "結束運動 "};
+	I8U string[32];
+	I8U language_type = cling.ui.language_type;	
 
-	I8U language_type = cling.ui.language_type;
+	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)gym_workout_run_name[language_type], string);
 
-	FONT_load_characters(128+31, (char *)run_stop_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
 }
 #endif
 
@@ -1598,12 +1612,27 @@ static void _middle_render_horizontal_workout_ready()
 
 static void _middle_render_horizontal_cycling_outdoor_start()
 {
-	const char *cycling_start_name[] = {"BIKE NOW", "开始骑行 ", "開始騎行 "};
+	I8U string[32];
 	I8U language_type = cling.ui.language_type;
 
-	FONT_load_characters(128+31, (char *)cycling_start_name[language_type], 16, 128, FALSE);
+	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH)
+	  _middle_render_horizontal_run_or_stop_core((I8U *)cycling_run_name[language_type], (I8U *)start_run_name[language_type], string);
+	else
+	  _middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)cycling_run_name[language_type], string);
+
+	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
 	
 	cling.train_stat.b_cycling_state = FALSE;
+}
+
+static void _middle_render_horizontal_cycling_outdoor_stop()
+{
+	I8U string[32];
+	I8U language_type = cling.ui.language_type;
+	
+	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)cycling_run_name[language_type], string);
+	
+	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
 }
 
 static void _middle_render_horizontal_cycling_outdoor_ready()
@@ -1644,23 +1673,11 @@ static void _middle_render_horizontal_cycling_outdoor_speed()
 		_right_render_horizontal_string_core(NULL, (I8U *)no_ble_horizontal_name[language_type]);
 	}
 }
-
-static void _middle_render_horizontal_cycling_outdoor_stop()
-{
-	const char *cycling_stop_name[] = {"STOP BIKE", "结束骑行 ", "結束騎行 "};
-	I8U language_type = cling.ui.language_type;
-
-	FONT_load_characters(128+30, (char *)cycling_stop_name[language_type], 16, 128, FALSE);
-}
 #endif
 
 #ifndef _CLINGBAND_PACE_MODEL_
-static void _middle_render_horizontal_stopwatch_start()
+static void _middle_render_stopwatch_core(I8U *hour_out, I8U *min_out, I8U *sec_out, I16U *ms_out)
 {
-	I8U string[32];
-	I8U b_24_size = 24;
-	I8U margin = 3;	
-	I8U offset = 0;
 	I8U hour = 0, min = 0, sec = 0;
 	I16U ms = 0;		
   I32U t_diff = 0;
@@ -1690,27 +1707,32 @@ static void _middle_render_horizontal_stopwatch_start()
 	
 	ms /= 10;
 	
-	// Render the time	
+	*hour_out = hour;
+	*min_out = min;
+	*sec_out = sec;
+	*ms_out = ms;
+}
+
+static void _middle_render_horizontal_stopwatch_start()
+{
+	I8U string[32];
+	I8U b_24_size = 24;
+	I8U margin = 3;	
+	I8U offset = 0;
+	I8U hour = 0, min = 0, sec = 0;
+	I16U ms = 0;		
+
+	_middle_render_stopwatch_core(&hour, &min, &sec, &ms);
+	
 	if (hour) {
-		// Render the hour	
+		// Render the time	
 		if (hour > 9) hour = 9;		
-		sprintf((char *)string, "%d:", hour);
+		sprintf((char *)string, "%d:%02d:%02d", hour, min, sec);
 	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 1);
-		// Render the minute				
-		sprintf((char *)string, "%02d:", min);
-	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);		
-		// Render the second				 
-		sprintf((char *)string, "%02d", sec);
-	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);		
-		
-		_middle_horizontal_alignment_center(offset);
 	} else {
-		// Render the minute	
-		sprintf((char *)string, "%d:", min);
+		// Render the minute and second.	
+		sprintf((char *)string, "%d:%02d.", min, sec);
 	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
-		// Render the second				
-		sprintf((char *)string, "%02d.", sec);
-	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);		
 		// Render the millisecond
 		b_24_size = 16;
 		offset += 128;
@@ -1718,8 +1740,14 @@ static void _middle_render_horizontal_stopwatch_start()
 		sprintf((char *)string, "%02d", ms);
 	  offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);		
 		offset -= 128;
-		_middle_horizontal_alignment_center(offset);
-	}	
+	}
+
+	_middle_horizontal_alignment_center(offset);	
+	
+	if (cling.ui.b_in_stopwatch_pause_mode)
+    _render_one_icon_16(ICON16_STOPWATCH_START_IDX, 110);
+	else
+    _render_one_icon_16(ICON16_STOPWATCH_STOP_IDX, 110);		
 }
 
 static void _middle_render_horizontal_stopwatch_stop()
@@ -1940,16 +1968,6 @@ static void _right_render_horizontal_small_clock()
  
 	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
 }
-
-#ifndef _CLINGBAND_PACE_MODEL_
-static void _right_render_horizontal_stopwatch_start()
-{
-	if (cling.ui.b_in_stopwatch_pause_mode)
-    _render_one_icon_16(ICON16_STOPWATCH_START_IDX, 110);
-	else
-    _render_one_icon_16(ICON16_STOPWATCH_STOP_IDX, 110);	
-}
-#endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _right_render_horizontal_button_hold()
@@ -2351,19 +2369,22 @@ static void _render_vertical_fonts_lib_invert_colors_core(I8U *string, I8U offse
 	_rotate_270_degree(p1, 384+offset+8);
 }
 
-static void _top_render_vertical_24_icon()
+static void _render_vertical_icon_core(I8U icon_24_idx, I8U b_24_size, I8U offset)
 {
 	I8U string[4];	
-	I8U len = 0;	
 	I8U	margin = 2;
-	I8U b_24_size = 24;
 
+	string[0] = icon_24_idx;
+	string[1] = 0;
+	_render_vertical_local_character_core(string, offset, margin, b_24_size, FALSE);
+}
+
+static void _top_render_vertical_24_icon()
+{
 	if (cling.ui.frm_render.vertical_icon_24_idx == ICON24_NONE)
 		return;
-	
-	string[len++] = cling.ui.frm_render.vertical_icon_24_idx;
-	string[len++] = 0;
-	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);
+
+  _render_vertical_icon_core(cling.ui.frm_render.vertical_icon_24_idx, 24, 0);	
 }
 
 static void _top_render_vertical_batt_ble()
@@ -2418,7 +2439,6 @@ static void _middle_render_vertical_home()
 
 static void _middle_render_vertical_steps()
 {
-	const char *step_name[3][3] = {{"STEP", "K", "K"},{"步 ", "千步", "万步"},{"步 ", "千步", "萬步"}};
 	I8U string[32];
 	I32U stat = 0;
 	I8U margin = 2;
@@ -2481,9 +2501,9 @@ static void _middle_render_vertical_steps()
 	}
 	
 	if ((step_unit_index) && (language_type == LANGUAGE_TYPE_ENGLISH)) {
-		_middle_render_vertical_character_core((I8U *)step_name[0][1], 75, (I8U *)step_name[0][0], 95);
+		_middle_render_vertical_character_core((I8U *)vertical_step_name[0][1], 75, (I8U *)vertical_step_name[0][0], 95);
 	} else {
-		_render_vertical_fonts_lib_character_core((I8U *)step_name[language_type][step_unit_index], 16, 80);
+		_render_vertical_fonts_lib_character_core((I8U *)vertical_step_name[language_type][step_unit_index], 16, 80);
 	}
 }
 
@@ -2670,9 +2690,8 @@ static void _middle_render_vertical_pm2p5()
 
 static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 {
-	const char *heart_rate_wave_indicator[] = {" - , ,", " , - ,", " , , -" };		
+	const char *const heart_rate_wave_indicator[] = {" - , ,", " , - ,", " , , -" };		
 	I8U string[32];		
-	I8U len = 0;	
 	I8U margin = 2;
 	I8U b_24_size = 24;
 	I8U hr_result = 0;
@@ -2696,7 +2715,7 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 				b_24_size = 24;
 				margin = 2;
 			}
-			len = sprintf((char *)string, "%d", hr_result);		
+			sprintf((char *)string, "%d", hr_result);		
 			if (b_24_size == 24) 
 				_render_vertical_local_character_core(string, offset, margin, b_24_size, b_all_hold);
 			else
@@ -2706,7 +2725,7 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 			if (cling.ui.heart_rate_wave_index > 2) {
 				cling.ui.heart_rate_wave_index = 0;
 			}
-			len = sprintf((char *)string, "%s", heart_rate_wave_indicator[cling.ui.heart_rate_wave_index]);
+			sprintf((char *)string, "%s", heart_rate_wave_indicator[cling.ui.heart_rate_wave_index]);
 			b_24_size = 8;
 			margin = 3;
 			_render_vertical_local_character_core(string, offset+5, margin, b_24_size, FALSE);
@@ -2715,12 +2734,7 @@ static I8U _render_middle_vertical_hr_core(I8U offset, BOOLEAN b_training_mode)
 		}
 	} else {
 		N_SPRINTF("[UI] Heart rate - not valid");
-		b_24_size = 24;
-		margin = 0;
-		len = 0;
-		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-		string[len++] = 0;
-		_render_vertical_local_character_core(string, offset, margin, b_24_size, FALSE);
+		_render_vertical_icon_core(ICON24_NO_SKIN_TOUCH_IDX, 24, 50);
 		hr_result = 0;
 	}
 	
@@ -2742,40 +2756,16 @@ static void _middle_render_vertical_heart_rate()
 	}
 }
 
-#if defined(_CLINGBAND_NFC_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)
+#ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_stopwatch_start()
 {
 	I8U string[32];	
 	I8U margin = 1;
 	I8U b_24_size = 24;	
-	I32U t_diff = 0;
 	I8U hour = 0, min = 0, sec = 0;
 	I16U ms = 0;
 
-  if (cling.ui.b_stopwatch_first_enter) {
-  	cling.ui.stopwatch_time_stamp = CLK_get_system_time();				
-		cling.ui.b_in_stopwatch_pause_mode = FALSE;
-		cling.ui.b_stopwatch_first_enter = FALSE;
-		cling.ui.stopwatch_t_stop_stamp = 0;
-	} else {
-	  if (!cling.ui.b_in_stopwatch_pause_mode)  {
-      t_diff = CLK_get_system_time() - cling.ui.stopwatch_time_stamp;			
-	    cling.ui.stopwatch_t_stop_stamp = t_diff;			
-		} else {
-	    t_diff = cling.ui.stopwatch_t_stop_stamp;
-			cling.ui.stopwatch_time_stamp = CLK_get_system_time() - cling.ui.stopwatch_t_stop_stamp;
-		}
-	}
-
-	ms = t_diff % 1000;
-	t_diff /= 1000;
-	hour = t_diff / 3600;
-	t_diff -= hour*3600;
-	min = t_diff / 60;
-	t_diff -= min * 60;
-	sec = t_diff;
-	
-	ms /= 10;	
+	_middle_render_stopwatch_core(&hour, &min, &sec, &ms);
 	
 	// Render the time	
 	if (hour) {
@@ -2792,16 +2782,14 @@ static void _middle_render_vertical_stopwatch_start()
 	  sprintf((char *)string, ":%02d", sec);
     _render_vertical_local_character_core(string, 84, margin, b_24_size, FALSE);			
 	} else {
-    if (min > 9) {
-	    // Render the minute
+	  // Render the minute		
+    if (min > 9) 
 	    sprintf((char *)string, " %02d", min);
-      _render_vertical_local_character_core(string, 28, margin, b_24_size, FALSE);					
-		} else {
-	    // Render the minute
-	    sprintf((char *)string, "+ %d", min);
-      _render_vertical_local_character_core(string, 28, margin, b_24_size, FALSE);					
-		}
-
+		else 
+	    sprintf((char *)string, "+ %d", min);		
+		
+		_render_vertical_local_character_core(string, 28, margin, b_24_size, FALSE);	
+		
 		// Render the second
 	  sprintf((char *)string, ":%02d", sec);
     _render_vertical_local_character_core(string, 56, margin, b_24_size, FALSE);			
@@ -2815,6 +2803,11 @@ static void _middle_render_vertical_stopwatch_start()
 	  sprintf((char *)string, "   %02d", ms);
     _render_vertical_local_character_core(string, 84, margin, b_24_size, FALSE);		
 	}
+	
+	if (cling.ui.b_in_stopwatch_pause_mode)
+		_render_vertical_icon_core(ICON16_STOPWATCH_START_IDX, 16, 110);
+	else
+		_render_vertical_icon_core(ICON16_STOPWATCH_STOP_IDX, 16, 110);
 }
 
 static void _middle_render_vertical_stopwatch_stop()
@@ -2840,10 +2833,7 @@ static void _middle_render_vertical_skin_temp()
 	_render_vertical_local_character_core((I8U *)string, 42, margin, b_24_size, FALSE);
 	
 	// - Skin temperature unit - 
-	string[0] = ICON24_CELCIUS_IDX;
-  string[1] = 0;
-
-	_render_vertical_local_character_core((I8U *)string, 80, margin, b_24_size, FALSE);
+	_render_vertical_icon_core(ICON24_CELCIUS_IDX, 24, 80);
 }
 #endif
 
@@ -2861,15 +2851,11 @@ static void _middle_render_vertical_weather()
 		weather_info.type = 0;
 	}
 
-	string[0] = ICON24_WEATHER_IDX+weather_info.type;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);	
-	
+	_render_vertical_icon_core(ICON24_WEATHER_IDX+weather_info.type, 24, 0);
+
 	// - Temperature Range - 
-	string[0] = ICON24_WEATHER_RANGE_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 55, margin, b_24_size, FALSE);
-	
+	_render_vertical_icon_core(ICON24_WEATHER_RANGE_IDX, 24, 55);
+
 	// - Low temperature -
 	sprintf((char *)string, "%d", weather_info.low_temperature);
 	
@@ -2888,17 +2874,12 @@ static void _middle_render_vertical_weather()
 	_render_vertical_local_character_core(string, 74, margin, b_24_size, FALSE);
 	
 	// - Weather temperature unit - 
-	string[0] = ICON24_CELCIUS_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 104, margin, b_24_size, FALSE);
+	_render_vertical_icon_core(ICON24_CELCIUS_IDX, 24, 104);
 }
 
 static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder)
 {
 	I8U string[32];	
-	I8U len = 0;	
-	I8U margin = 1;
-	I8U b_24_size = 24;
   BOOLEAN b_invalid_alarm = TRUE;
 	
 	if (b_alarm_clock_reminder) {
@@ -2916,30 +2897,25 @@ static void _middle_render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder
 	}
 		
 	if (b_invalid_alarm) {
-		len = 0;
-		string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-		string[len++] = 0;
-		_render_vertical_local_character_core(string, 50, margin, b_24_size, FALSE);		
+		_render_vertical_icon_core(ICON24_NO_SKIN_TOUCH_IDX, 24, 50);
 	} else {
 	  // Rendering clock ...
 		sprintf((char *)string, " %02d", cling.ui.ui_alarm_hh);
-		_render_vertical_local_character_core(string, 38, margin, b_24_size, TRUE);		
+		_render_vertical_local_character_core(string, 38, 1, 24, TRUE);		
 		
 		// Render the minute
 		sprintf((char *)string, ":%02d", cling.ui.ui_alarm_mm);
-		_render_vertical_local_character_core(string, 65, margin, b_24_size, FALSE);			
+		_render_vertical_local_character_core(string, 65, 1, 24, FALSE);			
 	}
 }
 
 static void _middle_render_vertical_alarm_clock_reminder()
 {
 	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK)) 
-    cling.ui.frm_render.vertical_icon_24_idx = ICON24_SLEEP_ALARM_CLOCK_IDX;
+    _render_vertical_icon_core(ICON24_SLEEP_ALARM_CLOCK_IDX, 24, 0);
 	else 
-    cling.ui.frm_render.vertical_icon_24_idx = ICON24_NORMAL_ALARM_CLOCK_IDX;	
+    _render_vertical_icon_core(ICON24_NORMAL_ALARM_CLOCK_IDX, 24, 0);
 
-	_top_render_vertical_24_icon();
-	
   _middle_render_vertical_reminder_core(TRUE);
 }
 
@@ -3371,8 +3347,8 @@ static void _middle_render_vertical_training_run_or_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_running_analysis()
 {
-	const	char *running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
-	const	char *running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
+	const	char *const running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
+	const	char *const running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
 	I8U language_type = cling.ui.language_type;		
 
 	_middle_render_vertical_character_core((I8U *)running_analysis_name_1[language_type], 50, (I8U *)running_analysis_name_2[language_type], 70);		
@@ -3382,8 +3358,8 @@ static void _middle_render_vertical_running_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_running_stop_analysis()
 {
-	const	char *stop_analysis_name_1[] = {"INFO", "结束 ", "結束 "};				
-	const	char *stop_analysis_name_2[] = {"END", "分析 ", "分析 "};				
+	const	char *const stop_analysis_name_1[] = {"INFO", "结束 ", "結束 "};				
+	const	char *const stop_analysis_name_2[] = {"END", "分析 ", "分析 "};				
 	I8U language_type = cling.ui.language_type;			
 
 	_middle_render_vertical_character_core((I8U *)stop_analysis_name_1[language_type], 50, (I8U *)stop_analysis_name_2[language_type], 70);		
@@ -3393,9 +3369,9 @@ static void _middle_render_vertical_running_stop_analysis()
 #ifdef _CLINGBAND_PACE_MODEL_		
 static void _middle_render_horizontal_vertical_connect_gps()
 {
-  const	char *conn_name[] = {"Link", "连接", "連接"};	
-  const	char *phone_name[] = {"", "手机", "手機"};	
-  const	char *gps_name[] = {"GPS", "GPS", "GPS"};		
+  const	char *const conn_name[] = {"Link", "连接", "連接"};	
+  const	char *const phone_name[] = {"", "手机", "手機"};	
+  const	char *const gps_name[] = {"GPS", "GPS", "GPS"};		
 	I8U language_type = cling.ui.language_type;		
 
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 20);
@@ -3405,8 +3381,8 @@ static void _middle_render_horizontal_vertical_connect_gps()
 
 static void _middle_render_horizontal_vertical_connect_gps_timeout()
 {
-  const	char *conn_name[] = {"Link", "连接", "連接"};	
-  const	char *timeout_name[] = {"T/O", "超时", "超時"};
+  const	char *const conn_name[] = {"Link", "连接", "連接"};	
+  const	char *const timeout_name[] = {"T/O", "超时", "超時"};
 	I8U language_type = cling.ui.language_type;		
 	
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
@@ -3415,8 +3391,8 @@ static void _middle_render_horizontal_vertical_connect_gps_timeout()
 
 static void _middle_render_horizontal_vertical_connect_gps_fail()
 {
-  const	char *conn_name[] = {"Link", "连接", "連接"};	
-  const	char *fail_name[] = {"Fail", "失败", "失敗"};	
+  const	char *const conn_name[] = {"Link", "连接", "連接"};	
+  const	char *const fail_name[] = {"Fail", "失败", "失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
 	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
@@ -3587,16 +3563,9 @@ static void _middle_render_vertical_training_hr()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_no_ble_core()
 {
-	I8U string[16];	
-	I8U len = 0;		
-	I8U margin = 2;
-	I8U b_24_size = 24;
 	I8U language_type = cling.ui.language_type;		
 
-	len = 0;
-	string[len++] = ICON24_NO_SKIN_TOUCH_IDX;
-	string[len++] = 0;
-	_render_vertical_local_character_core(string, 55, margin, b_24_size, FALSE);		
+	_render_vertical_icon_core(ICON24_NO_SKIN_TOUCH_IDX, 24, 55);
 
   _middle_render_vertical_character_core((I8U *)no_ble_vertical_name_1[language_type], 92, (I8U *)no_ble_vertical_name_2[language_type], 112);					
 }
@@ -3630,21 +3599,11 @@ static void _middle_render_vertical_cycling_outdoor_speed()
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _middle_render_vertical_carousel_core(I8U top_idx, I8U middle_idx, I8U bottom_idx)
 {
-	I8U string[32];		
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = top_idx;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 4, margin, b_24_size, FALSE);
-	
-	string[0] = middle_idx;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+48), margin, b_24_size, FALSE);
-	
-	string[0] = bottom_idx;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _render_vertical_icon_core(top_idx, 24, 4);
+
+  _render_vertical_icon_core(middle_idx, 24, 4+48);
+
+  _render_vertical_icon_core(bottom_idx, 24, 4+96);
 }
 
 static void _middle_render_vertical_carousel_1()
@@ -3684,21 +3643,11 @@ static void _middle_render_vertical_carousel_3()
 #ifdef _CLINGBAND_2_PAY_MODEL_
 static void _middle_render_vertical_carousel_4()
 {
-	I8U string[32];		
-	I8U margin = 0;
-	I8U b_24_size = 24;
-	
-	string[0] = ICON24_BUS_CARD_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 0, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_BANK_CARD_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 48, margin, b_24_size, FALSE);
-	
-	string[0] = ICON24_SETTING_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, (4+96), margin, b_24_size, FALSE);
+  _render_vertical_icon_core(ICON24_BUS_CARD_IDX, 24, 0);	
+
+  _render_vertical_icon_core(ICON24_BANK_CARD_IDX, 24, 48);	
+
+  _render_vertical_icon_core(ICON24_SETTING_IDX, 24, 4+96);	
 }
 #endif
 
@@ -3717,14 +3666,8 @@ static void _bottom_render_vertical_small_clock()
 
 static void _bottom_render_vertical_more()
 {
-	I8U string[16];
-  I8U b_24_size = 8;
-	I8U margin = 0;
-	
   if (cling.ui.b_detail_page) {
-	  string[0] = ICON8_MORE_IDX;
-	  string[1] = 0;
-	  _render_vertical_local_character_core(string, 120, margin, b_24_size, FALSE); 	
+		_render_vertical_icon_core(ICON8_MORE_IDX, 8, 120);
   }
 }
 
@@ -3756,33 +3699,10 @@ static void _bottom_render_vertical_alarm_clock_detail()
 }
 #endif
 
-#if defined(_CLINGBAND_NFC_MODEL_) || defined(_CLINGBAND_2_PAY_MODEL_)
-static void _bottom_render_vertical_stopwatch_start() 
-{
- 	I8U string[16];		
-	I8U margin = 0;
-	I8U b_24_size = 16;
-
-	if (cling.ui.b_in_stopwatch_pause_mode)
-		string[0] = ICON16_STOPWATCH_START_IDX;
-	else
-		string[0] = ICON16_STOPWATCH_STOP_IDX;
-
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 110, margin, b_24_size, FALSE); 
-}
-#endif
-
 #ifndef _CLINGBAND_PACE_MODEL_
 static void _bottom_render_vertical_ok()
 {
-	I8U string[16];		
-	I8U margin = 0;
-	I8U b_24_size = 16;
-	
-	string[0] = ICON16_OK_IDX;
-	string[1] = 0;
-	_render_vertical_local_character_core(string, 110, margin, b_24_size, FALSE);
+  _render_vertical_icon_core(ICON16_OK_IDX, 16, 110);	
 }
 #endif
 
@@ -4367,7 +4287,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_heart_rate,                _right_render_horizontal_small_clock},             /*UI_DISPLAY_HEART_RATE*/
   {_left_render_horizontal_16_icon_blinking,      _middle_render_horizontal_skin_temp,                 _right_render_horizontal_small_clock},             /*UI_DISPLAY_SKIN_TEMP*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_DISPLAY_SETTING*/
-  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _right_render_horizontal_stopwatch_start},         /*UI_DISPLAY_STOPWATCH_START*/
+  {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_start,           _RENDER_NONE},                                     /*UI_DISPLAY_STOPWATCH_START*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_stopwatch_stop,            _right_render_horizontal_ok_middle},               /*UI_DISPLAY_STOPWATCH_STOP*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_TREADMILL*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_CYCLING*/
@@ -4436,8 +4356,8 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_heart_rate,                  _bottom_render_vertical_small_clock},              /*UI_DISPLAY_HEART_RATE*/
   {_top_render_vertical_24_icon_blinking,         _middle_render_vertical_skin_temp,                   _bottom_render_vertical_small_clock},              /*UI_DISPLAY_SKIN_TEMP*/
   {_RENDER_NONE,                                  _middle_render_horizontal_system_restart,            _RENDER_NONE},                                     /*UI_DISPLAY_SETTING*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_stopwatch_start,             _bottom_render_vertical_stopwatch_start},          /*UI_DISPLAY_STOPWATCH_START*/
-  {_top_render_vertical_24_icon,                  _middle_render_vertical_stopwatch_stop,              _bottom_render_vertical_ok},               /*UI_DISPLAY_STOPWATCH_STOP*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_stopwatch_start,             _RENDER_NONE},                                     /*UI_DISPLAY_STOPWATCH_START*/
+  {_top_render_vertical_24_icon,                  _middle_render_vertical_stopwatch_stop,              _bottom_render_vertical_ok},                       /*UI_DISPLAY_STOPWATCH_STOP*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_TREADMILL*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_CYCLING*/
   {_left_render_horizontal_16_icon,               _middle_render_horizontal_workout_mode_switch,       _right_render_horizontal_ok_top},                  /*UI_DISPLAY_WORKOUT_STAIRS*/
