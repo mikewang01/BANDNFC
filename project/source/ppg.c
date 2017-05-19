@@ -367,7 +367,7 @@ static I16S _get_light_strength_register()
 static void _ppg_sample_proc()
 {
 	HEARTRATE_CTX *h = &cling.hr;
-#if defined(_CLINGBAND_PACE_MODEL_) || defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
 	double filter_val = 0.0;
 #else
 	double high_pass_filter_val = 0.0;
@@ -386,7 +386,7 @@ static void _ppg_sample_proc()
 	sample = _get_light_strength_register();
 
 	_skin_touch_detect(sample);
-#if defined(_CLINGBAND_PACE_MODEL_) || defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
+#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
 	filter_val = Butterworth_Filter_BP( (double) sample);
 	filt_sample = (I16S)filter_val;
 #else
@@ -655,7 +655,7 @@ void PPG_state_machine()
 		}
 		break;
 
-		case PPG_STAT_SAMPLE_READY:		
+		case PPG_STAT_SAMPLE_READY:
 		{
 			t_step_diff_sec = t_curr_sec - cling.activity.step_detect_t_sec;
 		  RTC_start_operation_clk();
