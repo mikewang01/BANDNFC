@@ -1674,7 +1674,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
 	}
 	
 	// Low pass filtering input 3-D accelerometer A, mainly used for step detection
-  gPDM.A = _lpf(in, (LP_FILTER *)&lpf_coeff[MAIN_LPF_8HZ], &gPDM.main_lpf);
+   gPDM.A = _lpf(in, (LP_FILTER *)&lpf_coeff[MAIN_LPF_8HZ], &gPDM.main_lpf);
 	
 	// Calculate magnitude of A, and low pass it
 	_calc_mag();

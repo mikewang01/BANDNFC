@@ -193,7 +193,7 @@ void ppg_PS_ALS_Auto             (void);
 #ifdef _CLINGBAND_PACE_MODEL_
 #define PPG_SAMPLE_AVERATE_THRESHOLD                             3000
 #else
-#define PPG_SAMPLE_AVERATE_THRESHOLD                             4000//5000//2000
+#define PPG_SAMPLE_AVERATE_THRESHOLD                             3600//4000//5000//2000
 #endif
 #define PPG_HR_SMOOTH_WINDOW_WIDTH                               6
 typedef enum {
@@ -266,6 +266,8 @@ typedef struct tagHEARTRATE_CTX{
 #ifndef __YLF__
 	I8U   m_epoch_num[PPG_HR_SMOOTH_WINDOW_WIDTH];
 	I8U m_epoch_cnt;
+	I8U m_HR_buffer[7];
+	I8U m_HR_cnt;
 #else
 	I8U   m_epoch_num[8];
 #endif
@@ -285,6 +287,10 @@ void PPG_state_machine(void);
 
 I8U PPG_minute_hr_calibrate(void);
 void PPG_closing_to_skin_detect_init(void);
+
+#ifndef __YLF_PPG__
+I8U PPG_Calculate_HR_mean5_moving(I8U);
+#endif
 
 #endif // __PPG_H__
 /** @} */

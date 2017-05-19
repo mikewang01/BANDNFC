@@ -941,7 +941,7 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 			
 			 b_ppg_switch_open = TRUE;
 		}
-#endif		
+#endif
 		
 	// Close PPG when batt is charging.	
 	if (BATT_is_charging()) {
@@ -1041,6 +1041,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		cling.train_stat.cycling_curr_distance = 0;
 		cling.train_stat.cycling_pre_distance = 0;
 		cling.train_stat.b_cycling_state = FALSE;
+		cling.train_stat.cycling_pre_delta_distance = 0;
 #endif
 	  // Running pace time stamp
 	  cling.run_stat.pace_calc_ts = CLK_get_system_time();

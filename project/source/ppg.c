@@ -398,6 +398,7 @@ static void _ppg_sample_proc()
 //	if (t_ms_diff > 3000) {//3 Seconds
 	t_ms_diff_threshold = 3000;//3 Seconds
 	if(h->measType == 2){
+		h->measType = 0;//Reset it to static
 		t_ms_diff_threshold = 6000;//6 Seconds
 	}
 	if(t_ms_diff > t_ms_diff_threshold){
@@ -574,6 +575,8 @@ void PPG_init()
   for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 42;
 	h->m_epoch_cnt = 0;
 	h->measType = 0;//static HR for default
+	h->m_HR_cnt = 0;
+	for (i=0; i<7; i++) h->m_HR_buffer[i] = 0;
 #else
   for (i=0; i<8; i++) h->m_epoch_num[i] = 42;
 #endif
@@ -653,7 +656,7 @@ void PPG_state_machine()
 		break;
 
 		case PPG_STAT_SAMPLE_READY:		
-		{						
+		{
 			t_step_diff_sec = t_curr_sec - cling.activity.step_detect_t_sec;
 		  RTC_start_operation_clk();
 		  if (h->sample_ready) {
@@ -757,12 +760,17 @@ void PPG_state_machine()
 				} else {
 					t_threshold = PPG_MEASURING_PERIOD_BACKGROUND_NIGHT;
 				}
-
+#ifndef __YLF_PPG__
+				//Restart measuring HR if skin detection fail after 4 minutes.
+				if(!cling.hr.b_closing_to_skin && !cling.hr.b_start_detect_skin_touch){
+					t_threshold = 240+5;//4 minutes
+				}
+#endif
 				// Normal background heart detection requires low power stationary mode
 				if (t_sec_diff < t_threshold) {
 					break;
 				}
-
+#if __YLF_PPG_20170518__
 				// Make sure it is in a low power stationary mode
 				if (!cling.lps.b_low_power_mode) {
 					break;
@@ -772,7 +780,7 @@ void PPG_state_machine()
 				if (t_curr_ms < (cling.lps.ts + PPG_WEARING_DETECTION_LPS_INTERVAL)) {
 					break;
 				}
-				
+#endif
 				// If device stays in background LPS for more than 60 minutes, no heart rate detection detection needed
 				if (t_curr_ms > (cling.lps.ts + PPG_WEARING_DETECTION_BG_IDLE_INTERVAL)) {
 					break;
@@ -798,6 +806,39 @@ void PPG_state_machine()
 			break;
 	}
 }
+
+#ifndef __YLF_PPG__
+I8U PPG_Calculate_HR_mean5_moving(I8U hr_value)
+{
+	HEARTRATE_CTX *h = &cling.hr;
+	I8U i,cnt=0,hr_min=0,hr_max=0;
+	I16U sum=0;
+	
+	if(cling.hr.m_HR_cnt>=7) cling.hr.m_HR_cnt = 0;
+	cling.hr.m_HR_buffer[cling.hr.m_HR_cnt++] = hr_value;
+	
+	for(i=0;i<7;i++){
+		if(h->m_HR_buffer[i]){
+			if(hr_min>h->m_HR_buffer[i]) hr_min = h->m_HR_buffer[i];
+			if(hr_max>h->m_HR_buffer[i]) hr_min = h->m_HR_buffer[i];
+			sum += h->m_HR_buffer[i];
+			cnt ++;
+		}
+	}
+	if(hr_max){
+		sum -= hr_max;
+		cnt --;
+		if(hr_min!=0 && hr_min!= hr_max){
+			sum -= hr_min;
+			cnt --;
+		}
+	}
+	
+	if(cnt>0) hr_value = sum/cnt;
+	
+	return hr_value;
+}
+#endif
 
 I8U PPG_minute_hr_calibrate()
 {
@@ -830,6 +871,9 @@ I8U PPG_minute_hr_calibrate()
 		else
 			hr_diff = cling.hr.current_rate - cling.hr.minute_rate;
 		hr_rendering = 60 + (hr_diff & 0x07);
-	} 
+	}
+#ifndef __YLF_PPG__
+	hr_rendering = PPG_Calculate_HR_mean5_moving(hr_rendering);
+#endif
 	return hr_rendering;
 }

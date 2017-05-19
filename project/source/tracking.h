@@ -132,6 +132,7 @@ typedef struct tagTRAINING_TRACK_CTX {
 	BOOLEAN b_cycling_state;
 	I32U cycling_curr_distance;
 	I32U cycling_pre_distance;
+	I32U cycling_pre_delta_distance;
 #endif
 } TRAINING_TRACK_CTX;
 

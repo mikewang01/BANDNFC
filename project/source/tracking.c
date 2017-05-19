@@ -534,10 +534,12 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		if(cling.train_stat.b_cycling_state){
 			cling.train_stat.cycling_pre_distance = cling.train_stat.cycling_curr_distance;
 			cling.train_stat.cycling_curr_distance = cling.train_stat.distance;
-			diff->distance = (cling.train_stat.cycling_curr_distance - cling.train_stat.cycling_pre_distance)>>1;
+			cling.train_stat.cycling_pre_delta_distance += (cling.train_stat.cycling_curr_distance - cling.train_stat.cycling_pre_distance);
+			diff->distance = cling.train_stat.cycling_pre_delta_distance>>3;//in 8 meters
+			cling.train_stat.cycling_pre_delta_distance -= diff->distance<<3;
 			cling.train_stat.b_cycling_state = FALSE;
 		}else{
-			diff->distance = (a->day.distance - a->day_stored.distance) >> 5;
+			diff->distance = (a->day.distance - a->day_stored.distance) >> 7;//5;//in 8 meters
 		}
 #else
 		// in 2 meters, normalized by 32
@@ -684,7 +686,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->walking = diff->walking;
 	pminute->running = diff->running;
 	pminute->calories = diff->calories;
-	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m)
+	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m),change to per 8 meters(/8m) if not Pace
 	pminute->sleep_state = diff->sleep_state;
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
@@ -829,9 +831,10 @@ void _training_pace_and_hr_alert()
 #ifndef __YLF_ALERT__
 		if ( (cling.user_data.profile.max_hr_alert & 0x80)) {
 #endif
-#ifdef _ENABLE_PPG_					
+#ifdef _ENABLE_PPG_
 			hr = PPG_minute_hr_calibrate();
 #endif			
+
 			hr_perc = (hr * 100);
 			hr_perc /= (220-cling.user_data.profile.age);	
 			if (hr_perc > 98)
@@ -883,7 +886,12 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	a->day_stored.walking += minute->walking;
 	a->day_stored.running += minute->running;
 	denormalized_stat = minute->distance;
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+	denormalized_stat <<= 7;
+#else
 	denormalized_stat <<= 5;
+#endif
 	a->day_stored.distance += denormalized_stat;
 	denormalized_stat = minute->calories;
 	denormalized_stat <<= 4;
@@ -892,8 +900,12 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	
 	// Distance in meter
 	denormalized_distance = minute->distance;
-	denormalized_distance <<= 1;
-	
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+	denormalized_distance <<= 3;
+#else
+	denormalized_stat <<= 1;
+#endif
 	// Update running statistics
 	if (cling.activity.b_workout_active) {
 		// Update training stats
