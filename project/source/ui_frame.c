@@ -973,7 +973,7 @@ static void _middle_render_horizontal_detail_notif()
 	
 	if (msg_len == 0) {
 	  NOTIFIC_get_app_name(0, (char *)string);	
-    cling.ui.notif_detail_index = 0;		
+    cling.ui.notific.detail_idx = 0;			
 	}	
 #else 
 	msg_len = NOTIFIC_get_app_message_detail(cling.ui.notific.app_notific_index, (char *)string);
@@ -1863,23 +1863,23 @@ static void _middle_render_horizontal_balance_core(BOOLEAN b_bus_card_balance)
 	I8U b_24_size = 24;	
 	I16U offset = 0;
 	I8U margin = 3;
-	I32U balance = 0;
+	I32U balance_display = 0;
 	I32U integer, fractional;
 	I8U language_type = cling.ui.language_type;
 
 	if (b_bus_card_balance)
-		balance = balance->bus_card_balance;
+		balance_display = balance->bus_card_balance;
 	else
-		balance = balance->bank_card_balance;
+		balance_display = balance->bank_card_balance;
 	
-	if (balance > 99999)
+	if (balance_display > 99999)
 		b_24_size = 16;
 	
-	if (balance > 99999999)
-		balance = 99999999;
+	if (balance_display > 99999999)
+		balance_display = 99999999;
 	
-	integer = balance/100;
-	fractional = balance - integer * 100;
+	integer = balance_display/100;
+	fractional = balance_display - integer * 100;
 	
 	// Render integer.		
 	len = sprintf((char *)string, "%d", integer);
@@ -4362,32 +4362,31 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 #ifdef _CLINGBAND_PACE_MODEL_		
   I32U t_curr = CLK_get_system_time();
 	I32U t_delay_offset = 500;
+  UI_PACE_PRIVATE_CTX *p = &cling.ui.pace_private;
 	
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS) {
 		// Update touch time stamp.
 		cling.ui.touch_time_stamp = t_curr;
-	  if (t_curr > (cling.ui.conn_gps_stamp + 1000 + t_delay_offset)) {
+	  if (t_curr > (p->conn_gps_t_stamp + 1000 + t_delay_offset)) {
 		  if (!BTLE_is_connected()) {
 				// Change UI frame page to "Connect GPS fail" page.
 			  cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL;
 				// Update connect gps time stamp.
-			  cling.ui.conn_gps_stamp = t_curr;
+			  p->conn_gps_t_stamp = t_curr;
 				Y_SPRINTF("[UI] CONN gps frame index to fail page");
 		  } 
 			
-			if (t_curr < (cling.ui.conn_gps_stamp + 4000 + t_delay_offset)) {
+			if (t_curr < (p->conn_gps_t_stamp + 4000 + t_delay_offset)) {
 				if (cling.train_stat.app_positon_service_status == POSITION_GPS_STATUS_READY) {
 			    // Connect GPS successed, and change UI frame page to "Training state ready" page.
-          cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;	
-			    // Update training ready time stamp.
-			    cling.ui.training_ready_time_stamp = t_curr;					
+          cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;				
 				  Y_SPRINTF("[UI] CONN gps frame index to training ready page (conn successed)");
 				}
 			} else {
 				// Change UI frame page to "Connect GPS timeout" page.
 				cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT;
 				// Update connect gps time stamp.
-				cling.ui.conn_gps_stamp = t_curr;			
+				p->conn_gps_t_stamp = t_curr;			
         Y_SPRINTF("[UI] CONN gps frame index to timeout page");				
 			}
 	  }	
@@ -4396,11 +4395,9 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT) {
 		// Update touch time stamp.
 		cling.ui.touch_time_stamp = t_curr;		
-		if (t_curr > cling.ui.conn_gps_stamp + 1000) {
+		if (t_curr > p->conn_gps_t_stamp + 1000) {
 			// Change UI frame page to "Training state ready" page.
       cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;
-			// Update training ready time stamp.
-			cling.ui.training_ready_time_stamp = t_curr;			
 			Y_SPRINTF("[UI] CONN gps frame index to training ready page 1");
 		}			
 	}
@@ -4408,11 +4405,9 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	if (cling.ui.frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL) {
 		// Update touch time stamp.
 		cling.ui.touch_time_stamp = t_curr;		
-		if (t_curr > cling.ui.conn_gps_stamp + 1000) {
+		if (t_curr > p->conn_gps_t_stamp  + 1000) {
 			// Change UI frame page to "Training state ready" page.
       cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_READY;
-			// Update training ready time stamp.
-			cling.ui.training_ready_time_stamp = t_curr;
 			Y_SPRINTF("[UI] CONN gps frame index to training ready page 2");
 		}			
 	}

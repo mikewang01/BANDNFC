@@ -770,7 +770,7 @@ void PPG_state_machine()
 				if (t_sec_diff < t_threshold) {
 					break;
 				}
-#if __YLF_PPG_20170518__
+#ifdef __YLF_PPG_20170518__
 				// Make sure it is in a low power stationary mode
 				if (!cling.lps.b_low_power_mode) {
 					break;

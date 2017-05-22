@@ -158,7 +158,7 @@ void HOMEKEY_click_check()
 		offset = t_curr - k->ticks[ON_CLICK];
 		
 		// Debouncing
-		if (offset < HOMEKEY_CLICK_DEBOUNCE) 
+		if (offset < HOMEKEY_CLICK_DEBOUNCE_ON) 
 			return;
 			
 		if (offset >= t_click_and_hold) { 
@@ -189,11 +189,13 @@ void HOMEKEY_click_check()
 	} else {
 		// Add debounce logic to prevent multiple button click
 		offset = t_curr - k->ticks[OFF_CLICK];
-		if (offset < HOMEKEY_CLICK_DEBOUNCE) 
+		if (offset < HOMEKEY_CLICK_DEBOUNCE_ON) 
 			return;
 
 		offset = k->ticks[OFF_CLICK] - k->ticks[ON_CLICK];
-
+		if (offset < HOMEKEY_CLICK_DEBOUNCE_OFF) 
+			return;
+		
 		// if there is half click flag, we are good to declare a single click event
 		if(k->half_click && (offset < t_click_and_hold)) {
 			k->half_click = 0;
@@ -207,8 +209,7 @@ void HOMEKEY_click_check()
 #endif
 			
 			N_SPRINTF("[HOMEKEY] +++ button single click");
-		}
-		else {
+		} else {
 			// declare a new state --> OFF HOOK
 			k->stable_st = OFF_CLICK;
 			k->half_click = 0; 

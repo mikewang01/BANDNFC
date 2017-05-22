@@ -751,7 +751,7 @@ typedef struct tagUI_ANIMATION_CTX {
 #endif
 
   // Pace private(Connect GPS and system restart vibration)
-#ifndef _CLINGBAND_PACE_MODEL_	
+#ifdef _CLINGBAND_PACE_MODEL_	
   UI_PACE_PRIVATE_CTX pace_private;
 #endif
 

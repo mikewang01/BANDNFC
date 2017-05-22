@@ -11,8 +11,8 @@
 #define CLICK_HOLD_TIME_RESTART  3000
 #define CLICK_HOLD_TIME_SOS      4000
 
-#define HOMEKEY_CLICK_DEBOUNCE	 50 // 50 milli-second for debouncing
-
+#define HOMEKEY_CLICK_DEBOUNCE_ON	   10 // 50 milli-second for debouncing
+#define HOMEKEY_CLICK_DEBOUNCE_OFF	 10 // 50 milli-second for debouncing
 
 typedef struct tagHOMEKEY_CLICK_STAT {
   I8U     temp_st;     			// temporarily hook status

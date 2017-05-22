@@ -116,7 +116,7 @@ static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 
 #ifdef _CLINGBAND_PACE_MODEL_		
   if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
-		u->b_in_incoming_detail_page = TRUE;
+		u->notific.b_in_incoming_detail_page = TRUE;
 		return TRUE;
 	}
 #else
@@ -1069,7 +1069,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 			
 #ifdef _CLINGBAND_PACE_MODEL_		
 		// Reset connect gps time stamp.
-		cling.ui.conn_gps_stamp = CLK_get_system_time();
+		cling.ui.pace_private.conn_gps_t_stamp = CLK_get_system_time();
 		// Clear app positon service status.
 		cling.train_stat.app_positon_service_status = POSITION_NO_SERVICE;
 #endif
@@ -1786,12 +1786,12 @@ void UI_state_machine()
 				u->display_to_base = t_curr;
 				UI_frame_display_appear(u->frame_index, TRUE);	
 #ifdef _CLINGBAND_PACE_MODEL_					
-        if (u->b_pace_vibration_restart) {		
-					u->pace_restart_vibration_time++;
-					if (u->pace_restart_vibration_time < 5) {
+        if (u->pace_private.b_pace_vibration_restart) {		
+					u->pace_private.pace_restart_vibration_time++;
+					if (u->pace_private.pace_restart_vibration_time < 5) {
 				    GPIO_vibrator_on_block(50);
 					} else {
-						u->b_pace_vibration_restart = FALSE;
+						u->pace_private.b_pace_vibration_restart = FALSE;
 					}
 				}
 #endif				
