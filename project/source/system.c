@@ -406,17 +406,18 @@ void SYSTEM_init(void)
 	LINK_init();
 
 #ifdef _CLINGBAND_PACE_MODEL_ 
+  UI_PACE_PRIVATE_CTX *p = &cling.ui.pace_private;	
 	I8U pdata[2];
 	
-	cling.ui.b_pace_vibration_restart = FALSE;
+	p->b_pace_vibration_restart = FALSE;
 	
 	if (!LINK_is_authorized()) {
 		
     FLASH_Read_App(SYSTEM_REMINDER_SPACE_START, pdata, 2);
 	
 	  if ((pdata[0] == 0x07) && (pdata[1] == 0x18)) {
-		  cling.ui.b_pace_vibration_restart = TRUE;
-			cling.ui.pace_restart_vibration_time = 0;
+		  p->b_pace_vibration_restart = TRUE;
+			p->pace_restart_vibration_time = 0;
 	  }
 		
 		FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
