@@ -120,7 +120,7 @@ static BOOLEAN _is_smart_incoming_notifying_page(I8U frame_index)
 		return TRUE;
 	}
 #else
-	if ((u->b_in_incoming_detail_page) && (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF))
+	if ((u->notific.b_in_incoming_detail_page) && (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF))
 		return TRUE;
 #endif	
   else if (u->frame_index == UI_DISPLAY_SMART_INCOMING_CALL)
@@ -517,21 +517,21 @@ static void _update_frame_index(UI_ANIMATION_CTX *u, const I8U *p_matrix, I8U ge
 	if ((u->frame_index == UI_DISPLAY_SMART_APP_NOTIF) && (u->b_detail_page) && (gesture == TOUCH_FINGER_RIGHT)) {
 		u->frame_index = UI_DISPLAY_SMART_DETAIL_NOTIF;
 		u->frame_next_idx = u->frame_index;		
-		u->b_in_incoming_detail_page = FALSE;
+		u->notific.b_in_incoming_detail_page = FALSE;
     return;		
 	}
 
 	if ((u->frame_prev_idx == UI_DISPLAY_SMART_INCOMING_MESSAGE) && (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)) {
-		u->b_in_incoming_detail_page = TRUE;
+		u->notific.b_in_incoming_detail_page = TRUE;
 	}
 	
 	if ((u->frame_index != UI_DISPLAY_SMART_INCOMING_MESSAGE) && (u->frame_index != UI_DISPLAY_SMART_DETAIL_NOTIF)) {
-		u->b_in_incoming_detail_page = FALSE;		
+		u->notific.b_in_incoming_detail_page = FALSE;		
 	}
 	
 	if ((gesture == TOUCH_SWIPE_LEFT) || (gesture == TOUCH_SWIPE_RIGHT)) {
 		if (u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) {
-			if (!u->b_in_incoming_detail_page) {
+			if (!u->notific.b_in_incoming_detail_page) {
 				u->frame_index = UI_DISPLAY_SMART_APP_NOTIF;
 				u->frame_next_idx = u->frame_index;		
 				return;
@@ -655,16 +655,17 @@ static void _set_animation_with_button_hold(I8U frame_index)
 #endif
 
 /*------------------------------------------------------------------------------------------
-*  Function:	_update_notif_repeat_look_time(UI_ANIMATION_CTX *u)
+*  Function:	_update_notif_repeat_look_time(I8U frame_index)
 *
 *  Description: If user cycle look this notification, go back to previous UI page. 
 *
 *------------------------------------------------------------------------------------------*/
-static void _update_notif_repeat_look_time(UI_ANIMATION_CTX *u)
+static void _update_notif_repeat_look_time(I8U frame_index)
 {	
 	BOOLEAN b_look_finished = FALSE;
-
-	switch (u->frame_index) {
+  UI_NOTIFICC_CTX *notific = &cling.ui.notific;
+	
+	switch (frame_index) {
 		case UI_DISPLAY_SMART_INCOMING_CALL: {
 		  // Don't need to look the incoming call detail information, and go back to previous UI page directly.
 		  b_look_finished = TRUE;		
@@ -675,55 +676,55 @@ static void _update_notif_repeat_look_time(UI_ANIMATION_CTX *u)
 			break;
 		}
 		case UI_DISPLAY_SMART_DETAIL_NOTIF: {
-			if (u->b_in_incoming_detail_page) {
-			  if (u->notif_repeat_look_time >= UI_LOOK_MESSAGE_MAX_REPEAT_TIME) {
+			if (notific->b_in_incoming_detail_page) {
+			  if (notific->repeat_look_time >= UI_LOOK_MESSAGE_MAX_REPEAT_TIME) {
 				  b_look_finished = TRUE;
-					u->b_in_incoming_detail_page = FALSE;
+					notific->b_in_incoming_detail_page = FALSE;
 			  }			
 		  }
 			break;
 		}		
 		case UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER: {
-			u->notif_repeat_look_time++;
-			if (u->notif_repeat_look_time >= UI_LOOK_ALARM_CLOCK_REMINDER_MAX_REPEAT_TIME) {
+			notific->repeat_look_time++;
+			if (notific->repeat_look_time >= UI_LOOK_ALARM_CLOCK_REMINDER_MAX_REPEAT_TIME) {
 				b_look_finished = TRUE;
 			}	
 			break;
 		}			
 		case UI_DISPLAY_SMART_IDLE_ALERT: {
-			u->notif_repeat_look_time++;
-			if (u->notif_repeat_look_time >= UI_LOOK_IDLE_ALERT_MAX_REPEAT_TIME) {
+			notific->repeat_look_time++;
+			if (notific->repeat_look_time >= UI_LOOK_IDLE_ALERT_MAX_REPEAT_TIME) {
 				b_look_finished = TRUE;
 			}		
 			break;
 		}		
 		case UI_DISPLAY_SMART_HEART_RATE_ALERT: {
-			u->notif_repeat_look_time++;
-			if (u->notif_repeat_look_time >= UI_LOOK_HEART_RATE_ALERT_MAX_REPEAT_TIME) {
+			notific->repeat_look_time++;
+			if (notific->repeat_look_time >= UI_LOOK_HEART_RATE_ALERT_MAX_REPEAT_TIME) {
 				b_look_finished = TRUE;
 			}		
 			break;
 		}		
 		case UI_DISPLAY_SMART_STEP_10K_ALERT: {
-			u->notif_repeat_look_time++;
-			if (u->notif_repeat_look_time >= UI_LOOK_STEP_10K_ALERT_MAX_REPEAT_TIME) {
+			notific->repeat_look_time++;
+			if (notific->repeat_look_time >= UI_LOOK_STEP_10K_ALERT_MAX_REPEAT_TIME) {
 				b_look_finished = TRUE;
 			}	
 			break;
 		}
     default: {
-			u->notif_repeat_look_time = 0;
+			notific->repeat_look_time = 0;
       break;			
 		}
 	}
 
 	if (b_look_finished) {
 	  // Go back to previous UI page		
-	  u->frame_index = UI_DISPLAY_PREVIOUS;
+	  cling.ui.frame_index = UI_DISPLAY_PREVIOUS;
 		// Clear message store flag
-		u->b_notif_need_store = FALSE;
+		notific->b_need_stored = FALSE;
 		// Reset message look time
-		u->notif_repeat_look_time = 0;		
+		notific->repeat_look_time = 0;		
 	}	
 }
 
@@ -737,13 +738,14 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 {	
 	char data[128];	
 	I8U max_frame_num = 0;
-
+  UI_NOTIFICC_CTX *notific = &cling.ui.notific;
+	
 	if ((u->frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF) && (u->frame_prev_idx == UI_DISPLAY_SMART_DETAIL_NOTIF)) {
 
 #ifdef _CLINGBAND_PACE_MODEL_			
 	  NOTIFIC_get_app_message_detail(0 ,data);
 #else 		
-	  NOTIFIC_get_app_message_detail(u->app_notific_index ,data);
+	  NOTIFIC_get_app_message_detail(notific->app_notific_index ,data);
 #endif
 		
 	  if (data[0] == 0)
@@ -754,14 +756,14 @@ static void _update_message_detail_index(UI_ANIMATION_CTX *u)
 		N_SPRINTF("[UI] max frame num : %d, notific detail index: %d", max_frame_num, u->notif_detail_index);
 
 	  // Update vertical Notific detail index
-		u->notif_detail_index++;
+		notific->detail_idx++;
 		
-		if (u->notif_detail_index >= max_frame_num) {
-			u->notif_detail_index = 0;
-			u->notif_repeat_look_time++;
+		if (notific->detail_idx >= max_frame_num) {
+			notific->detail_idx = 0;
+			notific->repeat_look_time++;
 		}
 	} else {
-		u->notif_detail_index = 0;		
+		notific->detail_idx = 0;		
 	}
 }
 
@@ -870,9 +872,10 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 {
 	I8U max_frame_num=0;
   BOOLEAN b_up;
-
+  UI_NOTIFICC_CTX *notific = &cling.ui.notific;
+	
 	if ((u->frame_index != UI_DISPLAY_SMART_APP_NOTIF) && (u->frame_index != UI_DISPLAY_SMART_DETAIL_NOTIF)) {
-		u->app_notific_index = 0;
+		notific->app_notific_index = 0;
 		return;
 	}
 
@@ -883,7 +886,7 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 		max_frame_num = 0;
 #endif		
 		if (max_frame_num == 0) {
-			u->app_notific_index = 0;
+			notific->app_notific_index = 0;
 			return;
 		}
 
@@ -896,17 +899,17 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 			
 		// Update App notific index
 		if (b_up) {
-			u->app_notific_index++;
+			notific->app_notific_index++;
 			
-			if (u->app_notific_index >= max_frame_num) {
-				u->app_notific_index = 0;
+			if (notific->app_notific_index >= max_frame_num) {
+				notific->app_notific_index = 0;
 			}
 			
 		} else {
-			if (u->app_notific_index == 0) {
-				u->app_notific_index = max_frame_num - 1;
+			if (notific->app_notific_index == 0) {
+				notific->app_notific_index = max_frame_num - 1;
 			} else {
-				u->app_notific_index --;
+				notific->app_notific_index --;
 			}
 		}
 	} 
@@ -941,7 +944,7 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 			
 			 b_ppg_switch_open = TRUE;
 		}
-#endif
+#endif		
 		
 	// Close PPG when batt is charging.	
 	if (BATT_is_charging()) {
@@ -972,6 +975,8 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 *------------------------------------------------------------------------------------------*/
 static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 {
+  UI_RUNNING_INFO_CTX *running_info = &cling.ui.running_info;
+	I32U t_curr = CLK_get_system_time();	
 	BOOLEAN b_enter_active_mode = FALSE;
 	
 #ifdef _CLINGBAND_PACE_MODEL_		
@@ -1026,14 +1031,13 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 #endif
 	
 	if (b_enter_active_mode) {
-		
-	  cling.ui.run_ready_index = 0;
-	  cling.ui.b_training_first_enter = TRUE;			
-	  cling.ui.training_ready_time_stamp = CLK_get_system_time();		
+		running_info->ready_idx = 0;
+		running_info->t_ready_stamp = 0;
+		running_info->time_start_in_ms = 0;
 
 	  // Reset all training data - distance, time stamp, calories, and session ID
 	  cling.train_stat.distance = 0;
-	  cling.train_stat.time_start_in_ms = CLK_get_system_time();
+	  cling.train_stat.time_start_in_ms = t_curr;
 	  cling.train_stat.session_id = cling.time.time_since_1970;
 	  cling.train_stat.calories = 0;
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -1183,10 +1187,10 @@ static void _update_music_control(UI_ANIMATION_CTX *u, I8U gesture)
 
 #ifdef _CLINGBAND_2_PAY_MODEL_
 static int get_balance(uint32_t bus_balance, uint32_t shande_balance){
-	UI_ANIMATION_CTX *u = &cling.ui;
-	
-	u->bus_card_balance = bus_balance;
-	u->bank_card_balance = shande_balance;
+	UI_BALANCE_CTX *balance = &cling.ui.balance;
+
+	balance->bus_card_balance = bus_balance;
+	balance->bank_card_balance = shande_balance;
 	return 1;
 }
 
@@ -1219,21 +1223,23 @@ static void _update_get_bus_and_bank_card_balance(UI_ANIMATION_CTX *u)
 static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture)
 {
 	BOOLEAN b_exit_stopwatch_mode = FALSE;
+  UI_STOPWATCH_CTX	*stopwatch = &cling.ui.stopwatch;
 	
 	// 1. Start stopwatch
 	if ((u->frame_prev_idx == UI_DISPLAY_CAROUSEL_2) && (u->frame_index == UI_DISPLAY_STOPWATCH_START)) {
-		u->stopwatch_time_stamp = 0;
-		u->b_stopwatch_first_enter = TRUE;
-		u->b_in_stopwatch_mode = TRUE;	
+		stopwatch->t_start_stamp = 0;
+		stopwatch->t_stop_stamp = 0;
+		stopwatch->b_without_exit_flag = TRUE;
+    stopwatch->b_in_pause_mode = FALSE;		
     return;		
 	}
 
 	// 2. Pause stopwatch
 	if ((u->frame_index == UI_DISPLAY_STOPWATCH_START) && (gesture == TOUCH_FINGER_RIGHT)) {
-		if (u->b_in_stopwatch_pause_mode) 
-		  u->b_in_stopwatch_pause_mode = FALSE;
+		if (stopwatch->b_in_pause_mode) 
+		  stopwatch->b_in_pause_mode = FALSE;
 		else
-			u->b_in_stopwatch_pause_mode = TRUE;
+			stopwatch->b_in_pause_mode = TRUE;
 	}
 		
   // 3. Exit stopwatch
@@ -1246,9 +1252,9 @@ static void _update_stopwatch_operation_control(UI_ANIMATION_CTX *u, I8U gesture
 	}
 	
 	if (b_exit_stopwatch_mode) {
-		u->stopwatch_time_stamp = 0;
-		u->b_stopwatch_first_enter = FALSE;		
-	  u->b_in_stopwatch_mode = FALSE;		
+		stopwatch->t_start_stamp = 0;
+		stopwatch->t_stop_stamp = 0;
+	  stopwatch->b_without_exit_flag = FALSE;		
 	}
 }
 #endif	
@@ -1284,7 +1290,7 @@ static void _update_all_feature_switch_control(UI_ANIMATION_CTX *u, const I8U *p
 	_update_message_detail_index(u);
 	
 	// 7. Cheak notification weather look finished.
-	_update_notif_repeat_look_time(u);
+	_update_notif_repeat_look_time(u->frame_index);
 
   // 8. Update notifying switch control.
   _update_vibrator_control(u);
@@ -1486,8 +1492,8 @@ static I8U _ui_touch_sensing()
 	gesture = TOUCH_get_gesture_panel();
 
 	// If user light up screen by touch button, Do not perform any action for the first time.
-	if ((gesture != TOUCH_NONE) && (u->b_first_light_up_from_dark)) {
-		u->b_first_light_up_from_dark = FALSE;
+	if ((gesture != TOUCH_NONE) && (u->b_invalid_touch_action)) {
+		u->b_invalid_touch_action = FALSE;
 		u->frame_next_idx = u->frame_index;
 		return FALSE;
 	}
@@ -1553,8 +1559,8 @@ static I8U _ui_touch_sensing()
 	gesture = HOMEKEY_get_gesture_panel();
 
 	// If user light up screen by touch button, Do not perform any action for the first time.
-	if ((gesture != HOMEKEY_BUTTON_NONE) && (u->b_first_light_up_from_dark)) {
-		u->b_first_light_up_from_dark = FALSE;
+	if ((gesture != HOMEKEY_BUTTON_NONE) && (u->b_invalid_touch_action)) {
+		u->b_invalid_touch_action = FALSE;
 		u->frame_next_idx = u->frame_index;
 		return FALSE;
 	}
@@ -1595,7 +1601,8 @@ static I8U _ui_touch_sensing()
 void UI_start_notifying(I8U frame_index)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
-
+  UI_NOTIFICC_CTX *notific = &cling.ui.notific;
+	
 	I32U t_curr = CLK_get_system_time(); 
 	// 1. Start system timer.
   RTC_start_operation_clk();
@@ -1604,16 +1611,16 @@ void UI_start_notifying(I8U frame_index)
 	u->frame_index = frame_index;
 
 	// 3. Update notif time stamp.
-  u->notif_time_stamp = t_curr;
+	notific->t_stamp = t_curr;
 
 	// 4. Turn on oled display.
 	UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 	
 	// 5. Store current incoming message(if not in running active mode).
 	if (_is_smart_incoming_notifying_page(u->frame_index) && (!cling.activity.b_workout_active)) {
-		u->b_notif_need_store = TRUE;		
+		notific->b_need_stored = TRUE;		
 	} else {
-		u->b_notif_need_store = FALSE;
+		notific->b_need_stored = FALSE;
   }
 	
 	// 6. Update running alarm flag
@@ -1832,16 +1839,16 @@ void UI_state_machine()
 				// 1. Turn on display when the motor is vibrating.
 				if (!NOTIFIC_is_idle()) {
 					u->touch_time_stamp = t_curr;		
-          u->notif_time_stamp	= t_curr;				
+					u->notific.t_stamp = t_curr;			
 				}	else {
-				  if (t_curr > (u->notif_time_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
+				  if (t_curr > (u->notific.t_stamp + UI_STORE_NOTIFICATION_MAX_TIME_IN_MS)) {
             // 2. Filtering the old information, go back to previous UI page.						
 			      u->frame_index = UI_DISPLAY_PREVIOUS;		
-					  u->b_notif_need_store = FALSE;	
+					  u->notific.b_need_stored = FALSE;	
 		      } else if (t_curr > u->touch_time_stamp + 15000) {
             // 3. Go back to previous UI page.						
 				    u->frame_index = UI_DISPLAY_PREVIOUS;		
-					  u->b_notif_need_store = FALSE;					
+					  u->notific.b_need_stored = FALSE;					
 				  }			
 			  }
 		  }
@@ -1867,7 +1874,7 @@ void UI_state_machine()
 #ifdef _CLINGBAND_PACE_MODEL_							
 					if (!cling.activity.b_workout_active) {
 #else 
-					if ((!cling.activity.b_workout_active) && (!u->b_in_stopwatch_mode)) {
+					if ((!cling.activity.b_workout_active) && (!u->stopwatch.b_without_exit_flag)) {
 #endif						
 						N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
 						u->state = UI_STATE_DARK;
@@ -1924,7 +1931,7 @@ void UI_state_machine()
 			u->b_detail_page = FALSE;		
 	
 			// 5. Go back to previous UI page
-	    if (!u->b_notif_need_store)
+	    if (!u->notific.b_need_stored)
 			  u->frame_index = UI_DISPLAY_PREVIOUS;						
 	
 			// 6. Update touch power control

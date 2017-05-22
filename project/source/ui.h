@@ -9,6 +9,8 @@
 #ifndef __UI_HEADER__
 #define __UI_HEADER__
 
+#include "standard_types.h"
+
 #define FRAME_DEPTH_STEP                              7
 #define FRAME_DEPTH_DISTANCE                          7
 #define FRAME_DEPTH_CALORIES                          7
@@ -642,33 +644,62 @@ enum {
 };
 #endif
 
-typedef struct tagFRAME_RENDERING_CTX {
-	
-	I8U vertical_icon_24_idx;
-	
-	I8U horizontal_icon_16_idx;
-} FRAME_RENDERING_CTX;
+// 
+typedef struct tagUI_STOPWATCH_CTX {
+	I32U t_start_stamp;   
+	I32U t_stop_stamp;   	
+	I8U  hour;
+	I8U  min;
+	I8U  sec;
+	I16U ms;			
+	BOOLEAN b_in_pause_mode;
+	BOOLEAN b_without_exit_flag;
+} UI_STOPWATCH_CTX;
+
+typedef struct tagUI_RUNNING_INF0_CTX {
+  I32U t_ready_stamp;  
+	I32U time_start_in_ms;
+	I8U  ready_idx;      
+	I8U  hour;
+	I8U  min;
+  I8U	 sec;	
+	BOOLEAN b_first_enter;	
+} UI_RUNNING_INFO_CTX;
+
+// Notification
+typedef struct tagUI_NOTIFIC_CTX {
+	I32U t_stamp;          
+	I8U  repeat_look_time;    
+	I8U  detail_idx;        
+	I8U  app_notific_index;	       
+  I8U  string_pos_buf[5];	    
+	I8U  alarm_clock_hh;
+	I8U  alarm_clock_mm;		
+	BOOLEAN b_need_stored;
+	BOOLEAN b_in_incoming_detail_page;	
+} UI_NOTIFICC_CTX;
+
+// Bus and band card balance
+typedef struct tagUI_BALANCE_CTX {
+	I32U bus_card_balance;
+  I32U bank_card_balance;
+} UI_BALANCE_CTX;
+
+typedef struct tagUI_PACE_PRIVATE_CTX {
+	I32U conn_gps_t_stamp;            // Connect gps time stamp. 		
+	BOOLEAN b_pace_vibration_restart;
+	I8U pace_restart_vibration_time;
+} UI_PACE_PRIVATE_CTX;
 
 typedef struct tagUI_ANIMATION_CTX {
 	// All the dword variables
 	I32U display_to_base;           // Display timeout base
 	I32U frame_interval;            // Frame interval, i.e., the time interval that a particular frame stays on this frame
 	I32U touch_time_stamp;          // Touch event time stamp
-  I32U training_ready_time_stamp; // Running record time stamp.
-	I32U notif_time_stamp;          // Notif time stamp.
 	I32U dark_time_stamp;           // Dark time stamp.	
-	I32U stopwatch_time_stamp;      // Stopwatch record time stamp. 	
-	I32U stopwatch_t_stop_stamp;    // Stopwatch record stop time stamp. 	
-	I32U conn_gps_stamp;            // Connect gps time stamp. 	
-	
-	// All the frame buffer related
-	I8U p_oled_up[512];
-	
+
 	// State machine
 	I8U state;
-	
-	BOOLEAN b_first_light_up_from_dark;
-	BOOLEAN b_in_running_alert_page;
 	
 	// Animation
 	I8U animation_mode;
@@ -684,51 +715,48 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Vertical switching
 	I8U vertical_index;
 
-	// Icon flashing
-	BOOLEAN icon_sec_blinking;
+	// Rendering icon index context
+	I8U vertical_icon_24_idx;
+	I8U horizontal_icon_16_idx;
+	
 	I8U linking_wave_index;
 	I8U heart_rate_wave_index;
 		
-	// Fonts type
-	BOOLEAN language_type;
-	
 	// Clock orientation
 	I8U clock_orientation;
 
-	// Notification
 	BOOLEAN b_detail_page;	    // Detail page.
-	BOOLEAN b_notif_need_store;
-	BOOLEAN b_in_incoming_detail_page;
-	I8U notif_repeat_look_time; // Notification repeat look time.	
-	I8U notif_detail_index;     // Incoming message detail index.
-  I8U string_pos_buf[5];	    // Incoming message detail index buff.	
-	I8U app_notific_index;	    // App notific index
 
-	// Running
-	I8U run_ready_index;    // Read go index.
-	BOOLEAN b_training_first_enter;
-  BOOLEAN b_enter_active_mode;	
+	// Icon flashing
+	BOOLEAN icon_sec_blinking;
 	
-	// Alarm
-	I8U ui_alarm_hh;
-	I8U ui_alarm_mm;	
+	// Language type
+	BOOLEAN language_type;
 	
-	// Training pace and hr alert
-	I8U training_hr;
-
-	// Stopwatch flag
-	BOOLEAN b_stopwatch_first_enter;
-	BOOLEAN b_in_stopwatch_mode;
-	BOOLEAN b_in_stopwatch_pause_mode;
-
-	// Rendering context
-	FRAME_RENDERING_CTX frm_render;
-
-	I32U bus_card_balance;
-  I32U bank_card_balance;
+	BOOLEAN b_invalid_touch_action;
 	
-	BOOLEAN b_pace_vibration_restart;
-	I8U pace_restart_vibration_time;
+	BOOLEAN b_in_running_alert_page;	
+
+	UI_NOTIFICC_CTX notific;
+	
+	UI_RUNNING_INFO_CTX	running_info;
+	
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+  UI_BALANCE_CTX balance;
+#endif
+	
+	// Stopwatch context		
+#ifndef _CLINGBAND_PACE_MODEL_	
+	UI_STOPWATCH_CTX	stopwatch;		
+#endif
+
+  // Pace private(Connect GPS and system restart vibration)
+#ifndef _CLINGBAND_PACE_MODEL_	
+  UI_PACE_PRIVATE_CTX pace_private;
+#endif
+
+	// All the frame buffer related
+	I8U p_oled_up[512];	
 } UI_ANIMATION_CTX;
 
 typedef enum {

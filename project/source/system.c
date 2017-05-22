@@ -421,8 +421,6 @@ void SYSTEM_init(void)
 		
 		FLASH_erase_App(SYSTEM_REMINDER_SPACE_START);
 	}
-#else
-  cling.ui.b_pace_vibration_restart = FALSE;	
 #endif	
 	
 	// If our FAT file system is NOT mounted, please erase NOR flash, and create it

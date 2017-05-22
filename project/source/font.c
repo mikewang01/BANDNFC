@@ -221,7 +221,7 @@ I8U FONT_get_string_display_depth(char *string)
 				curr_offset = 0;
 				curr_line_pos++;
 				if ((curr_line_pos%2) == 0) {
-			    cling.ui.string_pos_buf[sting_index++] = pos;
+			    cling.ui.notific.string_pos_buf[sting_index++] = pos;
 		    }					
 		  }	
       curr_offset += 8;
@@ -232,7 +232,7 @@ I8U FONT_get_string_display_depth(char *string)
 				curr_offset = 0;
 				curr_line_pos++;
 				if ((curr_line_pos%2) == 0) {
-			    cling.ui.string_pos_buf[sting_index++] = pos;
+			    cling.ui.notific.string_pos_buf[sting_index++] = pos;
 		    }	
 		  }	
 			curr_offset += 16;

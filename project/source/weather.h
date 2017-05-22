@@ -32,6 +32,7 @@ typedef struct tagWEATHER_CTX {
 
 	I8U  pm2p5_month;
 	I8U  pm2p5_day;
+	I8U  pm2p5_level_idx;
 	I16U pm2p5_value;
 	
 } WEATHER_CTX;

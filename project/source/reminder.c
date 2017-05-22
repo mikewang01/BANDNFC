@@ -206,8 +206,8 @@ static BOOLEAN _check_sleep_reminder()
 			{
 				cling.reminder.alarm_type = SLEEP_ALARM_CLOCK;
 				cling.reminder.b_sleep_valid = FALSE;
-				cling.ui.ui_alarm_hh = cling.user_data.profile.bed_hh;
-				cling.ui.ui_alarm_mm = cling.user_data.profile.bed_mm;		
+				cling.ui.notific.alarm_clock_hh = cling.user_data.profile.bed_hh;
+				cling.ui.notific.alarm_clock_mm = cling.user_data.profile.bed_mm;		
 				return TRUE;
 			}
 	}
@@ -219,8 +219,8 @@ static BOOLEAN _check_sleep_reminder()
 			{
 				cling.reminder.alarm_type = WAKEUP_ALARM_CLOCK;
 				cling.reminder.b_wakeup_valid = FALSE;
-				cling.ui.ui_alarm_hh = cling.user_data.profile.wakeup_hh;
-				cling.ui.ui_alarm_mm = cling.user_data.profile.wakeup_mm;						
+				cling.ui.notific.alarm_clock_hh = cling.user_data.profile.wakeup_hh;
+				cling.ui.notific.alarm_clock_mm = cling.user_data.profile.wakeup_mm;						
 				return TRUE;
 			}
 	}
@@ -250,8 +250,8 @@ void REMINDER_state_machine()
 				cling.reminder.state = REMINDER_STATE_ON;
 				cling.reminder.ts = t_curr;				
 				cling.reminder.alarm_type = NORMAL_ALARM_CLOCK;
-				cling.ui.ui_alarm_hh = cling.reminder.hour;
-				cling.ui.ui_alarm_mm = cling.reminder.minute;				
+				cling.ui.notific.alarm_clock_hh = cling.reminder.hour;
+				cling.ui.notific.alarm_clock_mm = cling.reminder.minute;				
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_NORMAL_ALARM_CLOCK, 0);
 			}
 			break;
@@ -340,8 +340,8 @@ I8U REMINDER_get_time_at_index(I8U index)
 	cling.reminder.ui_hh = hh;
 	cling.reminder.ui_mm = mm;
 	
-	cling.ui.ui_alarm_hh = cling.reminder.ui_hh;
-	cling.ui.ui_alarm_mm = cling.reminder.ui_mm;				
+	cling.ui.notific.alarm_clock_hh = cling.reminder.ui_hh;
+	cling.ui.notific.alarm_clock_mm = cling.reminder.ui_mm;				
 	
 	N_SPRINTF("[REMINDER] ui display: %d:%d", hh, mm);
 		
