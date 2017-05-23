@@ -708,7 +708,7 @@ static I8U _render_middle_horizontal_hr_core()
 				cling.ui.heart_rate_wave_index = 0;
 			}
 			len = sprintf((char *)string, "%s", horizontal_ware_indicator[cling.ui.heart_rate_wave_index]);
-			_render_middle_horizontal_section_core(string, 8, 5, 128+40, 0);
+			_render_middle_horizontal_section_core(string, 8, 5, 128+35, 0);
 			cling.ui.heart_rate_wave_index ++;
 			return 0;
 		}
@@ -772,8 +772,6 @@ static void _middle_render_horizontal_weather()
 		weather_info.type = 0;
 	}
 	
-	_render_one_icon_16(ICON16_WEATHER_IDX+weather_info.type, 0);
-
 	len = sprintf((char *)string, "%d", weather_info.low_temperature);
 	string[len++] = ICON24_WEATHER_RANGE_IDX;
 	len += sprintf((char *)string+len, "%d", weather_info.high_temperature);
@@ -783,6 +781,8 @@ static void _middle_render_horizontal_weather()
 	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 	// Shift all the display to the middle
 	_middle_horizontal_alignment_center(offset);
+	
+	_render_one_icon_16(ICON16_WEATHER_IDX+weather_info.type, 0);	
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_		
@@ -1390,7 +1390,7 @@ static void _middle_render_horizontal_training_connect_gps_fail()
 static BOOLEAN _middle_horizontal_running_ready_core()
 {
 	I8U b_24_size = 24;			
-	I8U len = 0;
+	I8U len = 1;
 	I16U offset = 60;
 	I8U margin = 5;
   I32U t_curr_in_ms = CLK_get_system_time();	
@@ -1411,9 +1411,11 @@ static BOOLEAN _middle_horizontal_running_ready_core()
     cling.activity.b_workout_active = TRUE;			
 	}
 	
-	if (running_info->ready_idx == 3)
+	if (running_info->ready_idx == 3){
+		len = 2;
 		offset = 53;
-			
+	}
+	
   _render_middle_horizontal_section_core((I8U *)ready_indicator_name[running_info->ready_idx], b_24_size, margin, offset, len);	
 	
 	return b_ready_finished;	
