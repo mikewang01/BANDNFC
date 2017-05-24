@@ -759,28 +759,44 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 			}
 	}
 	
-	if (cling.sleep.sleep_wakeup_steps > 4) {
+	if (cling.sleep.sleep_wakeup_steps > 6) {//if (cling.sleep.sleep_wakeup_steps > 4) {
 		SLEEP_wake_up_by_force(TRUE);
 #ifndef __YLF__
-		if(pminute->activity_count <= 20){
+		if(pminute->activity_count <= 60){//if(pminute->activity_count <= 20){
 			if(pminute->walking){
 				pminute->walking = 0;
 				cling.activity.day.walking = cling.activity.day_stored.walking;
+				cling.activity.day.distance = cling.activity.day_stored.distance;
 			}
 			if(pminute->running){
 				pminute->running = 0;
 				cling.activity.day.running = cling.activity.day_stored.running;
+				cling.activity.day.distance = cling.activity.day_stored.distance;
 			}
 		}
 #endif
 	}
 	cling.sleep.sleep_wakeup_steps = 0;
+#ifdef __YLF__
+	if(pminute->activity_count <= 30){
+			if(pminute->walking){
+				pminute->walking = 0;
+				cling.activity.day.walking = cling.activity.day_stored.walking;
+				cling.activity.day.distance = cling.activity.day_stored.distance;
+			}
+			if(pminute->running){
+				pminute->running = 0;
+				cling.activity.day.running = cling.activity.day_stored.running;
+				cling.activity.day.distance = cling.activity.day_stored.distance;
+			}
+		}
+#endif
 	
 	// For compatibility, we set activity count flag
 	pminute->activity_count |= 0x8000;
 	
 	// Refresh minute-based HR
-	if (pminute->heart_rate > 40) {		
+	if (pminute->heart_rate > 40) {
 		if (pminute->heart_rate > cling.hr.minute_rate) {
 			cling.hr.minute_rate = pminute->heart_rate;
 		} else {

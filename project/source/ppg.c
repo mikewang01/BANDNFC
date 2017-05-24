@@ -83,10 +83,21 @@ static void _calc_heart_rate()
 	// current pulse width
 	epoch_num = 0;
 	pulse_width = h->m_pre_pulse_width;
+#ifndef __YLF__
+	if(pulse_width == 0){//forbid to output-hr is zero
+		epoch_num = 42;
+	}else{
+		while (pulse_width>=0) {
+			pulse_width -= 20;        // 20 milliseconds per sample
+			epoch_num++;             // samples number in one heart rate pulse
+		}
+	}
+#else
 	while (pulse_width>=0) {
   	pulse_width -= 20;        // 20 milliseconds per sample
 		epoch_num++;             // samples number in one heart rate pulse
-	}	
+	}
+#endif
 	N_SPRINTF("[PPG] sample num: %d", epoch_num);
 	
 	// 50bpm: 60 samples
@@ -174,10 +185,22 @@ static void _reset_heart_rate_calculator()
 	
 	epoch_num = 0;
 	pulse_width = h->m_pre_pulse_width;
-	while (pulse_width>=0) {
-		pulse_width -= 20;
-		epoch_num++;
+#ifndef __YLF__
+	if(pulse_width == 0){//forbid to the problem of HR-output to UI is zero.
+		epoch_num = 42;
+	}else{
+		while (pulse_width>0) {
+			pulse_width -= 20;
+			epoch_num++;
+		}
 	}
+#else
+	while (pulse_width>=0) {
+			pulse_width -= 20;
+			epoch_num++;
+		}
+#endif
+
 #ifndef __YLF__
 	h->m_epoch_cnt = 0;
 	if((epoch_num<30)){
