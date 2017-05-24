@@ -599,7 +599,7 @@ void PPG_init()
 	h->m_epoch_cnt = 0;
 	h->measType = 0;//static HR for default
 	h->m_HR_cnt = 0;
-	for (i=0; i<7; i++) h->m_HR_buffer[i] = 0;
+	for (i=0; i<PPG_HR_BUFFER_NUM; i++) h->m_HR_buffer[i] = 0;
 #else
   for (i=0; i<8; i++) h->m_epoch_num[i] = 42;
 #endif
@@ -704,10 +704,12 @@ void PPG_state_machine()
 								} else {
 									// If user is viewing HR page, but no steps for over 30 seconds, go 
 									// turn off sensors
+#ifndef __YLF__
 									if (t_step_diff_sec > 30) {
 										PPG_disable_sensor();					       // Turn off ppg sensor module
 										h->state = PPG_STAT_DUTY_OFF;
 									}
+#endif
 								}
 							} else {
 								_ppg_sample_proc();				    // Process current sample
@@ -837,13 +839,13 @@ I8U PPG_Calculate_HR_mean5_moving(I8U hr_value)
 	I8U i,cnt=0,hr_min=0,hr_max=0;
 	I16U sum=0;
 	
-	if(cling.hr.m_HR_cnt>=7) cling.hr.m_HR_cnt = 0;
+	if(cling.hr.m_HR_cnt>=PPG_HR_BUFFER_NUM) cling.hr.m_HR_cnt = 0;
 	cling.hr.m_HR_buffer[cling.hr.m_HR_cnt++] = hr_value;
 	
-	for(i=0;i<7;i++){
+	for(i=0;i<PPG_HR_BUFFER_NUM;i++){
 		if(h->m_HR_buffer[i]){
-			if(hr_min>h->m_HR_buffer[i]) hr_min = h->m_HR_buffer[i];
-			if(hr_max>h->m_HR_buffer[i]) hr_min = h->m_HR_buffer[i];
+			if(hr_min > h->m_HR_buffer[i]) hr_min = h->m_HR_buffer[i];
+			if(hr_max < h->m_HR_buffer[i]) hr_max = h->m_HR_buffer[i];
 			sum += h->m_HR_buffer[i];
 			cnt ++;
 		}
