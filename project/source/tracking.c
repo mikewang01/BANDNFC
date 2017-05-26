@@ -541,12 +541,15 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		}else{
 			diff->distance = (a->day.distance - a->day_stored.distance) >> 7;//5;//in 8 meters
 		}
+		//diff->distance = 200>>3;//for test APP
+		N_SPRINTF("[TRACKING] diff->distance = %d",diff->distance);
 #else
 		// in 2 meters, normalized by 32
 		// Theoretical maximum distance in 1 minute is 255*2 = 510 meters
 		// Pace is about 1'57"
 		//
-		diff->distance = (a->day.distance - a->day_stored.distance) >> 5; 
+		diff->distance = (a->day.distance - a->day_stored.distance) >> 5;
+		//diff->distance = 400>>1;//for test APP
 #endif
 		diff->sleep_state = cling.sleep.state;
 		
@@ -762,7 +765,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	if (cling.sleep.sleep_wakeup_steps > 6) {//if (cling.sleep.sleep_wakeup_steps > 4) {
 		SLEEP_wake_up_by_force(TRUE);
 #ifndef __YLF__
-		if(pminute->activity_count <= 60){//if(pminute->activity_count <= 20){
+		if(pminute->activity_count <= 43){//if(pminute->activity_count <= 20){
 			if(pminute->walking){
 				pminute->walking = 0;
 				cling.activity.day.walking = cling.activity.day_stored.walking;
@@ -923,7 +926,7 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 //#ifndef __YLF_CYCLING__
 	denormalized_distance <<= 3;
 #else
-	denormalized_stat <<= 1;
+	denormalized_distance <<= 1;
 #endif
 	// Update running statistics
 	if (cling.activity.b_workout_active) {
