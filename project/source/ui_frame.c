@@ -697,10 +697,17 @@ static I8U _render_middle_horizontal_hr_core()
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
 #ifdef _ENABLE_PPG_				
-			hr_result = PPG_minute_hr_calibrate();
-#endif			
+			//hr_result = PPG_minute_hr_calibrate();
+			hr_result = cling.hr.m_curr_dispaly_HR;
+			if(cling.hr.m_display_hr_cnt == 3){
+				cling.hr.m_curr_dispaly_HR = PPG_minute_hr_calibrate();
+				cling.hr.m_display_hr_cnt = 0;
+			}else{
+				cling.hr.m_display_hr_cnt ++;
+			}
 #ifdef __YLF_BLE_HR__
 			heart_rate_meas_send(hr_result);
+#endif
 #endif
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
@@ -2671,11 +2678,18 @@ static I8U _render_middle_vertical_hr_core(I8U offset)
 	// Second, render heart rate 
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
-#ifdef _ENABLE_PPG_							
-			hr_result = PPG_minute_hr_calibrate();
-#endif			
+#ifdef _ENABLE_PPG_
+			//hr_result = PPG_minute_hr_calibrate();
+			hr_result = cling.hr.m_curr_dispaly_HR;
+			if(cling.hr.m_display_hr_cnt == 3){
+				cling.hr.m_curr_dispaly_HR = PPG_minute_hr_calibrate();
+				cling.hr.m_display_hr_cnt = 0;
+			}else{
+				cling.hr.m_display_hr_cnt ++;
+			}
 #ifdef __YLF_BLE_HR__
 			heart_rate_meas_send(hr_result);
+#endif
 #endif
 			if (hr_result > 99) {
 				b_24_size = 16; 

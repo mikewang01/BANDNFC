@@ -196,7 +196,7 @@ void ppg_PS_ALS_Auto             (void);
 #define PPG_SAMPLE_AVERATE_THRESHOLD                             3600//4000//5000//2000
 #endif
 #define PPG_HR_SMOOTH_WINDOW_WIDTH                               6
-#define PPG_HR_BUFFER_NUM                                        11//7
+#define PPG_HR_BUFFER_NUM                                        7//11//7
 typedef enum {
 	PPG_BODY_NOT_WEAR, 
 	PPG_BODY_WEAR, 
@@ -269,6 +269,8 @@ typedef struct tagHEARTRATE_CTX{
 	I8U m_epoch_cnt;
 	I8U m_HR_buffer[PPG_HR_BUFFER_NUM];
 	I8U m_HR_cnt;
+	I8U m_display_hr_cnt;
+	I8U m_curr_dispaly_HR;
 #else
 	I8U   m_epoch_num[8];
 #endif

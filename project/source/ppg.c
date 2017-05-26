@@ -595,6 +595,8 @@ void PPG_init()
 	
 	h->m_zero_point_timer   = CLK_get_system_time();
 #ifndef __YLF__
+	h->m_curr_dispaly_HR = 70;
+	h->m_display_hr_cnt = 0;
   for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 42;
 	h->m_epoch_cnt = 0;
 	h->measType = 0;//static HR for default
@@ -704,7 +706,7 @@ void PPG_state_machine()
 								} else {
 									// If user is viewing HR page, but no steps for over 30 seconds, go 
 									// turn off sensors
-#ifndef __YLF__
+#ifdef __YLF__
 									if (t_step_diff_sec > 30) {
 										PPG_disable_sensor();					       // Turn off ppg sensor module
 										h->state = PPG_STAT_DUTY_OFF;

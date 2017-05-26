@@ -848,9 +848,12 @@ void _training_pace_and_hr_alert()
 		if ( (cling.user_data.profile.max_hr_alert & 0x80)) {
 #endif
 #ifdef _ENABLE_PPG_
-			hr = PPG_minute_hr_calibrate();
-#endif			
-
+			//hr = PPG_minute_hr_calibrate();
+			hr = cling.hr.m_curr_dispaly_HR;
+#ifdef __YLF_BLE_HR__
+			heart_rate_meas_send(hr);
+#endif
+#endif
 			hr_perc = (hr * 100);
 			hr_perc /= (220-cling.user_data.profile.age);	
 			if (hr_perc > 98)

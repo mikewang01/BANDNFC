@@ -99,8 +99,12 @@ EN_STATUSCODE LIS3DH_normal_FIFO()
 	/* FIFO_CTRL_REG */
 	// FIFO in streaming mode, water mark: 25 samples -> 500 ms
 	// Note: FIFO has to be enabled first before configuring FIFO register
-	_set_reg(FIFO_CTRL_REG, 0x99);
-	
+#ifndef __YLF_ACC_FIFO_CTRL__
+	_set_reg(FIFO_CTRL_REG, 0x8C);// FIFO in streaming mode, water mark: 12 samples -> 240 ms
+#else
+	_set_reg(FIFO_CTRL_REG, 0x99);// FIFO in streaming mode, water mark: 25 samples -> 500 ms
+#endif
+
 	/* CTRL_REG6 */
 	// 0: Interrupt active HIGH, 1: Interrupt active LOW
 	_set_reg(CTRL_REG6, 0x00);
