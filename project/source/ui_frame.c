@@ -931,12 +931,12 @@ static void _middle_render_horizontal_reminder_core(BOOLEAN b_alarm_clock_remind
 
 static void _middle_render_horizontal_alarm_clock_reminder()
 {
+  _middle_render_horizontal_reminder_core(TRUE);
+	
 	if ((cling.reminder.alarm_type == SLEEP_ALARM_CLOCK) || (cling.reminder.alarm_type == WAKEUP_ALARM_CLOCK))
 		_render_one_icon_16(ICON16_SLEEP_ALARM_CLOCK_IDX, 0);				
 	else 
-		_render_one_icon_16(ICON16_NORMAL_ALARM_CLOCK_IDX, 0);
-	
-  _middle_render_horizontal_reminder_core(TRUE);
+		_render_one_icon_16(ICON16_NORMAL_ALARM_CLOCK_IDX, 0);	
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_	
@@ -4431,7 +4431,7 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	
 	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
 	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
-	
+
 	if (cling.user_data.profile.metric_distance)
 		cling.user_data.profile.metric_distance = 1;
 
