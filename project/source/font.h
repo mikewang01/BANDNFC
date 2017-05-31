@@ -16,7 +16,7 @@
 #define FONT_CHINESE_15X16_SPACE_START	   (FONT_ASCII_8X16_SPACE_START+FONT_ASCII_8X16_SPACE_SIZE)		
 #define FONT_CHINESE_15X16_SPACE_SIZE		   (668864)
 
-I8U FONT_load_characters(I16U pin_in_offset, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center);
+I8U  FONT_load_characters(I8U *pin_in, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center);
 I8U  FONT_get_string_display_depth(char *string);
 I16U FONT_get_string_display_len(char *string);
 #endif // __GT23L16U2Y__

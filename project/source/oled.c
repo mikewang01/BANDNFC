@@ -155,7 +155,7 @@ void OLED_hw_init()
 	
   OLED_init(0xf0);
 
-  FONT_load_characters(128, (char *)"Cling Fitness", 16, 128, TRUE);	
+  FONT_load_characters(cling.ui.p_oled_up + 128, (char *)"Cling Fitness", 16, 128, TRUE);	
 	
 	OLED_full_scree_show();
 
