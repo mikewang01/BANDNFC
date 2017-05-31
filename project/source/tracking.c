@@ -351,6 +351,11 @@ static void _day_stat_reset()
 	cling.run_stat.time_min = 0;
 	cling.run_stat.time_sec = 0;
 	cling.run_stat.accu_heart_rate = 0;
+
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+		cling.train_stat.b_cycling_state = FALSE;
+#endif
 }
 
 void TRACKING_total_data_load_file()
@@ -1601,7 +1606,12 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming)
 			
 			// 2. Accumulating distance
 			denormalized_distance = minute->distance;
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+			denormalized_distance <<= 3;
+#else
 			denormalized_distance <<= 1;
+#endif
 			day_streaming->distance += denormalized_distance;
 
 			// 3. Accumulating calories (for exercise and idel)
