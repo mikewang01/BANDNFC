@@ -333,6 +333,9 @@ static void _day_stat_reset()
 	cling.activity.day.calories = 0;
 	cling.activity.day.distance = 0;
 	cling.activity.day.active_time = 0;
+#ifndef __YLF__
+	cling.activity.day.diff_delta_dist = 0;
+#endif
 #ifndef __YLF_RUN_HR__
 	cling.activity.hr_sport_minutes = 0;
 #endif
@@ -535,11 +538,13 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 			cling.train_stat.cycling_pre_distance = cling.train_stat.cycling_curr_distance;
 			cling.train_stat.cycling_curr_distance = cling.train_stat.distance;
 			cling.train_stat.cycling_pre_delta_distance += (cling.train_stat.cycling_curr_distance - cling.train_stat.cycling_pre_distance);
+			a->day.distance = a->day_stored.distance + (cling.train_stat.cycling_pre_delta_distance<<4);//daily distance include GPS distance
 			diff->distance = cling.train_stat.cycling_pre_delta_distance>>3;//in 8 meters
 			cling.train_stat.cycling_pre_delta_distance -= diff->distance<<3;
 			cling.train_stat.b_cycling_state = FALSE;
 		}else{
-			diff->distance = (a->day.distance - a->day_stored.distance) >> 7;//5;//in 8 meters
+			diff->distance = ((a->day.distance - a->day_stored.distance) + a->day.diff_delta_dist) >> 7;//5;//in 8 meters
+			a->day.diff_delta_dist += (a->day.distance - a->day_stored.distance)-(diff->distance<<7);
 		}
 		//diff->distance = 200>>3;//for test APP
 		N_SPRINTF("[TRACKING] diff->distance = %d",diff->distance);
@@ -548,9 +553,14 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		// Theoretical maximum distance in 1 minute is 255*2 = 510 meters
 		// Pace is about 1'57"
 		//
-		diff->distance = (a->day.distance - a->day_stored.distance) >> 5;
+#ifndef __YLF__
+		diff->distance = ((a->day.distance - a->day_stored.distance)+ a->day.diff_delta_dist) >> 5;
+		a->day.diff_delta_dist += (a->day.distance - a->day_stored.distance)-(diff->distance<<5);
 		//diff->distance = 400>>1;//for test APP
+#else
+		diff->distance = (a->day.distance - a->day_stored.distance) >> 5;
 #endif
+#endif //#ifndef _CLINGBAND_PACE_MODEL_
 		diff->sleep_state = cling.sleep.state;
 		
 		if ((diff->walking+diff->running) >= 40) {

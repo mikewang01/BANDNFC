@@ -194,7 +194,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_SMART_HEART_RATE_ALERT,*/             400,	
 	/*UI_DISPLAY_SMART_STEP_10K_ALERT,*/               400,				
 	// 4: a set of VITAL
-	/*UI_DISPLAY_VITAL_HEART_RATE,*/                   400,
+	/*UI_DISPLAY_VITAL_HEART_RATE,*/                   333,//400,
 	// 5: Running Statistics
 	/*UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS,*/          2000,			
 	/*UI_DISPLAY_RUNNING_STAT_DISTANCE,*/              2000,
@@ -214,7 +214,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_TRAINING_STAT_TIME,*/                 300,	
 	/*UI_DISPLAY_TRAINING_STAT_DISTANCE,*/             300,
 	/*UI_DISPLAY_TRAINING_STAT_PACE,*/                 300,
-	/*UI_DISPLAY_TRAINING_STAT_HEART_RATE,*/           300,
+	/*UI_DISPLAY_TRAINING_STAT_HEART_RATE,*/           333,//300,
 	/*UI_DISPLAY_TRAINING_STAT_RUN_STOP,*/             400,		
 	// 7: PREVIOUS
 	/*UI_DISPLAY_PREVIOUS*/                            400,

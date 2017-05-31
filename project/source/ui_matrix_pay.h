@@ -667,7 +667,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_SMART_HEART_RATE_ALERT,*/          400,	
 	/*UI_DISPLAY_SMART_STEP_10K_ALERT,*/            400,			
 	// 4: a set of VITAL
-	/*UI_DISPLAY_VITAL_HEART_RATE,*/                400,
+	/*UI_DISPLAY_VITAL_HEART_RATE,*/                333,//400,
 	// 5: Special back panel mode
 	/*UI_DISPLAY_SETTING_VER,*/                     400,
 	// 6: Stopwatch
@@ -684,7 +684,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_WORKOUT_OTHERS,*/                  2000,	
 	/*UI_DISPLAY_WORKOUT_RT_READY,*/                100,
 	/*UI_DISPLAY_WORKOUT_RT_TIME,*/                 300,
-	/*UI_DISPLAY_WORKOUT_RT_HEART_RATE,*/           300,
+	/*UI_DISPLAY_WORKOUT_RT_HEART_RATE,*/           333,//300,
 	/*UI_DISPLAY_WORKOUT_RT_CALORIES,*/             300,
 	/*UI_DISPLAY_WORKOUT_RT_END,*/                  400,
 	// 8: Running Statistics
@@ -702,7 +702,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_TRAINING_STAT_TIME,*/              300,	
 	/*UI_DISPLAY_TRAINING_STAT_DISTANCE,*/          300,
 	/*UI_DISPLAY_TRAINING_STAT_PACE,*/              300,
-	/*UI_DISPLAY_TRAINING_STAT_HEART_RATE,*/        300,
+	/*UI_DISPLAY_TRAINING_STAT_HEART_RATE,*/        333,//300,
 	/*UI_DISPLAY_TRAINING_STAT_RUN_STOP,*/          400,
 	// 10: CYCLING_OUTDOOR Statistics
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_START,*/      400,	
@@ -710,7 +710,7 @@ const I16U ui_matrix_blinking_interval[UI_DISPLAY_MAXIMUM] = {
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME,*/       300,		
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_DISTANCE,*/   300,	
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_SPEED,*/      300,	
-	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE,*/ 300,	
+	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE,*/ 333,//300,
 	/*UI_DISPLAY_CYCLING_OUTDOOR_STAT_STOP,*/       400,	
 	// 11: MUSIC controlling
 	/*UI_DISPLAY_MUSIC_PLAY,*/                      2000,

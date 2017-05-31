@@ -189,11 +189,11 @@ void HOMEKEY_click_check()
 	} else {
 		// Add debounce logic to prevent multiple button click
 		offset = t_curr - k->ticks[OFF_CLICK];
-		if (offset < HOMEKEY_CLICK_DEBOUNCE_ON) 
+		if (offset < HOMEKEY_CLICK_DEBOUNCE_OFF)
 			return;
 
 		offset = k->ticks[OFF_CLICK] - k->ticks[ON_CLICK];
-		if (offset < HOMEKEY_CLICK_DEBOUNCE_OFF) 
+		if (offset < HOMEKEY_CLICK_DEBOUNCE_ON)
 			return;
 		
 		// if there is half click flag, we are good to declare a single click event

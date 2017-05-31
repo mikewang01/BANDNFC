@@ -85,7 +85,11 @@ typedef struct tagMINUTE_DELTA_TRACKING_CTX {
 	I8U sleep_state;
 	I8U walking;
 	I8U running;
+#ifndef _CLINGBAND_PACE_MODEL_
+	I16U distance;
+#else
 	I8U distance;
+#endif
 	I8U calories;
 	I16U activity_count;
 } MINUTE_DELTA_TRACKING_CTX;
@@ -96,6 +100,9 @@ typedef struct tagDAY_TRACKING_CTX {
 	I32U distance;
 	I32U calories;
 	I32U active_time;
+#ifndef __YLF__
+	I32U diff_delta_dist;
+#endif
 } DAY_TRACKING_CTX;
 
 #define PACE_BUF_LENGTH 4
