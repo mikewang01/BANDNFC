@@ -346,17 +346,17 @@ static void _middle_render_horizontal_system_restart()
 	I16U len;
 	
 	USER_device_get_name(string1);
-	FONT_load_characters(0, (char *)string1, 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up, (char *)string1, 16, 128, TRUE);
 	memset(cling.ui.p_oled_up+256, 0, 256);
 	
 	_middle_render_firmware_ver_core(string2);
 //	len = strlen((char *)string);
-	FONT_load_characters(384+64, (char *)string2, 8, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+384+64, (char *)string2, 8, 128, FALSE);
 
 	len = sprintf((char *)string3, "ID:");
 	SYSTEM_get_ble_code(string3+len);	
 	string3[len+4] = 0;	
-	FONT_load_characters(384+12, (char *)string3, 8, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+384+12, (char *)string3, 8, 128, FALSE);
 }
 
 static void _middle_render_horizontal_home()
@@ -383,9 +383,9 @@ static void _middle_render_horizontal_home()
 	  len = sprintf((char *)string, "%d/%02d", cling.time.local.month, cling.time.local.day);
 	}
 	
-	FONT_load_characters((128 -  len*6), (char *)string, 8, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+(128 -  len*6), (char *)string, 8, 128, FALSE);
 	
-	FONT_load_characters(256+96, (char *)week_name[language_type][dow_index], 16, 128, FALSE);		
+	FONT_load_characters(cling.ui.p_oled_up+256+96, (char *)week_name[language_type][dow_index], 16, 128, FALSE);		
 }
 
 static void _middle_render_horizontal_ota()
@@ -464,7 +464,7 @@ static void _middle_render_horizontal_system_charging()
 	
 	// show the percentage
 	sprintf((char *)string, "%d%%", perc);
-	FONT_load_characters(128+90, (char *)string, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+90, (char *)string, 16, 128, FALSE);
 }
 
 static void _middle_render_horizontal_ble_code()
@@ -494,12 +494,12 @@ static void _middle_render_horizontal_ble_code()
 	string1[5] = ' ';	
 	string1[6] = string[3];
 	string1[7] = 0;			
-	FONT_load_characters(256, (char *)string1, 16, 128, TRUE);		
+	FONT_load_characters(cling.ui.p_oled_up+256, (char *)string1, 16, 128, TRUE);		
 #endif
 
   _middle_render_firmware_ver_core(string);
 //	len = strlen((char *)string);
-	FONT_load_characters(70, (char *)string, 8, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+70, (char *)string, 8, 128, FALSE);
 }
 
 static void _middle_render_horizontal_linking()
@@ -606,7 +606,7 @@ static void _middle_render_horizontal_distance()
 	
 	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 	
-	FONT_load_characters(256+offset+3, (char *)distance_unit_name[language_type][metric], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+256+offset+3, (char *)distance_unit_name[language_type][metric], 16, 128, FALSE);
 }
 
 static void _middle_render_horizontal_calories()
@@ -664,7 +664,7 @@ static void _middle_render_horizontal_active_time()
 
 	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 
-	FONT_load_characters(256+offset+10, (char *)active_time_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+256+offset+10, (char *)active_time_name[language_type], 16, 128, FALSE);
 }
 
 #ifdef _CLINGBAND_UV_MODEL_		
@@ -831,10 +831,10 @@ static void _middle_render_horizontal_app_notif()
 		b_display_center = TRUE;	
 	}
 	
-  FONT_load_characters(offset, (char *)string, 16, 80, b_display_center);		
+  FONT_load_characters(cling.ui.p_oled_up+offset, (char *)string, 16, 80, b_display_center);		
 		
 	len = sprintf((char *)string, "%02d", cling.ui.notific.app_notific_index);
-	FONT_load_characters((128-len*8), (char *)string, 16, 128, FALSE);			
+	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);			
 }
 #endif
 
@@ -887,7 +887,7 @@ static void _middle_render_horizontal_pm2p5()
 	if (language_type != LANGUAGE_TYPE_ENGLISH)
 		language_type++;
 	
-	FONT_load_characters(256, (char *)air_level_name[language_type][w->pm2p5_level_idx], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+256, (char *)air_level_name[language_type][w->pm2p5_level_idx], 16, 128, FALSE);
 
   len = sprintf((char *)string, "%d", w->pm2p5_value);	
 	offset = (118 -  len*13) ;
@@ -966,7 +966,7 @@ static void _middle_render_horizontal_incoming_call_or_message()
 		b_display_center = TRUE;	
 	}
 
-	FONT_load_characters(offset, (char *)string, 16, 80, b_display_center);
+	FONT_load_characters(cling.ui.p_oled_up+offset, (char *)string, 16, 80, b_display_center);
 }
 
 static void _middle_render_horizontal_detail_notif()
@@ -995,7 +995,7 @@ static void _middle_render_horizontal_detail_notif()
 		string_pos = cling.ui.notific.string_pos_buf[cling.ui.notific.detail_idx - 1];
 	}
 	
-	FONT_load_characters(0, (char *)string+string_pos, 16, 112, FALSE);		
+	FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, 112, FALSE);		
 }
 
 static void _middle_render_horizontal_idle_alert()
@@ -1010,7 +1010,7 @@ static void _middle_render_horizontal_idle_alert()
 	else 
 		offset = 32;
 	
-	FONT_load_characters(256+offset, (char *)idle_alart_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+256+offset, (char *)idle_alart_name[language_type], 16, 128, FALSE);
 }
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
@@ -1061,7 +1061,7 @@ static void _middle_render_horizontal_workout_mode_switch()
 	
 	workout_idx = frame_index - UI_DISPLAY_WORKOUT_TREADMILL;
 		
-	FONT_load_characters(128, (char *)horizontal_workout_name[language_type][workout_idx], 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)horizontal_workout_name[language_type][workout_idx], 16, 128, TRUE);
 	
 	_render_middle_horizontal_section_core((I8U *)horizontal_ware_indicator[workout_idx], 8, 7, 256+30, 0);
 }
@@ -1076,13 +1076,13 @@ static void _right_render_horizontal_string_core(I8U *string1, I8U *string2)
 	if (string1_len > 128)
 	  return;
 	offset1 = 128 - string1_len;
-	FONT_load_characters(offset1, (char *)string1, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+offset1, (char *)string1, 16, 128, FALSE);
 	
 	string2_len = FONT_get_string_display_len((char *)string2);
 	if (string2_len > 128)
 	  return;
 	offset2 = 128 - string2_len;
-	FONT_load_characters(256 + offset2, (char *)string2, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+256 + offset2, (char *)string2, 16, 128, FALSE);
 }
 
 static void _horizontal_core_run_distance(I32U stat)
@@ -1151,7 +1151,7 @@ static void _middle_render_horizontal_running_analysis()
 	const char *running_analysis_name[] = {"RUN DATA", "当日跑步 ", "當日跑步 "};
 	I8U language_type = cling.ui.language_type;
 	
-	FONT_load_characters(128+24, (char *)running_analysis_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)running_analysis_name[language_type], 16, 128, FALSE);
 }
 #endif
 
@@ -1331,7 +1331,7 @@ static void _middle_render_horizontal_running_stop_analysis()
 	const char *analysis_end_name[] = {"INFO END", "结束分析 ", "結束分析 "};
 	I8U language_type = cling.ui.language_type;
 	
-	FONT_load_characters(128+24, (char *)analysis_end_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)analysis_end_name[language_type], 16, 128, FALSE);
 }
 #endif
 
@@ -1347,8 +1347,8 @@ static void _middle_render_horizontal_training_run_or_analysis()
 	memset(cling.ui.p_oled_up+128+96, 0, 32);
 	memset(cling.ui.p_oled_up+128+128+96, 0, 32);	
 	
-	FONT_load_characters(128+40, (char *)run_start_name[language_type], 16, 128, FALSE);
- 	FONT_load_characters(128+96, (char *)run_analysis_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+40, (char *)run_start_name[language_type], 16, 128, FALSE);
+ 	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)run_analysis_name[language_type], 16, 128, FALSE);
 	
   p0 = cling.ui.p_oled_up+128+40,
 	p1 = p0+128;
@@ -1374,7 +1374,7 @@ static void _middle_render_horizontal_training_connect_gps()
   const	char *const conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};	
 	I8U language_type = cling.ui.language_type;		
 
- 	FONT_load_characters(128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
+ 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
 }
 
 static void _middle_render_horizontal_training_connect_gps_timeout()
@@ -1382,7 +1382,7 @@ static void _middle_render_horizontal_training_connect_gps_timeout()
   const	char *const conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
 	I8U language_type = cling.ui.language_type;		
 
- 	FONT_load_characters(128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
+ 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
 }
 
 static void _middle_render_horizontal_training_connect_gps_fail()
@@ -1390,7 +1390,7 @@ static void _middle_render_horizontal_training_connect_gps_fail()
   const	char *const conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
- 	FONT_load_characters(128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
+ 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
 }
 #endif
 
@@ -1531,7 +1531,7 @@ static void _middle_render_horizontal_training_hr()
 			hr_perc = 98;
 		
 	  len = sprintf((char *)string, "%d%%", hr_perc);
-	  FONT_load_characters(128-(len*8), (char *)string, 16, 128, FALSE);		
+	  FONT_load_characters(cling.ui.p_oled_up+128-(len*8), (char *)string, 16, 128, FALSE);		
   }
 
 	p0 = cling.ui.p_oled_up+384+100;
@@ -1610,9 +1610,9 @@ static void _middle_render_horizontal_training_start_run()
 	  _middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)training_run_name[language_type], string);
 
 #ifdef _CLINGBAND_PACE_MODEL_		
-	FONT_load_characters(128+offset, (char *)string, 16, 128, FALSE);	
+	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)string, 16, 128, FALSE);	
 #else	
-	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 #endif	
 }
 
@@ -1630,7 +1630,7 @@ static void _middle_render_horizontal_training_run_stop()
 	  offset = 31;	
 #endif	
 	
-	FONT_load_characters(128+offset, (char *)string, 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)string, 16, 128, FALSE);
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -1641,7 +1641,7 @@ static void _middle_render_horizontal_training_workout_stop()
 
 	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)gym_workout_run_name[language_type], string);
 
-	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 }
 #endif
 
@@ -1668,7 +1668,7 @@ static void _middle_render_horizontal_cycling_outdoor_start()
 	else
 	  _middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)cycling_run_name[language_type], string);
 
-	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 	
 	cling.train_stat.b_cycling_state = FALSE;
 }
@@ -1680,7 +1680,7 @@ static void _middle_render_horizontal_cycling_outdoor_stop()
 	
 	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)cycling_run_name[language_type], string);
 	
-	FONT_load_characters(128, (char *)string, 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 }
 
 static void _middle_render_horizontal_cycling_outdoor_ready()
@@ -1715,7 +1715,7 @@ static void _middle_render_horizontal_cycling_outdoor_speed()
 	
 	if (BTLE_is_connected()) {
 		_horizontal_core_run_distance(cling.train_stat.speed);
-		FONT_load_characters(384+104, (char *)speed_unit_name[metric], 8, 128, FALSE);	
+		FONT_load_characters(cling.ui.p_oled_up+384+104, (char *)speed_unit_name[metric], 8, 128, FALSE);	
 	} else {
 		_render_one_icon_24(ICON24_NO_SKIN_TOUCH_IDX, 128+40);
 		_right_render_horizontal_string_core(NULL, (I8U *)no_ble_horizontal_name[language_type]);
@@ -1801,7 +1801,7 @@ static void _middle_render_horizontal_stopwatch_stop()
 {
 	I8U language_type = cling.ui.language_type;
 
-	FONT_load_characters(128, (char *)stopwatch_stop_name[language_type], 16, 128, TRUE);
+	FONT_load_characters(cling.ui.p_oled_up+128, (char *)stopwatch_stop_name[language_type], 16, 128, TRUE);
 }
 #endif
 
@@ -1917,9 +1917,9 @@ static void _middle_render_horizontal_balance_core(BOOLEAN b_bus_card_balance)
 	_middle_horizontal_alignment_center(offset);
 	
 	if (language_type == LANGUAGE_TYPE_ENGLISH)
-	  FONT_load_characters(256+104, (char *)unit_balance_display[language_type], 16, 128, FALSE);	
+	  FONT_load_characters(cling.ui.p_oled_up+256+104, (char *)unit_balance_display[language_type], 16, 128, FALSE);	
 	else 
-		FONT_load_characters(256+112, (char *)unit_balance_display[language_type], 16, 128, FALSE);	
+		FONT_load_characters(cling.ui.p_oled_up+256+112, (char *)unit_balance_display[language_type], 16, 128, FALSE);	
 }
 
 static void _middle_render_horizontal_bus_card_balance_enquiry()
@@ -1992,7 +1992,7 @@ static void _right_render_horizontal_delta_data_backward()
 	RTC_get_delta_clock_backward(&delta, cling.ui.vertical_index);
 
 	len = sprintf((char *)string, "%d/%02d", delta.month, delta.day);
-	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 #endif
 
@@ -2007,7 +2007,7 @@ static void _right_render_horizontal_small_clock()
 		len = sprintf((char *)string, "%d %02d",cling.time.local.hour, cling.time.local.minute);		
 	}
  
-	FONT_load_characters((128-len*6), (char *)string, 8, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+(128-len*6), (char *)string, 8, 128, FALSE);
 }
 
 #ifdef _CLINGBAND_PACE_MODEL_
@@ -2017,7 +2017,7 @@ static void _right_render_horizontal_button_hold()
 	I8U i;
 	I8U *p0, *p1;
 	
-	FONT_load_characters(128+96, (char *)button_hold_name[language_type], 16, 128, FALSE);	
+	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)button_hold_name[language_type], 16, 128, FALSE);	
 	
   p0 = cling.ui.p_oled_up+128+96,
 	p1 = p0+128;
@@ -2054,7 +2054,7 @@ static void _right_render_horizontal_app_notif()
 	I8U len;
 	
 	len = sprintf((char *)string, "%02d", cling.ui.notific.app_notific_index);
-	FONT_load_characters((128-len*8), (char *)string, 16, 128, FALSE);	
+	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);	
 
 	_right_render_horizontal_more();
 }
@@ -2065,7 +2065,7 @@ static void _right_render_horizontal_reminder()
 	I8U len;
 
 	len = sprintf((char *)string, "%02d", cling.ui.vertical_index);
-	FONT_load_characters((128-len*8), (char *)string, 16, 128, FALSE);	
+	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);	
 
 	_right_render_horizontal_more();
 }
@@ -2167,15 +2167,8 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	
 	memset(buf_fonts, 0, 256);
 	
-	line_len = FONT_load_characters(offset, (char *)string, height, 128, FALSE);
+	line_len = FONT_load_characters(buf_fonts, (char *)string, height, 128, FALSE);
 	
-	memcpy(buf_fonts, cling.ui.p_oled_up+offset, line_len);
-	memset(cling.ui.p_oled_up+offset, 0, line_len);
-	if (height == 16) {
-	  memcpy(buf_fonts+128, cling.ui.p_oled_up+offset+128, line_len);
-		memset(cling.ui.p_oled_up+offset+128, 0, line_len);	
-	}
-
 	// Shift to the center
 	_vertical_centerize(p0, p1, p2, line_len);
 	
@@ -2331,13 +2324,8 @@ static void _render_vertical_fonts_lib_invert_colors_core(I8U *string, I8U offse
 	
 	memset(buf_fonts, 0, 256);
 	
-	line_len = FONT_load_characters(offset, (char *)string, 16, 128, FALSE);
+	line_len = FONT_load_characters(buf_fonts, (char *)string, 16, 128, FALSE);
 	
-	memcpy(buf_fonts, cling.ui.p_oled_up+offset, line_len);
-	memset(cling.ui.p_oled_up+offset, 0, line_len);
-	memcpy(buf_fonts+128, cling.ui.p_oled_up+offset+128, line_len);
-  memset(cling.ui.p_oled_up+offset+128, 0, line_len);	
-
 	for (i=0;i<32;i++) {
 		*(p0+i) = ~(*(p0+i));
 		*(p1+i) = ~(*(p1+i));	
@@ -4431,7 +4419,7 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 	
 	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
 	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
-
+	
 	if (cling.user_data.profile.metric_distance)
 		cling.user_data.profile.metric_distance = 1;
 
