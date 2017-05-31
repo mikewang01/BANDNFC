@@ -273,7 +273,10 @@ static void _cling_global_init()
 {
     // Clean the cling global structure
     memset(&cling, 0, sizeof(CLING_MAIN_CTX));
-
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+		cling.train_stat.b_cycling_state = FALSE;
+#endif
     // Initialize the low power variables
     cling.lps.b_low_power_mode = FALSE;
 

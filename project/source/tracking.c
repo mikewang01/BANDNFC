@@ -333,9 +333,6 @@ static void _day_stat_reset()
 	cling.activity.day.calories = 0;
 	cling.activity.day.distance = 0;
 	cling.activity.day.active_time = 0;
-#ifndef __YLF__
-	cling.activity.day.diff_delta_dist = 0;
-#endif
 #ifndef __YLF_RUN_HR__
 	cling.activity.hr_sport_minutes = 0;
 #endif
@@ -543,8 +540,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 			cling.train_stat.cycling_pre_delta_distance -= diff->distance<<3;
 			cling.train_stat.b_cycling_state = FALSE;
 		}else{
-			diff->distance = ((a->day.distance - a->day_stored.distance) + a->day.diff_delta_dist) >> 7;//5;//in 8 meters
-			a->day.diff_delta_dist += (a->day.distance - a->day_stored.distance)-(diff->distance<<7);
+			diff->distance = (a->day.distance - a->day_stored.distance) >> 7;//5;//in 8 meters
 		}
 		//diff->distance = 200>>3;//for test APP
 		N_SPRINTF("[TRACKING] diff->distance = %d",diff->distance);
@@ -553,13 +549,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		// Theoretical maximum distance in 1 minute is 255*2 = 510 meters
 		// Pace is about 1'57"
 		//
-#ifndef __YLF__
-		diff->distance = ((a->day.distance - a->day_stored.distance)+ a->day.diff_delta_dist) >> 5;
-		a->day.diff_delta_dist += (a->day.distance - a->day_stored.distance)-(diff->distance<<5);
-		//diff->distance = 400>>1;//for test APP
-#else
 		diff->distance = (a->day.distance - a->day_stored.distance) >> 5;
-#endif
 #endif //#ifndef _CLINGBAND_PACE_MODEL_
 		diff->sleep_state = cling.sleep.state;
 		
@@ -1783,11 +1773,16 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 		}
 		
 	}
-
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
+	day_total->distance <<= 7; // denormalize distance as it is in unit of 8 meters
+	day_total->calories <<= 4;
+	r->distance <<= 3; // Denormalize distance as it is in unit of 8 meters
+#else
 	day_total->distance <<= 5; // denormalize distance as it is in unit of 2 meters
 	day_total->calories <<= 4;
 	r->distance <<= 1; // Denormalize distance as it is in unit of 2 meters
-	
+#endif
 	
 	N_SPRINTF("Totals: %d, %d, %d, %d",  day_total->walking, day_total->running, day_total->calories>>4, day_total->distance>>4);
 
