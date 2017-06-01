@@ -1404,6 +1404,9 @@ static BOOLEAN _middle_horizontal_running_ready_core()
   UI_RUNNING_INFO_CTX *running_info = &cling.ui.running_info;	
 	BOOLEAN b_ready_finished = FALSE;
 
+	// First Update touch time stamp.
+  cling.ui.touch_time_stamp = t_curr_in_ms;
+	
 	if (!running_info->t_ready_stamp)
 		running_info->t_ready_stamp = t_curr_in_ms;
 	
@@ -3368,6 +3371,9 @@ static BOOLEAN _middle_vertical_running_ready_core()
   BOOLEAN b_ready_finished = FALSE;	
   UI_RUNNING_INFO_CTX	*running_info = &cling.ui.running_info;
 
+	// First Update touch time stamp.
+  cling.ui.touch_time_stamp = t_curr_in_ms;
+	
 	if (!running_info->t_ready_stamp)
 		running_info->t_ready_stamp = t_curr_in_ms;
 	
