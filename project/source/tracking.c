@@ -276,7 +276,6 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 			cling.activity.day.running ++;
 			
 			if (cling.activity.b_workout_active) {
-		
 				if (OLED_panel_is_turn_off() && cling.user_data.b_running_alwayson) {
 					UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 				}
@@ -733,7 +732,7 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 #ifndef __YLF__
 	if(pminute->running>100 || ((pminute->running+pminute->walking)>140)){
 		cling.hr.b_runstate = TRUE;
-	}else if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
+	}else if(pminute->walking>60){//if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
 		cling.hr.b_walkstate = TRUE;
 	}else{
 		cling.hr.b_runstate = FALSE;

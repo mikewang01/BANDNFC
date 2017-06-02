@@ -381,7 +381,14 @@ void USER_setup_device(I8U *data)
 
 	u->screen_on_general = *pdata++;
 	if (u->screen_on_general == 0xff) {
+#ifndef __YLF_WRIST_FLIP__
+			if(cling.activity.b_screen_on_wrist_flip && (!cling.activity.b_screen_off_wrist_flip))
+				u->screen_on_general = 3;
+			else
+				u->screen_on_general = 4;
+#else
 		u->screen_on_general = 5;
+#endif
 	}
 	u->screen_on_heart_rate = *pdata++;
 	if (u->screen_on_heart_rate == 0xff) {

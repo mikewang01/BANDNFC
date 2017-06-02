@@ -79,6 +79,9 @@ static void _calc_heart_rate()
 	I8S  non_num;
 	I8S  avg_epoch_num;
 	I8U  i;
+#ifndef __YLF_SLEEP_HR__
+	SLEEP_CTX *slp = &cling.sleep;
+#endif //__YLF_SLEEP_HR__
 	
 	// current pulse width
 	epoch_num = 0;
@@ -97,7 +100,7 @@ static void _calc_heart_rate()
   	pulse_width -= 20;        // 20 milliseconds per sample
 		epoch_num++;             // samples number in one heart rate pulse
 	}
-#endif
+#endif //__YLF__
 	N_SPRINTF("[PPG] sample num: %d", epoch_num);
 	
 	// 50bpm: 60 samples
@@ -110,23 +113,31 @@ static void _calc_heart_rate()
 	for (i=PPG_HR_SMOOTH_WINDOW_WIDTH-1; i>0; i--)
 #else
 	for (i=7; i>0; i--)
-#endif
+#endif //__YLF__
 		N_SPRINTF("[PPG] sample num: %dth,%d", i,h->m_epoch_num[i-1]);
 	  h->m_epoch_num[i] = h->m_epoch_num[i-1];
 #ifndef __YLF__
-	if(h->m_epoch_cnt<3){
-		if((epoch_num>33) &&(epoch_num<47)){
-				h->m_epoch_num[0] = epoch_num;
-		}
-		h->m_epoch_cnt ++;
+#ifndef __YLF_SLEEP_HR__
+	if((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM)){
+		h->m_epoch_num[0] = epoch_num;
 	}else{
-		if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
-			h->m_epoch_num[0] = epoch_num;
+#endif //__YLF_SLEEP_HR__
+		if(h->m_epoch_cnt<3){
+			if((epoch_num>33) &&(epoch_num<47)){
+					h->m_epoch_num[0] = epoch_num;
+			}
+			h->m_epoch_cnt ++;
+		}else{
+			if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
+				h->m_epoch_num[0] = epoch_num;
+			}
 		}
+#ifndef __YLF_SLEEP_HR__
 	}
+#endif //__YLF_SLEEP_HR__
 #else
 	h->m_epoch_num[0] = epoch_num;
-#endif
+#endif //__YLF__
 	
 	//h->m_epoch_num[0] = Kalman_Filter(epoch_num);
 
@@ -138,7 +149,7 @@ static void _calc_heart_rate()
 	for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++)
 #else
 	for (i=0; i<8; i++)
-#endif
+#endif //__YLF__
 	{
 		if (h->m_epoch_num[i]!=0)
 		{
@@ -155,7 +166,7 @@ static void _calc_heart_rate()
 #ifndef __YLF__	
 	h->m_epoch_num[0] = Kalman_Filter(avg_epoch_num);
 	//h->m_epoch_num[0] = avg_epoch_num;
-#endif
+#endif //__YLF__
   //-------------------------------------------------------
 	
   one_minute = 3000;
@@ -182,6 +193,9 @@ static void _reset_heart_rate_calculator()
 	I8U  i;
 	I8U  epoch_num;
 	I16S pulse_width;
+#ifndef __YLF_SLEEP_HR__
+	SLEEP_CTX *slp = &cling.sleep;
+#endif //__YLF_SLEEP_HR__
 	
 	epoch_num = 0;
 	pulse_width = h->m_pre_pulse_width;
@@ -210,7 +224,15 @@ static void _reset_heart_rate_calculator()
 			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 35 -((30-epoch_num)& 0x05);
 		}
 	}else if(epoch_num>50){
-		for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 40 + ((epoch_num-50)& 0x05);
+#ifndef __YLF_SLEEP_HR__
+		if((slp->state == SLP_STAT_LIGHT) || (slp->state == SLP_STAT_SOUND) || (slp->state == SLP_STAT_REM)){
+			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = epoch_num;
+		}else{
+#endif //__YLF_SLEEP_HR__
+			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 40 + ((epoch_num-50)& 0x05);
+#ifndef __YLF_SLEEP_HR__
+		}
+#endif //__YLF_SLEEP_HR__
 	}else{
 		//Init epoch-array to last one when HR is during 60bpm~100bpm.
 			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = epoch_num;
@@ -762,7 +784,7 @@ void PPG_state_machine()
 #else
 				// Start PPG detection right away if the device is in motion
 				if (!cling.lps.b_low_power_mode) {
-#endif
+#endif //__YLF_PPG__
 					h->state = PPG_STAT_DUTY_ON;
 					// We need initialize skin touch detection routine
 					PPG_closing_to_skin_detect_init();
@@ -791,13 +813,17 @@ void PPG_state_machine()
 				//Restart measuring HR if skin detection fail after 4 minutes.
 				if(!cling.hr.b_closing_to_skin && !cling.hr.b_start_detect_skin_touch){
 					t_threshold = 240+5;//4 minutes
-				}
+					// Normal background heart detection requires low power stationary mode
+					if (t_sec_diff < t_threshold) {
+						break;
+					}
+				}else{
 #endif
 				// Normal background heart detection requires low power stationary mode
 				if (t_sec_diff < t_threshold) {
 					break;
 				}
-#ifdef __YLF_PPG_20170518__
+#ifndef __YLF_PPG_20170518__
 				// Make sure it is in a low power stationary mode
 				if (!cling.lps.b_low_power_mode) {
 					break;
@@ -807,7 +833,10 @@ void PPG_state_machine()
 				if (t_curr_ms < (cling.lps.ts + PPG_WEARING_DETECTION_LPS_INTERVAL)) {
 					break;
 				}
-#endif
+#endif //__YLF_PPG_20170518__
+#ifndef __YLF_PPG__
+			}
+#endif //#ifndef __YLF_PPG__
 				// If device stays in background LPS for more than 60 minutes, no heart rate detection detection needed
 				if (t_curr_ms > (cling.lps.ts + PPG_WEARING_DETECTION_BG_IDLE_INTERVAL)) {
 					break;
@@ -824,7 +853,7 @@ void PPG_state_machine()
 				PPG_closing_to_skin_detect_init();
 #ifndef __YLF_RUN_HR__
 				}
-#endif
+#endif //__YLF_RUN_HR__
 			}
 		}
 		break;

@@ -11,7 +11,7 @@
 
 
 #include "main.h"
-#include  "wrist_detect.h"
+#include "wrist_detect.h"
 #ifdef __WIRST_DETECT_ENABLE__
 static 	CLASS(wrist_detect) *p_wrist_obj = NULL;
 #endif
@@ -58,7 +58,8 @@ static void _navigation_wrist_shaking(I8U jitter_counts)
 }
 #ifndef __WIRST_DETECT_ENABLE__
 
-static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOLEAN b_motion)
+//static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOLEAN b_motion)
+static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOLEAN b_motion)
 {
 	I8U i;
 	I8U up_counts=0;
@@ -73,7 +74,25 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, B
 #endif
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
+#ifndef __YLF_WRIST_FLIP__
+		cling.activity.b_screen_off_wrist_flip = FALSE;
+#endif
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
+#ifndef __YLF_WRIST_FLIP__
+#ifdef _CLINGBAND_PACE_MODEL_
+	}else	if(G.x>4500||G.x<-10){
+		cling.activity.orientation[cling.activity.face_up_index] = FACE_SIDE;
+		currOrientation = FACE_SIDE;
+		cling.activity.b_screen_off_wrist_flip = TRUE;
+	//}
+#else
+	}else	if(G.y<-4500||G.y>10){
+		cling.activity.orientation[cling.activity.face_up_index] = FACE_SIDE;
+		currOrientation = FACE_SIDE;
+		cling.activity.b_screen_off_wrist_flip = TRUE;
+	//}
+#endif
+#endif //#ifndef __YLF_WRIST_FLIP__
 	} else {
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UNKNOWN;
 		currOrientation = FACE_UNKNOWN;
@@ -96,12 +115,12 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, B
 	
 	if (t_diff > 2000) {
 		N_SPRINTF("[SENSOR] -- return (no motion): %d ---", t_diff);
-		return FALSE;
+		return;
 	}
 	
 	if (currOrientation != FACE_UP) {
 		N_SPRINTF("[SENSOR] -- return (not face up orientation) ---");
-		return FALSE;
+		return;
 	}
 	
 	// Wrist flip detection
@@ -113,17 +132,21 @@ static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, B
 	//if ((up_counts>= 1) && (up_counts <= 2)) {
 	if ((up_counts>= 1)) {
 		N_SPRINTF("-------- [SENSOR] fliped !!!! -----\n");
-		
 		if (LINK_is_authorized()) {
 			if (OLED_panel_is_turn_off()) {
+#ifndef __YLF_WRIST_FLIP__
+				cling.activity.b_screen_on_wrist_flip = TRUE;
+				cling.activity.b_screen_off_wrist_flip = FALSE;
+#endif
 				// Turn on screen
 				UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 			}
 		}
-	}
-	return TRUE;
+	}	
+	//return TRUE;
 }
-#endif
+#endif //#ifndef __WIRST_DETECT_ENABLE__
+
 #define STATIONARY_ENG_TH  48 /* 0.023 g */
 
 #ifndef _USE_HW_MOTION_DETECTION_
@@ -230,7 +253,7 @@ static void _high_power_process_FIFO()
 	ACCELEROMETER_3D G;
 	I32U x, y, t_curr;
   I32S buffer_X[2]={0},buffer_y[2]={0},buffer_z[2]={0};
-	BOOLEAN b_motion = FALSE, b_wristFlip_flag = FALSE;
+	BOOLEAN b_motion = FALSE;//, b_wristFlip_flag = FALSE;
 #ifdef __WIRST_DETECT_ENABLE__
 	UNUSED_VARIABLE(b_motion);
 	UNUSED_VARIABLE(t_curr);
@@ -279,7 +302,6 @@ static void _high_power_process_FIFO()
 		if ((A.z < -1700) && ((x > 1700) || (y > 1700))) {
 			jitter_counts ++;
 		}
-		
 		// Set from 1.5g=2300 to 1g=1500 threshold for identifying a motion
 		if ((x > 1400) || (y > 1400)) {//if ((x > 2300) || (y > 2300)) {
 			b_motion = TRUE;
@@ -297,22 +319,32 @@ static void _high_power_process_FIFO()
 		}
 #endif
 #ifndef __WIRST_DETECT_ENABLE__
-		if((FALSE == b_wristFlip_flag)&&(cling.user_data.b_screen_wrist_flip)){
+		//if((FALSE == b_wristFlip_flag)&&(cling.user_data.b_screen_wrist_flip)){
+		if(cling.user_data.b_screen_wrist_flip){
 			if(j>=2){ j = 0; }
 			if(i>3){
 				G.x = (buffer_X[0]+buffer_X[1]+ A.x)/3;
 				G.y = (buffer_y[0]+buffer_y[1]+ A.y)/3;
 				G.z = (buffer_z[0]+buffer_z[1]+ A.z)/3;				
 				//if (cling.user_data.b_screen_wrist_flip) {
-				b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
+				//b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
+				_screen_activiation_wrist_flip(G, t_curr, b_motion);
 				//}
+#ifndef __YLF_WRIST_FLIP__
+				if(cling.activity.b_screen_off_wrist_flip){
+					if(OLED_panel_is_turn_on()&&cling.activity.b_screen_on_wrist_flip){
+						UI_switch_state(UI_STATE_DARK,0);
+						cling.activity.b_screen_on_wrist_flip = FALSE;
+					}
+				}
+#endif //#ifndef __YLF_WRIST_FLIP__
 			}
 			buffer_X[j] = A.x;
 			buffer_y[j] = A.y;
 			buffer_z[j] = A.z;
 			j++;
 		}
-#endif
+#endif //#ifndef __WIRST_DETECT_ENABLE__
 		 
 	}
 	

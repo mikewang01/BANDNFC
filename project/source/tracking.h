@@ -195,6 +195,10 @@ typedef struct tagTRACKING_CTX {
 	// Wrist Flip Detection
 	DEVICE_ORIENTATION_TYPE orientation[5];
 	I8U face_up_index;
+#ifndef __YLF_WRIST_FLIP__
+	BOOLEAN b_screen_on_wrist_flip;
+	BOOLEAN b_screen_off_wrist_flip;
+#endif
 	
 	// workout
 	I32U workout_time_stamp_start;

@@ -1677,10 +1677,9 @@ BOOLEAN UI_turn_on_display(UI_ANIMATION_STATE state)
 		if ((u->state != UI_STATE_CHARGING_GLANCE) && (u->state != UI_STATE_HOME) && (u->state != UI_STATE_CLING_START)) {
 		  UI_switch_state(state, 0);
 		}
-	} 			
+	}
 
 	N_SPRINTF("[UI] turn on display :%d, :%d", b_panel_on, cling.oled.state);
-	
 	return b_panel_on;
 }
 
@@ -1827,11 +1826,22 @@ void UI_state_machine()
 			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {		
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second				
 			} else {
+#ifndef __YLF_WRIST_FLIP__
+			if(cling.activity.b_screen_on_wrist_flip && (!cling.activity.b_screen_off_wrist_flip))
+				 t_threshold = 3;
+			else
 			  t_threshold = cling.user_data.screen_on_general; // in second
+#else
+				t_threshold = cling.user_data.screen_on_general; // in second
+#endif
 			}
 			
 			if ((!t_threshold) || (t_threshold == 0xff))
+#ifndef __YLF_WRIST_FLIP__
+				t_threshold = 3;
+#else
 				t_threshold = 4;
+#endif
 				
 			t_threshold *= 1000; // second -> milli-second
 	
