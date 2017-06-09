@@ -35,7 +35,7 @@ enum {
 #define NOMINAL_G g1ValueDef
 #define STATIONARY_ENG_DC 4194304 /* header.g1Value*header.g1Value */
 
-#define STATIONARY_ENG_TH  52428 /* STATIONARY_ENG_DC>>6 * 0.8, The energy threshold for detecting stationary period */
+#define PEDO_STATIONARY_ENG_TH  52428 /* STATIONARY_ENG_DC>>6 * 0.8, The energy threshold for detecting stationary period */
 
 #define NOMINAL_G_MAG (I32S)4194304 /*(g1ValueDef*g1ValueDef) */
 #define NOMINAL_G_MAG_SHIFT 22

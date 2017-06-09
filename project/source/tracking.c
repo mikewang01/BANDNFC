@@ -695,6 +695,9 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 	pminute->calories = diff->calories;
 	pminute->distance = diff->distance; // Note here, distance unit is per 2 meters (/2m),change to per 8 meters(/8m) if not Pace
 	pminute->sleep_state = diff->sleep_state;
+#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
+	pminute->sleep_state = SLP_STAT_AWAKE; // Do not use this sleep for anything else but activity filtering
+#endif
 	pminute->heart_rate = vital.heart_rate;
 	pminute->skin_touch_pads = vital.skin_touch_pads;
 	pminute->activity_count = diff->activity_count;

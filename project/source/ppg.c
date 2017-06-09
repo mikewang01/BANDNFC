@@ -359,6 +359,9 @@ static void _skin_touch_detect(I16S sample)
 {
 	HEARTRATE_CTX *h = &cling.hr;
 	I32S sample_val;
+#ifdef __YLF_ONDESK__
+	I32S ppg_sample_average_threshold;
+#endif
 	I32S t_curr, t_diff;
 
 	t_curr = CLK_get_system_time();	
@@ -378,8 +381,14 @@ static void _skin_touch_detect(I16S sample)
 
 		sample_val = (h->m_sample_sum) >> 5;
 		N_SPRINTF("[PPG] sample_val: %d",sample_val);
-#ifndef __YLF__
-		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)&&(sample_val<27000)) {
+#ifdef __YLF_ONDESK__
+		//if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)&&(sample_val<27000)) {
+		if((!cling.activity.b_stay_on_desk) && (cling.activity.t_stay_on_desk_diff_ms>120000)){// stay on desk for 2 minutes
+			ppg_sample_average_threshold = PPG_SAMPLE_AVERATE_THRESHOLD;
+		}else{// stay on desk,then make the threshold larger
+			ppg_sample_average_threshold = 3600;
+		}
+		if((sample_val>ppg_sample_average_threshold)&&(sample_val<27000)){
 #else
 		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)||(sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) ){//YLF2017.3.24
 #endif
@@ -728,7 +737,7 @@ void PPG_state_machine()
 								} else {
 									// If user is viewing HR page, but no steps for over 30 seconds, go 
 									// turn off sensors
-#ifdef __YLF__
+#ifndef __YLF__
 									if (t_step_diff_sec > 30) {
 										PPG_disable_sensor();					       // Turn off ppg sensor module
 										h->state = PPG_STAT_DUTY_OFF;
@@ -794,6 +803,14 @@ void PPG_state_machine()
 			{
 				h->state = PPG_STAT_DUTY_ON;
 				PPG_LOGGING("[PPG] PPG State on (force)");
+#ifdef __YLF_PPG__
+			}else if((!cling.lps.b_low_power_mode)&&(!((cling.sleep.state == SLP_STAT_LIGHT) ||	(cling.sleep.state == SLP_STAT_SOUND) ||(cling.sleep.state == SLP_STAT_REM)))){
+			   // Start PPG detection right away if the device is in motion but not sleep stage
+					h->state = PPG_STAT_DUTY_ON;
+					// We need initialize skin touch detection routine
+					PPG_closing_to_skin_detect_init();
+					PPG_LOGGING("[PPG] PPG State on (force)");
+#endif
 			} else {
 #ifndef __YLF_RUN_HR__
 				//Keep in sports(walking or running) above 3 minutes

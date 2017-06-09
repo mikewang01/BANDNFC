@@ -182,7 +182,7 @@ typedef struct tagTRACKING_CTX {
 	
 	// Device direction
 	//I32S z_mean;
-	
+
 	// Device tap timing
 	I32U tap_ts_ms;
 	
@@ -195,7 +195,7 @@ typedef struct tagTRACKING_CTX {
 	// Wrist Flip Detection
 	DEVICE_ORIENTATION_TYPE orientation[5];
 	I8U face_up_index;
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 	BOOLEAN b_screen_on_wrist_flip;
 	BOOLEAN b_screen_off_wrist_flip;
 #endif
@@ -210,6 +210,11 @@ typedef struct tagTRACKING_CTX {
 	BOOLEAN b_workout_active;
 #ifndef __YLF_RUN_HR__
 	I8U hr_sport_minutes;
+#endif
+#ifdef __YLF_ONDESK__
+	BOOLEAN b_stay_on_desk;
+	I32U t_stay_on_desk;
+	I32U t_stay_on_desk_diff_ms;
 #endif
 } TRACKING_CTX;
 

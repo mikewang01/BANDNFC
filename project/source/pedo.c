@@ -223,7 +223,7 @@ static BOOLEAN _det_stationary()
 		diff = diff_3;
 
 	// compare to a threshold to determine whether it is a stationary state
-	if (diff > STATIONARY_ENG_TH) {
+	if (diff > PEDO_STATIONARY_ENG_TH) {
 		if (s->acc.samples > STATIONARY_TIME_EARLY_TH) {
 			// Update stationary Gest
 			s->est.x = -(s->acc.x/s->acc.samples);
@@ -1675,6 +1675,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
 	
 	// Low pass filtering input 3-D accelerometer A, mainly used for step detection
    gPDM.A = _lpf(in, (LP_FILTER *)&lpf_coeff[MAIN_LPF_8HZ], &gPDM.main_lpf);
+	//gPDM.A = _lpf(in, (LP_FILTER *)&lpf_coeff[MAIN_LPF_3P6HZ], &gPDM.main_lpf);
 	
 	// Calculate magnitude of A, and low pass it
 	_calc_mag();

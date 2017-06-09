@@ -74,24 +74,19 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOL
 #endif
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 		cling.activity.b_screen_off_wrist_flip = FALSE;
 #endif
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 #ifdef _CLINGBAND_PACE_MODEL_
-	}else	if(G.x>4500||G.x<-10){
-		cling.activity.orientation[cling.activity.face_up_index] = FACE_SIDE;
-		currOrientation = FACE_SIDE;
-		cling.activity.b_screen_off_wrist_flip = TRUE;
-	//}
+	}else	if((G.x<0)&&(G.z>-1500)){//){//if(G.x<-10){//if(G.x>4500||G.x<-10){
 #else
-	}else	if(G.y<-4500||G.y>10){
+	}else	if((G.y>10)&&(G.z>-1500)){//if(G.y>10){//if(G.y<-4500||G.y>10){
+#endif
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_SIDE;
 		currOrientation = FACE_SIDE;
 		cling.activity.b_screen_off_wrist_flip = TRUE;
-	//}
-#endif
 #endif //#ifndef __YLF_WRIST_FLIP__
 	} else {
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UNKNOWN;
@@ -134,7 +129,7 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOL
 		N_SPRINTF("-------- [SENSOR] fliped !!!! -----\n");
 		if (LINK_is_authorized()) {
 			if (OLED_panel_is_turn_off()) {
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 				cling.activity.b_screen_on_wrist_flip = TRUE;
 				cling.activity.b_screen_off_wrist_flip = FALSE;
 #endif
@@ -251,7 +246,7 @@ static void _high_power_process_FIFO()
 	ACC_AXIS xyz;
 	ACCELEROMETER_3D A;
 	ACCELEROMETER_3D G;
-	I32U x, y, t_curr;
+	I32U x, y, t_curr;// z,
   I32S buffer_X[2]={0},buffer_y[2]={0},buffer_z[2]={0};
 	BOOLEAN b_motion = FALSE;//, b_wristFlip_flag = FALSE;
 #ifdef __WIRST_DETECT_ENABLE__
@@ -298,6 +293,7 @@ static void _high_power_process_FIFO()
 		
 		x = BASE_abs(A.x);
 		y = BASE_abs(A.y);
+		//z  = BASE_abs(A.z);
 		
 		if ((A.z < -1700) && ((x > 1700) || (y > 1700))) {
 			jitter_counts ++;
@@ -306,7 +302,19 @@ static void _high_power_process_FIFO()
 		if ((x > 1400) || (y > 1400)) {//if ((x > 2300) || (y > 2300)) {
 			b_motion = TRUE;
 		}
-		
+#ifdef __YLF_ONDESK__
+#ifdef _CLINGBAND_PACE_MODEL_
+		if(z<50 && x<50 && BASE_abs(y-1400)<100){
+#else
+		if((z<50 && y<50 && BASE_abs(x-1400)<100) || (x<50&&y<50&&BASE_abs(z+1400)<100)){
+#endif
+			cling.activity.b_stay_on_desk = TRUE;
+			cling.activity.t_stay_on_desk_diff_ms = t_curr - cling.activity.t_stay_on_desk;
+		}else{
+			cling.activity.b_stay_on_desk = FALSE;
+			cling.activity.t_stay_on_desk = t_curr;
+		}
+#endif
 		// Pedometer core data processing	
 		TRACKING_algorithms_proc(A);
 		
@@ -330,7 +338,7 @@ static void _high_power_process_FIFO()
 				//b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
 				_screen_activiation_wrist_flip(G, t_curr, b_motion);
 				//}
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 				if(cling.activity.b_screen_off_wrist_flip){
 					if(OLED_panel_is_turn_on()&&cling.activity.b_screen_on_wrist_flip){
 						UI_switch_state(UI_STATE_DARK,0);

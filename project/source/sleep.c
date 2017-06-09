@@ -112,6 +112,9 @@ static void _update_stationary_mins()
 
 static BOOLEAN _sleep_monitor_allowed()
 {
+#ifdef	USING_SLEEP_FOR_ACTIVITY_FILTERING
+	return TRUE;
+#else
 	SLEEP_CTX *slp = &cling.sleep;
 	
 	if (BATT_charging_det_for_sleep())
@@ -121,6 +124,7 @@ static BOOLEAN _sleep_monitor_allowed()
 		return TRUE;
 	
 	return FALSE;
+#endif
 }
 
 static void _sleep_main_state()
@@ -332,6 +336,19 @@ void SLEEP_minute_proc()
 	}
 
 	slp->pre_state = slp->state;
+#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
+#ifdef __YLF_SLEEP__
+	if(cling.hr.b_closing_to_skin||(!BATT_is_charging())){
+		slp->m_successive_no_skin_touch_mins = 0;
+		slp->b_valid_worn_in_entering_sleep_state = TRUE;
+	}else{
+		slp->m_successive_no_skin_touch_mins++;
+	}
+#else
+		slp->m_successive_no_skin_touch_mins = 0;
+		slp->b_valid_worn_in_entering_sleep_state = TRUE;
+#endif //#ifndef __YLF_SLEEP__
+#else
 #ifdef _ENABLE_TOUCH_
 	// monitoring whether device has been correctly worn
 	if (TOUCH_is_skin_touched()) {
@@ -342,6 +359,7 @@ void SLEEP_minute_proc()
 	{
 		slp->m_successive_no_skin_touch_mins++;
 	}
+#endif //#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
 
 	// detect walking/running step status
 	if ( slp->b_entered_sleep_stage ) {         // only check when having really entered sleep state. 
@@ -353,7 +371,7 @@ void SLEEP_minute_proc()
 			slp->b_step_flag = FALSE;
 		}
 
-		step_status_tmp = slp->step_status & 0x1F;      // two waling/running minutes in 3 minutes
+		step_status_tmp = slp->step_status & 0x1F;      // two walking/running minutes in 3 minutes
 		step_cnt = 0;
 		for (i=0; i<5; i++) {
 			if ( step_status_tmp & ((0x01)<<i) ) {

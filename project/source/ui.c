@@ -1826,7 +1826,7 @@ void UI_state_machine()
 			if (u->frame_index == UI_DISPLAY_VITAL_HEART_RATE) {		
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second				
 			} else {
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 			if(cling.activity.b_screen_on_wrist_flip && (!cling.activity.b_screen_off_wrist_flip))
 				 t_threshold = 3;
 			else
@@ -1837,7 +1837,7 @@ void UI_state_machine()
 			}
 			
 			if ((!t_threshold) || (t_threshold == 0xff))
-#ifndef __YLF_WRIST_FLIP__
+#ifdef __YLF_WRIST_FLIP__
 				t_threshold = 3;
 #else
 				t_threshold = 4;

@@ -48,6 +48,8 @@
 #define SLP_MINS_LEN3                                                 8
 #define SLP_MINS_LEN4                                                16
 
+#define USING_SLEEP_FOR_ACTIVITY_FILTERING
+
 typedef enum {
 	SLP_STAT_IDLE,
 	SLP_STAT_AWAKE,

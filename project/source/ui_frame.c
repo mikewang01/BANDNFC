@@ -696,7 +696,7 @@ static I8U _render_middle_horizontal_hr_core()
 	
 	if (cling.hr.b_closing_to_skin || cling.hr.b_start_detect_skin_touch) {
 		if (cling.hr.heart_rate_ready) {
-#ifdef _ENABLE_PPG_				
+#ifdef _ENABLE_PPG_
 			//hr_result = PPG_minute_hr_calibrate();
 			hr_result = cling.hr.m_curr_dispaly_HR;
 			if(cling.hr.m_display_hr_cnt == 3){
