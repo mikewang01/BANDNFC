@@ -97,6 +97,46 @@ void TRACKING_exit_low_power_mode(BOOLEAN b_force)
 #endif
 }
 
+#ifdef __YLF_STRIDE__
+void GPS_distance_Init()
+{
+		cling.train_stat.b_first_running_times = TRUE;
+		cling.train_stat.b_first_walking_times = TRUE;
+		cling.train_stat.train_pre_distance = 0;
+		cling.train_stat.train_curr_distance = 0;
+		cling.train_stat.train_pre_walking = 0;
+		cling.train_stat.train_curr_walking = 0;
+		cling.train_stat.train_pre_running = 0;
+		cling.train_stat.train_curr_running = 0;
+}
+
+void update_stride_by_GPS_distance()
+{
+	I16U delta_distance;
+	I16U delta_walking;
+	I16U delta_running;
+	if(cling.train_stat.train_curr_distance){//until get a valid distance
+		delta_distance = cling.train_stat.train_curr_distance - cling.train_stat.train_pre_distance;
+		delta_walking = cling.train_stat.train_curr_walking - cling.train_stat.train_pre_walking;
+		delta_running = cling.train_stat.train_curr_running - cling.train_stat.train_pre_running;
+		if((delta_walking+delta_running) >= 10)//per 10 steps
+		{
+			cling.train_stat.train_pre_distance = cling.train_stat.train_curr_distance;
+			cling.train_stat.train_pre_walking = cling.train_stat.train_curr_walking;
+			cling.train_stat.train_pre_running = cling.train_stat.train_curr_running;
+			if((delta_walking+0.01)/(delta_walking+delta_running)>0.9)
+			{
+				cling.train_stat.stride_walking = delta_distance/delta_walking;
+				cling.train_stat.b_first_walking_times = FALSE;
+			}
+			if((delta_running+0.01)/(delta_walking+delta_running)>0.9){
+				cling.train_stat.stride_running = delta_distance/delta_running;
+				cling.train_stat.b_first_running_times = FALSE;
+			}
+		}//per 10 steps
+	}
+}
+#endif
 static I32U steps_time_stamp[8];
 
 static I8U _get_stride_length(BOOLEAN b_running)
@@ -130,7 +170,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 		steps_time_stamp[i-1] = steps_time_stamp[i];
 	}
 	steps_time_stamp[7] = CLK_get_system_time();
-	
+
 	// Calculate pace
 	if (b_running) {
 		// Running pace is calculated based on real-time steps
@@ -151,8 +191,16 @@ static I8U _get_stride_length(BOOLEAN b_running)
 		// Get reference rate
 		ref_rate = cling.user_data.profile.running_rate;
 		ref_rate /= 60;
-		
+#ifdef __YLF_STRIDE__
+		if(cling.train_stat.b_first_running_times){//the first time
+			stride = cling.user_data.profile.stride_running_in_cm;
+		}else{
+			//update_stride_by_GPS_distance();
+			stride = cling.train_stat.stride_running;
+		}
+#else
 		stride = cling.user_data.profile.stride_running_in_cm;
+#endif
 		if (cling.activity.b_workout_active) {
 			if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
 				stride = cling.user_data.profile.stride_treadmill_in_cm;
@@ -176,9 +224,16 @@ static I8U _get_stride_length(BOOLEAN b_running)
 			pace = 1.58;
 		TRACKING_SPRINTF("[TRACKING] walking  pace: %d", (I8U)(pace*10));
 		stride = 43.89*pace - 7.68;
+#ifdef __YLF_STRIDE__
+		if(cling.train_stat.b_first_walking_times){//the first time
+			ratio = cling.user_data.profile.stride_in_cm;
+		}else{
+			ratio = cling.train_stat.stride_walking;
+		}
+#else
 		// Get user defined stride length and perform a calibration
 		ratio = cling.user_data.profile.stride_in_cm;
-	
+#endif
 		ratio /= 75; // Standard 75 cm (30 inches) per step for walking
 		if (ratio > 2)
 			ratio = 2;
@@ -546,7 +601,6 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		}else{
 			diff->distance = (a->day.distance - a->day_stored.distance) >> 7;//5;//in 8 meters
 		}
-		//diff->distance = 200>>3;//for test APP
 		N_SPRINTF("[TRACKING] diff->distance = %d",diff->distance);
 #else
 		// in 2 meters, normalized by 32

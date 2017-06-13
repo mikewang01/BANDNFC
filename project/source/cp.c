@@ -789,6 +789,9 @@ static void _create_ack_pkt()
 static void _pending_process()
 {
     CP_PENDING_CTX *p = &cling.gcp.pending;
+#ifdef __YLF_STRIDE__
+	  I32U t_gps_update_ms;
+#endif
 
 	N_SPRINTF("[CP] pending process");
     N_SPRINTF("[CP] pending - register is: %d, %d, %d", p->msg[0], p->task_id, p->b_touched);
@@ -940,10 +943,26 @@ static void _pending_process()
 				case CP_MSG_TYPE_WORKOUT_CYCLING_DATA: {
 						cling.train_stat.distance = BASE_dword_decode(p->msg+1);
 						cling.train_stat.speed = BASE_dword_decode(p->msg+5);
+#ifndef __YLF_GPS__
+						if(cling.activity.b_workout_active){
+							if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
 #ifndef _CLINGBAND_PACE_MODEL_
 //#ifndef __YLF_CYCLING__
-					cling.train_stat.b_cycling_state = TRUE;
+									cling.train_stat.b_cycling_state = TRUE;
 #endif
+							}else if(cling.activity.workout_type == WORKOUT_RUN_OUTDOOR){
+#ifdef __YLF_STRIDE__
+								cling.train_stat.train_curr_distance = cling.train_stat.distance;
+								cling.train_stat.train_curr_walking = cling.activity.day.walking;
+								cling.train_stat.train_curr_running = cling.activity.day.running;
+								t_gps_update_ms = CLK_get_system_time()- cling.train_stat.time_start_in_ms;
+								if(t_gps_update_ms>1000){//update it per second.
+									update_stride_by_GPS_distance();
+								}
+#endif
+							}
+						}
+#endif //#ifndef __YLF_GPS__
 					CP_SPRINTF("[CP] cycling: %d, %d", cling.train_stat.distance, cling.train_stat.speed);
 						break;
 				}

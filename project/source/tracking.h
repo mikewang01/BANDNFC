@@ -24,6 +24,11 @@
 #define MINUTE_STREAMING_FILE_SIZE 4096
 #define MINUTE_STREAMING_FILE_ENTRIES 256
 
+//open/close the function of wristFlip inversely to dark screen
+//#define __YLF_WRIST_FLIP__
+
+#define __YLF_STRIDE__
+
 // Activity and Vital  type
 enum {
 	TRACKING_UNKNOWN,
@@ -134,6 +139,18 @@ typedef struct tagTRAINING_TRACK_CTX {
 	I32U cycling_pre_distance;
 	I32U cycling_pre_delta_distance;
 #endif
+#ifdef __YLF_STRIDE__
+	I32U train_pre_distance;
+	I32U train_curr_distance;
+	I16U train_pre_walking;
+	I16U train_curr_walking;
+	I16U train_pre_running;
+	I16U train_curr_running;
+	I8U stride_running;//cm
+	I8U stride_walking;//cm
+	BOOLEAN b_first_walking_times;
+	BOOLEAN b_first_running_times;
+#endif
 } TRAINING_TRACK_CTX;
 
 typedef struct tagDAY_STREAMING_CTX {
@@ -233,4 +250,8 @@ void TRACKING_get_daily_streaming_stat(DAY_STREAMING_CTX *day_streaming);
 void TRACKING_enter_low_power_mode(void);
 void TRACKING_get_cycling_stat(void);
 
+#ifdef __YLF_STRIDE__
+void GPS_distance_Init(void);
+void update_stride_by_GPS_distance(void);
+#endif
 #endif  // __TRACKING_HEADER__

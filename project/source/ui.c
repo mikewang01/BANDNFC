@@ -1040,6 +1040,10 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	  cling.train_stat.time_start_in_ms = t_curr;
 	  cling.train_stat.session_id = cling.time.time_since_1970;
 	  cling.train_stat.calories = 0;
+#ifdef __YLF_STRIDE__
+		GPS_distance_Init();
+#endif
+
 #ifndef _CLINGBAND_PACE_MODEL_
 //#ifndef __YLF_CYCLING__
 		cling.train_stat.cycling_curr_distance = 0;

@@ -1672,8 +1672,10 @@ static void _middle_render_horizontal_cycling_outdoor_start()
 	  _middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)cycling_run_name[language_type], string);
 
 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
-	
+#ifndef _CLINGBAND_PACE_MODEL_
+//#ifndef __YLF_CYCLING__
 	cling.train_stat.b_cycling_state = FALSE;
+#endif
 }
 
 static void _middle_render_horizontal_cycling_outdoor_stop()
