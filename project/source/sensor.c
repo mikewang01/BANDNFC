@@ -70,7 +70,7 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOL
 #ifdef _CLINGBAND_PACE_MODEL_
 	if( (G.x>950&&G.x<4500) && (G.z<-800)&&(G.y<680&&G.y>-700)){
 #else
-	if( (G.y>-4500&&G.y <-850) && (G.z<-800)&&(G.x<680&&G.x>-700) ){
+	if( (G.y>-4500&&G.y <-900) && (G.z<-800)&&(G.x<680&&G.x>-700) ){
 #endif
 		cling.activity.orientation[cling.activity.face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
