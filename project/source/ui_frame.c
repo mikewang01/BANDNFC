@@ -1481,7 +1481,7 @@ static void _middle_render_horizontal_training_time()
 	_get_training_time_core();
 
 	if (running_info->hour) {
-	  len = sprintf((char *)string, "%d:%02d%02d", running_info->hour, running_info->min, running_info->sec);		
+	  len = sprintf((char *)string, "%d:%02d:%02d", running_info->hour, running_info->min, running_info->sec);		
 	} else {
 	  len = sprintf((char *)string, "%d:%02d", running_info->min, running_info->sec);				
 	}
