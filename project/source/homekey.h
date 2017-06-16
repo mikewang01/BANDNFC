@@ -21,6 +21,10 @@ typedef struct tagHOMEKEY_CLICK_STAT {
   I8U     half_click;   	  // on hook for a short time; but not long enough to call it on hook yet
 	I8U     gesture;
 	BOOLEAN b_valid_gesture;
+#ifndef __YLF_SOS__
+	BOOLEAN b_defective;
+	I16U defective_time_out;
+#endif
 } HOMEKEY_CLICK_STAT;
 
 // BUTTON STATUS

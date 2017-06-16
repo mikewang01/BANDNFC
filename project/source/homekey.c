@@ -43,7 +43,11 @@ void HOMEKEY_check_on_hook_change()
 	t_curr = CLK_get_system_time();
 	
 	if (b_pin) {
-		stat = OFF_CLICK;		
+		stat = OFF_CLICK;
+#ifndef __YLF_SOS__
+		k->b_defective = FALSE;
+		k->defective_time_out = 0;
+#endif
 	} 
   
 	if (stat != k->temp_st) {
@@ -95,6 +99,10 @@ void HOMEKEY_click_check()
 #else
 	I32U t_sos = CLICK_HOLD_TIME_SOS;
 #endif
+
+#ifndef __YLF_SOS__
+	if (k->b_defective) return;
+#endif
 	
 	// only update hook state machine when there is possible state switch 
 	if (k->stable_st == k->temp_st) {
@@ -130,23 +138,29 @@ void HOMEKEY_click_check()
 				}
 			}
 #else
+#ifndef __YLF_SOS__
+			if (k->defective_time_out >= 15000) {
+				k->b_defective = TRUE;
+				return;
+			}
+#endif
 			// Go ahead to check if SOS is pressed			
 			if (offset >= t_sos) {
-
 			  // Ignore SOS request if device is not authorized.
 			  if (!LINK_is_authorized())
 				  return;
-			
+
 				k->ticks[ON_CLICK] += 2000;
-		
+#ifndef __YLF_SOS__
+				k->defective_time_out += 2000;
+#endif
 				cling.touch.b_valid_gesture = TRUE;
 				cling.touch.gesture = TOUCH_BUTTON_PRESS_SOS;
 				N_SPRINTF("[HOMEKEY] +++ button (SOS), %d, %d, %d", t_curr, offset, t_sos);
-				
 				// Send SOS message to the App
 				CP_create_sos_msg();
 			}
-#endif			
+#endif
 		  return;
 		}
 	} 
@@ -167,7 +181,7 @@ void HOMEKEY_click_check()
 			// clear possible hook flash flag
 			k->half_click = 0;
 
-#ifdef _CLINGBAND_PACE_MODEL_						
+#ifdef _CLINGBAND_PACE_MODEL_
 			k->b_valid_gesture = TRUE;
 			k->gesture = HOMEKEY_BUTTON_HOLD;
 #else			
