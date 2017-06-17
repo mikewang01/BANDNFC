@@ -23,7 +23,7 @@ typedef struct tagHOMEKEY_CLICK_STAT {
 	BOOLEAN b_valid_gesture;
 #ifndef __YLF_SOS__
 	BOOLEAN b_defective;
-	I16U defective_time_out;
+	I8U defective_time_out;//I16U defective_time_out;
 #endif
 } HOMEKEY_CLICK_STAT;
 

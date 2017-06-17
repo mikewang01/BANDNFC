@@ -139,12 +139,12 @@ void HOMEKEY_click_check()
 			}
 #else
 #ifndef __YLF_SOS__
-			if (k->defective_time_out >= 15000) {
+			if (k->defective_time_out >= 7) {//if (k->defective_time_out >= 15000) {
 				k->b_defective = TRUE;
 				return;
 			}
 #endif
-			// Go ahead to check if SOS is pressed			
+			// Go ahead to check if SOS is pressed
 			if (offset >= t_sos) {
 			  // Ignore SOS request if device is not authorized.
 			  if (!LINK_is_authorized())
@@ -152,7 +152,7 @@ void HOMEKEY_click_check()
 
 				k->ticks[ON_CLICK] += 2000;
 #ifndef __YLF_SOS__
-				k->defective_time_out += 2000;
+				k->defective_time_out ++;//+= 2000;
 #endif
 				cling.touch.b_valid_gesture = TRUE;
 				cling.touch.gesture = TOUCH_BUTTON_PRESS_SOS;
