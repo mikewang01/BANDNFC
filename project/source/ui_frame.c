@@ -29,7 +29,9 @@ const	char *const heart_rate_name[3] = {"HR", "心率 ", "心率 "};
 const	char *const cadence_rate_name[3] = {"RATE", "步频", "步頻"};	
 const	char *const cadence_spm_name[3] = {"SPM", "步分", "步分"};		
 	
-const	char *const stride_name[3] = {"STRIDE", "步幅", "步幅"};
+const	char *const horizontal_stride_name[3] = {"STRIDE", "步幅", "步幅"};
+const	char *const vertical_stride_name[3] = {"STRD", "步幅", "步幅"};
+
 const char *const stride_unit_name[3][2] = {{"CM", "IN"},{"厘米", "英寸"},{"厘米", "英寸"}};		
 
 const	char *const calories_name[3] = {"BURN", "热量", "熱量"};		
@@ -1270,7 +1272,7 @@ static void _middle_render_horizontal_running_stride()
 	
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 	
-	_right_render_horizontal_string_core((I8U *)stride_name[language_type], (I8U *)stride_unit_name[language_type][metric]);	
+	_right_render_horizontal_string_core((I8U *)horizontal_stride_name[language_type], (I8U *)stride_unit_name[language_type][metric]);	
 }
 
 static void _middle_render_horizontal_running_hr()
@@ -2174,6 +2176,9 @@ static void _render_vertical_fonts_lib_character_core(I8U *string, I8U height, I
 	
 	line_len = FONT_load_characters(buf_fonts, (char *)string, height, 128, FALSE);
 	
+	if (line_len > 32)
+		line_len = 32;
+	
 	// Shift to the center
 	_vertical_centerize(p0, p1, p2, line_len);
 	
@@ -2305,6 +2310,10 @@ static void _render_vertical_local_character_core(I8U *string, I8U offset, I8U m
 			line_len += margin;
 		}
 	}
+	
+	if (line_len > 32)
+		line_len = 32;
+	
 	// Shift the line to the center
 	_vertical_centerize(buf1, buf2, buf3, line_len);
 	
@@ -3215,7 +3224,7 @@ static void _middle_render_vertical_running_stride()
 	I8U language_type = cling.ui.language_type;			
 	I8U metric = cling.user_data.profile.metric_distance;
 	
-	_render_vertical_fonts_lib_character_core((I8U *)stride_name[language_type], 16, 28);
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_stride_name[language_type], 16, 28);
 	
 	if (cling.run_stat.steps)
 		stat = (cling.run_stat.distance*100)/cling.run_stat.steps;
