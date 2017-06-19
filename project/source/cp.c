@@ -941,17 +941,20 @@ static void _pending_process()
             break;
         }
 				case CP_MSG_TYPE_WORKOUT_CYCLING_DATA: {
-						cling.train_stat.distance = BASE_dword_decode(p->msg+1);
+//						cling.train_stat.distance = BASE_dword_decode(p->msg+1);
 						cling.train_stat.speed = BASE_dword_decode(p->msg+5);
 #ifndef __YLF_GPS__
 						if(cling.activity.b_workout_active){
 							if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
 #ifndef _CLINGBAND_PACE_MODEL_
 //#ifndef __YLF_CYCLING__
-									cling.train_stat.b_cycling_state = TRUE;
+								cling.train_stat.b_cycling_state = TRUE;
+								cling.train_stat.distance = BASE_dword_decode(p->msg+1);
 #endif
 							}else if(cling.activity.workout_type == WORKOUT_RUN_OUTDOOR){
 #ifdef __YLF_STRIDE__
+								if(BASE_dword_decode(p->msg+1)>0)
+									cling.train_stat.distance = BASE_dword_decode(p->msg+1);
 								cling.train_stat.train_curr_distance = cling.train_stat.distance;
 								cling.train_stat.train_curr_walking = cling.activity.day.walking;
 								cling.train_stat.train_curr_running = cling.activity.day.running;
