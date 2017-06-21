@@ -63,7 +63,7 @@ void OLED_power_off()
 #endif
 }
 
-void OLED_full_scree_show()
+void OLED_full_screen_show()
 {
 #ifndef _CLING_PC_SIMULATION_
 	I8U i;
@@ -157,7 +157,7 @@ void OLED_hw_init()
 
   FONT_load_characters(cling.ui.p_oled_up + 128, (char *)"Cling Fitness", 16, 128, TRUE);	
 	
-	OLED_full_scree_show();
+	OLED_full_screen_show();
 
 	OLED_set_display(1);	
 	

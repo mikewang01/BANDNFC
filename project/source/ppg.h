@@ -193,7 +193,7 @@ void ppg_PS_ALS_Auto             (void);
 #ifdef _CLINGBAND_PACE_MODEL_
 #define PPG_SAMPLE_AVERATE_THRESHOLD                             3000
 #else
-#define PPG_SAMPLE_AVERATE_THRESHOLD                             3600//4000//5000//2000
+#define PPG_SAMPLE_AVERATE_THRESHOLD                             3200//3600//4000//5000//2000
 #endif
 #define PPG_HR_SMOOTH_WINDOW_WIDTH                               6
 #define PPG_HR_BUFFER_NUM                                        7//11//7
@@ -264,7 +264,7 @@ typedef struct tagHEARTRATE_CTX{
 	I8U measType;//0-static HR,1-training HR,2-fixed time HR measurement
 #endif
 #ifndef __YLF__
-	I8U   m_epoch_num[PPG_HR_SMOOTH_WINDOW_WIDTH];
+	I8U m_epoch_num[PPG_HR_SMOOTH_WINDOW_WIDTH];
 	I8U m_epoch_cnt;
 	I8U m_HR_buffer[PPG_HR_BUFFER_NUM];
 	I8U m_HR_cnt;
@@ -292,6 +292,7 @@ void PPG_closing_to_skin_detect_init(void);
 
 #ifndef __YLF_PPG__
 I8U PPG_Calculate_HR_mean5_moving(I8U);
+void update_and_push_hr(void);
 #endif
 
 #endif // __PPG_H__

@@ -121,18 +121,23 @@ static void _calc_heart_rate()
 	if((slp->state == SLP_STAT_LIGHT) ||	(slp->state == SLP_STAT_SOUND) ||	(slp->state == SLP_STAT_REM)){
 		h->m_epoch_num[0] = epoch_num;
 	}else{
-#endif //__YLF_SLEEP_HR__
-		if(h->m_epoch_cnt<3){
-			if((epoch_num>33) &&(epoch_num<47)){
-					h->m_epoch_num[0] = epoch_num;
-			}
-			h->m_epoch_cnt ++;
+		if((cling.time.local.hour>=22) || (cling.time.local.hour<6))//during night
+		{
+			h->m_epoch_num[0] = epoch_num;
 		}else{
-			if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
-				h->m_epoch_num[0] = epoch_num;
+#endif //__YLF_SLEEP_HR__
+			if(h->m_epoch_cnt<3){
+				if((epoch_num>33) &&(epoch_num<47)){
+						h->m_epoch_num[0] = epoch_num;
+				}
+				h->m_epoch_cnt ++;
+			}else{
+				if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
+					h->m_epoch_num[0] = epoch_num;
+				}
 			}
-		}
 #ifndef __YLF_SLEEP_HR__
+		}
 	}
 #endif //__YLF_SLEEP_HR__
 #else
@@ -390,7 +395,8 @@ static void _skin_touch_detect(I16S sample)
 		}
 		if((sample_val>ppg_sample_average_threshold)&&(sample_val<27000)){
 #else
-		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)||(sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) ){//YLF2017.3.24
+		//if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)||(sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) ){//YLF2017.3.24
+		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)&&(sample_val<27000) ){
 #endif
 			h->m_closing_to_skin_detection_timer = CLK_get_system_time();
 		}
@@ -829,7 +835,7 @@ void PPG_state_machine()
 #ifndef __YLF_PPG__
 				//Restart measuring HR if skin detection fail after 4 minutes.
 				if(!cling.hr.b_closing_to_skin && !cling.hr.b_start_detect_skin_touch){
-					t_threshold = 240+5;//4 minutes
+					t_threshold = 245;//240+5;//4 minutes
 					// Normal background heart detection requires low power stationary mode
 					if (t_sec_diff < t_threshold) {
 						break;
@@ -949,4 +955,20 @@ I8U PPG_minute_hr_calibrate()
 	hr_rendering = PPG_Calculate_HR_mean5_moving(hr_rendering);
 #endif
 	return hr_rendering;
+}
+
+
+void update_and_push_hr()
+{
+#ifdef _ENABLE_PPG_
+		if(cling.hr.m_display_hr_cnt >= 3){
+			cling.hr.m_curr_dispaly_HR = PPG_minute_hr_calibrate();
+			cling.hr.m_display_hr_cnt = 0;
+#ifdef __YLF_BLE_HR__
+			heart_rate_meas_send(cling.hr.m_curr_dispaly_HR);
+#endif
+			}else{
+				cling.hr.m_display_hr_cnt ++;
+			}
+#endif
 }

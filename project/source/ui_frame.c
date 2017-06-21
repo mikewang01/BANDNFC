@@ -96,7 +96,7 @@ static void _RENDER_NONE() { }
 
 void UI_render_screen()
 {	
-	OLED_full_scree_show();
+	OLED_full_screen_show();
 
 	OLED_set_display(1);
 }
@@ -700,16 +700,8 @@ static I8U _render_middle_horizontal_hr_core()
 		if (cling.hr.heart_rate_ready) {
 #ifdef _ENABLE_PPG_
 			//hr_result = PPG_minute_hr_calibrate();
+			update_and_push_hr();
 			hr_result = cling.hr.m_curr_dispaly_HR;
-			if(cling.hr.m_display_hr_cnt == 3){
-				cling.hr.m_curr_dispaly_HR = PPG_minute_hr_calibrate();
-				cling.hr.m_display_hr_cnt = 0;
-			}else{
-				cling.hr.m_display_hr_cnt ++;
-			}
-#ifdef __YLF_BLE_HR__
-			heart_rate_meas_send(hr_result);
-#endif
 #endif
 			len = sprintf((char *)string, "%d", hr_result);			
 		} else {
@@ -1144,7 +1136,8 @@ static void _middle_render_horizontal_training_distance()
 {
 	_horizontal_core_run_distance(cling.train_stat.distance);
 	
-  _middle_render_horizontal_distance_core();		
+  _middle_render_horizontal_distance_core();
+	update_and_push_hr();
 }
 
 #ifdef _CLINGBAND_PACE_MODEL_
@@ -1491,6 +1484,7 @@ static void _middle_render_horizontal_training_time()
 	offset = _render_middle_horizontal_section_core(string, b_24_size, margin, offset, len);	
 	
 	_middle_horizontal_alignment_center(offset);
+	update_and_push_hr();
 }
 
 static void _middle_render_horizontal_training_pace()
@@ -1516,7 +1510,8 @@ static void _middle_render_horizontal_training_pace()
 
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, len);
 	
-	_right_render_horizontal_string_core((I8U *)pace_name[language_type], NULL);	
+	_right_render_horizontal_string_core((I8U *)pace_name[language_type], NULL);
+	update_and_push_hr();
 }
 
 static void _middle_render_horizontal_training_hr()
@@ -1636,6 +1631,7 @@ static void _middle_render_horizontal_training_run_stop()
 #endif	
 	
 	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)string, 16, 128, FALSE);
+	update_and_push_hr();
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -2682,16 +2678,8 @@ static I8U _render_middle_vertical_hr_core(I8U offset)
 		if (cling.hr.heart_rate_ready) {
 #ifdef _ENABLE_PPG_
 			//hr_result = PPG_minute_hr_calibrate();
+			update_and_push_hr();
 			hr_result = cling.hr.m_curr_dispaly_HR;
-			if(cling.hr.m_display_hr_cnt == 3){
-				cling.hr.m_curr_dispaly_HR = PPG_minute_hr_calibrate();
-				cling.hr.m_display_hr_cnt = 0;
-			}else{
-				cling.hr.m_display_hr_cnt ++;
-			}
-#ifdef __YLF_BLE_HR__
-			heart_rate_meas_send(hr_result);
-#endif
 #endif
 			if (hr_result > 99) {
 				b_24_size = 16; 
@@ -2958,7 +2946,8 @@ static void _middle_render_vertical_training_distance()
 	I8U language_type = cling.ui.language_type;		
 	I8U metric = cling.user_data.profile.metric_distance;	
 	
-	_vertical_core_run_distance(cling.train_stat.distance, TRUE, (I8U *)running_distance_name[language_type], (I8U *)distance_unit_name[language_type][metric]);			
+	_vertical_core_run_distance(cling.train_stat.distance, TRUE, (I8U *)running_distance_name[language_type], (I8U *)distance_unit_name[language_type][metric]);
+	update_and_push_hr();
 }
 
 static void _middle_render_vertical_running_time()
@@ -3028,6 +3017,7 @@ static void _middle_render_vertical_training_time()
 		sprintf((char *)string, ":%02d", running_info->sec);
     _render_vertical_local_character_core(string, 104, margin, b_24_size, TRUE);				
 	}
+	update_and_push_hr();
 }
 
 static void _middle_render_vertical_running_pace()
@@ -3288,7 +3278,8 @@ static void _middle_render_vertical_training_run_stop()
 {
 	I8U language_type = cling.ui.language_type;		
 
-	_middle_render_vertical_start_or_stop_run_core((I8U *)stop_run_name[language_type], (I8U *)training_run_name[language_type]);	
+	_middle_render_vertical_start_or_stop_run_core((I8U *)stop_run_name[language_type], (I8U *)training_run_name[language_type]);
+	update_and_push_hr();
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -3412,7 +3403,7 @@ static void _middle_render_vertical_training_ready()
 	
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
-		cling.ui.frame_next_idx = cling.ui.frame_index;	
+		cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
 }
 
@@ -3425,7 +3416,7 @@ static void _middle_render_vertical_cycling_outdoor_ready()
 	
 	if (b_ready_finished) {	
 		cling.ui.frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;
-		cling.ui.frame_next_idx = cling.ui.frame_index;	
+		cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
 }
 #endif
@@ -3439,7 +3430,7 @@ static void _middle_render_vertical_workout_ready()
 	
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_WORKOUT_RT_TIME;
-		cling.ui.frame_next_idx = cling.ui.frame_index;	
+		cling.ui.frame_next_idx = cling.ui.frame_index;
 	}
 }
 #endif
@@ -3469,6 +3460,7 @@ static void _middle_render_vertical_training_pace()
 	if (cling.ui.icon_sec_blinking) {	
 		_render_vertical_fonts_lib_character_core((I8U *)pace_name[language_type], 16, 28);
 	}
+	update_and_push_hr();
 }
 
 static void _middle_render_vertical_training_hr()

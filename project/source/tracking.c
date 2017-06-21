@@ -115,25 +115,26 @@ void update_stride_by_GPS_distance()
 	I16U delta_distance;
 	I16U delta_walking;
 	I16U delta_running;
+	I16U delta_steps;
 	if(cling.train_stat.train_curr_distance){//until get a valid distance
 		delta_distance = 100*(cling.train_stat.train_curr_distance - cling.train_stat.train_pre_distance);
 		delta_walking = cling.train_stat.train_curr_walking - cling.train_stat.train_pre_walking;
 		delta_running = cling.train_stat.train_curr_running - cling.train_stat.train_pre_running;
-		if((delta_walking+delta_running) >= 10)//per 10 steps
+		delta_steps = delta_walking+delta_running;
+		if(delta_steps >= 40)//per 40 steps
 		{
 			cling.train_stat.train_pre_distance = cling.train_stat.train_curr_distance;
 			cling.train_stat.train_pre_walking = cling.train_stat.train_curr_walking;
 			cling.train_stat.train_pre_running = cling.train_stat.train_curr_running;
-			if((delta_walking+0.0001)/(delta_walking+delta_running)>0.9)
+			if(delta_walking>=delta_running*9)
 			{
-				cling.train_stat.stride_walking = delta_distance/delta_walking;
+				cling.train_stat.stride_walking = delta_distance/delta_steps;
 				cling.train_stat.b_first_walking_times = FALSE;
-			}
-			if((delta_running+0.0001)/(delta_walking+delta_running)>0.9){
-				cling.train_stat.stride_running = delta_distance/delta_running;
+			}else if(delta_running>=delta_walking*9){
+				cling.train_stat.stride_running = delta_distance/delta_steps;
 				cling.train_stat.b_first_running_times = FALSE;
 			}
-		}//per 10 steps
+		}//per 40 steps
 	}
 }
 #endif
@@ -199,7 +200,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 				}else{
 					//update_stride_by_GPS_distance();
 					stride = cling.train_stat.stride_running;
-					if(stride<40)//less than 40cm
+					if(stride<40||stride>220)//less than 40cm or more than 220cm
 						stride = cling.user_data.profile.stride_running_in_cm;
 				}
 			}else if (cling.activity.workout_type == WORKOUT_TREADMILL_INDOOR) {
@@ -241,7 +242,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 				ratio = cling.user_data.profile.stride_in_cm;
 			}else{
 				ratio = cling.train_stat.stride_walking;
-				if(ratio<30)//less than 30cm
+				if(ratio<30 ||ratio>200)//less than 30cm or more than 200cm
 					ratio = cling.user_data.profile.stride_in_cm;
 			}
 		}else{
@@ -705,10 +706,12 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 
 static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 {
+#ifndef __YLF_PPG__
+	I8U delta_hr;
 	I32U t_curr_sec;
 	
 	t_curr_sec = cling.time.system_clock_in_sec - cling.activity.step_detect_t_sec;
-
+#endif
 	N_SPRINTF("[TRACKING] touch pads: %d, time: %d", vital->skin_touch_pads, touch_time);
 	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
@@ -726,16 +729,20 @@ static void	_get_vital_minute(MINUTE_VITAL_CTX *vital)
 	} 
 	
 	vital->heart_rate = cling.hr.current_rate;
-	
+#ifndef __YLF_PPG__
 	if (t_curr_sec > 300) {
 		// If no steps for over 5 minutes (300 seconds), filter out the heart rate that is greater than 95
 		if (vital->heart_rate >= 95) {
-			vital->heart_rate = 95 - (cling.hr.current_rate >> 3);
-
+			if((cling.time.local.hour>=22) || (cling.time.local.hour<6)){//during night
+				vital->heart_rate = 95 - (cling.hr.current_rate >> 3);
+			}else{
+				delta_hr = cling.hr.current_rate-95;
+				vital->heart_rate = 95 + (delta_hr>>2);//95 - (cling.hr.current_rate >> 3);
+			}
 			N_SPRINTF("[TRACKING] heart rate: %d, original: %d", vital->heart_rate, cling.hr.current_rate);
-
 		}
 	}
+#endif //__YLF_PPG__
 }
 
 void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_TRACKING_CTX *diff)
