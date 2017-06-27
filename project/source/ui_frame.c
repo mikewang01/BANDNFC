@@ -2654,11 +2654,11 @@ static void _middle_render_vertical_pm2p5()
 	I8U string[32];	
   I8U	margin = 1;
 	I8U b_24_size = 24;
-	I8U language_type = cling.ui.language_type;			
 	WEATHER_CTX *w = &cling.weather;
-	
+#if 0	
+	I8U language_type = cling.ui.language_type;			
   _middle_render_pm2p5_core();
-
+#endif
 	if (w->pm2p5_value > 99)
 		b_24_size = 16;
 	else
@@ -2670,9 +2670,11 @@ static void _middle_render_vertical_pm2p5()
 		_render_vertical_local_character_core(string, 42, margin, b_24_size, FALSE);
 	else
 		_render_vertical_local_character_core(string, 46, margin, b_24_size, FALSE);
-
+#if 0
 	language_type ++;
 	_render_vertical_fonts_lib_character_core((I8U *)air_level_name[language_type][w->pm2p5_level_idx], 16, 84);
+#endif
+	
 }
 #endif
 
