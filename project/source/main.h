@@ -62,8 +62,8 @@
 #include "nrf_drv_twi.h"
 #include "nrf_adc.h"
 #include "touch.h"
-#include "butterworth.h"
 #include "ppg.h"
+#include "butterworth.h"
 #include "weather.h"
 #include "ota.h"
 #include "sleep.h"
@@ -235,6 +235,10 @@ typedef struct tagCLING_MAIN_CTX {
 
   // HEART RATE state machine
   HEARTRATE_CTX hr;
+	
+	// Butterworth context
+	BUTT_CTX butterworth_filter_context;
+
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
 	// Thermistor state context

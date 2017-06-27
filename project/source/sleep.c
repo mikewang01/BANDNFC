@@ -360,7 +360,7 @@ void SLEEP_minute_proc()
 		slp->m_successive_no_skin_touch_mins++;
 	}
 #endif //#ifdef USING_SLEEP_FOR_ACTIVITY_FILTERING
-
+	
 	// detect walking/running step status
 	if ( slp->b_entered_sleep_stage ) {         // only check when having really entered sleep state. 
 		slp->step_status <<= 1;      // shift/update step status in this epoch.

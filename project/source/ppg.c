@@ -132,7 +132,8 @@ static void _calc_heart_rate()
 				}
 				h->m_epoch_cnt ++;
 			}else{
-				if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
+				//if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
+				if(((epoch_num>=33) &&(epoch_num<=47)) || ((h->m_sportstate==1) && ((epoch_num>20) && (epoch_num<33))) || ((h->m_sportstate==2) && ((epoch_num>=15) && (epoch_num<=20)))){
 					h->m_epoch_num[0] = epoch_num;
 				}
 			}
@@ -223,7 +224,7 @@ static void _reset_heart_rate_calculator()
 #ifndef __YLF__
 	h->m_epoch_cnt = 0;
 	if((epoch_num<30)){
-		if(h->b_runstate){
+		if(h->m_sportstate == 2){//if(h->b_runstate){
 			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 30 -((30-epoch_num)& 0x05);
 		}else{
 			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 35 -((30-epoch_num)& 0x05);
@@ -364,9 +365,6 @@ static void _skin_touch_detect(I16S sample)
 {
 	HEARTRATE_CTX *h = &cling.hr;
 	I32S sample_val;
-#ifdef __YLF_ONDESK__
-	I32S ppg_sample_average_threshold;
-#endif
 	I32S t_curr, t_diff;
 
 	t_curr = CLK_get_system_time();	
@@ -386,18 +384,8 @@ static void _skin_touch_detect(I16S sample)
 
 		sample_val = (h->m_sample_sum) >> 5;
 		N_SPRINTF("[PPG] sample_val: %d",sample_val);
-#ifdef __YLF_ONDESK__
-		//if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)&&(sample_val<27000)) {
-		if((!cling.activity.b_stay_on_desk) && (cling.activity.t_stay_on_desk_diff_ms>120000)){// stay on desk for 2 minutes
-			ppg_sample_average_threshold = PPG_SAMPLE_AVERATE_THRESHOLD;
-		}else{// stay on desk,then make the threshold larger
-			ppg_sample_average_threshold = 3600;
-		}
-		if((sample_val>ppg_sample_average_threshold)&&(sample_val<27000)){
-#else
 		//if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)||(sample_val<(-PPG_SAMPLE_AVERATE_THRESHOLD)) ){//YLF2017.3.24
 		if ((sample_val>PPG_SAMPLE_AVERATE_THRESHOLD)&&(sample_val<27000) ){
-#endif
 			h->m_closing_to_skin_detection_timer = CLK_get_system_time();
 		}
 	}
@@ -442,7 +430,6 @@ static void _ppg_sample_proc()
 	sample = _get_light_strength_register();
 
 	_skin_touch_detect(sample);
-
 	high_pass_filter_val = Butterworth_Filter_HP( (double) sample);
 	low_pass_filter_val  = Butterworth_Filter_LP(high_pass_filter_val);
 	filt_sample = (I16S)low_pass_filter_val;
@@ -949,7 +936,7 @@ I8U PPG_minute_hr_calibrate()
 	return hr_rendering;
 }
 
-
+#ifndef __YLF_PPG__
 void update_and_push_hr()
 {
 #ifdef _ENABLE_PPG_
@@ -964,3 +951,4 @@ void update_and_push_hr()
 			}
 #endif
 }
+#endif

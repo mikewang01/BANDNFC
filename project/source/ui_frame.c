@@ -69,12 +69,12 @@ const char *const week_name[3][7] = {{"MON",  "TUE",  "WED",  "THU",  "FRI",  "S
 	                                   {"周一", "周二", "周三", "周四", "周五", "周六", "周日"},
 	                                   {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"}};	
 
-																		 
+#if 0
 const char *const air_level_name[4][7] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "Poor", "hazardous"},
 	                                        {"--","GOOD", "GOOD",     "POOR",      "POOR", "POOR", "POOR"},
 	                                        {"--","优质", "良好",     "轻度",      "中度", "重度", "严重"},
 												                  {"--","優質", "良好",     "輕度",      "中度", "重度", "嚴重"}};
-
+#endif
 const char *const horizontal_workout_name[3][8] = {{"Treadmill", "Cycling", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
 	                                  {"跑步机 ",   "单车",    "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"},
 	                                  {"跑步機 ",   "單車",    "爬樓梯 ", "橢圓機 ",    "劃船", "有氧操 ", "Piloxing", "其它"}};
@@ -831,7 +831,7 @@ static void _middle_render_horizontal_app_notif()
 	FONT_load_characters(cling.ui.p_oled_up+(128-len*8), (char *)string, 16, 128, FALSE);			
 }
 #endif
-
+#if 0
 static void _middle_render_pm2p5_core()
 {
 	WEATHER_CTX *w = &cling.weather;
@@ -865,6 +865,7 @@ static void _middle_render_pm2p5_core()
 		w->pm2p5_level_idx = 0;
 	}		
 }
+#endif
 
 static void _middle_render_horizontal_pm2p5()
 {
@@ -873,16 +874,16 @@ static void _middle_render_horizontal_pm2p5()
 	I8U b_24_size = 24;		
 	I16U offset = 0;
 	I8U margin = 3;	
-	I8U language_type = cling.ui.language_type;
 	WEATHER_CTX *w = &cling.weather;
-	
+#if 0
+	I8U language_type = cling.ui.language_type;
   _middle_render_pm2p5_core();
 
 	if (language_type != LANGUAGE_TYPE_ENGLISH)
 		language_type++;
-	
-	FONT_load_characters(cling.ui.p_oled_up+256, (char *)air_level_name[language_type][w->pm2p5_level_idx], 16, 128, FALSE);
 
+	FONT_load_characters(cling.ui.p_oled_up+256, (char *)air_level_name[language_type][w->pm2p5_level_idx], 16, 128, FALSE);
+#endif
   len = sprintf((char *)string, "%d", w->pm2p5_value);	
 	offset = (118 -  len*13) ;
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
@@ -2237,37 +2238,21 @@ static void _render_vertical_local_character_core(I8U *string, I8U offset, I8U m
 	for (i = 0; i < len; i++) {
 		// Digits in large fonts
 		if (b_24_size == 24) {
-			if (b_all_hold) {
-        if (string[i] == ' ') {
-				  p0 += 4;
-				  p1 += 4;
-				  p2 += 4;
-				  char_len = 0;
-				  line_len += 4;	
-			  } else if (string[i] == '+') {
-				  p0 += 13;
-			  	p1 += 13;
-				  p2 += 13;
-				  char_len = 0;
-				  line_len += 13;	
-			  } else {				
+			if (string[i] == ' ') {
+				p0 += 4;
+				p1 += 4;
+				p2 += 4;
+				line_len += 4;	
+			} else if (string[i] == '+') {
+				p0 += 13;
+				p1 += 13;
+				p2 += 13;
+				line_len += 13;	
+			} else {				
+				if (b_all_hold) {
 				  pin = asset_content+asset_pos[512+string[i]];
 				  char_len = asset_len[512+string[i]];	
-				}					
-			} else {
-          if (string[i] == ' ') {
-				  p0 += 4;
-			  	p1 += 4;
-				  p2 += 4;
-				  char_len = 0;
-				  line_len += 4;	
-		  	} else if (string[i] == '+') {
-				  p0 += 13;
-				  p1 += 13;
-				  p2 += 13;
-				  char_len = 0;
-				  line_len += 13;	
-			  } else {				
+				}	else {				
 				  if ((string[i] >= '0') && (string[i] <= '9')) {
 					  pin = asset_content+asset_pos[512+string[i]+152];
 					  char_len = asset_len[512+string[i]+152];
@@ -2276,12 +2261,12 @@ static void _render_vertical_local_character_core(I8U *string, I8U offset, I8U m
 					  char_len = asset_len[512+string[i]];
 				  }		
 			  }				
-			}
 
-			for (j = 0; j < char_len; j++) {
-					*p0++ = (*pin++);
-					*p1++ = (*pin++);
-					*p2++ = (*pin++);
+				for (j = 0; j < char_len; j++) {
+						*p0++ = (*pin++);
+						*p1++ = (*pin++);
+						*p2++ = (*pin++);
+				}
 			}
 		} else if (b_24_size == 16) {
 			if (string[i] == ' ') {

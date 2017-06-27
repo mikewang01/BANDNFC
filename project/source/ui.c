@@ -270,20 +270,21 @@ static void _restore_perv_frame_index()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 	I32U t_curr = CLK_get_system_time();
+	TRACKING_CTX *a = &cling.activity;
 
 	// 1. Check if user in running active mode.
-	if (cling.activity.b_workout_active) {
+	if (a->b_workout_active) {
 	
 		if (_is_running_active_mode_page(u->frame_cached_index)) {
 			u->frame_index = u->frame_cached_index;				
 			return;
 		}
 		
-		if (cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) {
+		if (a->workout_type == WORKOUT_RUN_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_TRAINING_STAT_TIME;		
 		}	
 #ifndef _CLINGBAND_PACE_MODEL_			
-	  else if (cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR) {
+	  else if (a->workout_type == WORKOUT_CYCLING_OUTDOOR) {
 			u->frame_index = UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME;		
 		}	else {
 			u->frame_index = UI_DISPLAY_WORKOUT_RT_TIME;		
@@ -410,12 +411,13 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 	I8U run_analysis_page_filtering = 0;
 	I8U run_analysis_page_enable = 0;	
 	I8U i = 0;
-	
+	USER_PROFILE_CTX *p = &cling.user_data.profile;
+
 	if (_is_regular_page(u->frame_index)) {
 		
-		regular_page_filtering = cling.user_data.profile.regular_page_display_2;
+		regular_page_filtering = p->regular_page_display_2;
 		regular_page_filtering <<= 8;
-		regular_page_filtering |= cling.user_data.profile.regular_page_display_1;
+		regular_page_filtering |= p->regular_page_display_1;
 		
 #ifdef _CLINGBAND_PACE_MODEL_			
 		// Allways open home page and run analysis page.
@@ -451,7 +453,7 @@ static void _update_page_filtering_pro(UI_ANIMATION_CTX *u, const I8U *p_matrix)
 		u->frame_next_idx = u->frame_index;
 	} else if (_is_running_analysis_page(u->frame_index)) {
 		
-	  run_analysis_page_filtering = cling.user_data.profile.running_page_display;
+	  run_analysis_page_filtering = p->running_page_display;
 
 #ifdef _CLINGBAND_PACE_MODEL_			
 		// Allways open Running distance page and stop analysis page.
@@ -926,6 +928,7 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 {
 	BOOLEAN b_ppg_switch_open = FALSE;
+	TRACKING_CTX *a = &cling.activity;
 
 	// Initialize PPG approximation detection with a swipe
 #ifdef _CLINGBAND_PACE_MODEL_		
@@ -958,7 +961,7 @@ static void _update_ppg_switch_control(UI_ANIMATION_CTX *u)
 	if (b_ppg_switch_open) {
 		PPG_closing_to_skin_detect_init();
 	}	else {
-		if (!cling.activity.b_workout_active) {
+		if (!a->b_workout_active) {
 			cling.hr.heart_rate_ready  = FALSE;
 			PPG_disable_sensor();
 			cling.hr.state = PPG_STAT_DUTY_OFF;
@@ -978,11 +981,12 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
   UI_RUNNING_INFO_CTX *running_info = &cling.ui.running_info;
 	I32U t_curr = CLK_get_system_time();	
 	BOOLEAN b_enter_active_mode = FALSE;
+	TRACKING_CTX *a = &cling.activity;
 	
 #ifdef _CLINGBAND_PACE_MODEL_		
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) && (u->frame_index == UI_DISPLAY_TRAINING_STAT_CONNECT_GPS)) {
 		Y_SPRINTF("[UI] Enter outdoor running mode");	
-		cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+		a->workout_type = WORKOUT_RUN_OUTDOOR;		
 		b_enter_active_mode = TRUE;
 	}
 #endif
@@ -991,7 +995,7 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	if ((u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START) || (u->frame_prev_idx == UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS)) {	
 	  if (u->frame_index == UI_DISPLAY_TRAINING_STAT_READY) {
 		  Y_SPRINTF("[UI] Enter outdoor running mode");	
-		  cling.activity.workout_type = WORKOUT_RUN_OUTDOOR;		
+		  a->workout_type = WORKOUT_RUN_OUTDOOR;		
 		  b_enter_active_mode = TRUE;			
 		}
 	}
@@ -1003,29 +1007,29 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 		  b_enter_active_mode = TRUE;			
 			N_SPRINTF("[UI] Enter normal workout mode");	
 			if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_TREADMILL)
-		    cling.activity.workout_type = WORKOUT_TREADMILL_INDOOR;
+		    a->workout_type = WORKOUT_TREADMILL_INDOOR;
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_CYCLING)
-		    cling.activity.workout_type = WORKOUT_CYCLING_INDOOR;
+		    a->workout_type = WORKOUT_CYCLING_INDOOR;
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_STAIRS)
-		    cling.activity.workout_type = WORKOUT_STAIRS_INDOOR;			
+		    a->workout_type = WORKOUT_STAIRS_INDOOR;			
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_ELLIPTICAL)
-		    cling.activity.workout_type = WORKOUT_ELLIPTICAL_INDOOR;	
+		    a->workout_type = WORKOUT_ELLIPTICAL_INDOOR;	
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_ROW)
-		    cling.activity.workout_type = WORKOUT_ROWING;	
+		    a->workout_type = WORKOUT_ROWING;	
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_AEROBIC)
-		    cling.activity.workout_type = WORKOUT_AEROBIC;		
+		    a->workout_type = WORKOUT_AEROBIC;		
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_PILOXING)
-		    cling.activity.workout_type = WORKOUT_PILOXING;		
+		    a->workout_type = WORKOUT_PILOXING;		
 			else if (u->frame_prev_idx == UI_DISPLAY_WORKOUT_OTHERS)
-		    cling.activity.workout_type = WORKOUT_OTHER;		
+		    a->workout_type = WORKOUT_OTHER;		
       else			
-				cling.activity.workout_type = WORKOUT_OTHER;
+				a->workout_type = WORKOUT_OTHER;
 		}
 	}
 
 	if ((u->frame_prev_idx == UI_DISPLAY_CYCLING_OUTDOOR_STAT_START) && (u->frame_index == UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY)) {
 		N_SPRINTF("[UI] Enter CYCLING_OUTDOOR workout mode");	
-		cling.activity.workout_type = WORKOUT_CYCLING_OUTDOOR;		
+		a->workout_type = WORKOUT_CYCLING_OUTDOOR;		
 		b_enter_active_mode = TRUE;		
 	}
 #endif
@@ -1079,11 +1083,11 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 #endif
 		
 		if (BTLE_is_connected()) {
-			if ((cling.activity.workout_type == WORKOUT_RUN_OUTDOOR) || 
-					(cling.activity.workout_type == WORKOUT_CYCLING_OUTDOOR))
+			if ((a->workout_type == WORKOUT_RUN_OUTDOOR) || 
+					(a->workout_type == WORKOUT_CYCLING_OUTDOOR))
 			{
 				Y_SPRINTF("[UI] cp create workout rt msg");	
-				CP_create_workout_rt_msg(cling.activity.workout_type);
+				CP_create_workout_rt_msg(a->workout_type);
 			}
 		}	
 
@@ -1092,15 +1096,15 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 	
 #ifndef _CLINGBAND_PACE_MODEL_	
   if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index) || _is_other_need_store_page(u->frame_index)) {
-		cling.activity.b_workout_active = FALSE;		
-		cling.activity.workout_type = WORKOUT_NONE;
+		a->b_workout_active = FALSE;		
+		a->workout_type = WORKOUT_NONE;
 	}
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_		
 	if (_is_regular_page(u->frame_index) || _is_running_analysis_page(u->frame_index)) {
-		cling.activity.b_workout_active = FALSE;		
-		cling.activity.workout_type = WORKOUT_NONE;
+		a->b_workout_active = FALSE;		
+		a->workout_type = WORKOUT_NONE;
 	} 
 #endif
 }
@@ -1113,13 +1117,14 @@ static void _update_workout_active_control(UI_ANIMATION_CTX *u)
 *------------------------------------------------------------------------------------------*/
 static void _update_vibrator_control(UI_ANIMATION_CTX *u)
 {
+	USER_PROFILE_CTX *p = &cling.user_data.profile;
 	if (_is_smart_incoming_notifying_page(u->frame_index)) {
 	  // Stop notification
 		NOTIFIC_stop_notifying();
 	} 
 
 	// If a valid gesture is detected, vibrate it for interaction
-	if (cling.user_data.profile.touch_vibration) {
+	if (p->touch_vibration) {
 		GPIO_vibrator_on_block(UI_TOUCH_VIBRATION_ON_TIME_IN_MS);
 		GPIO_vibrator_set(FALSE);
 	}	
@@ -1606,6 +1611,7 @@ void UI_start_notifying(I8U frame_index)
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
   UI_NOTIFICC_CTX *notific = &cling.ui.notific;
+	TRACKING_CTX *a = &cling.activity;
 	
 	I32U t_curr = CLK_get_system_time(); 
 	// 1. Start system timer.
@@ -1621,7 +1627,7 @@ void UI_start_notifying(I8U frame_index)
 	UI_turn_on_display(UI_STATE_TOUCH_SENSING);
 	
 	// 5. Store current incoming message(if not in running active mode).
-	if (_is_smart_incoming_notifying_page(u->frame_index) && (!cling.activity.b_workout_active)) {
+	if (_is_smart_incoming_notifying_page(u->frame_index) && (!a->b_workout_active)) {
 		notific->b_need_stored = TRUE;		
 	} else {
 		notific->b_need_stored = FALSE;
@@ -1712,6 +1718,7 @@ void UI_state_machine()
 {
 	UI_ANIMATION_CTX *u = &cling.ui;
 	I32U t_curr, t_diff, t_threshold;
+	TRACKING_CTX *a = &cling.activity;
 	
 	t_curr = CLK_get_system_time();
 
@@ -1762,8 +1769,8 @@ void UI_state_machine()
 			if (t_curr > u->display_to_base + 1500) {
 			  // Exit running mode.			
 			  u->frame_index = UI_DISPLAY_HOME;	
-			  cling.activity.workout_type = WORKOUT_NONE;
-			  cling.activity.b_workout_active = FALSE;	
+			  a->workout_type = WORKOUT_NONE;
+			  a->b_workout_active = FALSE;	
 				u->touch_time_stamp = t_curr;
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);				
 			}
@@ -1831,7 +1838,7 @@ void UI_state_machine()
 				t_threshold = cling.user_data.screen_on_heart_rate; // in second				
 			} else {
 #ifdef __YLF_WRIST_FLIP__
-			if(cling.activity.b_screen_on_wrist_flip && (!cling.activity.b_screen_off_wrist_flip))
+			if(a->b_screen_on_wrist_flip && (!a->b_screen_off_wrist_flip))
 				 t_threshold = 3;
 			else
 			  t_threshold = cling.user_data.screen_on_general; // in second
@@ -1867,7 +1874,7 @@ void UI_state_machine()
 			  }
 		  }
 			
-			if ((u->b_in_running_alert_page) && (cling.activity.b_workout_active)) {
+			if ((u->b_in_running_alert_page) && (a->b_workout_active)) {
         if (t_curr > u->touch_time_stamp + 10000) {
 					// Go back to previous UI page.						
 					u->frame_index = UI_DISPLAY_PREVIOUS;		
@@ -1886,9 +1893,9 @@ void UI_state_machine()
 				
 				if (cling.user_data.b_running_alwayson) {
 #ifdef _CLINGBAND_PACE_MODEL_							
-					if (!cling.activity.b_workout_active) {
+					if (!a->b_workout_active) {
 #else 
-					if ((!cling.activity.b_workout_active) && (!u->stopwatch.b_without_exit_flag)) {
+					if ((!a->b_workout_active) && (!u->stopwatch.b_without_exit_flag)) {
 #endif						
 						N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
 						u->state = UI_STATE_DARK;

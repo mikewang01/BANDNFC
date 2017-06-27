@@ -180,13 +180,14 @@ static BOOLEAN _check_normal_reminder()
 void REMINDER_set_sleep_reminder()
 {
 	I8U week, day;
+	USER_PROFILE_CTX *p = &cling.user_data.profile;
 	
 	cling.reminder.b_sleep_total = FALSE;
 	cling.reminder.b_sleep_valid = FALSE;
 	cling.reminder.b_wakeup_valid = FALSE;
 
-	if (cling.user_data.profile.sleep_dow & 0x80) {
-		week = cling.user_data.profile.sleep_dow & 0x7f;
+	if (p->sleep_dow & 0x80) {
+		week = p->sleep_dow & 0x7f;
 		day = 1 << cling.time.local.dow;
 		
 		if (week & day) {
@@ -199,28 +200,30 @@ void REMINDER_set_sleep_reminder()
 
 static BOOLEAN _check_sleep_reminder()
 {	
+	USER_PROFILE_CTX *p = &cling.user_data.profile;
+	
 	// Add sleep bed & wakeup time
 	if (cling.reminder.b_sleep_valid) {
-			if ((cling.time.local.hour == cling.user_data.profile.bed_hh) && 
-					(cling.time.local.minute == cling.user_data.profile.bed_mm))
+			if ((cling.time.local.hour == p->bed_hh) && 
+					(cling.time.local.minute == p->bed_mm))
 			{
 				cling.reminder.alarm_type = SLEEP_ALARM_CLOCK;
 				cling.reminder.b_sleep_valid = FALSE;
-				cling.ui.notific.alarm_clock_hh = cling.user_data.profile.bed_hh;
-				cling.ui.notific.alarm_clock_mm = cling.user_data.profile.bed_mm;		
+				cling.ui.notific.alarm_clock_hh = p->bed_hh;
+				cling.ui.notific.alarm_clock_mm = p->bed_mm;		
 				return TRUE;
 			}
 	}
 
 	// Add wakeup wakeup time
 	if (cling.reminder.b_wakeup_valid) {
-			if ((cling.time.local.hour == cling.user_data.profile.wakeup_hh) && 
-					(cling.time.local.minute == cling.user_data.profile.wakeup_mm))
+			if ((cling.time.local.hour == p->wakeup_hh) && 
+					(cling.time.local.minute == p->wakeup_mm))
 			{
 				cling.reminder.alarm_type = WAKEUP_ALARM_CLOCK;
 				cling.reminder.b_wakeup_valid = FALSE;
-				cling.ui.notific.alarm_clock_hh = cling.user_data.profile.wakeup_hh;
-				cling.ui.notific.alarm_clock_mm = cling.user_data.profile.wakeup_mm;						
+				cling.ui.notific.alarm_clock_hh = p->wakeup_hh;
+				cling.ui.notific.alarm_clock_mm = p->wakeup_mm;						
 				return TRUE;
 			}
 	}

@@ -4,81 +4,25 @@
 void Butterworth_Filter_Init()
 {
 	I8U i;
-	HEARTRATE_CTX *hr_ctx = &cling.hr;
-
-	hr_ctx->butterworth_filter_context.firstElement_lp = TRUE;
-	hr_ctx->butterworth_filter_context.firstElement_hp = TRUE;
+	BUTT_CTX *bw_ctx = &cling.butterworth_filter_context;
+#if 1
+	bw_ctx->firstElement_lp = TRUE;
+	bw_ctx->firstElement_hp = TRUE;
+	
 	for (i=0; i<(BUTTORD+1); i++) {
-		hr_ctx->butterworth_filter_context.x_lp[i] = 0.0;
-		hr_ctx->butterworth_filter_context.y_lp[i] = 0.0;
-		hr_ctx->butterworth_filter_context.x_hp[i] = 0.0;
-		hr_ctx->butterworth_filter_context.y_hp[i] = 0.0;
+		bw_ctx->x_lp[i] = 0.0;
+		bw_ctx->y_lp[i] = 0.0;
+		bw_ctx->x_hp[i] = 0.0;
+		bw_ctx->y_hp[i] = 0.0;
 	}
-	hr_ctx->butterworth_filter_context.pre_guess  = 48;
-	hr_ctx->butterworth_filter_context.post_guess = 48;
-	hr_ctx->butterworth_filter_context.pre_error  = 1.0;
-	hr_ctx->butterworth_filter_context.post_error = 1.0;
-	hr_ctx->butterworth_filter_context.gain       = 1.0;
+#endif
+	bw_ctx->pre_guess  = 48;
+	bw_ctx->post_guess = 48;
+	bw_ctx->pre_error  = 1.0;
+	bw_ctx->post_error = 1.0;
+	bw_ctx->gain       = 1.0;
 }
 
-#if 0
-I16S Butterworth_Filter_LP(I16S invar)
-{
-  I8U i;
-	I32S numerator;
-	I32S denominator;
-
-// low pass filter, cut frequency 6 Hz, 50 sample/sec
-  const I16S a[BUTTORD+1] = {8192, -21090, 24526, -15161,  4921, -662};   // Q13
-  const I16S b[BUTTORD+1] = {2901,  14507, 29013,  29013, 14507, 2901};   // Q20
-	
-	HEARTRATE_CTX *hr_ctx = &cling.hr;
-	
-	for(i=BUTTORD;i>0;i--) {
-		hr_ctx->butterworth_filter_context.y[i] = hr_ctx->butterworth_filter_context.y[i-1];
-		hr_ctx->butterworth_filter_context.x[i] = hr_ctx->butterworth_filter_context.x[i-1];
-	}
-	
-	hr_ctx->butterworth_filter_context.x[0] = invar;
-
-	if(hr_ctx->butterworth_filter_context.firstElement) {
-		hr_ctx->butterworth_filter_context.firstElement = FALSE;		
-		hr_ctx->butterworth_filter_context.y[0] = invar;
-		return invar;
-	}
-
-	numerator = 0;       // b *x
-	for (i=0; i<(BUTTORD+1); i++) {
-		 numerator += (b[i] * (hr_ctx->butterworth_filter_context.x[i]) );
-	}
-	
-#if 1
-	if (numerator > MAX_INT)
-		numerator = MAX_INT;
-	else if (numerator < MIN_INT)
-		numerator = MIN_INT;
-#endif
-	
-	denominator = 0;    // a * y
-	for (i=1; i<(BUTTORD+1); i++) {
-		denominator += (a[i] * (hr_ctx->butterworth_filter_context.y[i]) ) ;
-	}
-
-#if 1
-	if (denominator > MAX_INT)
-		denominator = MAX_INT;
-	else if (denominator < MIN_INT)
-		denominator = MIN_INT;
-#endif
-	
-	numerator >>= 7;
-	numerator  -= denominator;
-	numerator >>= 13;
-
-	hr_ctx->butterworth_filter_context.y[0] = numerator;
-	return hr_ctx->butterworth_filter_context.y[0];
-}
-#endif
 
 double Butterworth_Filter_LP(double invar)
 {
@@ -89,98 +33,104 @@ double Butterworth_Filter_LP(double invar)
 // low pass filter, cut frequency 6 Hz, 50 sample/sec
   const double a[BUTTORD+1] = {1.000000000000000000, -3.782050676232970000, 5.83747836187128000, -4.57774375976233000, 1.819272330918000000, -0.292583915178916000};   // Q13
   const double b[BUTTORD+1] = {0.000136635675470833,  0.000683178377354167, 0.00136635675470833,  0.00136635675470833, 0.000683178377354167,  0.000136635675470833};   // Q20
-
-	HEARTRATE_CTX *hr_ctx = &cling.hr;
+  //a[0] = 1.000000000000000000;
+//	a[1] = -3.782050676232970000;a[2]=5.83747836187128000;a[3]= -4.57774375976233000;a[4]=1.819272330918000000;a[5]= -0.292583915178916000;
+//  b[0] = 0.000136635675470833;b[1] = 0.000683178377354167;b[2] = 0.00136635675470833;b[3] = 0.00136635675470833; b[4] = 0.000683178377354167;b[5] = 0.000136635675470833;
+	BUTT_CTX *bw_ctx = &cling.butterworth_filter_context;
 	
 	for(i=BUTTORD;i>0;i--) {
-		hr_ctx->butterworth_filter_context.y_lp[i] = hr_ctx->butterworth_filter_context.y_lp[i-1];
-		hr_ctx->butterworth_filter_context.x_lp[i] = hr_ctx->butterworth_filter_context.x_lp[i-1];
+		bw_ctx->y_lp[i] = bw_ctx->y_lp[i-1];
+		bw_ctx->x_lp[i] = bw_ctx->x_lp[i-1];
 	}
 	
-	hr_ctx->butterworth_filter_context.x_lp[0] = invar;
+	bw_ctx->x_lp[0] = invar;
 
-	if(hr_ctx->butterworth_filter_context.firstElement_lp) {
-		hr_ctx->butterworth_filter_context.firstElement_lp = FALSE;		
-		hr_ctx->butterworth_filter_context.y_lp[0] = invar;
+	if(bw_ctx->firstElement_lp) {
+		bw_ctx->firstElement_lp = FALSE;		
+		bw_ctx->y_lp[0] = invar;
 		return invar;
 	}
 
 	numerator = 0.0;       // b *x
 	for (i=0; i<(BUTTORD+1); i++) {
-		 numerator += (b[i] * (hr_ctx->butterworth_filter_context.x_lp[i]) );
+		 numerator += (b[i] * (bw_ctx->x_lp[i]) );
 	}
 	
 	denominator = 0.0;    // a * y
 	for (i=1; i<(BUTTORD+1); i++) {
-		denominator += (a[i] * (hr_ctx->butterworth_filter_context.y_lp[i]) ) ;
+		denominator += (a[i] * (bw_ctx->y_lp[i]) ) ;
 	}
 	
 	numerator  -= denominator;
 
-	hr_ctx->butterworth_filter_context.y_lp[0] = numerator;
-	return hr_ctx->butterworth_filter_context.y_lp[0];
+	bw_ctx->y_lp[0] = numerator;
+	return bw_ctx->y_lp[0];
 }
 
+double a[BUTTORD + 1] = {1.000000000000000, -4.69504062610034, 8.82614592256438, -8.30396669308534, 3.90989399411579, -0.737026189748336};    // 1.0Hz, five orders
+double b[BUTTORD + 1] = {0.858502294550443, -4.29251147275222, 8.58502294550443, -8.58502294550443, 4.29251147275222, -0.858502294550443};
 double Butterworth_Filter_HP(double invar)
 {
   I8U i;
 	double numerator;
 	double denominator;
-	double a[BUTTORD + 1] = {1.000000000000000, -4.69504062610034, 8.82614592256438, -8.30396669308534, 3.90989399411579, -0.737026189748336};    // 1.0Hz, five orders
-	double b[BUTTORD + 1] = {0.858502294550443, -4.29251147275222, 8.58502294550443, -8.58502294550443, 4.29251147275222, -0.858502294550443};
+//	double a[BUTTORD + 1] = {1.000000000000000, -4.69504062610034, 8.82614592256438, -8.30396669308534, 3.90989399411579, -0.737026189748336};    // 1.0Hz, five orders
+//	double b[BUTTORD + 1] = {0.858502294550443, -4.29251147275222, 8.58502294550443, -8.58502294550443, 4.29251147275222, -0.858502294550443};
 	
 	HEARTRATE_CTX *hr_ctx = &cling.hr;
+	BUTT_CTX *bw_ctx = &cling.butterworth_filter_context;
+
 #ifndef __YLF__
-	if(hr_ctx->b_walkstate) {//1.5Hz
+	if(hr_ctx->m_sportstate == 1){//if(hr_ctx->b_walkstate) {//1.5Hz
 		a[1] = -4.390276194261; a[2] = 7.742869540801; a[3] = -6.854349350896; a[4] =  3.04468530918; a[5] = -0.5427513749335;
 		b[0] = 0.7367166178147; b[1] = -3.683583089074; b[2] = 7.367166178147; b[3] = -7.367166178147; b[4] = 3.683583089074; b[5] = -0.7367166178147;
-	}else if(hr_ctx->b_runstate){//2Hz
+	}else if(hr_ctx->m_sportstate == 2){//if(hr_ctx->b_runstate){//2Hz
 		a[1] = -4.187300047864; a[2] = 7.069722752792; a[3] = -6.009958148187; a[4] =  2.570429302524; a[5] = -0.4422091823996;
 		b[0] = 0.6649881073052; b[1] = -3.324940536526; b[2] = 6.649881073052; b[3] = -6.649881073052; b[4] = 3.324940536526; b[5] = -0.6649881073052;
 	}
 #endif
 	for(i=BUTTORD;i>0;i--) {
-		hr_ctx->butterworth_filter_context.y_hp[i] = hr_ctx->butterworth_filter_context.y_hp[i-1];
-		hr_ctx->butterworth_filter_context.x_hp[i] = hr_ctx->butterworth_filter_context.x_hp[i-1];
+		bw_ctx->y_hp[i] = bw_ctx->y_hp[i-1];
+		bw_ctx->x_hp[i] = bw_ctx->x_hp[i-1];
 	}
 	
-	hr_ctx->butterworth_filter_context.x_hp[0] = (double)invar;
+	bw_ctx->x_hp[0] = (double)invar;
 
-	if(hr_ctx->butterworth_filter_context.firstElement_hp) {
-		hr_ctx->butterworth_filter_context.firstElement_hp = FALSE;		
-		hr_ctx->butterworth_filter_context.y_hp[0] = invar;
+	if(bw_ctx->firstElement_hp) {
+		bw_ctx->firstElement_hp = FALSE;		
+		bw_ctx->y_hp[0] = invar;
 		return invar;
 	}
 
 	numerator = 0.0;       // b *x
 	for (i=0; i<(BUTTORD+1); i++) {
-		 numerator += (b[i] * (hr_ctx->butterworth_filter_context.x_hp[i]) );
+		 numerator += (b[i] * (bw_ctx->x_hp[i]) );
 	}
 	
 	denominator = 0.0;    // a * y
 	for (i=1; i<(BUTTORD+1); i++) {
-		denominator += (a[i] * (hr_ctx->butterworth_filter_context.y_hp[i]) ) ;
+		denominator += (a[i] * (bw_ctx->y_hp[i]) ) ;
 	}
 	
 	numerator  -= denominator;
 
-	hr_ctx->butterworth_filter_context.y_hp[0] = numerator;
-	return (I16S)hr_ctx->butterworth_filter_context.y_hp[0];
+	bw_ctx->y_hp[0] = numerator;
+	return (I16S)bw_ctx->y_hp[0];
 }
 
 I8U Kalman_Filter(I8U sample_width)
 {
-	HEARTRATE_CTX *hr_ctx = &cling.hr;
+	BUTT_CTX *bw_ctx = &cling.butterworth_filter_context;
 	
-	hr_ctx->butterworth_filter_context.pre_guess = hr_ctx->butterworth_filter_context.post_guess;
-	hr_ctx->butterworth_filter_context.pre_error = hr_ctx->butterworth_filter_context.post_error + 0.0004;
+	bw_ctx->pre_guess = bw_ctx->post_guess;
+	bw_ctx->pre_error = bw_ctx->post_error + 0.0004;
 	
-	hr_ctx->butterworth_filter_context.gain = (double)hr_ctx->butterworth_filter_context.pre_guess / (hr_ctx->butterworth_filter_context.pre_guess + 256.00);
+	bw_ctx->gain = (double)bw_ctx->pre_guess / (bw_ctx->pre_guess + 256.00);
 	
-	hr_ctx->butterworth_filter_context.post_guess = (I8U) ( ( hr_ctx->butterworth_filter_context.pre_guess + hr_ctx->butterworth_filter_context.gain * (sample_width - hr_ctx->butterworth_filter_context.pre_guess) ) + 0.5 );
-	hr_ctx->butterworth_filter_context.post_error = (1.0 - hr_ctx->butterworth_filter_context.gain) * hr_ctx->butterworth_filter_context.pre_error;
+	bw_ctx->post_guess = (I8U) ( ( bw_ctx->pre_guess + bw_ctx->gain * (sample_width - bw_ctx->pre_guess) ) + 0.5 );
+	bw_ctx->post_error = (1.0 - bw_ctx->gain) * bw_ctx->pre_error;
 
-  return hr_ctx->butterworth_filter_context.post_guess;
+  return bw_ctx->post_guess;
 }
 
 
