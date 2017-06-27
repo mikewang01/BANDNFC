@@ -887,7 +887,6 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 #else 		
 		max_frame_num = 0;
 #endif		
-		N_SPRINTF("FRAME NUM: %d", max_frame_num);
 		if (max_frame_num == 0) {
 			notific->app_notific_index = 0;
 			return;

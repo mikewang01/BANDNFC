@@ -283,6 +283,5 @@ I16U FONT_get_string_display_len(char *string)
 		if (offset >= 240)
 			break;
 	}
-	N_SPRINTF("FONT string: %d, %d", pos, offset);
 	return offset;
 }
