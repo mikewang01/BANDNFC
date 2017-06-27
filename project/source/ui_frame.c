@@ -808,14 +808,17 @@ static void _middle_render_horizontal_message()
 static void _middle_render_horizontal_app_notif()
 {
 	I8U len;
-	I8U dis_len;
+	I16U dis_len;
 	I8U string[128];
 	I16U offset = 0;
   BOOLEAN b_display_center = FALSE;
 	
 	len = NOTIFIC_get_app_name(cling.ui.notific.app_notific_index, (char *)string);
-	N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.app_notific_index, len, (char *)string);
+	N_SPRINTF("[UI] app index: %d, %d, %s", cling.ui.notific.app_notific_index, len, (char *)string);
 	
+	
+	// bug fix: dis_len is a byte type, the length should not be greater than 255,
+	// if it does go beyond 255, , dis_len becomes 0, that causes problem
 	dis_len = FONT_get_string_display_len((char *)string);
 
 	if (dis_len > 80) {
@@ -824,6 +827,9 @@ static void _middle_render_horizontal_app_notif()
 		offset = 256;
 		b_display_center = TRUE;	
 	}
+	
+	N_SPRINTF("[UI] app notif: %d, %d [%d, %d, %d, %d]", offset, dis_len, string[0], string[1], string[2], string[3]);
+
 	
   FONT_load_characters(cling.ui.p_oled_up+offset, (char *)string, 16, 80, b_display_center);		
 		

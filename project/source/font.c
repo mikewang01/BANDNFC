@@ -278,6 +278,11 @@ I16U FONT_get_string_display_len(char *string)
 			// Is not within the scope of the can display,continue to read the next.
 			pos++;		
 		}
+		
+		// leave at least one character at the end
+		if (offset >= 240)
+			break;
 	}
+	N_SPRINTF("FONT string: %d, %d", pos, offset);
 	return offset;
 }

@@ -887,6 +887,7 @@ static void _update_horizontal_app_notific_index(UI_ANIMATION_CTX *u, I8U gestur
 #else 		
 		max_frame_num = 0;
 #endif		
+		N_SPRINTF("FRAME NUM: %d", max_frame_num);
 		if (max_frame_num == 0) {
 			notific->app_notific_index = 0;
 			return;
@@ -1359,7 +1360,7 @@ static void _perform_ui_with_a_finger_touch(UI_ANIMATION_CTX *u, I8U gesture)
 		// Update all control.
     _update_all_feature_switch_control(u, p_matrix, gesture);
 		
-		UI_SPRINTF("[UI] finger touch: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
+		N_SPRINTF("[UI] finger touch: %d, %d, %d", u->frame_prev_idx, u->frame_index, u->frame_next_idx);			
 	} else {
 		// Animation is not needed
 		u->frame_next_idx = u->frame_index;
