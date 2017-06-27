@@ -3,20 +3,11 @@
 #define __BUTTERWORTH_H__
 
 #include "standards.h"
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
-#define BUTTORD      6                   // butterworth low pass filter order
-#else
 #define BUTTORD      5                   // butterworth low pass filter order
-#endif
 #define MAX_INT      2147483647          // 0x7FFFFFFF
 #define MIN_INT     -2147483646          // 0x80000002
 
 typedef struct tagBUTT_CTX {
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
-	BOOLEAN firstElement_hp;
-	double x_hp[BUTTORD+1];
-	double y_hp[BUTTORD+1];
-#else
 	BOOLEAN firstElement_lp;
 	BOOLEAN firstElement_hp;
 
@@ -25,7 +16,6 @@ typedef struct tagBUTT_CTX {
 	
 	double x_hp[BUTTORD+1];
 	double y_hp[BUTTORD+1];
-#endif
 	// kalman status
 	I8U        pre_guess;
 	I8U        post_guess;
@@ -35,12 +25,8 @@ typedef struct tagBUTT_CTX {
 } BUTT_CTX;
 
 void   Butterworth_Filter_Init(void);
-#if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)
-double Butterworth_Filter_BP(double invar);
-#else
 double Butterworth_Filter_LP(double invar);
 double Butterworth_Filter_HP(double invar);
-#endif
 I8U    Kalman_Filter(I8U sample_width);
 
 #endif
