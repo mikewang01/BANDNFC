@@ -1207,9 +1207,16 @@ static void _middle_render_horizontal_running_pace()
 		offset = 22;
 	else
     offset = 29;
+
+	if ((!min) && (!sec)) {
+		offset = 39;
+		// Render the pace
+	  sprintf((char *)string, "--/ --*");	
+	} else {
+	  // Render the pace
+	  sprintf((char *)string, "%d/%02d*", min, sec);
+	}
 	
-	// Render the pace
-	sprintf((char *)string, "%d/%02d*", min, sec);
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 	
 	_right_render_horizontal_string_core((I8U *)gym_workout_run_name[language_type], (I8U *)pace_name[language_type]);	
@@ -1336,14 +1343,12 @@ static void _middle_render_horizontal_training_run_or_analysis()
 	I8U language_type = cling.ui.language_type;		
 	I8U i;
 	I8U *p0, *p1;
+	I8U offset = 40;
 	
-	memset(cling.ui.p_oled_up+128+40, 0, 32);
-	memset(cling.ui.p_oled_up+128+128+40, 0, 32);
-	memset(cling.ui.p_oled_up+128+96, 0, 32);
-	memset(cling.ui.p_oled_up+128+128+96, 0, 32);	
+  if (language_type	== LANGUAGE_TYPE_ENGLISH)
+	  offset = 44;
 	
-	FONT_load_characters(cling.ui.p_oled_up+128+40, (char *)run_start_name[language_type], 16, 128, FALSE);
- 	FONT_load_characters(cling.ui.p_oled_up+128+96, (char *)run_analysis_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)run_start_name[language_type], 16, 128, FALSE);
 	
   p0 = cling.ui.p_oled_up+128+40,
 	p1 = p0+128;
@@ -1355,11 +1360,18 @@ static void _middle_render_horizontal_training_run_or_analysis()
 	
   p0 = cling.ui.p_oled_up+128+96,
 	p1 = p0+128;
-	
+
+	if (language_type	== LANGUAGE_TYPE_ENGLISH)
+	  offset = 97;
+	else
+		offset = 96;
+		
+ 	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)run_analysis_name[language_type], 16, 128, FALSE);
+
 	for (i=0;i<32;i++) {
-	 *(p0+i) = ~(*(p0+i));
-	 *(p1+i) = ~(*(p1+i));	
-	}	
+		*(p0+i) = ~(*(p0+i));
+		*(p1+i) = ~(*(p1+i));	
+	}		
 }
 #endif
 
@@ -1505,9 +1517,15 @@ static void _middle_render_horizontal_training_pace()
 	else 
 		offset = 29;
 	
-	// Render the pace
-	len = sprintf((char *)string, "%d/%02d*", min, sec);
-
+	if ((!min) && (!sec)) {
+		offset = 39;
+		// Render the pace
+	  len = sprintf((char *)string, "--/ --*");	
+	} else {
+	  // Render the pace
+	  len = sprintf((char *)string, "%d/%02d*", min, sec);		
+	}
+	
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, len);
 	
 	_right_render_horizontal_string_core((I8U *)pace_name[language_type], NULL);
@@ -2327,20 +2345,25 @@ static void _render_vertical_fonts_lib_invert_colors_core(I8U *string, I8U offse
 	I8U *p0, *p1, *p2;
 	I8U line_len;
 	I8U i;
-
+	
 	p0 = buf_fonts;
 	p1 = p0 + 128;
 	p2 = p1 + 32;
 	
 	memset(buf_fonts, 0, 256);
-	
-	line_len = FONT_load_characters(buf_fonts, (char *)string, 16, 128, FALSE);
-	
+
+  if (!memcmp(string ,"RUN ", 4))
+	  line_len = FONT_load_characters(buf_fonts+4, (char *)string, 16, 128, FALSE);
+	else if (!memcmp(string ,"MORE", 4)) 
+	  line_len = FONT_load_characters(buf_fonts+1, (char *)string, 16, 128, FALSE);			
+	else 
+	  line_len = FONT_load_characters(buf_fonts, (char *)string, 16, 128, FALSE);		
+
 	for (i=0;i<32;i++) {
 		*(p0+i) = ~(*(p0+i));
 		*(p1+i) = ~(*(p1+i));	
-	}
-	
+	}		
+		
 	line_len = 32;
 
 	// Shift to the center
@@ -2640,6 +2663,7 @@ static void _middle_render_vertical_uv_index()
 }
 #endif
 
+#ifndef _CLINGBAND_UV_MODEL_
 static void _middle_render_vertical_pm2p5()
 {					
 	I8U string[32];	
@@ -2665,6 +2689,7 @@ static void _middle_render_vertical_pm2p5()
 	language_type ++;
 	_render_vertical_fonts_lib_character_core((I8U *)air_level_name[language_type][w->pm2p5_level_idx], 16, 84);
 }
+#endif
 
 static I8U _render_middle_vertical_hr_core(I8U offset)
 {
@@ -2724,6 +2749,7 @@ static void _middle_render_vertical_heart_rate()
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
+#ifndef _CLINGBAND_UV_MODEL_
 static void _middle_render_vertical_stopwatch_start()
 {
 	I8U string[32];	
@@ -2780,6 +2806,7 @@ static void _middle_render_vertical_stopwatch_stop()
 
 	_render_vertical_fonts_lib_character_core((I8U *)stopwatch_stop_name[language_type], 16, 55);
 }
+#endif
 #endif
 
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
@@ -3050,15 +3077,29 @@ static void _middle_render_vertical_running_pace()
 		sec = 0;
 	}
 	
-	// Render the hour
+	// Render the minute
 	if (min > 9)
 		sprintf((char *)string, "%02d/", min);
 	else
 		sprintf((char *)string, "+%d/", min);
+	
+	if ((!min) && (!sec)) {
+		margin = 0;
+    sprintf((char *)string, "+  - /");
+	} 
+
 	_render_vertical_local_character_core(string, 76, margin, b_24_size, FALSE);		
 
-	// Render the minute
-	sprintf((char *)string, "%02d*", sec);
+	if ((!min) && (!sec)) {
+		margin = 0;
+	  // Render the second
+	  sprintf((char *)string, "   - - *");		
+	} else {
+		margin = 1;
+	  // Render the second
+	  sprintf((char *)string, "%02d*", sec);				
+	}
+	
 	_render_vertical_local_character_core(string, 104, margin, b_24_size, FALSE);		
 }
 
@@ -3403,7 +3444,7 @@ static void _middle_render_vertical_training_ready()
 	
 	if (b_ready_finished) {
 		cling.ui.frame_index = UI_DISPLAY_TRAINING_STAT_TIME;
-		cling.ui.frame_next_idx = cling.ui.frame_index;
+		cling.ui.frame_next_idx = cling.ui.frame_index;	
 	}
 }
 
@@ -3445,16 +3486,29 @@ static void _middle_render_vertical_training_pace()
 	
 	min = cling.run_stat.last_10sec_pace_min;
 	sec = cling.run_stat.last_10sec_pace_sec;
-	
-	if (min > 9)
-		sprintf((char *)string, "%02d/", min);
-	else
-		sprintf((char *)string, "+%d/", min);
+
+	if ((!min) && (!sec)) {
+		margin = 0;
+    sprintf((char *)string, "+  - /");
+	} else {
+	  if (min > 9)
+		  sprintf((char *)string, "%02d/", min);
+	  else
+		  sprintf((char *)string, "+%d/", min);
+	}
 	
 	_render_vertical_local_character_core(string, 76, margin, b_24_size, TRUE);	
 
-	// Render the minute
-	sprintf((char *)string, "%02d*", sec);
+	if ((!min) && (!sec)) {
+		margin = 0;
+	  // Render the minute
+	  sprintf((char *)string, "   - - *");		
+	} else {
+		margin = 1;
+	  // Render the minute
+	  sprintf((char *)string, "%02d*", sec);				
+	}
+
 	_render_vertical_local_character_core(string, 104, margin, b_24_size, TRUE);	
 	
 	if (cling.ui.icon_sec_blinking) {	
