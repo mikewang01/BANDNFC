@@ -2215,7 +2215,7 @@ static void _frame_render_horizontal_cycling_outdoor_stop()
 #endif
 
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
-static void _middle_render_horizontal_music_play()
+static void _frame_render_horizontal_music_play()
 {
 	I16U offset = 10;
 
@@ -2233,7 +2233,7 @@ static void _middle_render_horizontal_music_play()
 	_middle_horizontal_alignment_center(offset);
 }
 
-static void _middle_render_horizontal_music_track()
+static void _frame_render_horizontal_music_track()
 {
 	I16U offset = 10;
 
@@ -2251,7 +2251,7 @@ static void _middle_render_horizontal_music_track()
 	_middle_horizontal_alignment_center(offset);
 }
 
-static void _middle_render_horizontal_music_volume()
+static void _frame_render_horizontal_music_volume()
 {
 	I16U offset = 10;
 
@@ -2271,7 +2271,7 @@ static void _middle_render_horizontal_music_volume()
 #endif
 
 #ifdef _CLINGBAND_2_PAY_MODEL_
-static void _middle_render_horizontal_balance_core(BOOLEAN b_bus_card_balance)
+static void _render_horizontal_balance_core(BOOLEAN b_bus_card_balance)
 {
 	UI_BALANCE_CTX *balance = &cling.ui.balance;
 	
@@ -2331,14 +2331,22 @@ static void _middle_render_horizontal_balance_core(BOOLEAN b_bus_card_balance)
 		FONT_load_characters(cling.ui.p_oled_up+256+112, (char *)unit_balance_display[language_type], 16, 128, FALSE);	
 }
 
-static void _middle_render_horizontal_bus_card_balance_enquiry()
+static void _frame_render_horizontal_bus_card_balance_enquiry()
 {
-  _middle_render_horizontal_balance_core(TRUE);
+	// 1. Render the middle
+  _render_horizontal_balance_core(TRUE);
+	
+	// 2. Render the left	
+  _render_one_icon_16(ICON16_BUS_CARD_IDX, 0);		
 }
 
-static void _middle_render_horizontal_bank_card_balance_enquiry()
+static void _frame_render_horizontal_bank_card_balance_enquiry()
 {
-  _middle_render_horizontal_balance_core(FALSE);
+	// 1. Render the middle	
+  _render_horizontal_balance_core(FALSE);
+	
+	// 2. Render the left		
+  _render_one_icon_16(ICON16_BANK_CARD_IDX, 0);		
 }
 #endif
 
@@ -4321,7 +4329,8 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 	{_frame_render_horizontal_training_pace},            /*UI_DISPLAY_TRAINING_STAT_PACE*/			
 	{_frame_render_horizontal_training_hr},              /*UI_DISPLAY_TRAINING_STAT_HEART_RATE*/	
 	{_frame_render_horizontal_training_run_stop},        /*UI_DISPLAY_TRAINING_STAT_RUN_STOP*/	
-	
+
+	// 7: Cycling Outdoor Statistics	
 #ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_horizontal_cycling_outdoor_start},    /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_START*/		
 	{_frame_render_horizontal_cycling_outdoor_ready},    /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY*/		
@@ -4330,10 +4339,27 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
   {_frame_render_horizontal_cycling_outdoor_speed},    /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_SPEED*/	
 	{_frame_render_horizontal_training_hr},              /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE*/	
 	{_frame_render_horizontal_cycling_outdoor_stop},     /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_STOP*/	
+
+	// 8: MUSIC	
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+	{_frame_render_horizontal_music_play},               /*UI_DISPLAY_MUSIC_PLAY*/	
+	{_frame_render_horizontal_music_track},              /*UI_DISPLAY_MUSIC_SONG*/		
+	{_frame_render_horizontal_music_volume},             /*UI_DISPLAY_MUSIC_VOLUME*/		
+#endif	
+
+		// 9: Pay	
+#ifdef _CLINGBAND_2_PAY_MODEL_		
+	{_frame_render_horizontal_bus_card_balance_enquiry}, /*UI_DISPLAY_PAY_BUS_CARD_BALANCE_ENQUIRY*/		
+	{_frame_render_horizontal_bank_card_balance_enquiry},/*UI_DISPLAY_PAY_BANK_CARD_BALANCE_ENQUIRY*/			
+#endif	
 	
+  // 10: CAROUSEL		
 	{_frame_render_horizontal_carousel_1},               /*UI_DISPLAY_CAROUSEL_1*/	
 	{_frame_render_horizontal_carousel_2},               /*UI_DISPLAY_CAROUSEL_2*/	
 	{_frame_render_horizontal_carousel_3},               /*UI_DISPLAY_CAROUSEL_3*/	
+#endif	
+#ifdef _CLINGBAND_2_PAY_MODEL_		
+	{_frame_render_horizontal_carousel_4},               /*UI_DISPLAY_CAROUSEL_4*/		
 #endif	
 }; 
 
@@ -4438,7 +4464,8 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 	{_frame_render_vertical_training_pace},              /*UI_DISPLAY_TRAINING_STAT_PACE*/			
 	{_frame_render_vertical_training_hr},                /*UI_DISPLAY_TRAINING_STAT_HEART_RATE*/	
 	{_frame_render_vertical_training_run_stop},          /*UI_DISPLAY_TRAINING_STAT_RUN_STOP*/	
-	
+
+	// 7: Cycling Outdoor Statistics		
 #ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_vertical_cycling_outdoor_start},      /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_START*/		
 	{_frame_render_vertical_cycling_outdoor_ready},      /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY*/		
@@ -4447,10 +4474,27 @@ const UI_RENDER_CTX vertical_ui_render[] = {
   {_frame_render_vertical_cycling_outdoor_speed},      /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_SPEED*/	
 	{_frame_render_vertical_training_hr},                /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_HEART_RATE*/	
 	{_frame_render_vertical_cycling_outdoor_stop},       /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_STOP*/	
-	
+
+	// 8: MUSIC	
+#if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_VOC_MODEL_)	
+	{_frame_render_horizontal_music_play},               /*UI_DISPLAY_MUSIC_PLAY*/	
+	{_frame_render_horizontal_music_track},              /*UI_DISPLAY_MUSIC_SONG*/		
+	{_frame_render_horizontal_music_volume},             /*UI_DISPLAY_MUSIC_VOLUME*/		
+#endif	
+
+		// 9: Pay	
+#ifdef _CLINGBAND_2_PAY_MODEL_		
+	{_frame_render_horizontal_bus_card_balance_enquiry}, /*UI_DISPLAY_PAY_BUS_CARD_BALANCE_ENQUIRY*/		
+	{_frame_render_horizontal_bank_card_balance_enquiry},/*UI_DISPLAY_PAY_BANK_CARD_BALANCE_ENQUIRY*/			
+#endif	
+
+  // 10: CAROUSEL	
 	{_frame_render_vertical_carousel_1},                 /*UI_DISPLAY_CAROUSEL_1*/	
 	{_frame_render_vertical_carousel_2},                 /*UI_DISPLAY_CAROUSEL_2*/	
 	{_frame_render_vertical_carousel_3},                 /*UI_DISPLAY_CAROUSEL_3*/	
+#endif	
+#ifdef _CLINGBAND_2_PAY_MODEL_	
+	{_frame_render_vertical_carousel_4},                 /*UI_DISPLAY_CAROUSEL_4*/		
 #endif	
 }; 
 
