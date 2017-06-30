@@ -92,8 +92,20 @@ const char *const horizontal_ware_indicator[] = {"-,,,,,,,",
 		                                             ",,,,,,,-"};
 
 const char *const vertical_hr_wave_indicator[3] = {" - , ,", " , - ,", " , , -" };		
-																									
-	
+
+#ifdef _CLINGBAND_PACE_MODEL_	
+const	char *const horizontal_conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};		
+const	char *const horizontal_conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
+const	char *const horizontal_conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};		
+
+const	char *const vertical_phone_name[] = {"", "手机", "手機"};	
+const	char *const vertical_gps_name[] = {"GPS", "GPS", "GPS"};		
+const	char *const vertical_gps_timeout_name[] = {"T/O", "超时", "超時"};
+const	char *const vertical_gps_conn_name[] = {"Link", "连接", "連接"};	
+const	char *const vertical_gps_fail_name[] = {"Fail", "失败", "失敗"};		
+#endif
+
+
 static void _core_frame_display(I8U middle, BOOLEAN b_render);
 
 void UI_render_screen()
@@ -948,6 +960,26 @@ static void _frame_render_horizontal_weather()
 	_render_one_icon_16(ICON16_WEATHER_IDX+weather_info.type, 0);	
 }
 
+static void _render_horizontal_app_notif_core(I8U *string)
+{
+	I16U dis_len;
+	I16U offset = 0;
+  BOOLEAN b_display_center = FALSE;
+
+	// bug fix: dis_len is a byte type, the length should not be greater than 255,
+	// if it does go beyond 255, , dis_len becomes 0, that causes problem
+	dis_len = FONT_get_string_display_len((char *)string);
+
+	if (dis_len > 80) {
+		offset = 22;
+	} else {
+		offset = 256;
+		b_display_center = TRUE;	
+	}
+
+  FONT_load_characters(cling.ui.p_oled_up+offset, (char *)string, 16, 80, b_display_center);		
+}
+
 #ifndef _CLINGBAND_PACE_MODEL_		
 static void _frame_render_horizontal_message()
 {
@@ -972,26 +1004,6 @@ static void _frame_render_horizontal_message()
 	
 	// 3. Render the left		
 	_render_one_icon_16(ICON16_RETURN_IDX, 0);	
-}
-
-static void _render_horizontal_app_notif_core(I8U *string)
-{
-	I16U dis_len;
-	I16U offset = 0;
-  BOOLEAN b_display_center = FALSE;
-
-	// bug fix: dis_len is a byte type, the length should not be greater than 255,
-	// if it does go beyond 255, , dis_len becomes 0, that causes problem
-	dis_len = FONT_get_string_display_len((char *)string);
-
-	if (dis_len > 80) {
-		offset = 22;
-	} else {
-		offset = 256;
-		b_display_center = TRUE;	
-	}
-
-  FONT_load_characters(cling.ui.p_oled_up+offset, (char *)string, 16, 80, b_display_center);		
 }
 
 static void _frame_render_horizontal_app_notif()
@@ -1746,7 +1758,7 @@ static void _frame_render_horizontal_running_calories()
 }
 
 #ifdef _CLINGBAND_PACE_MODEL_
-static void _middle_render_horizontal_running_analysis()
+static void _frame_render_horizontal_running_analysis()
 {
 	const char *running_analysis_name[] = {"RUN DATA", "当日跑步 ", "當日跑步 "};
 	I8U language_type = cling.ui.language_type;
@@ -1768,7 +1780,7 @@ static void _frame_render_horizontal_training_calories()
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
-static void _middle_render_horizontal_running_stop_analysis()
+static void _frame_render_horizontal_running_stop_analysis()
 {
 	const char *analysis_end_name[] = {"INFO END", "结束分析 ", "結束分析 "};
 	I8U language_type = cling.ui.language_type;
@@ -1778,28 +1790,29 @@ static void _middle_render_horizontal_running_stop_analysis()
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_		
-static void _middle_render_horizontal_training_connect_gps()
+static void _frame_render_horizontal_connect_gps()
 {
-  const	char *const conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};	
 	I8U language_type = cling.ui.language_type;		
 
- 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)conn_gps_name[language_type], 16, 128, TRUE);	
+ 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)horizontal_conn_gps_name[language_type], 16, 128, TRUE);	
 }
 
-static void _middle_render_horizontal_training_connect_gps_timeout()
+static void _frame_render_horizontal_connect_gps_timeout()
 {
-  const	char *const conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
 	I8U language_type = cling.ui.language_type;		
 
- 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)conn_timeout_name[language_type], 16, 128, TRUE);	
+ 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)horizontal_conn_timeout_name[language_type], 16, 128, TRUE);	
+	
+  _render_one_icon_16(ICON16_GPS_CONN_TIMEOUT_IDX, 0);	
 }
 
-static void _middle_render_horizontal_training_connect_gps_fail()
+static void _frame_render_horizontal_connect_gps_fail()
 {
-  const	char *const conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
- 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)conn_fail_name[language_type], 16, 128, TRUE);	
+ 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)horizontal_conn_fail_name[language_type], 16, 128, TRUE);	
+	
+	_render_one_icon_16(ICON16_BLE_IDX, 0);		
 }
 #endif
 
@@ -3747,7 +3760,11 @@ static void _frame_render_vertical_training_run_start()
 	_middle_render_vertical_start_or_stop_run_core((I8U *)start_run_name[language_type], (I8U *)training_run_name[language_type]);
 
 	// 2. Render the bottom	
+#ifdef _CLINGBAND_PACE_MODEL_	
+  _bottom_render_vertical_button_hold();
+#else	
   _bottom_render_vertical_ok();
+#endif
 	
 	// 3. Render the top	
   _render_vertical_icon_core(ICON24_RUNNING_DISTANCE_IDX, 24, 0);			
@@ -3774,7 +3791,11 @@ static void _frame_render_vertical_cycling_outdoor_start()
 static void _render_vertical_running_stop_buttom_top()
 {
 	// 2. Render the bottom
+#ifdef _CLINGBAND_PACE_MODEL_	
+  _bottom_render_vertical_button_hold();
+#else	
   _bottom_render_vertical_ok();
+#endif
 	
 	// 3. Render the top		
 	if (cling.ui.icon_sec_blinking)
@@ -3834,7 +3855,7 @@ static void _frame_render_vertical_training_run_or_analysis()
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
-static void _middle_render_vertical_running_analysis()
+static void _frame_render_vertical_running_analysis()
 {
 	const	char *const running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
 	const	char *const running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
@@ -3845,7 +3866,7 @@ static void _middle_render_vertical_running_analysis()
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_
-static void _middle_render_vertical_running_stop_analysis()
+static void _frame_render_vertical_running_stop_analysis()
 {
 	const	char *const stop_analysis_name_1[] = {"INFO", "结束 ", "結束 "};				
 	const	char *const stop_analysis_name_2[] = {"END", "分析 ", "分析 "};				
@@ -3856,36 +3877,37 @@ static void _middle_render_vertical_running_stop_analysis()
 #endif
 
 #ifdef _CLINGBAND_PACE_MODEL_		
-static void _middle_render_horizontal_vertical_connect_gps()
+static void _frame_render_vertical_connect_gps()
 {
-  const	char *const conn_name[] = {"Link", "连接", "連接"};	
-  const	char *const phone_name[] = {"", "手机", "手機"};	
-  const	char *const gps_name[] = {"GPS", "GPS", "GPS"};		
 	I8U language_type = cling.ui.language_type;		
 
-	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 20);
-	_render_vertical_fonts_lib_character_core((I8U *)phone_name[language_type], 16, 40);
-	_render_vertical_fonts_lib_character_core((I8U *)gps_name[language_type], 16, 75);
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_gps_conn_name[language_type], 16, 20);
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_phone_name[language_type], 16, 40);
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_gps_name[language_type], 16, 75);
 }
 
-static void _middle_render_horizontal_vertical_connect_gps_timeout()
+static void _frame_render_vertical_connect_gps_timeout()
 {
-  const	char *const conn_name[] = {"Link", "连接", "連接"};	
-  const	char *const timeout_name[] = {"T/O", "超时", "超時"};
 	I8U language_type = cling.ui.language_type;		
+
+	// 1. Render the middle	
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_gps_conn_name[language_type], 16, 55);
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_gps_timeout_name[language_type], 16, 75);
 	
-	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
-	_render_vertical_fonts_lib_character_core((I8U *)timeout_name[language_type], 16, 75);
+	// 2. Render the top	
+  _render_vertical_icon_core(ICON24_GPS_CONN_TIMEOUT_IDX, 24, 0);			
 }
 
-static void _middle_render_horizontal_vertical_connect_gps_fail()
+static void _frame_render_vertical_connect_gps_fail()
 {
-  const	char *const conn_name[] = {"Link", "连接", "連接"};	
-  const	char *const fail_name[] = {"Fail", "失败", "失敗"};	
 	I8U language_type = cling.ui.language_type;		
 
-	_render_vertical_fonts_lib_character_core((I8U *)conn_name[language_type], 16, 55);
-	_render_vertical_fonts_lib_character_core((I8U *)fail_name[language_type], 16, 75);
+	// 1. Render the middle
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_gps_conn_name[language_type], 16, 55);
+	_render_vertical_fonts_lib_character_core((I8U *)vertical_gps_fail_name[language_type], 16, 75);
+	
+	// 2. Render the top	
+  _render_vertical_icon_core(ICON24_BLE_IDX, 24, 0);		
 }
 #endif
 
@@ -4203,12 +4225,17 @@ typedef struct tagUI_RENDER_CTX {
 /********************* horizontal frame display ********************************************/
 /*******************************************************************************************/
 const UI_RENDER_CTX horizontal_ui_render[] = {
+  // 0: Home
 	{_frame_render_horizontal_home},                     /*UI_DISPLAY_HOME_CLOCK*/
+	
+	// 1: System	
 	{_frame_render_horizontal_system_restart},           /*UI_DISPLAY_SYSTEM_RESTART*/
 	{_frame_render_horizontal_ota},                      /*UI_DISPLAY_SYSTEM_OTA*/
 	{_frame_render_horizontal_linking},                  /*UI_DISPLAY_SYSTEM_LINKING*/
 	{_frame_render_horizontal_unauthorized},             /*UI_DISPLAY_SYSTEM_UNAUTHORIZED*/
 	{_frame_render_horizontal_charging},                 /*UI_DISPLAY_SYSTEM_BATT_POWER*/
+	
+	// 2: a set of the typical use cases	
 	{_frame_render_horizontal_steps},                    /*UI_DISPLAY_TRACKER_STEP*/
 	{_frame_render_horizontal_distance},                 /*UI_DISPLAY_TRACKER_DISTANCE*/
 	{_frame_render_horizontal_calories},                 /*UI_DISPLAY_TRACKER_CALORIES*/
@@ -4216,25 +4243,34 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 #ifdef _CLINGBAND_UV_MODEL_		
 	{_frame_render_horizontal_uv_idx},                   /*UI_DISPLAY_TRACKER_UV_IDX*/
 #endif
+	
+	// 3: a set of smart features	
 	{_frame_render_horizontal_pm2p5},                    /*UI_DISPLAY_SMART_PM2P5*/
   {_frame_render_horizontal_weather}, 	               /*UI_DISPLAY_SMART_WEATHER*/
+#ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_horizontal_message},                  /*UI_DISPLAY_SMART_MESSAGE*/
 	{_frame_render_horizontal_app_notif},                /*UI_DISPLAY_SMART_APP_NOTIF*/
+#endif	
 	{_frame_render_horizontal_detail_notif},             /*UI_DISPLAY_SMART_DETAIL_NOTIF*/
 	{_frame_render_horizontal_incoming_call},            /*UI_DISPLAY_SMART_INCOMING_CALL*/
 	{_frame_render_horizontal_incoming_msg},             /*UI_DISPLAY_SMART_INCOMING_MESSAGE*/	
 	{_frame_render_horizontal_alarm_clock_reminder},     /*UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER*/	
+#ifndef _CLINGBAND_PACE_MODEL_			
 	{_frame_render_horizontal_alarm_clock_detail},       /*UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL*/	
+#endif	
   {_frame_render_horizontal_idle_alert},               /*UI_DISPLAY_SMART_IDLE_ALERT*/	
 	{_frame_render_horizontal_heart_rate},               /*UI_DISPLAY_SMART_HEART_RATE_ALERT*/	
 	{_frame_render_horizontal_steps},                    /*UI_DISPLAY_SMART_STEP_10K_ALERT*/	           
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
   {_frame_render_horizontal_sos_alert},                /*UI_DISPLAY_SMART_SOS_ALERT*/		
 #endif	
+	
+	// 4: a set of VITAL	
 	{_frame_render_horizontal_heart_rate},               /*UI_DISPLAY_VITAL_HEART_RATE*/	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
   {_frame_render_horizontal_skin_temp},                /*UI_DISPLAY_VITAL_SKIN_TEMP*/	
 #endif
+	
 #ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_horizontal_system_restart},           /*UI_DISPLAY_SETTING_VER*/	
   {_frame_render_horizontal_stopwatch_start},	         /*UI_DISPLAY_STOPWATCH_START*/	
@@ -4253,6 +4289,11 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 	{_frame_render_horizontal_training_calories},        /*UI_DISPLAY_WORKOUT_RT_CALORIES*/			
 	{_frame_render_horizontal_workout_stop},             /*UI_DISPLAY_WORKOUT_RT_END*/			
 #endif	
+	
+	// 5: Running Statistics	
+#ifdef _CLINGBAND_PACE_MODEL_			
+	{_frame_render_horizontal_running_analysis},         /*UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS*/		
+#endif	
 	{_frame_render_horizontal_running_distance},         /*UI_DISPLAY_RUNNING_STAT_DISTANCE*/				
 	{_frame_render_horizontal_running_time},             /*UI_DISPLAY_RUNNING_STAT_TIME*/			
 	{_frame_render_horizontal_running_pace},             /*UI_DISPLAY_RUNNING_STAT_PACE*/			
@@ -4260,9 +4301,20 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 	{_frame_render_horizontal_running_cadence},          /*UI_DISPLAY_RUNNING_STAT_CADENCE*/		
 	{_frame_render_horizontal_running_hr},               /*UI_DISPLAY_RUNNING_STAT_HEART_RATE*/			
 	{_frame_render_horizontal_running_calories},         /*UI_DISPLAY_RUNNING_STAT_CALORIES*/				
+#ifdef _CLINGBAND_PACE_MODEL_		
+	{_frame_render_horizontal_running_stop_analysis},    /*UI_DISPLAY_RUNNING_STAT_STOP_ANALYSIS*/		
+#endif	
 	
+	// 6: training Statistics	
 	{_frame_render_horizontal_training_start_run},       /*UI_DISPLAY_TRAINING_STAT_START*/			
-	{_frame_render_horizontal_training_run_or_analysis}, /*UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS*/				
+#ifndef _CLINGBAND_PACE_MODEL_		
+	{_frame_render_horizontal_training_run_or_analysis}, /*UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS*/		
+#endif
+#ifdef _CLINGBAND_PACE_MODEL_		
+	{_frame_render_horizontal_connect_gps},              /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS*/			
+	{_frame_render_horizontal_connect_gps_timeout},      /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT*/			
+	{_frame_render_horizontal_connect_gps_fail},         /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/	
+#endif	
 	{_frame_render_horizontal_training_ready},           /*UI_DISPLAY_TRAINING_STAT_READY*/			
 	{_frame_render_horizontal_training_time},            /*UI_DISPLAY_TRAINING_STAT_TIME*/	
 	{_frame_render_horizontal_training_distance},        /*UI_DISPLAY_TRAINING_STAT_DISTANCE*/		
@@ -4270,6 +4322,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 	{_frame_render_horizontal_training_hr},              /*UI_DISPLAY_TRAINING_STAT_HEART_RATE*/	
 	{_frame_render_horizontal_training_run_stop},        /*UI_DISPLAY_TRAINING_STAT_RUN_STOP*/	
 	
+#ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_horizontal_cycling_outdoor_start},    /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_START*/		
 	{_frame_render_horizontal_cycling_outdoor_ready},    /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY*/		
 	{_frame_render_horizontal_training_time},            /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME*/			
@@ -4281,6 +4334,7 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 	{_frame_render_horizontal_carousel_1},               /*UI_DISPLAY_CAROUSEL_1*/	
 	{_frame_render_horizontal_carousel_2},               /*UI_DISPLAY_CAROUSEL_2*/	
 	{_frame_render_horizontal_carousel_3},               /*UI_DISPLAY_CAROUSEL_3*/	
+#endif	
 }; 
 
 
@@ -4288,12 +4342,17 @@ const UI_RENDER_CTX horizontal_ui_render[] = {
 /************************* vertical frame display **********************************************/
 /***********************************************************************************************/
 const UI_RENDER_CTX vertical_ui_render[] = {
+  // 0: Home	
 	{_frame_render_vertical_home},                       /*UI_DISPLAY_HOME_CLOCK*/
+	
+	// 1: System		
 	{_frame_render_horizontal_system_restart},           /*UI_DISPLAY_SYSTEM_RESTART*/
 	{_frame_render_horizontal_ota},                      /*UI_DISPLAY_SYSTEM_OTA*/
 	{_frame_render_horizontal_linking},                  /*UI_DISPLAY_SYSTEM_LINKING*/
 	{_frame_render_horizontal_unauthorized},             /*UI_DISPLAY_SYSTEM_UNAUTHORIZED*/
 	{_frame_render_horizontal_charging},                 /*UI_DISPLAY_SYSTEM_BATT_POWER*/
+	
+	// 2: a set of the typical use cases		
 	{_frame_render_vertical_steps},                      /*UI_DISPLAY_TRACKER_STEP*/
 	{_frame_render_vertical_distance},                   /*UI_DISPLAY_TRACKER_DISTANCE*/
 	{_frame_render_vertical_calories},                   /*UI_DISPLAY_TRACKER_CALORIES*/
@@ -4301,25 +4360,34 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 #ifdef _CLINGBAND_UV_MODEL_		
 	{_frame_render_vertical_uv_index},                   /*UI_DISPLAY_TRACKER_UV_IDX*/
 #endif
+	
+	// 3: a set of smart features		
 	{_frame_render_vertical_pm2p5},                      /*UI_DISPLAY_SMART_PM2P5*/
   {_frame_render_vertical_weather}, 	                 /*UI_DISPLAY_SMART_WEATHER*/
+#ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_horizontal_message},                  /*UI_DISPLAY_SMART_MESSAGE*/
 	{_frame_render_horizontal_app_notif},                /*UI_DISPLAY_SMART_APP_NOTIF*/
+#endif	
 	{_frame_render_horizontal_detail_notif},             /*UI_DISPLAY_SMART_DETAIL_NOTIF*/
 	{_frame_render_horizontal_incoming_call},            /*UI_DISPLAY_SMART_INCOMING_CALL*/
 	{_frame_render_horizontal_incoming_msg},             /*UI_DISPLAY_SMART_INCOMING_MESSAGE*/	
-	{_frame_render_vertical_alarm_clock_reminder},       /*UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER*/	
+	{_frame_render_vertical_alarm_clock_reminder},       /*UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER*/
+#ifndef _CLINGBAND_PACE_MODEL_			
 	{_frame_render_vertical_alarm_clock_detail},         /*UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL*/	
+#endif	
   {_frame_render_horizontal_idle_alert},               /*UI_DISPLAY_SMART_IDLE_ALERT*/	
 	{_frame_render_vertical_heart_rate},                 /*UI_DISPLAY_SMART_HEART_RATE_ALERT*/	
 	{_frame_render_vertical_steps},                      /*UI_DISPLAY_SMART_STEP_10K_ALERT*/	           
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
   {_frame_render_horizontal_sos_alert},                /*UI_DISPLAY_SMART_SOS_ALERT*/		
 #endif	
+	
+	// 4: a set of VITAL	
 	{_frame_render_vertical_heart_rate},                 /*UI_DISPLAY_VITAL_HEART_RATE*/	
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	
   {_frame_render_vertical_skin_temp},                  /*UI_DISPLAY_VITAL_SKIN_TEMP*/	
 #endif
+	
 #ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_horizontal_system_restart},           /*UI_DISPLAY_SETTING_VER*/	
   {_frame_render_vertical_stopwatch_start},	           /*UI_DISPLAY_STOPWATCH_START*/	
@@ -4338,6 +4406,11 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 	{_frame_render_vertical_training_calories},          /*UI_DISPLAY_WORKOUT_RT_CALORIES*/			
 	{_frame_render_vertical_training_workout_stop},      /*UI_DISPLAY_WORKOUT_RT_END*/			
 #endif	
+	
+	// 5: Running Statistics	
+#ifdef _CLINGBAND_PACE_MODEL_			
+	{_frame_render_vertical_running_analysis},           /*UI_DISPLAY_RUNNING_STAT_RUN_ANALYSIS*/			
+#endif	
 	{_frame_render_vertical_running_distance},           /*UI_DISPLAY_RUNNING_STAT_DISTANCE*/				
 	{_frame_render_vertical_running_time},               /*UI_DISPLAY_RUNNING_STAT_TIME*/			
 	{_frame_render_vertical_running_pace},               /*UI_DISPLAY_RUNNING_STAT_PACE*/			
@@ -4345,9 +4418,20 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 	{_frame_render_vertical_running_cadence},            /*UI_DISPLAY_RUNNING_STAT_CADENCE*/		
 	{_frame_render_vertical_running_hr},                 /*UI_DISPLAY_RUNNING_STAT_HEART_RATE*/			
 	{_frame_render_vertical_running_calories},           /*UI_DISPLAY_RUNNING_STAT_CALORIES*/				
+#ifdef _CLINGBAND_PACE_MODEL_		
+	{_frame_render_vertical_running_stop_analysis},      /*UI_DISPLAY_RUNNING_STAT_STOP_ANALYSIS*/		
+#endif	
 	
+	// 6: training Statistics		
 	{_frame_render_vertical_training_run_start},         /*UI_DISPLAY_TRAINING_STAT_START*/			
-	{_frame_render_vertical_training_run_or_analysis},   /*UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS*/				
+#ifndef _CLINGBAND_PACE_MODEL_		
+	{_frame_render_vertical_training_run_or_analysis},   /*UI_DISPLAY_TRAINING_STAT_START_OR_ANALYSIS*/	
+#endif	
+#ifdef _CLINGBAND_PACE_MODEL_			
+	{_frame_render_vertical_connect_gps},                /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS*/			
+	{_frame_render_vertical_connect_gps_timeout},        /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_TIMEOUT*/			
+	{_frame_render_vertical_connect_gps_fail},           /*UI_DISPLAY_TRAINING_STAT_CONNECT_GPS_FAIL*/	
+#endif	
 	{_frame_render_vertical_training_ready},             /*UI_DISPLAY_TRAINING_STAT_READY*/			
 	{_frame_render_vertical_training_time},              /*UI_DISPLAY_TRAINING_STAT_TIME*/	
 	{_frame_render_vertical_training_distance},          /*UI_DISPLAY_TRAINING_STAT_DISTANCE*/		
@@ -4355,6 +4439,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 	{_frame_render_vertical_training_hr},                /*UI_DISPLAY_TRAINING_STAT_HEART_RATE*/	
 	{_frame_render_vertical_training_run_stop},          /*UI_DISPLAY_TRAINING_STAT_RUN_STOP*/	
 	
+#ifndef _CLINGBAND_PACE_MODEL_		
 	{_frame_render_vertical_cycling_outdoor_start},      /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_START*/		
 	{_frame_render_vertical_cycling_outdoor_ready},      /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_READY*/		
 	{_frame_render_vertical_training_time},              /*UI_DISPLAY_CYCLING_OUTDOOR_STAT_TIME*/			
@@ -4366,6 +4451,7 @@ const UI_RENDER_CTX vertical_ui_render[] = {
 	{_frame_render_vertical_carousel_1},                 /*UI_DISPLAY_CAROUSEL_1*/	
 	{_frame_render_vertical_carousel_2},                 /*UI_DISPLAY_CAROUSEL_2*/	
 	{_frame_render_vertical_carousel_3},                 /*UI_DISPLAY_CAROUSEL_3*/	
+#endif	
 }; 
 
 

@@ -630,19 +630,6 @@ static void _set_animation_with_button_single(I8U frame_index)
 static void _set_animation_with_button_hold(I8U frame_index)
 {
 	BOOLEAN b_vertical_animation = FALSE;
-	
-	if ((frame_index == UI_DISPLAY_HOME) ||
-		  (frame_index == UI_DISPLAY_TRACKER_STEP) ||
-	    (frame_index == UI_DISPLAY_TRACKER_DISTANCE) ||
-	    (frame_index == UI_DISPLAY_TRACKER_CALORIES) ||
-	    (frame_index == UI_DISPLAY_TRACKER_ACTIVE_TIME) ||
-      (frame_index == UI_DISPLAY_VITAL_HEART_RATE) ||
-	    (frame_index == UI_DISPLAY_SMART_WEATHER) ||
-	    (frame_index == UI_DISPLAY_SMART_PM2P5)) {
-						 
-		UI_set_animation(ANIMATION_PANNING_OUT, TRANSITION_DIR_LEFT);
-		return;					 
-	}
 
   if (_ui_vertical_animation(frame_index) && cling.ui.b_detail_page) {
 		b_vertical_animation = TRUE;
