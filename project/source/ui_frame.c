@@ -1054,7 +1054,9 @@ static void _frame_render_horizontal_detail_notif()
 	if (cling.ui.notific.detail_idx) {
 		string_pos = cling.ui.notific.string_pos_buf[cling.ui.notific.detail_idx - 1];
 	}
-	FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, UI_DETAIL_MESSAGE_DISPLAY_MAX_LEN, FALSE);		
+	
+	if (string_pos <= 125)
+	  FONT_load_characters(cling.ui.p_oled_up, (char *)string+string_pos, 16, UI_DETAIL_MESSAGE_DISPLAY_MAX_LEN, FALSE);		
 	
 	// 2. Render the right
   _right_render_horizontal_more();

@@ -200,26 +200,15 @@ static BOOLEAN _ui_vertical_animation(I8U frame_index)
 #ifndef _CLINGBAND_PACE_MODEL_		
 	if ((frame_index >= UI_DISPLAY_TRACKER) && (frame_index <= UI_DISPLAY_TRACKER_ACTIVE_TIME)) 
 		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_MESSAGE)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_APP_NOTIF)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_DETAIL_NOTIF)
-		return TRUE;
-	else if (frame_index == UI_DISPLAY_SMART_INCOMING_MESSAGE)
-		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_REMINDER)
-		return TRUE;		
-	else if (frame_index == UI_DISPLAY_SMART_ALARM_CLOCK_DETAIL)
-		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_IDLE_ALERT)
-		return TRUE;	
-	else if (frame_index == UI_DISPLAY_SMART_HEART_RATE_ALERT)
-		return TRUE;		
-	else if (frame_index == UI_DISPLAY_SMART_STEP_10K_ALERT)
-		return TRUE;		
-	else 
+	
+	if ((frame_index >= UI_DISPLAY_SMART_MESSAGE) && 
+		  (frame_index <= UI_DISPLAY_SMART_STEP_10K_ALERT) &&
+	    (frame_index != UI_DISPLAY_SMART_INCOMING_CALL)) {
+		
+	  return TRUE;
+	} else {
 		return FALSE;
+	}
 #endif	
 }
 
@@ -714,6 +703,8 @@ static void _update_notif_repeat_look_time(I8U frame_index)
 		notific->b_need_stored = FALSE;
 		// Reset message look time
 		notific->repeat_look_time = 0;		
+		// Clear detail message string pos buff.
+		memset(notific->string_pos_buf, 0, 5);
 	}	
 }
 
