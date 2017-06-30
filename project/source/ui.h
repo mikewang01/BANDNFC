@@ -25,6 +25,8 @@
 #define UI_LOOK_HEART_RATE_ALERT_MAX_REPEAT_TIME      2
 #define UI_LOOK_STEP_10K_ALERT_MAX_REPEAT_TIME        2
 
+#define UI_DETAIL_MESSAGE_DISPLAY_MAX_LEN             112
+
 /** @brief UI regular page filtering.
  *
  * @details 16 bits:
@@ -715,10 +717,6 @@ typedef struct tagUI_ANIMATION_CTX {
 	// Vertical switching
 	I8U vertical_index;
 
-	// Rendering icon index context
-	I8U vertical_icon_24_idx;
-	I8U horizontal_icon_16_idx;
-	
 	I8U linking_wave_index;
 	I8U heart_rate_wave_index;
 		

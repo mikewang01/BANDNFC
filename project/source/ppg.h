@@ -258,9 +258,8 @@ typedef struct tagHEARTRATE_CTX{
 	I16U  m_pre_pulse_width;
 #ifndef __YLF__
 	BOOLEAN b_exceptional_hr_alert;
-//	BOOLEAN b_walkstate;
-//	BOOLEAN b_runstate;
-	I8U m_sportstate;
+	BOOLEAN b_walkstate;
+	BOOLEAN b_runstate;
 	I8U measType;//0-static HR,1-training HR,2-fixed time HR measurement
 #endif
 #ifndef __YLF__
@@ -274,7 +273,6 @@ typedef struct tagHEARTRATE_CTX{
 	I8U   m_epoch_num[8];
 #endif
 } HEARTRATE_CTX;
-
 
 
 //

@@ -823,14 +823,13 @@ void TRACKING_get_whole_minute_delta(MINUTE_TRACKING_CTX *pminute, MINUTE_DELTA_
 		cling.user_data.idle_state = IDLE_ALERT_STATE_IDLE;
 	}
 #ifndef __YLF__
-	if((pminute->running>100) || ((pminute->running+pminute->walking)>140)){
-		cling.hr.m_sportstate = 2;//cling.hr.b_runstate = TRUE;
-	}else if(pminute->walking > 60){//if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
-		cling.hr.m_sportstate = 1;//cling.hr.b_walkstate = TRUE;
+	if(pminute->running>100 || ((pminute->running+pminute->walking)>140)){
+		cling.hr.b_runstate = TRUE;
+	}else if(pminute->walking>60){//if(pminute->walking>50){//if((pminute->walking+pminute->running)>80){//if(pminute->walking>50){
+		cling.hr.b_walkstate = TRUE;
 	}else{
-//		cling.hr.b_runstate = FALSE;
-//		cling.hr.b_walkstate = FALSE;
-		cling.hr.m_sportstate = 0;//
+		cling.hr.b_runstate = FALSE;
+		cling.hr.b_walkstate = FALSE;
 	}
 #endif
 	adj = 0;

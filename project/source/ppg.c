@@ -132,8 +132,7 @@ static void _calc_heart_rate()
 				}
 				h->m_epoch_cnt ++;
 			}else{
-				//if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
-				if(((epoch_num>=33) &&(epoch_num<=47)) || ((h->m_sportstate==1) && ((epoch_num>20) && (epoch_num<33))) || ((h->m_sportstate==2) && ((epoch_num>=15) && (epoch_num<=20)))){
+				if(((epoch_num>=33) &&(epoch_num<=47)) || (h->b_walkstate && ((epoch_num>20) && (epoch_num<33))) || (h->b_runstate && ((epoch_num>=15) && (epoch_num<=20)))){
 					h->m_epoch_num[0] = epoch_num;
 				}
 			}
@@ -224,7 +223,7 @@ static void _reset_heart_rate_calculator()
 #ifndef __YLF__
 	h->m_epoch_cnt = 0;
 	if((epoch_num<30)){
-		if(h->m_sportstate == 2){//if(h->b_runstate){
+		if(h->b_runstate){
 			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 30 -((30-epoch_num)& 0x05);
 		}else{
 			for (i=0; i<PPG_HR_SMOOTH_WINDOW_WIDTH; i++) h->m_epoch_num[i] = 35 -((30-epoch_num)& 0x05);
@@ -936,7 +935,7 @@ I8U PPG_minute_hr_calibrate()
 	return hr_rendering;
 }
 
-#ifndef __YLF_PPG__
+
 void update_and_push_hr()
 {
 #ifdef _ENABLE_PPG_
@@ -951,4 +950,3 @@ void update_and_push_hr()
 			}
 #endif
 }
-#endif

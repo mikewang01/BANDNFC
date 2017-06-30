@@ -93,6 +93,7 @@ static void _font_read_one_Chinese_characters(I8U *utf_8, I16U len, I8U *dataBuf
  *
  * b_center : display in the middle(TRUE),display from the top(FALSE). 
  */
+
 I8U FONT_load_characters(I8U *pin_in, char *string, I8U height, I8U horizontal_len, BOOLEAN b_center)
 {	
 	I8U  font_data[32];
@@ -126,12 +127,12 @@ I8U FONT_load_characters(I8U *pin_in, char *string, I8U height, I8U horizontal_l
         memcpy(p0 + offset, font_data, 6);  	
 				offset += 6;
 				line_len += 6;
-		  } else if (height == 16) {	
+		  } else if (height == 16) {
 				if(offset > (horizontal_len - 8)){
 				  b_center = FALSE;
 					curr_line_pos++;
 					if(curr_line_pos >= 2)	
-            return line_len;
+            break;
           p0 += 256;	
           offset = 0;					
 		    }					
@@ -145,25 +146,33 @@ I8U FONT_load_characters(I8U *pin_in, char *string, I8U height, I8U horizontal_l
 			
 		  pos += 1;
 	  } else if (((string[pos]&0xF0) == 0xE0) && ((string[pos+1]&0xC0) == 0x80) && ((string[pos+2]&0xC0) == 0x80)) {
-			// Chinese characters Utf-8 encode format.	
-			if(offset > (horizontal_len - 16)){
-				b_center = FALSE;
-				curr_line_pos++;
-				if(curr_line_pos >= 2)	
-          return line_len;
-				p0 += 256;	
-				offset = 0;					
+			// Chinese character should only respond to height of 16
+			if (height == 16) 
+			{
+				// Chinese characters Utf-8 encode format.	
+				if(offset > (horizontal_len - 16)){
+					// Switch to second line when displaying two lines of Chinese Characters
+					b_center = FALSE;
+					curr_line_pos++;
+					if(curr_line_pos >= 2)	
+						break;
+					p0 += 256;	
+					offset = 0;					
+				}
+				_font_read_one_Chinese_characters((I8U *)(string+pos), 32, font_data);
+				memcpy(p0 + offset, font_data, 16);
+				memcpy(p0 + offset + 128, &font_data[16], 16);
+				offset += 16;
+				line_len += 16;
 			}
-		  _font_read_one_Chinese_characters((I8U *)(string+pos), 32, font_data);
-		  memcpy(p0 + offset, font_data, 16);
-      memcpy(p0 + offset + 128, &font_data[16], 16);
-			offset += 16;
 		  pos += 3;
-			line_len += 16;
 	  } else {
 			// Is not within the scope of the can display,continue to read the next.
 			pos++;
 		}
+		
+		// We should put extra protection for overflow since next character could be a chinese character
+		if (pos > 125) break;
 	}
 	
 	// Shift all the display to the middle
@@ -217,7 +226,7 @@ I8U FONT_get_string_display_depth(char *string)
 
 		if((string[pos] >= 0x20)&&(string[pos] <= 0x7e)) {
 		  // ASCII code encode format.
-			if(curr_offset >= 112) {
+			if(curr_offset > (UI_DETAIL_MESSAGE_DISPLAY_MAX_LEN - 8)) {
 				curr_offset = 0;
 				curr_line_pos++;
 				if ((curr_line_pos%2) == 0) {
@@ -228,7 +237,7 @@ I8U FONT_get_string_display_depth(char *string)
 			pos += 1;
 		} else if (((string[pos]&0xF0) == 0xE0)&&((string[pos+1]&0xC0) == 0x80)&&((string[pos+2]&0xC0) == 0x80)) {
 		  // Chinese characters Utf-8 encode format.
-			if(curr_offset >= 104) {
+			if(curr_offset > (UI_DETAIL_MESSAGE_DISPLAY_MAX_LEN - 16)) {
 				curr_offset = 0;
 				curr_line_pos++;
 				if ((curr_line_pos%2) == 0) {
@@ -278,10 +287,13 @@ I16U FONT_get_string_display_len(char *string)
 			// Is not within the scope of the can display,continue to read the next.
 			pos++;		
 		}
-		
+
+		// Don't need to add restrictions in this place.
+#if 0		
 		// leave at least one character at the end
 		if (offset >= 240)
 			break;
+#endif		
 	}
 	return offset;
 }

@@ -32,5 +32,4 @@ double Butterworth_Filter_LP(double invar);
 double Butterworth_Filter_HP(double invar);
 I8U    Kalman_Filter(I8U sample_width);
 
-
 #endif

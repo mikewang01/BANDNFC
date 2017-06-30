@@ -17,12 +17,6 @@ enum {
 	LANGUAGE_TYPE_MAX
 };
 
-typedef struct tagUI_RENDER_CTX {
-  void (*top_row_render)();
-  void (*middle_row_render)();
-  void (*bottom_row_render)();
-} UI_RENDER_CTX;
-
 void UI_frame_display_appear(I8U index, BOOLEAN b_render);
 void UI_render_screen(void);
 #endif
