@@ -105,6 +105,7 @@ static void _gpio_cfg_connect_input(uint32_t pin_number, nrf_gpio_pin_sense_t se
                                         | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);
 	}
 }
+
 #endif
 
 void GPIO_system_powerup()
@@ -198,7 +199,7 @@ void GPIO_init()
 	_gpio_cfg_connect_input(GPIO_CHARGER_CHGFLAG, NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_PULLUP); // Charger Flag, no sense, internal pull up
 	_gpio_cfg_output(GPIO_CHARGER_EN       , TRUE );  // Charge enable, drive HIGH
 
-	// 20 .. 24
+	// 20 .. 24	
 	_gpio_cfg_connect_input(GPIO_TOUCH_HOMEKEY_INT, NRF_GPIO_PIN_SENSE_LOW, NRF_GPIO_PIN_PULLUP);
 	_gpio_cfg_output(GPIO_SPI_0_CS_NFLASH  , TRUE );  // SPI CS (NOR FLASH), drive HIGH
 	_gpio_cfg_disconnect_input(GPIO_NFC_RESET     );  // NFC reset pin
@@ -366,6 +367,12 @@ void GPIO_therm_adc_config(void)
 	nrf_adc_configure( (nrf_adc_config_t *)&nrf_adc_config);
 #endif
 }
+
+void GPIO_cfg_homeky_no_sense()
+{
+	_gpio_cfg_connect_input(GPIO_TOUCH_HOMEKEY_INT, NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_PULLUP);
+}
+
 #endif
 
 void GPIO_vibrator_on_block(I8U latency)
@@ -513,3 +520,4 @@ void BATT_gpiote_init()
 	nrf_drv_gpiote_in_event_enable(GPIO_CHARGER_INT, true);
 }
 #endif
+

@@ -68,6 +68,7 @@ void GPIO_vbat_adc_disable(void);
 void GPIO_therm_adc_config(void);
 void GPIO_therm_power_on(void);
 void GPIO_therm_power_off(void);
+void GPIO_cfg_homeky_no_sense(void);
 #endif
 
 // TWI pin configuration

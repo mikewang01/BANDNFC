@@ -141,6 +141,8 @@ void HOMEKEY_click_check()
 #ifndef __YLF_SOS__
 			if (k->defective_time_out >= 7) {//if (k->defective_time_out >= 15000) {
 				k->b_defective = TRUE;
+				// do not trigger interrupt anymore
+				GPIO_cfg_homeky_no_sense();
 				return;
 			}
 #endif
