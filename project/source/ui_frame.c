@@ -1765,7 +1765,14 @@ static void _frame_render_horizontal_running_analysis()
 	const char *running_analysis_name[] = {"RUN DATA", "当日跑步 ", "當日跑步 "};
 	I8U language_type = cling.ui.language_type;
 	
+	// 1. Render the middle
 	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)running_analysis_name[language_type], 16, 128, FALSE);
+	
+	// 2. Render the right
+	_right_render_horizontal_button_hold();
+	
+	// 3. Render the left
+	_render_one_icon_16(ICON16_RUNNING_PACE_IDX, 0);	
 }
 #endif
 
@@ -1786,8 +1793,15 @@ static void _frame_render_horizontal_running_stop_analysis()
 {
 	const char *analysis_end_name[] = {"INFO END", "结束分析 ", "結束分析 "};
 	I8U language_type = cling.ui.language_type;
-	
+
+	// 1. Render the middle	
 	FONT_load_characters(cling.ui.p_oled_up+128+24, (char *)analysis_end_name[language_type], 16, 128, FALSE);
+	
+	// 2. Render the right
+	_right_render_horizontal_button_hold();
+	
+	// 3. Render the left
+	_render_one_icon_16(ICON16_RUNNING_STOP_IDX, 0);		
 }
 #endif
 
@@ -3871,7 +3885,14 @@ static void _frame_render_vertical_running_analysis()
 	const	char *const running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
 	I8U language_type = cling.ui.language_type;		
 
+	// 1. Render the middle.
 	_middle_render_vertical_character_core((I8U *)running_analysis_name_1[language_type], 50, (I8U *)running_analysis_name_2[language_type], 70);		
+	
+	// 2. Render the bottom.
+	_bottom_render_vertical_button_hold();
+	
+	// 3. Render the top	
+  _render_vertical_icon_core(ICON24_RUNNING_PACE_IDX, 24, 0);					
 }
 #endif
 
@@ -3882,7 +3903,14 @@ static void _frame_render_vertical_running_stop_analysis()
 	const	char *const stop_analysis_name_2[] = {"END", "分析 ", "分析 "};				
 	I8U language_type = cling.ui.language_type;			
 
+	// 1. Render the middle.	
 	_middle_render_vertical_character_core((I8U *)stop_analysis_name_1[language_type], 50, (I8U *)stop_analysis_name_2[language_type], 70);		
+	
+	// 2. Render the bottom.
+	_bottom_render_vertical_button_hold();
+	
+	// 3. Render the top	
+  _render_vertical_icon_core(ICON24_RUNNING_STOP_IDX, 24, 0);				
 }
 #endif
 
