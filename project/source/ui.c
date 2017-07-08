@@ -1872,10 +1872,11 @@ void UI_state_machine()
 				
 				if (cling.user_data.b_running_alwayson) {
 #ifdef _CLINGBAND_PACE_MODEL_							
-					if (!a->b_workout_active) {
+					if (!a->b_workout_active) 
 #else 
-					if ((!a->b_workout_active) && (!u->stopwatch.b_without_exit_flag)) {
-#endif						
+					if ((!a->b_workout_active) && (!u->stopwatch.b_without_exit_flag)) 
+#endif			
+					{						
 						N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
 						u->state = UI_STATE_DARK;
 					}
