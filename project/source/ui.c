@@ -1867,7 +1867,8 @@ void UI_state_machine()
 #endif
 			
 			// If we don't see any gesture in 4 seconds, dark out screen
-			if (t_curr > (u->touch_time_stamp+t_threshold)) {
+			t_diff = t_curr - u->touch_time_stamp; // Using "t_diff" in case there is a memory overflow
+			if (t_diff > t_threshold) {
 				
 				if (cling.user_data.b_running_alwayson) {
 #ifdef _CLINGBAND_PACE_MODEL_							
