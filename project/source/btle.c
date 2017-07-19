@@ -11,10 +11,10 @@
 
 #include "main.h"
 #include "Aes.h"
-#include "ble_conn_params.h"
 #define BLE_PAYLOAD_LEN 20
 #ifndef _CLING_PC_SIMULATION_
 extern int8_t ancs_master_handle;
+#include "ble_conn_params.h"
 
 #endif
 
@@ -193,7 +193,7 @@ void BTLE_disconnect(I8U reason)
 {
 #ifndef _CLING_PC_SIMULATION_
 	BLE_CTX *r = &cling.ble;
-	uint32_t err_code;
+	I32U err_code;
 	
 	_BTLE_LOG("[BTLE] disconnect BLE for reason: %d", reason);
 	
@@ -426,7 +426,7 @@ BOOLEAN BTLE_Send_Packet(I8U *data, I8U len)
 	uint16_t               hvx_len;
 	ble_gatts_hvx_params_t hvx_params;
 	I8U ch_idx = 0;
-	uint32_t err_code;
+	I32U err_code;
 	
 	// Input parameter check
 	if (data == NULL || (len != CP_UUID_PKT_SIZE))
@@ -582,7 +582,7 @@ BOOLEAN BTLE_is_streaming_enabled(void)
 /*
 	retrive the amount of minute activity need to be uploaded
 */
-uint32_t get_flash_minute_activity_offset()
+I32U get_flash_minute_activity_offset()
 {
 	#define DATA_SENDED_MARK (0x80000000)
 	I32U stored_offset=0;
@@ -590,7 +590,7 @@ uint32_t get_flash_minute_activity_offset()
 	static I32U data_sended_offset = 0;
 	I32U offset = data_sended_offset;
 	I32U dw_buf[4];
-	uint32_t epoch_file_count = FILE_exists_with_prefix((I8U *)"epoch", 5);
+	I32U epoch_file_count = FILE_exists_with_prefix((I8U *)"epoch", 5);
 	_BTLE_LOG("[TRACKING] epoch file number = %d", epoch_file_count);
 	/*if a buffered file existed in file system this means this device has not been synced for days*/
 	if(epoch_file_count > 0){
@@ -715,20 +715,22 @@ BOOLEAN BTLE_streaming_authorized()
 		
 	// Streaming second based activity packets
 	if (r->streaming_second_count > BLE_STREAMING_SECOND_MAX) {
+#ifndef _CLING_PC_SIMULATION_
 		// Switch to slow connection mode if the streaming part is done
 		if (HAL_set_slow_conn_params(SWITCH_SPEED_FOR_POWER_SAVING)) {
 			N_SPRINTF("Streaming ends: Slow Connection interval(%d)", cling.system.reconfig_cnt);
 		}
+#endif
 		return FALSE;
 	} else {
 		if (t_curr > (r->packet_received_ts + 20000)) {
 #ifndef _CLING_PC_SIMULATION_
 			BTLE_reset_streaming();
-#endif
 			// if we haven't seen anything in about 20 seconds, switch to slow connection mode
 			if (HAL_set_slow_conn_params(SWITCH_SPEED_FOR_POWER_SAVING)) {
 				N_SPRINTF("No packets: Slow Connection interval");
 			}
+#endif
 		} else {
 				// Update amount of data needs to be streamed
 				if (!r->streaming_minute_scratch_amount) {
@@ -788,9 +790,10 @@ BOOLEAN BTLE_streaming_authorized()
 	// then come the second data 
 	if (t_curr > (r->streaming_ts + 1000)) {
 
+#ifndef _CLING_PC_SIMULATION_
 		// Streaming seconds means we are done with syncing, so switch to slow connection mode
 		HAL_set_slow_conn_params(SWITCH_SPEED_FOR_POWER_SAVING);
-
+#endif
 		// For background activity streaming, we default media to be BLE.
 		CP_create_streaming_daily_msg();
 		r->streaming_ts = t_curr;	// Recording streaming time stamp

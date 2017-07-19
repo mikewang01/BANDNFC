@@ -8,8 +8,10 @@
 #ifndef _ANCS_H__
 #define _ANCS_H__
 #include "standard_types.h"
-#include "ble.h"
 
+#ifndef _CLING_PC_SIMULATION_
+#include "ble.h"
+#endif
 #define _ENABLE_ANCS_
 
 /**@brief Category IDs for iOS notifications. */

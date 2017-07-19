@@ -24,7 +24,7 @@ I32U SYSFLASH_drv_sector_erasure(I32U addr)
 	return err_code;
 }
 
-void SYSFLASH_drv_event_handler(uint32_t sys_evt)
+void SYSFLASH_drv_event_handler(I32U sys_evt)
 {
 	if (g_system_state == SYSFLASH_STATE_ERASURE) {
 		N_SPRINTF("[SYSTEM] Flash operation: erasure with event %d", sys_evt);

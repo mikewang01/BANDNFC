@@ -13,16 +13,18 @@
 #ifndef _CLING_PC_SIMULATION_
 #include "ble_flash.h"
 #include "pstorage.h"
+#include "crc_16.h"
 #endif
 #include "sysflash_rw.h"
-#include "crc_16.h"
 
 #define SYSTEM_LOG Y_SPRINTF
 
 I16U CRCCCITT(I8U *data, I32U length, unsigned short seed, unsigned short final)
 {
     I16U crc = seed;
-    crc = cyg_crc16(data, length, crc);  
+#ifndef _CLING_PC_SIMULATION_
+	crc = cyg_crc16(data, length, crc);
+#endif
     return (crc ^ final);
 }
 
@@ -693,7 +695,8 @@ void SYSTEM_format_disk(BOOLEAN b_erase_data)
 void SYSTEM_restart_from_reset_vector()
 {
 	SYSTEM_LOG("[SYSTEM] restarting system");
-	
+#ifndef _CLING_PC_SIMULATION_
+
 #ifdef _CLINGBAND_2_PAY_MODEL_	
 	CLASS(HalExti) *p_exti_instance = HalExti_get_instance();
 	p_exti_instance->disable_all(p_exti_instance);
@@ -707,6 +710,7 @@ void SYSTEM_restart_from_reset_vector()
 	
 	// Reboot system.
 	sd_nvic_SystemReset();
+#endif
 }
 
 void SYSTEM_release_mutex(I8U value)

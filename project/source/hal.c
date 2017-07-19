@@ -44,9 +44,9 @@
 #include "pstorage_platform.h"
 #include "pstorage.h"
 #include "ble_db_discovery.h"
+#include "wechat_port.h"
 #endif
 #include "sysflash_rw.h"
-#include "wechat_port.h"
 
 #define _TOUCH_IC_PROGRAM_
 

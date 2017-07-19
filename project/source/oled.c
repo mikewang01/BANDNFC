@@ -3,9 +3,13 @@
 #include "spidev_hal.h"
 #include "font.h"
 #endif
-
+#ifndef _CLING_PC_SIMULATION_
 extern I8U g_spi_tx_buf[];
 extern I8U g_spi_rx_buf[];
+#else
+I8U g_spi_tx_buf[10];
+I8U g_spi_rx_buf[10];
+#endif
 
 #ifdef _CLINGBAND_2_PAY_MODEL_
 static void oled_tx_rx(spi_master_hw_instance_t   spi_master_instance,
@@ -24,8 +28,9 @@ static void oled_tx_rx(spi_master_hw_instance_t   spi_master_instance,
 /**@brief Function for OLED write command.
  *
  */
-static void _set_reg(uint8_t command)
+static void _set_reg(I8U command)
 {    
+#ifndef _CLING_PC_SIMULATION_
 	g_spi_tx_buf[0] = command;
 
 	nrf_gpio_pin_clear(GPIO_OLED_A0);
@@ -35,10 +40,12 @@ static void _set_reg(uint8_t command)
 #else 
 	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 1, g_spi_rx_buf, 0, GPIO_SPI_0_CS_OLED);	
 #endif	
+#endif
 }
 
 static void _set_data(I16U num, I8U *data)
 {
+#ifndef _CLING_PC_SIMULATION_
 	nrf_gpio_pin_set(GPIO_OLED_A0);
 	
 #ifdef _CLINGBAND_2_PAY_MODEL_	
@@ -46,6 +53,7 @@ static void _set_data(I16U num, I8U *data)
 #else 
 	SPI_master_tx_rx(SPI_MASTER_0, data, num,g_spi_rx_buf,0, GPIO_SPI_0_CS_OLED);  
 #endif	
+#endif
 }
 
 void OLED_power_on(void) 
@@ -175,17 +183,18 @@ void OLED_set_panel_off()
 
 BOOLEAN OLED_set_panel_on()
 {
-#ifndef _CLING_PC_SIMULATION_
 	CLING_OLED_CTX *o = &cling.oled;
 
 	// Start 20 ms timer for screen rendering
 	RTC_start_operation_clk();
 	
+#ifndef _CLING_PC_SIMULATION_
 	// We are about to turn on OLED, if BLE is in idle mode, we should start advertising
 	if (BTLE_is_idle()) {
 		BTLE_execute_adv(TRUE);
 	}
-	
+#endif
+
 	if (OLED_STATE_IDLE == o->state) {
 		o->state = OLED_STATE_APPLYING_POWER;
 		
@@ -193,7 +202,7 @@ BOOLEAN OLED_set_panel_on()
 		
 		return TRUE;
 	} 
-#endif
+
 	return FALSE;
 }
 
@@ -224,7 +233,6 @@ BOOLEAN OLED_panel_is_turn_on()
 //static I8U oledstate;
 void OLED_state_machine(void) 
 {
-#ifndef _CLING_PC_SIMULATION_
 	I32U t_curr;
 	CLING_OLED_CTX *o = &cling.oled;
 	t_curr = CLK_get_system_time();
@@ -260,11 +268,13 @@ void OLED_state_machine(void)
 		{
 			if ((t_curr - o->ts) > OLED_POWER_START_DELAY_TIME) {
 			  if (!o->b_init_finished) {			
+#ifndef _CLING_PC_SIMULATION_
 				  // Pulse the reset low for the minimum time.
 				  nrf_gpio_pin_clear(GPIO_OLED_RST);
 				  // now pulse reset for at least 3us
 				  BASE_delay_msec(2);
 				  nrf_gpio_pin_set(GPIO_OLED_RST);
+#endif
 				}
 				o->state = OLED_STATE_INIT_REGISTERS;
 			}
@@ -316,7 +326,6 @@ void OLED_state_machine(void)
 		default:
 			break;
 	}
-#endif
 }
 
 

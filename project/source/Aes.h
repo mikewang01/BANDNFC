@@ -13,10 +13,10 @@ Classification: U//FOUO
 #ifndef htons
 #define htons(A) ((((uint16_t)(A) & 0xff00) >> 8) | \
 (((uint16_t)(A) & 0x00ff) << 8))
-#define htonl(A) ((((uint32_t)(A) & 0xff000000) >> 24) | \
-(((uint32_t)(A) & 0x00ff0000) >> 8) | \
-(((uint32_t)(A) & 0x0000ff00) << 8) | \
-(((uint32_t)(A) & 0x000000ff) << 24))
+#define htonl(A) ((((I32U)(A) & 0xff000000) >> 24) | \
+(((I32U)(A) & 0x00ff0000) >> 8) | \
+(((I32U)(A) & 0x0000ff00) << 8) | \
+(((I32U)(A) & 0x000000ff) << 24))
 #define ntohs htons
 #define ntohl htonl
 #endif
@@ -54,19 +54,19 @@ typedef enum
 /** @brief This structure holds the AES key context */
 typedef struct aes_key_st 
 {
-    uint16_t rounds;                    /**< @brief # of rounds - based on keysize */
-    uint16_t key_size;                  /**< @brief keysize int bits */
-    uint32_t ks[(AES_MAXROUNDS+1)*8];   /**< @brief hold the different keystates */
-    uint8_t  iv[AES_IV_SIZE];           /**< @brief holds the initilaization vector */
+    I16U rounds;                    /**< @brief # of rounds - based on keysize */
+    I16U key_size;                  /**< @brief keysize int bits */
+    I32U ks[(AES_MAXROUNDS+1)*8];   /**< @brief hold the different keystates */
+    I8U  iv[AES_IV_SIZE];           /**< @brief holds the initilaization vector */
 } AES_CTX;
 
 
 
 /* ----- static functions ----- */
-void AES_encrypt(const AES_CTX *ctx, uint32_t *data);
-void AES_decrypt(const AES_CTX *ctx, uint32_t *data);
-void AES_hncpy32(uint32_t * dst, uint32_t * src);
-uint8_t AES_xtime(uint32_t x);
+void AES_encrypt(const AES_CTX *ctx, I32U *data);
+void AES_decrypt(const AES_CTX *ctx, I32U *data);
+void AES_hncpy32(I32U * dst, I32U * src);
+I8U AES_xtime(I32U x);
 void AES_generateSBox(void);
 
 
@@ -81,7 +81,7 @@ AES_set_key
     @param[in]  iv      Initlaization vector data
     @param[in]  mode 	Enum of supported AES keysizes
 ****************************************************************************/
-void AES_set_key(AES_CTX *ctx, const uint8_t *key, const uint8_t *iv, AES_MODE mode);
+void AES_set_key(AES_CTX *ctx, const I8U *key, const I8U *iv, AES_MODE mode);
 
 /****************************************************************************
 AES_convert_key
@@ -108,7 +108,7 @@ AES_cbc_encrypt
     @param[in]  length  The length of the msguffer in bytes, must be evenly
                         divisible the AES blocksize of 16.
 ****************************************************************************/
-void AES_cbc_encrypt(AES_CTX *ctx, const uint8_t *msg, uint8_t *out, int length);
+void AES_cbc_encrypt(AES_CTX *ctx, const I8U *msg, I8U *out, int length);
 
 /****************************************************************************
 AES_cbc_decrypt
@@ -126,4 +126,4 @@ AES_cbc_decrypt
     @param[in]  length  The length of the msguffer in bytes, must be evenly
                         divisible the AES blocksize of 16.
 ****************************************************************************/
-void AES_cbc_decrypt(AES_CTX *ctx, const uint8_t *msg, uint8_t *out, int length);
+void AES_cbc_decrypt(AES_CTX *ctx, const I8U *msg, I8U *out, int length);

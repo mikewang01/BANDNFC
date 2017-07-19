@@ -249,9 +249,11 @@ static void _create_dev_info_msg()
     I16S file_available;
     I8U dev_data[GLOBAL_DEVICE_ID_LEN];
     I8U key_user_info[32];
-    I8U i;
+	I8U i;
     PAIRING_CTX *pPairing;
-		ble_gap_addr_t mac_addr_t;
+#ifndef _CLING_PC_SIMULATION_
+	ble_gap_addr_t mac_addr_t;
+#endif
 
     // Get free space in current file system
     FAT_Init();
@@ -409,7 +411,7 @@ static void _create_dev_info_msg()
 
     // Amount of minute streaming files
     t->msg[t->msg_filling_offset++] = FILE_exists_with_prefix((I8U *)"epoch", 5);
-
+#ifndef _CLING_PC_SIMULATION_
 		// Valid mac address
 		sd_ble_gap_address_get(&mac_addr_t);
 
@@ -420,6 +422,15 @@ static void _create_dev_info_msg()
 		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[3];
 		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[4];
 		t->msg[t->msg_filling_offset++] = mac_addr_t.addr[5];
+#else
+	t->msg[t->msg_filling_offset++] = 0x69;
+	t->msg[t->msg_filling_offset++] = 0x11;
+	t->msg[t->msg_filling_offset++] = 0x22;
+	t->msg[t->msg_filling_offset++] = 0x33;
+	t->msg[t->msg_filling_offset++] = 0x44;
+	t->msg[t->msg_filling_offset++] = 0x55;
+	t->msg[t->msg_filling_offset++] = 0x66;
+#endif
 
     t->msg_len = t->msg_filling_offset;
 
@@ -1548,7 +1559,7 @@ BOOLEAN CP_create_streaming_file_minute_msg(I32U space_size)
                 N_SPRINTF("[CP] different epoch: %d, %d", pminute_2->epoch, pminute_1->epoch);
                 break;
             }
-						int ret = memcmp(&pminute_2->activity_count, &pminute_1->activity_count, (uint32_t)&(pminute_1->uv_and_activity_type) - (uint32_t)&(pminute_1->activity_count));
+						int ret = memcmp(&pminute_2->activity_count, &pminute_1->activity_count, (I32U)&(pminute_1->uv_and_activity_type) - (I32U)&(pminute_1->activity_count));
 						if(ret != 0){
 								break;
 						}
@@ -1704,7 +1715,7 @@ BOOLEAN CP_create_streaming_minute_msg(I32U space_size)
                 N_SPRINTF("[CP] different epoch: %d, %d", pminute_2->epoch, pminute_1->epoch);
                 break;
             }
-						int ret = memcmp(&pminute_2->activity_count, &pminute_1->activity_count, (uint32_t)&(pminute_1->uv_and_activity_type) - (uint32_t)&(pminute_1->activity_count));
+						int ret = memcmp(&pminute_2->activity_count, &pminute_1->activity_count, (I32U)&(pminute_1->uv_and_activity_type) - (I32U)&(pminute_1->activity_count));
 						if(ret != 0){
 								break;
 						}

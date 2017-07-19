@@ -26,7 +26,7 @@ void HAL_init(void);
 void HAL_device_manager_init(BOOLEAN b_delete);
 void HAL_advertising_start(void);
 BOOLEAN HAL_set_conn_params(BOOLEAN b_fast);
-BOOLEAN HAL_set_slow_conn_params(const uint8_t swith_purpose);
-void HAL_disconnect_for_fast_connection(const uint8_t swith_purpose);
+BOOLEAN HAL_set_slow_conn_params(const I8U swith_purpose);
+void HAL_disconnect_for_fast_connection(const I8U swith_purpose);
 void HAL_start_ancs_service_discovery(void);
 #endif

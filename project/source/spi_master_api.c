@@ -16,8 +16,8 @@
 #include "nrf_error.h"
 #include "nrf_drv_spi.h"
 
-uint8_t g_spi_tx_buf[10];
-uint8_t g_spi_rx_buf[10];
+I8U g_spi_tx_buf[10];
+I8U g_spi_rx_buf[10];
 
 static const nrf_drv_spi_t m_spi_master_0 = NRF_DRV_SPI_INSTANCE(0);
 

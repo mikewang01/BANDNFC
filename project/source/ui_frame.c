@@ -2432,12 +2432,13 @@ static void _rotate_8_bytes_opposite_core(I8U *in_data, I8U *out_data)
 
 static void _rotate_270_degree(I8U *in, I16U offset)
 {
-	if (offset > (384 + 120))
-		return;
-		
 	I8U *in_data;
 	I8U *out = cling.ui.p_oled_up+offset;
 	I8U *out_data;
+
+	if (offset > (384 + 120))
+		return;
+		
 	
 	// first 8 bytes
 	out_data = out+7;
@@ -4586,10 +4587,17 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 		}			
 	}
 #endif	
+#ifdef _CLING_PC_SIMULATION_
+	if (cling.ui.false_det) {
+		Y_SPRINTF("[UI] Wrong!!! - memory overflow");
+	}
+#endif
 	
 	// If we see language type out of range, something is very wrong!!
-	if (cling.ui.language_type >= LANGUAGE_TYPE_TRADITIONAL_CHINESE)	
-	  cling.ui.language_type = LANGUAGE_TYPE_TRADITIONAL_CHINESE;
+	if (cling.ui.language_type > LANGUAGE_TYPE_TRADITIONAL_CHINESE)	{
+	  cling.ui.language_type = LANGUAGE_TYPE_SIMPLIFIED_CHINESE;
+	  Y_SPRINTF("[UI] Wrong!!! - language is modified");
+	}
 	
 	if (cling.user_data.profile.metric_distance)
 		cling.user_data.profile.metric_distance = 1;
@@ -4620,4 +4628,7 @@ static void _core_frame_display(I8U frame_index, BOOLEAN b_render)
 		// Finally, we render the frame
 		UI_render_screen();
 	}
+#ifdef _CLING_PC_SIMULATION_
+	Y_SPRINTF("[UI] Core display frame: %d @ %d", frame_index, CLK_get_system_time());
+#endif
 }

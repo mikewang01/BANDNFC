@@ -54,9 +54,6 @@ static void _tracking_init()
 	
 	// Erase this space first
 	FLASH_erase_App(SYSTEM_DAYSTAT_SPACE_START);
-
-  // Add latency before storing messages (Erasure latency: 50 ms)		
-  BASE_delay_msec(50); 
 	
 	for (i = 0; i < 9; i++) {
 		FLASH_Write_App(SYSTEM_DAYSTAT_SPACE_START+offset, (I8U *)tracking_sim_array[i], TRACKING_DAY_STAT_SIZE);
@@ -66,13 +63,13 @@ static void _tracking_init()
 
 static void _weather_init()
 {
-	WEATHER_CTX *w = cling.weather;
+	WEATHER_CTX *w = &cling.weather;
 	
-	memcpy(&w[0], weather_sim_array[0], sizeof(WEATHER_CTX));
-	memcpy(&w[1], weather_sim_array[1], sizeof(WEATHER_CTX));
-	memcpy(&w[2], weather_sim_array[2], sizeof(WEATHER_CTX));
-	memcpy(&w[3], weather_sim_array[3], sizeof(WEATHER_CTX));
-	memcpy(&w[4], weather_sim_array[4], sizeof(WEATHER_CTX));
+	memcpy(&w->weather_info[0], weather_sim_array[0], sizeof(WEATHER_CTX));
+	memcpy(&w->weather_info[1], weather_sim_array[1], sizeof(WEATHER_CTX));
+	memcpy(&w->weather_info[2], weather_sim_array[2], sizeof(WEATHER_CTX));
+	memcpy(&w->weather_info[3], weather_sim_array[3], sizeof(WEATHER_CTX));
+	memcpy(&w->weather_info[4], weather_sim_array[4], sizeof(WEATHER_CTX));
 }
 
 void SIM_init()

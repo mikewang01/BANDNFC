@@ -14,6 +14,7 @@ extern I8U g_spi_rx_buf[];
  
 static void _set_reg(I8U reg_idx, I8U config)
 {	
+#ifndef _CLING_PC_SIMULATION_
 	g_spi_tx_buf[0] = reg_idx;
 	g_spi_tx_buf[1] = config;
 	
@@ -26,10 +27,12 @@ static void _set_reg(I8U reg_idx, I8U config)
 #else	
 	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2, g_spi_rx_buf,  0, GPIO_SPI_0_CS_ACC);
 #endif
+#endif
 }
 
 static void _get_reg(I8U reg_idx)
 {	
+#ifndef _CLING_PC_SIMULATION_
 	g_spi_tx_buf[0] = reg_idx | 0x80;
 	g_spi_tx_buf[1] = 0;
 	
@@ -42,10 +45,12 @@ static void _get_reg(I8U reg_idx)
 #else	
 	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 2,  g_spi_rx_buf,  2, GPIO_SPI_0_CS_ACC);
 #endif
+#endif
 }
 
 static void _get_data(I8U reg_idx)
 {	
+#ifndef _CLING_PC_SIMULATION_
 	g_spi_tx_buf[0] = reg_idx | 0xc0;
 	
 #ifdef _CLINGBAND_2_PAY_MODEL_			
@@ -56,6 +61,7 @@ static void _get_data(I8U reg_idx)
 	p->close(p, t);	
 #else
 	SPI_master_tx_rx(SPI_MASTER_0, g_spi_tx_buf, 7, g_spi_rx_buf, 7, GPIO_SPI_0_CS_ACC);
+#endif
 #endif
 }
 

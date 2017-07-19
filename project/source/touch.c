@@ -118,7 +118,7 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 		N_SPRINTF("Finger: right");
 	}
 #else
-	const uint8_t op_check_table[] = {TOUCH_FINGER_LEFT, TOUCH_FINGER_MIDDLE, TOUCH_FINGER_RIGHT};
+	const I8U op_check_table[] = {TOUCH_FINGER_LEFT, TOUCH_FINGER_MIDDLE, TOUCH_FINGER_RIGHT};
 	t->gesture = op_check_table[op_detail];	
 #endif	
 	// Make sure OLED display panel is faced up.

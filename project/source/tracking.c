@@ -579,7 +579,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 	TRACKING_CTX *a = &cling.activity;
 	I8U calories_diff;
 #ifndef __YLF__
-	bool b_active_time_Update = false;
+	BOOLEAN b_active_time_Update = FALSE;
 #endif
 
 #ifdef _ACTIVITY_SIM_BASED_ON_EPOCH_
@@ -642,7 +642,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		if ((diff->walking+diff->running) >= 40) {
 			a->day.active_time++;
 #ifndef __YLF__
-			b_active_time_Update = true;
+			b_active_time_Update = TRUE;
 #endif
 		}
 
@@ -696,7 +696,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				a->day.walking = a->day_stored.walking;
 				a->day.running = a->day_stored.running;
 				a->day.distance = a->day_stored.distance;
-				if(b_active_time_Update == true){a->day.active_time --;}
+				if(b_active_time_Update == TRUE){a->day.active_time --;}
 			}
 #endif
 			a->day.calories += calories_diff;

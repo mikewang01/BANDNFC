@@ -132,6 +132,6 @@ BOOLEAN BTLE_is_streaming_enabled(void);
 void BTLE_reset_streaming(void);
 void BTLE_update_streaming_minute_entries(void);
 BOOLEAN BTLE_streaming_authorized(void);
-uint32_t get_flash_minute_activity_offset(void);
+I32U get_flash_minute_activity_offset(void);
 #endif // __BTLE_HEADER__
 /** @} */

@@ -56,7 +56,7 @@ void intterrupt_mgr_init(void)
 }
 #endif
 
-static void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
+static void _gpio_cfg_output(I32U pin_number, BOOLEAN b_drive)
 {
 #ifndef _CLING_PC_SIMULATION_
 	// Output pin, we need to disconnect it from input buffer.
@@ -73,7 +73,7 @@ static void _gpio_cfg_output(uint32_t pin_number, BOOLEAN b_drive)
 #endif
 }
 
-static void _gpio_cfg_disconnect_input(uint32_t pin_number)
+static void _gpio_cfg_disconnect_input(I32U pin_number)
 {
 #ifndef _CLING_PC_SIMULATION_
 	// when system is disconnected from input buffer, none of other parameter matters
@@ -86,7 +86,7 @@ static void _gpio_cfg_disconnect_input(uint32_t pin_number)
 }
 
 #ifndef _CLING_PC_SIMULATION_
-static void _gpio_cfg_connect_input(uint32_t pin_number, nrf_gpio_pin_sense_t sense_config, nrf_gpio_pin_pull_t pull_config)
+static void _gpio_cfg_connect_input(I32U pin_number, nrf_gpio_pin_sense_t sense_config, nrf_gpio_pin_pull_t pull_config)
 {
 	// Always enable the input buffer in a separate write operation, before enabling the sense functionality
 	NRF_GPIO->PIN_CNF[pin_number] = (NRF_GPIO_PIN_NOSENSE << GPIO_PIN_CNF_SENSE_Pos)
@@ -370,7 +370,9 @@ void GPIO_therm_adc_config(void)
 
 void GPIO_cfg_homeky_no_sense()
 {
+#ifndef _CLING_PC_SIMULATION_
 	_gpio_cfg_connect_input(GPIO_TOUCH_HOMEKEY_INT, NRF_GPIO_PIN_NOSENSE, NRF_GPIO_PIN_PULLUP);
+#endif
 }
 
 #endif

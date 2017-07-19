@@ -21,7 +21,7 @@ static const I16U battery_vol_tab[BATTERY_PERCENTAGE_LEVEL] = {
 578, 577, 576, 576, 575, 574, 573, 573, 572, 571, 571, 570, 569, 569, 568, 568, 
 567, 567, 565, 564, 564, 563, 562, 560, 559, 556, 555, 553};
 
-static const I16U battery_perc_tab[BATTERY_PERCENTAGE_LEVEL] = {
+static const I8U battery_perc_tab[BATTERY_PERCENTAGE_LEVEL] = {
 100,98,97,95,93,92,90,88,87,85,83,82,80,78,77,75,
  73,72,70,68,67,65,63,62,60,58,57,55,53,52,50,48,
  47,45,43,42,40,38,37,35,33,32,30,28,27,25,23,22,
@@ -145,6 +145,7 @@ I8U BATT_get_level()
 
 BOOLEAN BATT_is_charging()
 {
+#ifndef _CLING_PC_SIMULATION_
 #if defined(_CLINGBAND_2_PAY_MODEL_) || defined(_CLINGBAND_PACE_MODEL_)		
 	if (!cling.batt.charging_connected) {
 #else		
@@ -154,6 +155,9 @@ BOOLEAN BATT_is_charging()
 	} else {
 		return TRUE;
 	}
+#else
+	return FALSE;
+#endif
 }
 
 BOOLEAN BATT_charging_det_for_sleep()
@@ -351,6 +355,10 @@ void BATT_init()
 	} else {
 		cling.batt.charging_state = CHARGER_REMOVED;
 	}
+
+#ifdef _CLING_PC_SIMULATION_
+	cling.system.mcu_reg[REGISTER_MCU_BATTERY] = 50;
+#endif
 }
 
 BOOLEAN BATT_device_unauthorized_shut_down()
@@ -402,6 +410,8 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 		return TRUE;
 		
 	}
+#else
+	return FALSE;
 #endif
 }
 
@@ -449,8 +459,8 @@ static void _battery_adc_acquired(BATT_CTX *b, I32U t_curr)
 
 static void _battery_adc_idle(BATT_CTX *b, I32U t_curr)
 {
-	I32U t_diff;
 #ifndef _CLING_PC_SIMULATION_
+	I32U t_diff;
 
 	N_SPRINTF("[BATT] --- adc idle---");
 	

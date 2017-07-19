@@ -21,7 +21,9 @@
 #define GLOBAL_DEVICE_ID_LEN 20
 
 #include "standards.h"
+#ifdef _CLING_PC_SIMULATION_
 #include "sim.h"
+#endif
 #include "system.h"
 #include "base.h"
 #include "hal.h"
@@ -59,8 +61,10 @@
 #include "gpio.h"
 #include "spi_master_api.h"
 #include "batt.h"
+#ifndef _CLING_PC_SIMULATION_
 #include "nrf_drv_twi.h"
 #include "nrf_adc.h"
+#endif
 #include "touch.h"
 #include "ppg.h"
 #include "butterworth.h"
@@ -69,7 +73,9 @@
 #include "sleep.h"
 #include "reminder.h"
 #include "notific.h"
+#ifndef _CLING_PC_SIMULATION_
 #include "ancs.h"
+#endif
 #include "homekey.h"
 #include "ppg.h"
 #if defined(_CLINGBAND_UV_MODEL_) || defined(_CLINGBAND_NFC_MODEL_)	|| defined(_CLINGBAND_VOC_MODEL_)	

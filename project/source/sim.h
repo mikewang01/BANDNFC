@@ -17,11 +17,12 @@ typedef enum {
 
 //#define _SLEEP_SIMULATION_
 
-//#define USING_VIRTUAL_ACTIVITY_SIM
+#define USING_VIRTUAL_ACTIVITY_SIM
 
 //#define _ACTIVITY_SIM_BASED_ON_EPOCH_
 //#define _REMINDER_SIMULATION_
 //#define _LONG_TERM_TRACKING_
+#define _UI_DEBUG_
 
 void SIM_init(void);
 I16S SIM_get_current_activity(I8U type);

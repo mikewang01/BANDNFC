@@ -1683,7 +1683,9 @@ void UI_init()
 	OLED_set_panel_on();
 
 	// UI initial state
-	UI_switch_state(UI_STATE_CLING_START, 3000);		
+	UI_switch_state(UI_STATE_CLING_START, 3000);	
+
+	cling.ui.b_init_version = TRUE;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -1719,21 +1721,29 @@ void UI_state_machine()
 			break;
 		case UI_STATE_CLING_START:
 		{
-			UI_frame_display_appear(UI_DISPLAY_SYSTEM_RESTART, TRUE);	
-			if (t_curr > (u->display_to_base + 3000)) {
-				u->touch_time_stamp = t_curr;								
-				u->frame_index = UI_DISPLAY_HOME;	
-				UI_switch_state(UI_STATE_APPEAR, 0);
+			if (u->b_init_version) {
+				u->b_init_version = FALSE;
+				UI_frame_display_appear(UI_DISPLAY_SYSTEM_RESTART, TRUE);	
+				Y_SPRINTF("[UI] Init start state: @ %d", t_curr);
+			}
+			else {
+				if (t_curr > (u->display_to_base + 3000)) {
+					u->touch_time_stamp = t_curr;
+					u->frame_index = UI_DISPLAY_HOME;
+					UI_switch_state(UI_STATE_APPEAR, 0);
+				}
 			}
 			break;
 		}
 		case UI_STATE_HOME:
 		{
-      if (BATT_is_low_battery() && (!BATT_is_charging())) {
-			  UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);			
+			if (BATT_is_low_battery() && (!BATT_is_charging())) {
+				Y_SPRINTF("[UI] LOW BATTERY: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
+				UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);			
 				UI_switch_state(UI_STATE_CHARGING_GLANCE, 0);				
 			} else if (BATT_is_charging()) {
-			  UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);									
+				Y_SPRINTF("[UI] BATTERY charging: %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);
+				UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);
 				UI_switch_state(UI_STATE_CHARGING_GLANCE, 0);							
 			} else {
 				UI_switch_state(UI_STATE_TOUCH_SENSING, 0);						
@@ -1741,9 +1751,7 @@ void UI_state_machine()
 	  	break;
 		}
 		case UI_STATE_CHARGING_GLANCE:
-		{
-			N_SPRINTF("[UI] LOW BATTERY(or charging): %d", cling.system.mcu_reg[REGISTER_MCU_BATTERY]);			
-			UI_frame_display_appear(UI_DISPLAY_SYSTEM_BATT_POWER, TRUE);				
+		{		
 			if (t_curr > u->display_to_base + 1500) {
 			  // Exit running mode.			
 			  u->frame_index = UI_DISPLAY_HOME;	
@@ -1802,11 +1810,11 @@ void UI_state_machine()
 		case UI_STATE_TOUCH_SENSING:
 		{
       if (_ui_touch_sensing()) {
-				N_SPRINTF("[UI] new gesture --- %d", t_curr);
+				Y_SPRINTF("[UI] new gesture --- %d", t_curr);
 				u->touch_time_stamp = t_curr;
 				// Record notification time stamp.
 			} else if (t_curr > u->display_to_base + u->frame_interval) {
-				N_SPRINTF("[UI] Go blinking the icon: %d", u->frame_index);
+				Y_SPRINTF("[UI] Go blinking the icon: %d", u->frame_index);
 				UI_switch_state(UI_STATE_APPEAR, 0);
 			} 
 	
@@ -1877,11 +1885,11 @@ void UI_state_machine()
 					if ((!a->b_workout_active) && (!u->stopwatch.b_without_exit_flag)) 
 #endif			
 					{						
-						N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
+						Y_SPRINTF("[UI] gesture monitor time out (alwaysOn)- %d at %d", t_threshold, t_curr);
 						u->state = UI_STATE_DARK;
 					}
 				} else {
-					N_SPRINTF("[UI] gesture monitor time out 1 - %d at %d", t_threshold, t_curr);
+					Y_SPRINTF("[UI] gesture monitor time out (normal) - %d at %d", t_threshold, t_curr);
 					u->state = UI_STATE_DARK;					
 				}
 			}
@@ -1895,8 +1903,8 @@ void UI_state_machine()
 		}
 		case UI_STATE_APPEAR:
 		{
-			N_SPRINTF("[UI] appear time: %d, index: %d", t_curr, u->frame_index);
-			
+			Y_SPRINTF("[UI] appear time: %d, index: %d", t_curr, u->frame_index);
+
 			// 1. Restore perv frame index
       if (u->frame_index == UI_DISPLAY_PREVIOUS) {		
 				
@@ -1917,7 +1925,7 @@ void UI_state_machine()
 		}
 		case UI_STATE_DARK:
 		{
-			UI_SPRINTF("[UI] screen go dark - %d, %d", u->frame_index, u->frame_cached_index);
+			UI_SPRINTF("[UI] screen go dark - %d, %d **** \n", u->frame_index, u->frame_cached_index);
 
 			// 1. Turn off OLED panel
 			OLED_set_panel_off();
