@@ -104,7 +104,7 @@ void _cleark(void) {
 void _toupper(I8U* charString, I8U length) {
 	I8U i;
 	for (i=0;i<length;i++) {
-		if (NULL == charString[i]) break;
+		if (0 == charString[i]) break;
 		// ascii order is "0Aa", that is, the lower case has a larger value than lower case
 		if (charString[i] >= 'a') {
 			charString[i] -= 'a' - 'A';

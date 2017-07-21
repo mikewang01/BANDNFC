@@ -31,9 +31,9 @@ void SYSCLK_update_tick(void)
 I32U SYSCLK_GetFineTime(void)
 {
 	I32U tick_diff=0;
-	I32U tick_now;
 	double system_clock_in_ms;
 #ifndef _CLING_PC_SIMULATION_
+	I32U tick_now;
 
 	// Get the elapsed time
 	app_timer_cnt_get(&tick_now);

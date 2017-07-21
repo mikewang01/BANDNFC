@@ -11,76 +11,155 @@
 #include "font.h"
 #include "ui_frame.h"
 
-#pragma diag_suppress 870
+const char press_ch[] = "长按";
+const char press_th[] = "長按";
+const	char *const button_hold_name[3] = {"HOLD", press_ch, press_th};	
 
+const char km_ch[] = "公里";
+const char km_th[] = "公裏";
+const char ml_ch[] = "英里";
+const char ml_th[] = "英裏";
+const char *const distance_unit_name[3][2] = {{"KM", "ML"},{km_ch, ml_ch},{km_th, ml_th}};	
 
-const	char *const button_hold_name[3] = {"HOLD", "长按", "長按"};	
-
-const char *const distance_unit_name[3][2] = {{"KM", "ML"},{"公里", "英里"},{"公裏", "英裏"}};	
-
-const char *const vertical_step_name[3][3] = {{"STEP", "K", "K"},{"步 ", "千步", "万步"},{"步 ", "千步", "萬步"}};
+const char step_ch[] = "步数";
+const char step_k_ch[] = "千步";
+const char step_10k_ch[] = "万步";
+const char step_10k_th[] = "萬步";
+const char *const vertical_step_name[3][3] = {{"STEP", "K", "K"},
+																							{step_ch, step_k_ch, step_10k_ch},
+																							{step_ch, step_k_ch, step_10k_th}};
 	
-const char *const active_time_name[3] = {"MIN","分钟","分鍾"};		
+const char min_ch[] = "分钟";
+const char min_th[] = "分鍾";
+const char *const active_time_name[3] = {"MIN",min_ch,min_th};		
  
-const	char *const pace_name[3] = {"PACE", "配速 ", "配速 "};
-const	char *const avg_name[3] = {"AVG", "平均 ", "平均 "};		
-const	char *const heart_rate_name[3] = {"HR", "心率 ", "心率 "};	
+const char pace_ch[] = "速度";
+const	char *const pace_name[3] = {"PACE", pace_ch, pace_ch};
 
-const	char *const cadence_rate_name[3] = {"RATE", "步频", "步頻"};	
-const	char *const cadence_spm_name[3] = {"SPM", "步分", "步分"};		
+const char avg_ch[] = "平均";
+const	char *const avg_name[3] = {"AVG", avg_ch, avg_ch};		
+
+const char hr_ch[] = "心率";
+const	char *const heart_rate_name[3] = {"HR", hr_ch, hr_ch};	
+
+const char cadence_ch[] = "步频";
+const char cadence_th[] = "步頻";
+const	char *const cadence_rate_name[3] = {"RATE", cadence_ch, cadence_th};	
+
+const char spm_ch[] = "步分";
+const	char *const cadence_spm_name[3] = {"SPM", spm_ch, spm_ch};		
 	
-const	char *const horizontal_stride_name[3] = {"STRIDE", "步幅", "步幅"};
-const	char *const vertical_stride_name[3] = {"STRD", "步幅", "步幅"};
+const char stride_ch[] = "步幅";
+const	char *const horizontal_stride_name[3] = {"STRIDE", stride_ch, stride_ch};
+const	char *const vertical_stride_name[3] = {"STRD", stride_ch, stride_ch};
 
-const char *const stride_unit_name[3][2] = {{"CM", "IN"},{"厘米", "英寸"},{"厘米", "英寸"}};		
+const char cm_ch[] = "厘米";
+const char inch_ch[] = "英寸";
+const char *const stride_unit_name[3][2] = {{"CM", "IN"},{cm_ch, inch_ch},{cm_ch, inch_ch}};		
 
-const	char *const calories_name[3] = {"BURN", "热量", "熱量"};		
-const	char *const calories_unit_horizontal_name[3] = {"CALS", "大卡", "大卡"};
-const char *const calories_unit_vertical_name[3][2] = {{"CAL", "K"},{"大卡 ", "千 "},{"大卡 ", "千 "}};
+const char calorie_name_ch[] = "热量";
+const char calorie_name_th[] = "熱量";
+const	char *const calories_name[3] = {"BURN", calorie_name_ch, calorie_name_th};		
 
-const	char *const running_time_name[3] = {"TIME", "耗时", "耗時"};
-const char *const running_distance_name[3] = {"RUN", "里程", "裏程" };	
+const char calorie_ch[] = "大卡";
+const char calorie_k_ch[] = "K";
+const	char *const calories_unit_horizontal_name[3] = {"CALS", calorie_ch, calorie_ch};
+const char *const calories_unit_vertical_name[3][2] = {{"CAL", "K"},{calorie_ch, calorie_k_ch},{calorie_ch, calorie_k_ch}};
 
-const	char *const stop_run_name[3] = {"STOP ", "结束 ", "結束 "};	
-const	char *const start_run_name[3] = {"NOW ", "开始 ", "開始 "};	
+const char time_ch[] = "耗时";
+const char time_th[] = "耗時";
+const	char *const running_time_name[3] = {"TIME", time_ch, time_th};
+
+const char distance_ch[] = "里程";
+const char distance_th[] = "裏程";
+const char *const running_distance_name[3] = {"RUN", distance_ch, distance_th};	
+
+const char start_ch[] = "准备";
+const char end_ch[] = "结束";
+const char end_th[] = "結束";
+const	char *const stop_run_name[3] = {"STOP ", end_ch, end_th};	
+const	char *const start_run_name[3] = {"NOW ", start_ch, start_ch};	
 	
-const	char *const training_run_name[3] = {"RUN ", "跑步 ", "跑步 "};	
-const	char *const gym_workout_run_name[3] = {"RUN ", "运动 ", "運動 "};			
-const	char *const cycling_run_name[3] = {"BIKE ", "骑行 ", "騎行 "};	
+const char run_ch[] = "跑步";
+const char workout_ch[] = "运动";
+const char workout_th[] = "運動";
+const char cycling_ch[] = "骑行";
+const char cycling_th[] = "騎行";
+const	char *const training_run_name[3] = {"RUN ", run_ch, run_ch};	
+const	char *const gym_workout_run_name[3] = {"RUN ", workout_ch, workout_th};			
+const	char *const cycling_run_name[3] = {"BIKE ", cycling_ch, cycling_th};	
 	
 const char *const ready_indicator_name[4] = {"3","2","1","GO"};
 
-const char *const run_speed_name[3] = {"SPED", "速度", "速度" };		
+const char speed_ch[] = "速度";
+const char *const run_speed_name[3] = {"SPED", speed_ch, speed_ch};		
 const char *const speed_unit_name[2] = {"KM/H", "ML/H"};	
 
-const char *const no_ble_horizontal_name[3] = {"NO BLE", "无蓝牙 ", "無藍牙 "};	
+const char no_ble_ch[] = "没有蓝牙";
+const char no_ble_th[] = "没有藍牙";
+const char *const no_ble_horizontal_name[3] = {"NO BLE", no_ble_ch, no_ble_th};	
 
-const char *const no_ble_vertical_name_1[3] = {"NO", "无 ", "無 "};		
-const char *const no_ble_vertical_name_2[3] = {"BLE", "蓝牙 ", "藍牙 "};		
+const char no_ch[] = "没有";
+const char ble_ch[] = "蓝牙";
+const char ble_th[] = "藍牙";
+const char *const no_ble_vertical_name_1[3] = {"NO", no_ch, no_ch};		
+const char *const no_ble_vertical_name_2[3] = {"BLE", ble_ch, ble_th};		
 
-const char *const stopwatch_stop_name[3] = {"END", "结束 ", "結束 "};
+const char *const stopwatch_stop_name[3] = {"END", end_ch, end_th};
 
-const	char *const run_start_name[3] = {"RUN ", "开始 ", "開始 "};	
-const	char *const run_analysis_name[3] = {"MORE", "记录 ", "記錄 "};		
+const	char *const run_start_name[3] = {"RUN ", start_ch, start_ch};	
 
-const	char *const idle_alart_name[] = {"time for move", "该活动一下了", "該活動一下了"};
+const char analysis_ch[] = "记录";
+const char analysis_th[] = "記錄";
+const	char *const run_analysis_name[3] = {"MORE", analysis_ch, analysis_th};		
+
+const char idle_ch[] = "该活动一下了";
+const char idle_th[] = "該活動一下了";
+const	char *const idle_alart_name[] = {"time for move", idle_ch, idle_th};
 	
+const char mon_ch[] = "周一";
+const char mon_th[] = "周壹";
+const char tue_ch[] = "周二";
+const char wed_ch[] = "周三";
+const char thu_ch[] = "周四";
+const char fri_ch[] = "周五";
+const char sat_ch[] = "周六";
+const char sun_ch[] = "周日";
 const char *const week_name[3][7] = {{"MON",  "TUE",  "WED",  "THU",  "FRI",  "SAT",  "SUN"},
-	                                   {"周一", "周二", "周三", "周四", "周五", "周六", "周日"},
-	                                   {"周壹", "周二", "周三", "周四", "周五", "周六", "周日"}};	
+	                                   {mon_ch, tue_ch, wed_ch, thu_ch, fri_ch, sat_ch, sun_ch},
+	                                   {mon_th, tue_ch, wed_ch, thu_ch, fri_ch, sat_ch, sun_ch}};	
 
 #ifdef _CLINGBAND_UV_MODEL_	
 const char *const air_level_name[1][7] = {{"--","GOOD", "GOOD",     "POOR",      "POOR", "POOR", "POOR"}};																				 
 #else																	 
+const char good_ch[] = "优质";				 
+const char good_th[] = "優質";
+const char moderate_ch[] = "良好";
+const char light_ch[] = "轻度";
+const char light_th[] = "輕度";
+const char bad_ch[] = "中度";
+const char worse_ch[] = "重度";
+const char hazardous_ch[] = "严重";
+const char hazardous_th[] = "嚴重";
 const char *const air_level_name[4][7] = {{"--","Good", "Moderate", "Unhealthy", "Poor", "Poor", "hazardous"},
 	                                        {"--","GOOD", "GOOD",     "POOR",      "POOR", "POOR", "POOR"},
-	                                        {"--","优质", "良好",     "轻度",      "中度", "重度", "严重"},
-												                  {"--","優質", "良好",     "輕度",      "中度", "重度", "嚴重"}};																			
+	                                        {"--", good_ch, moderate_ch, light_ch, bad_ch, worse_ch, hazardous_ch},
+												                  {"--", good_th, moderate_ch, light_th, bad_ch, worse_ch, hazardous_th}};																			
 #endif		
-																					
+								
+const char treadmill_ch[] = "室内跑步";
+const char bike_ch[] = "单车";
+const char bike_th[] = "單車";
+const char stairs_ch[] = "爬楼梯机";
+const char elliptical_ch[] = "跑椭圆机";
+const char elliptical_th[] = "跑橢圓機";
+const char row_ch[] = "划船";
+const char row_th[] = "劃船";
+const char aerobic_ch[] = "有氧训练";																					
+const char other_ch[] = "其它";																					 
 const char *const horizontal_workout_name[3][8] = {{"Treadmill", "Cycling", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
-	                                  {"跑步机 ",   "单车",    "爬楼梯 ", "椭圆机 ",    "划船", "有氧操 ", "Piloxing", "其它"},
-	                                  {"跑步機 ",   "單車",    "爬樓梯 ", "橢圓機 ",    "劃船", "有氧操 ", "Piloxing", "其它"}};
+	                                  {treadmill_ch, bike_ch, stairs_ch, elliptical_ch, row_ch, aerobic_ch, "Piloxing", other_ch},
+	                                  {treadmill_ch, bike_th, stairs_ch, elliptical_th, row_th, aerobic_ch, "Piloxing", other_ch}};
 	
 const char *const horizontal_ware_indicator[] = {"-,,,,,,,",
 	                                             	 ",-,,,,,,", 
@@ -94,15 +173,28 @@ const char *const horizontal_ware_indicator[] = {"-,,,,,,,",
 const char *const vertical_hr_wave_indicator[3] = {" - , ,", " , - ,", " , , -" };		
 
 #ifdef _CLINGBAND_PACE_MODEL_	
-const	char *const horizontal_conn_gps_name[] = {"Link GPS", "连接手机 GPS", "連接手機 GPS"};		
-const	char *const horizontal_conn_timeout_name[] = {"Link Timeout", "连接超时", "連接超時"};	
-const	char *const horizontal_conn_fail_name[] = {"Link Fail", "连接失败", "連接失敗"};		
+const char conn_gps_ch[] = "连接手机 GPS";			
+const char conn_gps_th[] = "連接手機 GPS";																					
+const	char *const horizontal_conn_gps_name[] = {"Link GPS", conn_gps_ch, conn_gps_th};		
+const char conn_to_ch[] = "连接超时";																						
+const char conn_to_th[] = "連接超時";																					
+const	char *const horizontal_conn_timeout_name[] = {"Link Timeout", conn_to_ch, conn_to_th};	
+const char conn_fail_ch[] = "连接失败";																					
+const char conn_fail_th[] = "連接失敗";																					
+const	char *const horizontal_conn_fail_name[] = {"Link Fail", conn_fail_ch, conn_fail_th};		
 
-const	char *const vertical_phone_name[] = {"", "手机", "手機"};	
-const	char *const vertical_gps_name[] = {"GPS", "GPS", "GPS"};		
-const	char *const vertical_gps_timeout_name[] = {"T/O", "超时", "超時"};
-const	char *const vertical_gps_conn_name[] = {"Link", "连接", "連接"};	
-const	char *const vertical_gps_fail_name[] = {"Fail", "失败", "失敗"};		
+const char phone_ch[] = "手机";																					
+const	char *const vertical_phone_name[] = {"", phone_ch, phone_ch};	
+const	char *const vertical_gps_name[] = {"GPS", "GPS", "GPS"};	
+const char gps_to_ch[] = "超时";																					
+const char gps_to_th[] = "超時";																										
+const	char *const vertical_gps_timeout_name[] = {"T/O", gps_to_ch, gps_to_th};
+const char gps_conn_ch[] = "连接";																					
+const char gps_conn_th[] = "連接";																					
+const	char *const vertical_gps_conn_name[] = {"Link", gps_conn_ch, gps_conn_th};	
+const char gps_fail_ch[] = "失败";																					
+const char gps_fail_th[] = "失敗";																					
+const	char *const vertical_gps_fail_name[] = {"Fail", gps_fail_ch, gps_fail_th};		
 #endif
 
 
@@ -985,7 +1077,7 @@ static void _frame_render_horizontal_message()
 {
 	I8U string[32];
 	I8U b_24_size = 24;		
-	I8U offset=0;
+	I16U offset=0;
 	I8U margin=3;
 
   // 1. Render the middle		
@@ -1354,7 +1446,7 @@ static void _frame_render_horizontal_stopwatch_start()
 	I8U string[32];
 	I8U b_24_size = 24;
 	I8U margin = 3;	
-	I8U offset = 0;
+	I16U offset = 0;
 	UI_STOPWATCH_CTX *stopwatch = &cling.ui.stopwatch;	
 
 	// 1. Render the middle 		
@@ -1442,13 +1534,7 @@ static BOOLEAN _middle_horizontal_running_ready_core()
 
 static void _middle_render_horizontal_run_or_stop_core(I8U *string1, I8U *string2, I8U *string_out)
 {
-	I8U len = 0;
-	I8U language_type = cling.ui.language_type;
-	
-	len = sprintf((char *)string_out, "%s", string1);
-	if (language_type != LANGUAGE_TYPE_ENGLISH) {
-		len --;
-	}
+	I8U len = sprintf((char *)string_out, "%s", string1);
 	
 	sprintf((char *)&string_out[len], "%s", string2);	
 }
@@ -1564,7 +1650,8 @@ static void _frame_render_horizontal_running_time()
 	I8U b_24_size = 24;
 	I8U margin = 3;
 	I16U offset = 0;
-	I8U hour=0, min=0, sec=0;
+	I8U hour=0, sec=0;
+	I16U min = 0;
 
 	// 1. Render the middle	
 	min = cling.run_stat.time_min;
@@ -3432,7 +3519,8 @@ static void _frame_render_vertical_running_time()
 	I8U string[32];	
 	I8U margin = 1;
 	I8U b_24_size = 24;	
-	I8U hour=0, min=0, sec=0;	
+	I8U hour=0, sec=0;	
+	I16U min = 0;
 	I8U language_type = cling.ui.language_type;
 
 	// 1. Render the middle and bottom		

@@ -351,11 +351,10 @@ void OPERATION_timer_handler( void * p_context )
 
 void RTC_timer_handler( void * p_context )
 {
+	I32U tick_in_s;
+#ifndef _CLING_PC_SIMULATION_	
 	I32U tick_now;
 	I32U tick_diff;
-	I32U tick_in_s;
-
-#ifndef _CLING_PC_SIMULATION_	
 	if (cling.time.tick_count) {		
 		app_timer_cnt_get(&tick_now);
 		app_timer_cnt_diff_compute(tick_now, cling.time.tick_count, &tick_diff);
@@ -517,8 +516,8 @@ void RTC_stop_operation_clk(void)
 
 void RTC_start_operation_clk()
 {
-    I32U err_code;
 #ifndef _CLING_PC_SIMULATION_
+    I32U err_code;
     if (!cling.time.operation_clk_enabled) {
         cling.time.operation_clk_start_in_ms = CLK_get_system_time();			
         N_SPRINTF("[SYSCLK] OPERATION clk start, %d ", cling.time.operation_clk_start_in_ms);

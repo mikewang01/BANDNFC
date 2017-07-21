@@ -165,7 +165,7 @@ static void _create_file_list_msg()
     t->msg_id ++;
 
     // Get overall file amount and message length
-    t->msg_file_total = FILE_GetFileNum(&t->msg_len);
+    t->msg_file_total = (I8U)FILE_GetFileNum(&t->msg_len);
 
     t->pkt.uuid[0] = (UUID_TX_START >> 8) & 0xff;
     t->pkt.uuid[1] = (UUID_TX_START & 0xff);
@@ -186,8 +186,8 @@ static void _create_file_list_msg()
     // Filling up the message buffer
     t->msg_filling_offset = 0;
     t->msg[t->msg_filling_offset++] = CP_MSG_TYPE_FILE_LOAD_LIST;
-    t->msg[t->msg_filling_offset++] = (t->msg_file_total >> 8) & 0xff;
-    t->msg[t->msg_filling_offset++] = t->msg_file_total & 0xff;
+    t->msg[t->msg_filling_offset++] = 0;
+    t->msg[t->msg_filling_offset++] = (I8U)t->msg_file_total;
 
     // Create packet payload
     // Pending message delivery
@@ -219,7 +219,7 @@ static void _create_file_list_msg()
             t->msg_filling_offset = FILE_getFileInfo(i, t->msg, t->msg_filling_offset);
         }
 
-        t->msg_file_id = i;
+        t->msg_file_id = (I8U)i;
 
         // Add checksum to the end
         for (i = 0; i < t->msg_filling_offset; i++)
@@ -799,15 +799,15 @@ static void _create_ack_pkt()
 
 static void _pending_process()
 {
+
     CP_PENDING_CTX *p = &cling.gcp.pending;
+#ifndef _CLING_PC_SIMULATION_
 #ifdef __YLF_STRIDE__
-		I32U distance;
+	I32U distance;
 #endif
 
 	N_SPRINTF("[CP] pending process");
     N_SPRINTF("[CP] pending - register is: %d, %d, %d", p->msg[0], p->task_id, p->b_touched);
-
-#ifndef _CLING_PC_SIMULATION_
 
     switch (p->task_id) {
         case CP_MSG_TYPE_REGISTER_WRITE: {
@@ -1014,7 +1014,7 @@ static void _filling_msg_tx_buf()
     if (t->msg_fetching_offset) {
         // Moving memory content
         len = t->msg_filling_offset - t->msg_fetching_offset;
-        t->msg_filling_offset = len;
+        t->msg_filling_offset = (I8U)len;
         p1 = t->msg;
         p2 = t->msg + t->msg_fetching_offset;
         if (len) {
@@ -1039,7 +1039,7 @@ static void _filling_msg_tx_buf()
                 }
                 t->msg_filling_offset = FILE_getFileInfo(i, t->msg, t->msg_filling_offset);
             }
-            t->msg_file_id = i;
+            t->msg_file_id = (I8U)i;
 
             for (i = pos; i < t->msg_filling_offset; i++) {
                 t->msg_checksum += t->msg[i];
@@ -1442,7 +1442,7 @@ static void _fillup_streaming_packet(I8U *pkt, MINUTE_TRACKING_CTX *pminute, I8U
 			if (denormalized_distance >255)
 				pkt[filling_offset++] = 255;
 			else
-				pkt[filling_offset++] = denormalized_distance;
+				pkt[filling_offset++] = (I8U)denormalized_distance;
 		}
 		
     // sleep seconds (1B)

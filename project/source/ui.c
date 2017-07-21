@@ -1688,6 +1688,31 @@ void UI_init()
 	cling.ui.b_init_version = TRUE;
 }
 
+BOOLEAN static _ui_state_sanity_check()
+{
+	I32U t_curr;
+	
+	// Check whether we have some memory overflow issue
+	if (cling.ui.language_type > LANGUAGE_TYPE_TRADITIONAL_CHINESE)	{
+	  return FALSE;
+	}
+	
+	if (cling.link.b_authorizing) {
+		t_curr = CLK_get_system_time();
+		// If authorizing time is greater than 5 minutes, restart system
+		if (t_curr > (cling.link.link_ts + 300000)) {
+			return FALSE;
+		}
+	}
+	
+	if (OTA_if_enabled()) {
+		if (cling.ota.b_update != TRUE)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 /*------------------------------------------------------------------------------------------
 *  Function:	UI_state_machine()
 *
@@ -1713,6 +1738,12 @@ void UI_state_machine()
 	// Only display unauthorized page if is unauthorized device.
 	if (!LINK_is_authorized()) 
 		u->state = UI_STATE_AUTHORIZATION;
+	
+	// State machine sanity check
+	if (!_ui_state_sanity_check()) {
+	  Y_SPRINTF("[UI] Wrong!!! - sanity check is failed");
+		SYSTEM_restart_from_reset_vector();
+	}
 	
 	N_SPRINTF("[UI] new active state: %d @ %d", u->state, CLK_get_system_time());	
 

@@ -141,8 +141,8 @@ I8U NOR_readStatusRegister(void)
 *----------------------------------------------------------------------------------*/
 void NOR_readData(I32U addr, I16U len, I8U *dataBuf)
 {
-	I32U rx_data[65];
 #ifndef _CLING_PC_SIMULATION_
+	I32U rx_data[65];
 
 	if (b_flash_PD_flag) {
 		b_flash_PD_flag = FALSE;
@@ -185,8 +185,8 @@ void NOR_readData(I32U addr, I16U len, I8U *dataBuf)
 *----------------------------------------------------------------------------------*/
 static void _page_program_core(I32U addr, I16U len, I8U *data)
 {
-	I32U tx_data[65];
 #ifndef _CLING_PC_SIMULATION_
+	I32U tx_data[65];
 
 	if (b_flash_PD_flag) {
 		b_flash_PD_flag = FALSE;

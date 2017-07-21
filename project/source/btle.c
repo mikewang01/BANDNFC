@@ -149,9 +149,9 @@ void _radio_state_cleanup()
 // iOS/Android dev -> Wristband:   using WRITE, as the client needs to send data to the server
 I32U BTLE_services_init()
 {
+#ifndef _CLING_PC_SIMULATION_
 	BLE_CTX *r = &cling.ble;
 	I32U   err_code;
-#ifndef _CLING_PC_SIMULATION_
 	ble_uuid_t ble_uuid;
 	
 	// Clear all BTLE states

@@ -221,7 +221,7 @@ void FILE_delete(I8U *file_name)
 	}
 }
 
-I32U FILE_getFileInfo(I8U f_id, I8U *buf, I32U buf_pos)
+I32U FILE_getFileInfo(I16U f_id, I8U *buf, I32U buf_pos)
 {
 	I32U f_total;
 	I16U f_valid = 0;
@@ -312,6 +312,9 @@ I16U FILE_GetFileNum(I32U *msg_len)
 
 	// 2-byte: number of files
 	*msg_len = f_name_len;
+
+	if (f_valid > 255)
+		f_valid = 255;
 
 	return f_valid;
 }

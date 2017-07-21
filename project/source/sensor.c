@@ -367,7 +367,9 @@ static void _high_power_process_FIFO()
 
 void SENSOR_accel_processing()
 {
+#ifndef _CLING_PC_SIMULATION_
 	I8U int_pin;
+#endif
 	I8U int_source;
 	ACC_AXIS xyz;
 	

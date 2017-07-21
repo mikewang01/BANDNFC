@@ -157,7 +157,7 @@ I16U FILE_GetFileNum(I32U *msg_len);
 //
 // Load file info
 //
-I32U FILE_getFileInfo(I8U f_id, I8U *buf, I32U buf_pos);
+I32U FILE_getFileInfo(I16U f_id, I8U *buf, I32U buf_pos);
 //
 // Force close out a file
 //
