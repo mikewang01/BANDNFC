@@ -107,7 +107,7 @@ const char *const no_ble_vertical_name_2[3] = {"BLE", ble_ch, ble_th};
 
 const char *const stopwatch_stop_name[3] = {"END", end_ch, end_th};
 
-const	char *const run_start_name[3] = {"RUN ", start_ch, start_ch};	
+const	char *const run_start_name[3] = {"RUN ", run_ch, run_ch};	
 
 const char analysis_ch[] = "记录";
 const char analysis_th[] = "記錄";
@@ -151,6 +151,7 @@ const char treadmill_ch[] = "室内跑步";
 const char bike_ch[] = "单车";
 const char bike_th[] = "單車";
 const char stairs_ch[] = "爬楼梯机";
+const char stairs_th[] = "爬楼梯機";
 const char elliptical_ch[] = "跑椭圆机";
 const char elliptical_th[] = "跑橢圓機";
 const char row_ch[] = "划船";
@@ -159,7 +160,7 @@ const char aerobic_ch[] = "有氧训练";
 const char other_ch[] = "其它";																					 
 const char *const horizontal_workout_name[3][8] = {{"Treadmill", "Cycling", "Stairs",  "Elliptical", "Row",  "Aerobic", "Piloxing", "Others"},
 	                                  {treadmill_ch, bike_ch, stairs_ch, elliptical_ch, row_ch, aerobic_ch, "Piloxing", other_ch},
-	                                  {treadmill_ch, bike_th, stairs_ch, elliptical_th, row_th, aerobic_ch, "Piloxing", other_ch}};
+	                                  {treadmill_ch, bike_th, stairs_th, elliptical_th, row_th, aerobic_ch, "Piloxing", other_ch}};
 	
 const char *const horizontal_ware_indicator[] = {"-,,,,,,,",
 	                                             	 ",-,,,,,,", 
