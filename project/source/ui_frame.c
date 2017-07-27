@@ -1182,7 +1182,7 @@ static void _frame_render_horizontal_incoming_call()
 	
 	// 2. Render the left			
 	if (cling.ui.icon_sec_blinking) 
-	  _render_one_icon_16(ICON16_MESSAGE_IDX, 0);		
+	  _render_one_icon_16(ICON16_INCOMING_CALL_IDX, 0);		
 }
 
 static void _frame_render_horizontal_incoming_msg()
