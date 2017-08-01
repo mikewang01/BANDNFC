@@ -24,7 +24,8 @@ typedef struct tagREMINDER_CTX {
 	I32U ts;
 	I8U hour;
 	I8U minute;
-	I8U b_valid;
+	I8U b_valid_alarm;
+	I8U b_daily_alarm;
 	I8U b_sleep_valid;
 	I8U b_wakeup_valid;
 	I8U ui_hh;

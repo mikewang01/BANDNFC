@@ -41,7 +41,6 @@ typedef struct tagNOTIFIC_CTX {
 	I32U ts;
 	I8U hour;
 	I8U minute;
-	I8U b_valid;
 	I8U vibrate_time;
 	I8U second_reminder_time;
 	I8U second_reminder_max;

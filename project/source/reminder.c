@@ -84,9 +84,10 @@ void REMINDER_set_next_normal_reminder()
 	
 	cling.reminder.ui_hh = 0xff;
 	cling.reminder.ui_mm = 0xff;
+	cling.reminder.b_daily_alarm = FALSE;
 	
 	if (!LINK_is_authorized()) {
-		cling.reminder.b_valid = FALSE;
+		cling.reminder.b_valid_alarm = FALSE;
 		cling.reminder.hour = 0;
 		cling.reminder.minute = 0;
 		N_SPRINTF("[REMINDER] NOT authorized, set invalid hh/mm");
@@ -96,7 +97,7 @@ void REMINDER_set_next_normal_reminder()
 	if (cling.user_data.b_reminder_off_weekends) {
 		// Check if today is Saturday or Sunday
 		if (cling.time.local.dow > 4) {
-			cling.reminder.b_valid = FALSE;
+			cling.reminder.b_valid_alarm = FALSE;
 			cling.reminder.hour = 0;
 			cling.reminder.minute = 0;
 			N_SPRINTF("[REMINDER] Weekend OFF mode, set invalid hh/mm");
@@ -124,6 +125,8 @@ void REMINDER_set_next_normal_reminder()
 			
 			if (week & day) {
 				
+				cling.reminder.b_daily_alarm = TRUE;
+				
 				if (!b_first_alarm) {
 					b_first_alarm = TRUE;
 					cling.reminder.ui_hh = hour;
@@ -145,13 +148,13 @@ void REMINDER_set_next_normal_reminder()
 	}
 	
 	if (b_found) {
-		cling.reminder.b_valid = TRUE;
+		cling.reminder.b_valid_alarm = TRUE;
 		cling.reminder.hour = hour;
 		cling.reminder.minute = minute;
 		
 		N_SPRINTF("[REMINDER] found reminder: %d:%d", cling.reminder.hour, cling.reminder.minute);
 	} else {
-		cling.reminder.b_valid = FALSE;
+		cling.reminder.b_valid_alarm = FALSE;
 		cling.reminder.hour = 0;
 		cling.reminder.minute = 0;
 
@@ -167,7 +170,7 @@ void REMINDER_set_next_normal_reminder()
 
 static BOOLEAN _check_normal_reminder()
 {
-	if (!cling.reminder.b_valid)
+	if (!cling.reminder.b_valid_alarm)
 		return FALSE;
 	
 	if ((cling.time.local.hour == cling.reminder.hour) && (cling.time.local.minute == cling.reminder.minute)) {
@@ -249,7 +252,7 @@ void REMINDER_state_machine()
 				NOTIFIC_start_notifying(NOTIFICATION_TYPE_SLEEP_ALARM_CLOCK, 0);
 			} else if (_check_normal_reminder()) {
 				N_SPRINTF("[REMINDER] Work reminder is hit @ %d:%d", cling.time.local.hour, cling.time.local.minute);
-				cling.reminder.b_valid = FALSE;
+				cling.reminder.b_valid_alarm = FALSE;
 				cling.reminder.state = REMINDER_STATE_ON;
 				cling.reminder.ts = t_curr;				
 				cling.reminder.alarm_type = NORMAL_ALARM_CLOCK;
