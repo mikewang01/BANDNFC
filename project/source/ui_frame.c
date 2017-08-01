@@ -3233,14 +3233,14 @@ static void _render_vertical_reminder_core(BOOLEAN b_alarm_clock_reminder)
 	I8U string[32];	
   BOOLEAN b_invalid_alarm = TRUE;
 	
-	if (b_alarm_clock_reminder) {
-		if ((cling.reminder.total) || (cling.reminder.b_sleep_total)){
-			b_invalid_alarm = FALSE;
-		} 		
+  if (b_alarm_clock_reminder) {
+		if ((cling.reminder.b_daily_alarm) || (cling.reminder.b_sleep_total)) {
+		  b_invalid_alarm = FALSE;
+		}			
 	} else {
-		if (cling.reminder.total){
+		if (cling.reminder.b_daily_alarm) {
       b_invalid_alarm = FALSE;
-		} 
+		}		
 	}
 
 	if ((cling.ui.notific.alarm_clock_hh >= 24) || (cling.ui.notific.alarm_clock_mm >= 60)) {
