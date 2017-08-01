@@ -1694,6 +1694,9 @@ BOOLEAN static _ui_state_sanity_check()
 	
 	// Check whether we have some memory overflow issue
 	if (cling.ui.language_type > LANGUAGE_TYPE_TRADITIONAL_CHINESE)	{
+		cling.ui.language_type = LANGUAGE_TYPE_SIMPLIFIED_CHINESE;
+		SYSTEM_backup_critical();
+		Y_SPRINTF("Language type: %d", cling.ui.language_type);
 	  return FALSE;
 	}
 	
@@ -1701,13 +1704,16 @@ BOOLEAN static _ui_state_sanity_check()
 		t_curr = CLK_get_system_time();
 		// If authorizing time is greater than 5 minutes, restart system
 		if (t_curr > (cling.link.link_ts + 300000)) {
+			Y_SPRINTF("Authorizing time: %d", t_curr-cling.link.link_ts);
 			return FALSE;
 		}
 	}
 	
 	if (OTA_if_enabled()) {
-		if (cling.ota.b_update != TRUE)
+		if (cling.ota.b_update != TRUE) {
+			Y_SPRINTF("OTA update: %d", cling.ota.b_update);
 			return FALSE;
+		}
 	}
 
 	return TRUE;
