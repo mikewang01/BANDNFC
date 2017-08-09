@@ -122,7 +122,6 @@ static void _finger_down_processing(TOUCH_CTX *t, I8U op_detail, I32U t_curr)
 	t->gesture = op_check_table[op_detail];	
 #endif	
 	// Make sure OLED display panel is faced up.
-//		if (LINK_is_authorized() && (cling.activity.z_mean < 0)) {
 	if (LINK_is_authorized()) {
 			
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");
@@ -165,7 +164,6 @@ static void _swipe_processing(TOUCH_CTX *t, I8U op_detail)
 	/*since TOUCH_SWIPE_LEFT = 1 and TOUCH_SWIPE_RIGHT =2, a simple add algrithon is able to help to get right op*/
 	t->gesture = TOUCH_SWIPE_LEFT + op_detail;
 #endif
-//		if (LINK_is_authorized() && (cling.activity.z_mean < 0)) {
 	if (LINK_is_authorized()) {
 
 		N_SPRINTF("[TOUCH] ------------ TURN ON SCREEN --------");

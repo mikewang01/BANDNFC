@@ -70,7 +70,6 @@ enum {
 #define ADJ_G_STEP_WIN 4
 
 
-#define CLASSIFICATION_TIME_SPAN 8 /* A 8 seconds span for classification . */
 #define CLASSIFIER_STEP_WIN_SZ 32  /* a window of 32 steps for classification */
 //#define CLASSIFIER_STEP_WIN_SZ 16  /* a window of 32 steps for classification */
 #define CHEATING_POINTS_NORM        (I8U)64
@@ -232,11 +231,6 @@ typedef struct tagANTI_CHEATING_CTX {
 
 } ANTI_CHEATING_CTX, *PANTI_CHEATING_CTX;
 
-typedef struct tagUC_CONSTRAINS_TAB {
-    I32U a_diff_th;
-    I8U step_th;
-} UC_CONSTRAINS_TAB, *PUC_CONSTRAINS_TAB;
-
 // Classifier state
 typedef struct tagCLASSIFIER_STAT {
     I8U step_stat[CLASSIFIER_STEP_WIN_SZ];   // step classification Status
@@ -257,8 +251,6 @@ typedef struct tagCLASSIFIER_STAT {
     I32S w_r_votes[CLASSIFIER_STEP_WIN_SZ];
 
     I16U apu_pace;
-    // step pace check over a span of last 8 steps
-    I8U b_pace_cheating;
 
     I32U stationary_ts; // Exit time of stationary mode, this parameter is used to exclude CAR classification for short walking/running activities
 
@@ -300,19 +292,14 @@ typedef struct tagRAW_ACCE_STAT {
 typedef struct tagACCELEROMETER_INPUT_STAT {
 
     I8U pair_ratio_lo;              // the maximum of each axis
-    I8U pair_ratio_hi;              // the maximum of each axis
     I32U ts;                        // time stamp on second
     I32U min_mag;                   // Minimum magnitude
     I32U max_mag;                   // Minimum magnitude
     I32U acc;
     I8U peak_vibrate_single;
     I32U peak_vibrate_window;
-    I32U peak_vibrate_smooth;
     I8U peak_strike_single;
-    I8U peak_strike_window;         // the maximum of each axis
-    I8U acc_symmetric_window;
     I8U max_acce_idx;
-
     RAW_ACCE_STAT stat[3];          // Raw acceleration statistics
 
 } ACCELEROMETER_INPUT_STAT, *PACCELEROMETER_INPUT_STAT;

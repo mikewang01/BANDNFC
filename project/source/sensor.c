@@ -59,7 +59,7 @@ static void _navigation_wrist_shaking(I8U jitter_counts)
 #ifndef __WIRST_DETECT_ENABLE__
 
 //static BOOLEAN _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOLEAN b_motion)
-static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOLEAN b_motion)
+static void _screen_activiation_wrist_flip(ACCELEROMETER_3D *g, I32U t_curr, BOOLEAN b_motion)
 {
 	I8U i;
 	I8U up_counts=0;
@@ -69,9 +69,9 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOL
 
 	//judge from procedure not location
 #ifdef _CLINGBAND_PACE_MODEL_
-	if( (G.x>950&&G.x<4500) && (G.z<-800)&&(G.y<680&&G.y>-700)){
+	if( (g->x>950&&g->x<4500) && (g->z<-800)&&(g->y<680&&g->y>-700)){
 #else
-	if( (G.y>-4500&&G.y <-900) && (G.z<-800)&&(G.x<680&&G.x>-700) ){
+	if( (g->y>-4500&&g->y <-900) && (g->z<-800)&&(g->x<680&&g->x>-700) ){
 #endif
 		a->orientation[a->face_up_index] = FACE_UP;
 		currOrientation = FACE_UP;
@@ -81,9 +81,9 @@ static void _screen_activiation_wrist_flip(ACCELEROMETER_3D G, I32U t_curr, BOOL
 		N_SPRINTF("[SENSOR] --- FACE UP ---");
 #ifdef __YLF_WRIST_FLIP__
 #ifdef _CLINGBAND_PACE_MODEL_
-	}else	if((G.x<0)&&(G.z>-1500)){//){//if(G.x<-10){//if(G.x>4500||G.x<-10){
+	}else	if((g->x<0)&&(g->z>-1500)){//){//if(G.x<-10){//if(G.x>4500||G.x<-10){
 #else
-	}else	if((G.y>10)&&(G.z>-1500)){//if(G.y>10){//if(G.y<-4500||G.y>10){
+	}else	if((g->y>10)&&(g->z>-1500)){//if(G.y>10){//if(G.y<-4500||G.y>10){
 #endif
 		a->orientation[a->face_up_index] = FACE_SIDE;
 		currOrientation = FACE_SIDE;
@@ -242,14 +242,16 @@ static void _low_power_process_sw()
 
 static void _high_power_process_FIFO()
 {
-	I8U i, j=0, sample_count;
+	I8U i, sample_count;
 	I8U jitter_counts;
 	ACC_AXIS xyz;
 	ACCELEROMETER_3D A;
 	ACCELEROMETER_3D G;
+	ACCELEROMETER_3D prevA_1;
+	ACCELEROMETER_3D prevA_2;
 	I32U x, y, t_curr;// z,
-  I32S buffer_X[2]={0},buffer_y[2]={0},buffer_z[2]={0};
 	BOOLEAN b_motion = FALSE;//, b_wristFlip_flag = FALSE;
+	
 #ifdef __WIRST_DETECT_ENABLE__
 	UNUSED_VARIABLE(b_motion);
 	UNUSED_VARIABLE(t_curr);
@@ -270,12 +272,14 @@ static void _high_power_process_FIFO()
 		return;
 #endif
 	jitter_counts = 0;
-	//a->z_mean = 0;
-	
-	// Reset the accumulator
-	G.x = 0;
-	G.y = 0;
-	G.z = 0;
+
+	// Reset previous accelerations
+	prevA_1.x = 0;
+	prevA_2.x = 0;
+	prevA_1.y = 0;
+	prevA_2.y = 0;
+	prevA_1.z = 0;
+	prevA_2.z = 0;
 	
 	for (i = 0; i < sample_count; i++) {
 		
@@ -287,9 +291,6 @@ static void _high_power_process_FIFO()
 		A.y = (I32S)(xyz.y>>2);
 		A.z = (I32S)(xyz.z>>2);
 		
-		// Calculate Z mean
-//		a->z_mean += A.z;
-
 		N_SPRINTF("[SENSOR] data: %d,%d,%d,", A.x, A.y, A.z);
 		
 		x = BASE_abs(A.x);
@@ -321,6 +322,8 @@ static void _high_power_process_FIFO()
 		
 		// Sleep monitoring module
 		SLEEP_algorithms_proc(&xyz);
+		
+		// Screen activate by flipping wrist
 #ifdef __WIRST_DETECT_ENABLE__
 		if(cling.user_data.b_screen_wrist_flip){
 			/*wrist detetction moudule*/
@@ -330,14 +333,14 @@ static void _high_power_process_FIFO()
 #ifndef __WIRST_DETECT_ENABLE__
 		//if((FALSE == b_wristFlip_flag)&&(cling.user_data.b_screen_wrist_flip)){
 		if(cling.user_data.b_screen_wrist_flip){
-			if(j>=2){ j = 0; }
+			// Detection starts from 3rd acceleration data (Skip the 1st and 2nd data)
 			if(i>3){
-				G.x = (buffer_X[0]+buffer_X[1]+ A.x)/3;
-				G.y = (buffer_y[0]+buffer_y[1]+ A.y)/3;
-				G.z = (buffer_z[0]+buffer_z[1]+ A.z)/3;				
+				G.x = (prevA_1.x+prevA_2.x+ A.x)/3;
+				G.y = (prevA_1.y+prevA_2.y+ A.y)/3;
+				G.z = (prevA_1.z+prevA_2.z+ A.z)/3;				
 				//if (cling.user_data.b_screen_wrist_flip) {
 				//b_wristFlip_flag = _screen_activiation_wrist_flip(G, t_curr, b_motion);
-				_screen_activiation_wrist_flip(G, t_curr, b_motion);
+				_screen_activiation_wrist_flip(&G, t_curr, b_motion);
 				//}
 #ifdef __YLF_WRIST_FLIP__
 				if(a->b_screen_off_wrist_flip){
@@ -348,10 +351,13 @@ static void _high_power_process_FIFO()
 				}
 #endif //#ifndef __YLF_WRIST_FLIP__
 			}
-			buffer_X[j] = A.x;
-			buffer_y[j] = A.y;
-			buffer_z[j] = A.z;
-			j++;
+			prevA_2.x = prevA_1.x;
+			prevA_2.y = prevA_1.y;
+			prevA_2.z = prevA_1.z;
+			
+			prevA_1.x = A.x;
+			prevA_1.y = A.y;
+			prevA_1.z = A.z;
 		}
 #endif //#ifndef __WIRST_DETECT_ENABLE__
 		 

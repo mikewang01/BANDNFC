@@ -280,6 +280,7 @@ static I8U _get_stride_length(BOOLEAN b_running)
 void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 {
 	I16U pdm_stat;
+	I32U t_diff;
 	I32U curr_time = CLK_get_system_time();
 	I8U act_motion;
 	I8U distance_per_step;
@@ -367,7 +368,6 @@ void TRACKING_algorithms_proc(ACCELEROMETER_3D A)
 				
 				// Update running sec
 				{
-					I32U t_diff;
 					t_diff = CLK_get_system_time() - cling.train_stat.time_start_in_ms;
 					t_diff /= 1000;
 					t_diff %= 60;
@@ -1056,7 +1056,6 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	// Update speed
 	r->walk_per_60_second = minute->walking;
 	r->run_per_60_second = minute->running;
-	r->last_minute_distance = denormalized_distance;;
 }
 
 static void _logging_per_minute()

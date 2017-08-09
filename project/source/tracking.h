@@ -114,7 +114,6 @@ typedef struct tagRUNNING_TRACK_CTX {
 	I8U time_sec;
 	I8U walk_per_60_second;
 	I8U run_per_60_second;
-	I16U last_minute_distance;
 	I16U last_10sec_distance;
 	I16U last_d_buf[PACE_BUF_LENGTH];
 	I16U last_t_buf[PACE_BUF_LENGTH];
@@ -197,9 +196,6 @@ typedef struct tagTRACKING_CTX {
 	// Step time stamp
 	I32U step_detect_t_sec;
 	
-	// Device direction
-	//I32S z_mean;
-
 	// Device tap timing
 	I32U tap_ts_ms;
 	
