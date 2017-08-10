@@ -1688,13 +1688,12 @@ void UI_init()
 	cling.ui.b_init_version = TRUE;
 }
 
-BOOLEAN static _ui_state_sanity_check()
+static BOOLEAN _ui_state_sanity_check()
 {
 	I32U t_curr;
 	
 	// Check whether we have some memory overflow issue
 	if (cling.ui.language_type > LANGUAGE_TYPE_TRADITIONAL_CHINESE)	{
-		cling.ui.language_type = LANGUAGE_TYPE_SIMPLIFIED_CHINESE;
 		SYSTEM_backup_critical();
 		Y_SPRINTF("Language type: %d", cling.ui.language_type);
 	  return FALSE;

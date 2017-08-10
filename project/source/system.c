@@ -517,6 +517,23 @@ BOOLEAN SYSTEM_get_mutex(I8U value)
 	return b_mutex_obtained;
 }
 
+static BOOLEAN _critical_sanity_check()
+{
+	if (cling.ui.language_type > LANGUAGE_TYPE_TRADITIONAL_CHINESE)	{
+		return FALSE;
+	}
+	
+	if (cling.gcp.host_type > HOST_TYPE_ANDROID) {
+		return FALSE;
+	}
+	
+	if (cling.ui.clock_orientation > 10) {
+		return FALSE;
+	}
+	
+	return TRUE;
+}
+
 BOOLEAN SYSTEM_backup_critical()
 {
 	// We should add system restoration for critical info
@@ -524,6 +541,11 @@ BOOLEAN SYSTEM_backup_critical()
 	I32U cbuf[16];
 	I8U *critical = (I8U *)cbuf;
 	I32U offset = 0;
+	
+	// If we fail to pass sanity check, go restart system
+	if (!_critical_sanity_check()) {
+		SYSTEM_restart_from_reset_vector();
+	}
 		
 	while (offset < FLASH_ERASE_BLK_SIZE) {
 		// Read out the first 4 bytes -

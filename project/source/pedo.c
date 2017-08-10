@@ -85,12 +85,13 @@ void PEDO_release()
 {
 	// Clear whatever exists in gPDM.
 	memset(&gPDM, 0, sizeof(PEDO_STAT));
+    
 }
 
 static ACCELEROMETER_3D _lpf(ACCELEROMETER_3D in, LP_FILTER *flt, LPF_HISTORY *hist)
 {
 	I16S i;
-  ACCELEROMETER_3D *hist_i = hist->in;
+    ACCELEROMETER_3D *hist_i = hist->in;
 	ACCELEROMETER_3D *hist_o = hist->out;
 	I32S o_b_x, o_b_y, o_b_z;
 	I32S o_a_x, o_a_y, o_a_z;
@@ -305,7 +306,7 @@ static BOOLEAN _det_stationary()
 static ACCELEROMETER_3D _3D_norm(ACCELEROMETER_3D in, I32S norm)
 {
 	I32S tmp;
-  ACCELEROMETER_3D out;
+    ACCELEROMETER_3D out;
 
     if (!norm) {
         return in;
@@ -512,7 +513,7 @@ static void _calc_apu_p2p(CLASSIFIER_STAT *c, I32S apu)
 
 static void _update_apu_step_ts(CLASSIFIER_STAT *c)
 {
-  I16S i;
+    I16S i;
 
 	// Update time stamp and reset its stat.
 	for (i = CLASSIFIER_STEP_WIN_SZ-1; i > 0; i--) {
@@ -1421,7 +1422,10 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
         p2p.z = _calc_raw_stat(&r->stat[2], in.z);
 
         r->pair_ratio_lo <<= 1;
+        r->pair_ratio_hi <<= 1;
+        r->peak_strike_window <<= 1;
         r->peak_vibrate_window <<= 1;
+        r->peak_vibrate_smooth <<= 1;
         if (!p2p.x || !p2p.y || !p2p.z) {
             ratio = 0;
             r->peak_strike_single = 0;
@@ -1470,11 +1474,19 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
         // Keep 8 second of axis peak-to-peak ratio history
         if (ratio > AXIS_RATIO_CHEATING_TH_LO)
             r->pair_ratio_lo |= 1;
+        if (ratio > AXIS_RATIO_CHEATING_TH_HI)
+            r->pair_ratio_hi |= 1;
+        if (r->peak_strike_single >= 7)
+            r->peak_strike_window |= 1;
 
         // Detect whether device is in a vibrating mode
         // The maximum magnitude of one axis (peak) is within 1 G range, while it gets a lot of vibration
         if ((r->peak_vibrate_single >= 10) && (r->max_mag >= 300) && (r->max_mag <= 1500))
             r->peak_vibrate_window |= 1;
+
+        // Detect whether device is possiblly in a cheating mode
+        if (r->peak_vibrate_single <= 3)
+            r->peak_vibrate_smooth |= 1;
 
         // Check whether the device is likely in a CAR mode
         cnt = BASE_calculate_occurance(r->peak_vibrate_window, 32);
@@ -1503,7 +1515,11 @@ static void _acce_correlation(ACCELEROMETER_3D in, MOTION_TICK_CTX *pt)
     } 
     
     if (gPDM.g_adj.b_update) {
+        r->acc_symmetric_window <<= 1;
         r->acc = BASE_abs(r->stat[r->max_acce_idx].acc_step);
+        if (r->acc < 10000) {
+            r->acc_symmetric_window |=  1;  // Accumulating the waveform for its symmetric check
+        }
     }
 
     // Calculate the number of strike
@@ -1642,7 +1658,7 @@ static void _clean_up_random_steps()
 
 }
 
-//static int steps_overall = 0;
+static int steps_overall = 0;
 
 I16U PEDO_main(ACCELEROMETER_3D in)
 {
@@ -1710,7 +1726,7 @@ I16U PEDO_main(ACCELEROMETER_3D in)
         // Reset stationary 
         _reset_pedo_stationary();
 		
-//				steps_overall ++;
+				steps_overall ++;
 				N_SPRINTF("STEPS overall -- %d/%d --", steps_motion, steps_overall);
 		
     } else{
