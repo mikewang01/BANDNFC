@@ -80,13 +80,11 @@ const char end_th[] = "結束";
 const	char *const stop_run_name[3] = {"STOP ", end_ch, end_th};	
 const	char *const start_run_name[3] = {"NOW ", start_ch, start_ch};	
 	
-const char run_ch[] = "跑步";
 const char workout_ch[] = "运动";
 const char workout_th[] = "運動";
 const char cycling_ch[] = "骑行";
 const char cycling_th[] = "騎行";
-const	char *const training_run_name[3] = {"RUN ", run_ch, run_ch};	
-const	char *const gym_workout_run_name[3] = {"RUN ", workout_ch, workout_th};			
+const	char *const workout_run_name[3] = {"RUN ", workout_ch, workout_th};			
 const	char *const cycling_run_name[3] = {"BIKE ", cycling_ch, cycling_th};	
 	
 const char *const ready_indicator_name[4] = {"3","2","1","GO"};
@@ -107,7 +105,6 @@ const char *const no_ble_vertical_name_2[3] = {"BLE", ble_ch, ble_th};
 
 const char *const stopwatch_stop_name[3] = {"END", end_ch, end_th};
 
-const	char *const run_start_name[3] = {"RUN ", run_ch, run_ch};	
 
 const char analysis_ch[] = "记录";
 const char analysis_th[] = "記錄";
@@ -1292,7 +1289,7 @@ static I8U _render_middle_horizontal_hr_core()
 		if (cling.hr.heart_rate_ready) {
 #ifdef _ENABLE_PPG_
 			//hr_result = PPG_minute_hr_calibrate();
-			update_and_push_hr();
+			PPG_update_and_push_hr();
 			hr_result = cling.hr.m_curr_dispaly_HR;
 #endif
 			len = sprintf((char *)string, "%d", hr_result);			
@@ -1583,7 +1580,7 @@ static void _frame_render_horizontal_workout_stop()
 	I8U language_type = cling.ui.language_type;	
 
 	// 1. Render the middle 		
-	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)gym_workout_run_name[language_type], string);
+	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)workout_run_name[language_type], string);
 	FONT_load_characters(cling.ui.p_oled_up+128, (char *)string, 16, 128, TRUE);
 	
 	// 2. Render the right
@@ -1721,7 +1718,7 @@ static void _frame_render_horizontal_running_pace()
 	_render_middle_horizontal_section_core(string, b_24_size, margin, offset, 0);
 	
   // 2. Render the right	
-	_right_render_horizontal_string_core((I8U *)gym_workout_run_name[language_type], (I8U *)pace_name[language_type]);	
+	_right_render_horizontal_string_core((I8U *)workout_run_name[language_type], (I8U *)pace_name[language_type]);	
 	
 	// 3. Render the left	
 	_render_one_icon_16(ICON16_RUNNING_PACE_IDX, 0);				
@@ -1938,10 +1935,7 @@ static void _frame_render_horizontal_training_start_run()
 	b_center_display = FALSE;
 #endif
 	
-	if (cling.ui.language_type == LANGUAGE_TYPE_ENGLISH)
-	  _middle_render_horizontal_run_or_stop_core((I8U *)training_run_name[language_type], (I8U *)start_run_name[language_type], string);
-	else
-	  _middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)training_run_name[language_type], string);
+	_middle_render_horizontal_run_or_stop_core((I8U *)start_run_name[language_type], (I8U *)workout_run_name[language_type], string);
 
 	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)string, 16, 128, b_center_display);	
 	
@@ -1968,7 +1962,7 @@ static void _frame_render_horizontal_training_run_or_analysis()
   if (language_type	== LANGUAGE_TYPE_ENGLISH)
 	  offset = 44;
 	
-	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)run_start_name[language_type], 16, 128, FALSE);
+	FONT_load_characters(cling.ui.p_oled_up+128+offset, (char *)workout_run_name[language_type], 16, 128, FALSE);
 	
   p0 = cling.ui.p_oled_up+128+40,
 	p1 = p0+128;
@@ -2065,7 +2059,7 @@ static void _frame_render_horizontal_training_time()
 	if (cling.ui.icon_sec_blinking) 
 	  _render_one_icon_16(ICON16_RUNNING_TIME_IDX, 0);			
 	
-	update_and_push_hr();	
+	PPG_update_and_push_hr();	
 }
 
 static void _frame_render_horizontal_training_distance()
@@ -2080,7 +2074,7 @@ static void _frame_render_horizontal_training_distance()
 	if (cling.ui.icon_sec_blinking) 
 	  _render_one_icon_16(ICON16_RUNNING_DISTANCE_IDX, 0);		
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 static void _frame_render_horizontal_training_pace()
@@ -2120,7 +2114,7 @@ static void _frame_render_horizontal_training_pace()
 	if (cling.ui.icon_sec_blinking) 
 	  _render_one_icon_16(ICON16_RUNNING_PACE_IDX, 0);	
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 static void _frame_render_horizontal_training_hr()
@@ -2199,7 +2193,7 @@ static void _frame_render_horizontal_training_run_stop()
 	I8U language_type = cling.ui.language_type;	
 	
   // 1. Render the middle			
-	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)training_run_name[language_type], string);
+	_middle_render_horizontal_run_or_stop_core((I8U *)stop_run_name[language_type], (I8U *)workout_run_name[language_type], string);
 
 #ifdef _CLINGBAND_PACE_MODEL_				
 	  offset = 24;	
@@ -2218,7 +2212,7 @@ static void _frame_render_horizontal_training_run_stop()
 	if (cling.ui.icon_sec_blinking) 
 	  _render_one_icon_16(ICON16_RUNNING_STOP_IDX, 0);			
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -3301,7 +3295,7 @@ static I8U _render_vertical_hr_core(I8U offset)
 		if (cling.hr.heart_rate_ready) {
 #ifdef _ENABLE_PPG_
 			//hr_result = PPG_minute_hr_calibrate();
-			update_and_push_hr();
+			PPG_update_and_push_hr();
 			hr_result = cling.hr.m_curr_dispaly_HR;
 #endif
 			if (hr_result > 99) {
@@ -3513,7 +3507,7 @@ static void _frame_render_vertical_training_distance()
 	// 2. Render the top
 	_render_vertical_icon_core(ICON24_RUNNING_DISTANCE_IDX, 24, 0);			
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 static void _frame_render_vertical_running_time()
@@ -3593,7 +3587,7 @@ static void _frame_render_vertical_training_time()
   // 2. Render the top			
 	_render_vertical_icon_core(ICON24_RUNNING_TIME_IDX, 24, 0);				
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 static void _frame_render_vertical_running_pace()
@@ -3606,7 +3600,7 @@ static void _frame_render_vertical_running_pace()
 	I8U language_type = cling.ui.language_type;	
 
 	// 1. Render the middle and bottom
-	_middle_render_vertical_character_core((I8U *)gym_workout_run_name[language_type], 28, (I8U *)pace_name[language_type], 46);		
+	_middle_render_vertical_character_core((I8U *)workout_run_name[language_type], 28, (I8U *)pace_name[language_type], 46);		
 	
 	if (cling.run_stat.distance) {
 		pace = cling.run_stat.time_sec+cling.run_stat.time_min*60;
@@ -3872,7 +3866,7 @@ static void _frame_render_vertical_training_run_start()
 	I8U language_type = cling.ui.language_type;		
 
 	// 1. Render the middle		
-	_middle_render_vertical_start_or_stop_run_core((I8U *)start_run_name[language_type], (I8U *)training_run_name[language_type]);
+	_middle_render_vertical_start_or_stop_run_core((I8U *)start_run_name[language_type], (I8U *)workout_run_name[language_type]);
 
 	// 2. Render the bottom	
 #ifdef _CLINGBAND_PACE_MODEL_	
@@ -3922,12 +3916,12 @@ static void _frame_render_vertical_training_run_stop()
 	I8U language_type = cling.ui.language_type;		
 
 	// 1. Render the middle
-	_middle_render_vertical_start_or_stop_run_core((I8U *)stop_run_name[language_type], (I8U *)training_run_name[language_type]);
+	_middle_render_vertical_start_or_stop_run_core((I8U *)stop_run_name[language_type], (I8U *)workout_run_name[language_type]);
 
 	// 2. Render the bottom and top	
   _render_vertical_running_stop_buttom_top();
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 #ifndef _CLINGBAND_PACE_MODEL_
@@ -3936,7 +3930,7 @@ static void _frame_render_vertical_training_workout_stop()
 	I8U language_type = cling.ui.language_type;		
 
 	// 1. Render the middle
-	_middle_render_vertical_start_or_stop_run_core((I8U *)stop_run_name[language_type], (I8U *)gym_workout_run_name[language_type]);	
+	_middle_render_vertical_start_or_stop_run_core((I8U *)stop_run_name[language_type], (I8U *)workout_run_name[language_type]);	
 
 	// 2. Render the bottom and top	
   _render_vertical_running_stop_buttom_top();
@@ -3960,7 +3954,7 @@ static void _frame_render_vertical_training_run_or_analysis()
 	I8U language_type = cling.ui.language_type;	
 
 	// 1. Render the middle and bottom		
-	_render_vertical_fonts_lib_invert_colors_core((I8U *)run_start_name[language_type], 60);	
+	_render_vertical_fonts_lib_invert_colors_core((I8U *)workout_run_name[language_type], 60);	
 		
 	_render_vertical_fonts_lib_invert_colors_core((I8U *)run_analysis_name[language_type], 100);	
 	
@@ -4162,7 +4156,7 @@ static void _frame_render_vertical_training_pace()
 	// 2. Render the top	
   _render_vertical_icon_core(ICON24_RUNNING_PACE_IDX, 24, 0);				
 	
-	update_and_push_hr();
+	PPG_update_and_push_hr();
 }
 
 static void _frame_render_vertical_training_hr()

@@ -290,7 +290,7 @@ void PPG_closing_to_skin_detect_init(void);
 
 #ifndef __YLF_PPG__
 I8U PPG_Calculate_HR_mean5_moving(I8U);
-void update_and_push_hr(void);
+void PPG_update_and_push_hr(void);
 #endif
 
 #endif // __PPG_H__

@@ -936,7 +936,7 @@ I8U PPG_minute_hr_calibrate()
 }
 
 
-void update_and_push_hr()
+void PPG_update_and_push_hr()
 {
 #ifdef _ENABLE_PPG_
 		if(cling.hr.m_display_hr_cnt >= 3){
