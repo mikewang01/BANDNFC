@@ -51,7 +51,7 @@ static void _sync_time_proc(I8U *data)
 		
 		// Update stored total
 		memcpy(&cling.activity.day, &stored_day_total, sizeof(stored_day_total));
-		memcpy(&cling.activity.day_stored, &stored_day_total, sizeof(stored_day_total) - sizeof(stored_day_total.active_time));
+		memcpy(&cling.activity.day_stored, &stored_day_total, sizeof(stored_day_total));
 		
 		// Last, update local day since time zone is changed
 		cling.time.local_day = cling.time.local.day;
