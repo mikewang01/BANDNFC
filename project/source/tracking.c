@@ -413,7 +413,7 @@ static void _day_stat_reset()
 	a->day.running = 0;
 	a->day.calories = 0;
 	a->day.distance = 0;
-	a->day.active_time = 0;
+	a->day.active_time_in_minutes = 0;
 #ifndef __YLF_RUN_HR__
 	a->hr_sport_minutes = 0;
 #endif
@@ -423,7 +423,7 @@ static void _day_stat_reset()
 	a->day_stored.running = 0;
 	a->day_stored.distance = 0;
 	a->day_stored.calories = 0;
-	a->day_stored.active_time = 0;
+	a->day_stored.active_time_in_minutes = 0;
 	
 	// Reset running statistics as well
 	r->calories = 0;
@@ -640,7 +640,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		diff->sleep_state = cling.sleep.state;
 		
 		if ((diff->walking+diff->running) >= 40) {
-			a->day.active_time++;
+			a->day.active_time_in_minutes++;
 #ifndef __YLF__
 			b_active_time_Update = TRUE;
 #endif
@@ -696,7 +696,9 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				a->day.walking = a->day_stored.walking;
 				a->day.running = a->day_stored.running;
 				a->day.distance = a->day_stored.distance;
-				if(b_active_time_Update == TRUE){a->day.active_time --;}
+				if(b_active_time_Update == TRUE) {
+					a->day.active_time_in_minutes --;
+				}
 			}
 #endif
 			a->day.calories += calories_diff;
@@ -1018,7 +1020,7 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	denormalized_stat = minute->calories;
 	denormalized_stat <<= 4;
 	a->day_stored.calories += denormalized_stat;
-  a->day_stored.active_time = a->day.active_time;		
+  a->day_stored.active_time_in_minutes = a->day.active_time_in_minutes;		
 	
 	// Distance in meter
 	denormalized_distance = minute->distance;
@@ -1205,7 +1207,7 @@ static void _logging_midnight_local()
 	dw_buf[2] = a->day_stored.walking+a->day_stored.running;
 	dw_buf[3] = a->day_stored.distance>>4;
 	dw_buf[4] = a->day_stored.calories>>4;
-	dw_buf[5] = a->day_stored.active_time;
+	dw_buf[5] = a->day_stored.active_time_in_minutes;
 
 	// Put it into DAYSTAT space
 	pbuf = (I8U *)buf2;
@@ -1514,7 +1516,7 @@ void TRACKING_get_activity(I8U index, I8U mode, I32U *value)
 				*value = (t->day.distance >> 4);
 				break;
 			case TRACKING_ACTIVE_TIME:
-				*value = t->day.active_time;
+				*value = t->day.active_time_in_minutes;
 			default:
 				break;
 		}
@@ -1822,7 +1824,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	day_total->running = 0;
 	day_total->calories = 0;
 	day_total->distance = 0;
-	day_total->active_time = 0;
+	day_total->active_time_in_minutes = 0;
 	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
 		FLASH_Read_App(offset + SYSTEM_TRACKING_SPACE_START, pbuf, 16);
 		
@@ -1851,7 +1853,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 				day_total->distance += minute->distance;// Denormalize distance as it is in unit of 2 meters
 				day_total->calories += minute->calories;
 				if ((minute->walking+minute->running) >= 40) {
-					day_total->active_time ++;
+					day_total->active_time_in_minutes ++;
 				}
 #if 0
 				{

@@ -289,6 +289,12 @@ void USER_setup_profile(I8U *data)
 	// If running rate is less than 150, which is unrealistic number, set to 172
 	if (p->running_rate < 150) 
 		p->running_rate = 172;
+	
+	// Display active calories only
+	p->display_active_calories_only = *pdata++;
+	if (p->display_active_calories_only > DISPLAY_CALORIES_TYPE_IDLE) {
+		p->display_active_calories_only = DISPLAY_CALORIES_TYPE_ALL;
+	}
 }
 
 void USER_setup_device(I8U *data)

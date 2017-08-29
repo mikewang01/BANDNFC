@@ -100,7 +100,7 @@ typedef struct tagDAY_TRACKING_CTX {
 	I32U running;
 	I32U distance;
 	I32U calories;
-	I32U active_time;
+	I32U active_time_in_minutes;
 } DAY_TRACKING_CTX;
 
 #define PACE_BUF_LENGTH 4

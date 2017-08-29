@@ -188,7 +188,7 @@ static void _activity_info_restored(BOOLEAN b_reset)
 		a->day_stored.running = a->day.running;
 		a->day_stored.distance = a->day.distance;
 		a->day_stored.calories = a->day.calories;
-		a->day_stored.active_time = a->day.active_time;
+		a->day_stored.active_time_in_minutes = a->day.active_time_in_minutes;
 		SYSTEM_LOG("[SYSTEM] activity: %d, %d, %d, %d", a->day.walking, a->day.running, a->day.distance, a->day.calories);
 		
 		// Get sleep seconds by noon
@@ -202,7 +202,7 @@ static void _activity_info_restored(BOOLEAN b_reset)
 		a->day_stored.distance = a->day.distance;
 		a->day_stored.running = a->day.running;
 		a->day_stored.walking = a->day.walking;
-    a->day_stored.active_time = a->day.active_time;		
+    a->day_stored.active_time_in_minutes = a->day.active_time_in_minutes;		
 		
 		// Get sleep by noon from flash
 		a->sleep_by_noon = 0;

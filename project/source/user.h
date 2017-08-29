@@ -19,6 +19,12 @@ enum {
 	SEX_FEMALE
 };
 
+enum {
+	DISPLAY_CALORIES_TYPE_ALL = 0,
+	DISPLAY_CALORIES_TYPE_ACTIVE,
+	DISPLAY_CALORIES_TYPE_IDLE,
+};
+
 #define APP_DISTANCE_NORMALIZATION  0x01
 			
 typedef struct tagUSER_PROFILE_CTX {
@@ -43,6 +49,7 @@ typedef struct tagUSER_PROFILE_CTX {
 	I8U running_rate;
 	I8U running_page_display;
 	I8U touch_vibration;
+	I8U display_active_calories_only;
 	// Mileage limit for stigama tracking
 	I8U mileage_limit;
 	I8U age;
