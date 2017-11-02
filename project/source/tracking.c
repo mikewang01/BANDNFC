@@ -1908,13 +1908,13 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 #ifndef _CLINGBAND_PACE_MODEL_
 //#ifndef __YLF_CYCLING__
 	day_total->distance <<= 7; // denormalize distance as it is in unit of 8 meters
-	day_total->calories <<= 4;
 	r->distance <<= 3; // Denormalize distance as it is in unit of 8 meters
 #else
 	day_total->distance <<= 5; // denormalize distance as it is in unit of 2 meters
-	day_total->calories <<= 4;
 	r->distance <<= 1; // Denormalize distance as it is in unit of 2 meters
 #endif
+	day_total->calories <<= 4;
+	day_total->active_calories <<= 4;
 	
 	N_SPRINTF("Totals: %d, %d, %d, %d",  day_total->walking, day_total->running, day_total->calories>>4, day_total->distance>>4);
 
