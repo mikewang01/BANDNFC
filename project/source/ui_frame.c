@@ -863,6 +863,10 @@ static void _frame_render_horizontal_calories()
 	// 1. Render the middle
 #ifdef _CLINGBAND_PACE_MODEL_	
 	TRACKING_get_activity(0, TRACKING_CALORIES, &stat);
+	if (cling.user_data.profile.display_active_calories_only == DISPLAY_CALORIES_TYPE_ACTIVE) {
+		stat = cling.activity.day.active_calories;
+		stat >>= 4; // normalize stationary calories by a factor of 16
+	}
 #else 
 	TRACKING_get_activity(cling.ui.vertical_index, TRACKING_CALORIES, &stat);
 #endif
@@ -1847,7 +1851,7 @@ static void _frame_render_horizontal_running_calories()
 #ifdef _CLINGBAND_PACE_MODEL_
 static void _frame_render_horizontal_running_analysis()
 {
-	const char *running_analysis_name[] = {"RUN DATA", "当日跑步 ", "當日跑步 "};
+	const char *running_analysis_name[] = {"RUN DATA", "当日运动", "當日運動"};
 	I8U language_type = cling.ui.language_type;
 	
 	// 1. Render the middle
@@ -3016,6 +3020,11 @@ static void _frame_render_vertical_calories()
 	// 1. Render the middle	
 #ifdef _CLINGBAND_PACE_MODEL_		
 	TRACKING_get_activity(0, TRACKING_CALORIES, &stat);
+
+	if (cling.user_data.profile.display_active_calories_only == DISPLAY_CALORIES_TYPE_ACTIVE) {
+		stat = cling.activity.day.active_calories;
+		stat >>= 4; // normalize stationary calories by a factor of 16
+	}	
 #else
 	TRACKING_get_activity(cling.ui.vertical_index, TRACKING_CALORIES, &stat);
 #endif
@@ -3967,7 +3976,7 @@ static void _frame_render_vertical_training_run_or_analysis()
 static void _frame_render_vertical_running_analysis()
 {
 	const	char *const running_analysis_name_1[] = {"RUN", "当日 ", "當日 "};	
-	const	char *const running_analysis_name_2[] = {"DATA", "跑步 ", "跑步 "};	
+	const	char *const running_analysis_name_2[] = {"DATA", workout_ch, workout_th};	
 	I8U language_type = cling.ui.language_type;		
 
 	// 1. Render the middle.

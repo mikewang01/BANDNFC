@@ -412,6 +412,7 @@ static void _day_stat_reset()
 	a->day.walking = 0;
 	a->day.running = 0;
 	a->day.calories = 0;
+	a->day.active_calories = 0;
 	a->day.distance = 0;
 	a->day.active_time_in_minutes = 0;
 #ifndef __YLF_RUN_HR__
@@ -423,6 +424,7 @@ static void _day_stat_reset()
 	a->day_stored.running = 0;
 	a->day_stored.distance = 0;
 	a->day_stored.calories = 0;
+	a->day_stored.active_calories = 0;
 	a->day_stored.active_time_in_minutes = 0;
 	
 	// Reset running statistics as well
@@ -577,6 +579,7 @@ static I8U _get_calories_per_minute(I8U type)
 static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute_update)
 {
 	TRACKING_CTX *a = &cling.activity;
+	I32U calories_per_min, steps;
 	I8U calories_diff;
 #ifndef __YLF__
 	BOOLEAN b_active_time_Update = FALSE;
@@ -650,12 +653,16 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 
 		if (diff->running > 0) {
 			if (!a->b_workout_active) {
-				if (diff->running > 50) {
+				steps = diff->walking+diff->running;
+				if (steps > 120) {
 					calories_diff = 208; // 12.5 for running
-				} else if (diff->walking > diff->running) {
-					calories_diff = 158;
 				} else {
-					calories_diff = 108;
+					calories_per_min = (steps << 4);
+					calories_per_min /= 10;
+					calories_diff = (I8U)calories_per_min;
+					if (calories_diff < 40) {
+						calories_diff = 40;
+					}
 				}
 			} else {
 				calories_diff = _get_calories_per_minute(a->workout_type);
@@ -666,12 +673,15 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 		}
 		else if (diff->walking > 0) {
 			if (!a->b_workout_active) {
-				if (diff->walking > 50) {
+				if (diff->walking > 60) {
 					calories_diff = 108;  // 6.2 for walking
-				} else if (diff->walking > 20) {
-					calories_diff = 58;
 				} else {
-					calories_diff = 33;
+					calories_per_min = diff->walking << 4;
+					calories_per_min /= 10;
+					calories_diff = (I8U)calories_per_min;
+					if (calories_diff < 33) {
+						calories_diff = 33;
+					}
 				}
 			} else {
 				calories_diff = _get_calories_per_minute(a->workout_type);
@@ -696,6 +706,7 @@ static void	_get_activity_diff(MINUTE_DELTA_TRACKING_CTX *diff, BOOLEAN b_minute
 				a->day.walking = a->day_stored.walking;
 				a->day.running = a->day_stored.running;
 				a->day.distance = a->day_stored.distance;
+				a->day.active_calories = a->day_stored.active_calories;
 				if(b_active_time_Update == TRUE) {
 					a->day.active_time_in_minutes --;
 				}
@@ -1021,6 +1032,11 @@ void _update_minute_base(MINUTE_TRACKING_CTX *minute)
 	denormalized_stat <<= 4;
 	a->day_stored.calories += denormalized_stat;
   a->day_stored.active_time_in_minutes = a->day.active_time_in_minutes;		
+	
+	if (minute->walking || minute->running) {
+		a->day.active_calories += denormalized_stat;
+		a->day_stored.active_calories += denormalized_stat;
+	}
 	
 	// Distance in meter
 	denormalized_distance = minute->distance;
@@ -1823,6 +1839,7 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 	day_total->walking = 0;
 	day_total->running = 0;
 	day_total->calories = 0;
+	day_total->active_calories = 0;
 	day_total->distance = 0;
 	day_total->active_time_in_minutes = 0;
 	while (offset < SYSTEM_TRACKING_SPACE_SIZE) {
@@ -1854,6 +1871,9 @@ I32U TRACKING_get_daily_total(DAY_TRACKING_CTX *day_total)
 				day_total->calories += minute->calories;
 				if ((minute->walking+minute->running) >= 40) {
 					day_total->active_time_in_minutes ++;
+				}
+				if (minute->walking || minute->running) {
+					day_total->active_calories += minute->calories;
 				}
 #if 0
 				{

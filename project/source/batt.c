@@ -375,6 +375,7 @@ BOOLEAN BATT_device_unauthorized_shut_down()
 	// If device is un-authorized and DC-power is removed
 	if (BATT_is_charging()) {
 		cling.batt.shut_down_time = 0;
+			N_SPRINTF("[BATT] Unauthorized, in charging");
 	
 		return FALSE;
 	} else {
